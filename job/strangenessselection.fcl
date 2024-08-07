@@ -1,0 +1,28 @@
+BEGIN_PROLOG
+
+NeutralDecaySelection: {
+    module_type: NeutralDecaySelection
+    Verbose: false
+    IsData: false
+    IsFakeData: false
+
+    PFPproducer: "pandora"
+    SHRproducer: "pandora" 
+    HITproducer: "pandora"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    VTXproducer: "pandora"
+    PCAproducer: "pandora"
+    TRKproducer: "pandoraTrack"
+    MCTproducer: "generator"
+
+    SelectionTool: {
+        tool_typ: "EmptySelection"
+    }
+
+    AnalysisTool: {
+        
+    }
+}
+
+END_PROLOG
