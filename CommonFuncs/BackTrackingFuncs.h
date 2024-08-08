@@ -39,7 +39,7 @@ art::Ptr<simb::MCParticle> getAssocMCParticle(art::FindManyP<simb::MCParticle, a
     std::unordered_map<int, double> trkide;
     std::unordered_map<int, float> trkq;
     double maxe = -1, tote = 0;
-    art::Ptr<simb::MCParticle> maxp_me; /
+    art::Ptr<simb::MCParticle> maxp_me; 
     
     for (auto h : hits)
     {
