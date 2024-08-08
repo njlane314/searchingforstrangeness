@@ -32,6 +32,22 @@ namespace common
                     proxy::withAssociated<recob::Shower>(std::declval<art::InputTag>()),
                     proxy::withAssociated<recob::SpacePoint>(std::declval<art::InputTag>())) );   
     using ProxyPfpElem_t = ProxyPfpColl_t::element_proxy_t;
+
+    using ProxyClusColl_t = decltype(proxy::getCollection<std::vector<recob::Cluster>>(
+                    std::declval<art::Event>(), std::declval<art::InputTag>(),
+                    proxy::withAssociated<recob::Hit>(std::declval<art::InputTag>())));
+    using ProxyClusElem_t = ProxyClusColl_t::element_proxy_t;
+
+
+    using ProxyCaloColl_t = decltype(proxy::getCollection<std::vector<recob::Track>>(
+        std::declval<art::Event>(), std::declval<art::InputTag>(),
+        proxy::withAssociated<anab::Calorimetry>(std::declval<art::InputTag>())));
+    using ProxyCaloElem_t = ProxyCaloColl_t::element_proxy_t;
+
+    using ProxyPIDColl_t = decltype(proxy::getCollection<std::vector<recob::Track>>(
+        std::declval<art::Event>(), std::declval<art::InputTag>(),
+        proxy::withAssociated<anab::ParticleID>(std::declval<art::InputTag>())));
+    using ProxyPIDElem_t = ProxyPIDColl_t::element_proxy_t;
 }
 
 #endif
