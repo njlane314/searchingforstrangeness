@@ -18,7 +18,6 @@ namespace common
     {
         mcScatteredParticle = mcParticle;
 
-        // Create the MCParticleMap
         std::map<int, art::Ptr<simb::MCParticle> > mcParticleMap;
         for (size_t d = 0; d < mcp_h->size(); d++)
         {
@@ -27,24 +26,24 @@ namespace common
                 throw cet::exception("::GetNScatters") << " - Found repeated MCParticle with TrackId = " << mcParticle->TrackId() << "." << std::endl;
         }
 
-        // Loop over the daughters and count the number of elastic and inelastic scatters
         art::Ptr<simb::MCParticle> finalStateParticle;
         bool foundInelasticScatter = false;
         for (const auto &daughter : GetDaughters(mcParticle, mcParticleMap))
         {
             const auto& process = daughter->Process();
 
-            if (process == "hadElastic") nElastic++;
+            if (process == "hadElastic") 
+            {
+                nElastic++;
+            }
             else if (process.find("Inelastic") != std::string::npos)
             {
-                // If the daughter has the same PDG as the incident particle, then assume it's the same particle before & after the scatter
                 if (daughter->PdgCode() != mcParticle->PdgCode()) continue;
 
-                // If there are multiple particles from the inelastic collision, then don't treat it as a scatter
                 if (foundInelasticScatter) 
                 {
-                    // nInelastic = 0;
                     foundInelasticScatter = false;
+
                     break;
                 }
                 
@@ -58,6 +57,68 @@ namespace common
             nInelastic++;
             GetNScatters(mcp_h, finalStateParticle, mcScatteredParticle, nElastic, nInelastic);
         }
+    }
+
+    std::string GetEndState(const art::Ptr<simb::MCParticle> &particle, const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h)
+    {
+        std::string type = "Other";
+        bool hasPi0 = false;
+        bool hasDecayMuon = false;
+        bool hasDecayMuonNeutrino = false;
+
+        std::map<int, art::Ptr<simb::MCParticle>> mcParticleMap;
+        for (size_t d = 0; d < mcp_h->size(); d++)
+        {
+            const art::Ptr<simb::MCParticle> mcParticle(mcp_h, d);
+            mcParticleMap[mcParticle->TrackId()] = mcParticle;
+        }
+
+        art::Ptr<simb::MCParticle> scatteredParticle = particle;
+        unsigned int nElastic = 0;
+        unsigned int nInelastic = 0;
+        GetNScatters(mcp_h, particle, scatteredParticle, nElastic, nInelastic);
+
+        std::vector<art::Ptr<simb::MCParticle>> products;
+        for (const auto &daughter : GetDaughters(scatteredParticle, mcParticleMap))
+        {
+            const auto process = daughter->Process();
+
+            if (daughter->PdgCode() == 11 && process == "hIoni")
+                continue;
+
+            if (process == "hadElastic")
+                continue;
+
+            products.push_back(daughter);
+
+            if (daughter->PdgCode() == 111 && (process == "pi+Inelastic" || process == "pi-Inelastic"))
+                hasPi0 = true;
+
+            if (daughter->PdgCode() == -13 && process == "Decay")
+                hasDecayMuon = true;
+
+            if (daughter->PdgCode() == 14 && process == "Decay")
+                hasDecayMuonNeutrino = true;
+        }
+
+        if (products.empty())
+        {
+            type = "None";
+        }
+        else if (hasDecayMuon && hasDecayMuonNeutrino && products.size() == 2)
+        {
+            type = "DecayToMuon";
+        }
+        else if (scatteredParticle->EndProcess() == "pi+Inelastic" || scatteredParticle->EndProcess() == "pi-Inelastic")
+        {
+            type = hasPi0 ? "Pi0ChargeExchange" : "InelasticAbsorption";
+        }
+        else
+        {
+            type = "Other";
+        }
+
+        return type;
     }
 }
 

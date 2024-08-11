@@ -1,0 +1,3 @@
+if source build.sh; then
+    lar -c run_neutrinoselectionfilter.fcl -s Sandbox/PhysicsRun-2016_7_29_22_26_32-0007003-01286_20160805T195522_ext_unbiased_20160806T215518_merged_20231124T135742_simmxd_detsim_mix_r1a_r1b_20231124T175_a4687571-abb8-4bf6-8fd9-38e59ea36114.root
+fi
