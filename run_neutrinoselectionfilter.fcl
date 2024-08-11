@@ -1,0 +1,96 @@
+#include "services_microboone.fcl"   
+#include "reco_uboone_data_mcc9_8.fcl"
+
+process_name: NeutrinoSelectionProcess  
+
+services:
+{
+    TFileService: { fileName: "neutrino_selection_output.root" }  
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    ExptGeoHelperInterface: @local::microboone_geometry_helper
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source:
+{
+    module_type: RootInput  
+    fileNames: ["input_file.root"] 
+    maxEvents: -1  
+}
+
+physics:
+{
+    filters:
+    {
+        nuselection: {
+            module_type: NeutrinoSelectionFilter 
+            PFPproducer: "pandora"
+            SHRproducer: "pandora"
+            HITproducer: "gaushit"
+            CLSproducer: "pandora"
+            SLCproducer: "pandora"
+            VTXproducer: "pandora"
+            TRKproducer: "pandora"
+            PCAproducer: "pandora"
+            MCTproducer: "generator"
+            Verbose: true
+            IsData: false
+            IsFakeData: false
+            Filter: true
+            BDT_branch: ""
+            BDT_cut: -1
+            SelectionTool: {
+                tool_type: "EmptySelection"  
+            }
+            AnalysisTools: {
+                default: {
+                    tool_type: "DefaultAnalysis"  
+                    PFPproducer: "pandora"   # Add the PFPproducer here again if needed
+                    CLSproducer: "pandora"
+                    MCTproducer: "generator"
+                    MCFluxproducer: "generator"
+                    Hproducer: "gaushit"
+                    BacktrackTag: "gaushitTruthMatch"
+                    MCRproducer: "mcreco"
+                    SLCproducer: "pandora"
+                    MCPproducer: "largeant"
+                    ProtonThreshold: 0.04 # GeV
+                    fidvolXstart: 10.0
+                    fidvolXend: 10.0
+                    fidvolYstart: 15.0
+                    fidvolYend: 15.0
+                    fidvolZstart: 10.0
+                    fidvolZend: 50.0
+                    makeNuMINtuple: false
+                    ignoreMCFlux: false
+                    NuMIOpFiltProcName: "DataStage1Optical"
+                    NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
+                }
+                neutral_decay: {
+                    tool_type: "NeutralDecayAnalysis"
+                    MCTproducer: "generator"
+                    MCRproducer: "largeant"
+                    MCPproducer: "largeant"
+                }
+            }
+        }
+    }
+    
+    p1: [ nuselection ]  # Applies the filter
+
+    trigger_paths: [ p1 ]
+}
