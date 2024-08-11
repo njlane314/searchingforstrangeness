@@ -50,8 +50,6 @@ private:
     TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
     TParticlePDG *kaon_long = TDatabasePDG::Instance()->GetParticle(130);
 
-    int _mc_run, _mc_subrun, _mc_event;
-
     unsigned int _mc_piplus_n_elas;
     unsigned int _mc_piplus_n_inelas;
     unsigned int _mc_piminus_n_elas;
@@ -66,7 +64,6 @@ private:
     float _mc_kshrt_piminus_px, _mc_kshrt_piminus_py, _mc_kshrt_piminus_pz;
 
     float _mc_kshrt_total_energy;
-    int _mc_num_daughters;
 
     float _mc_neutrino_vertex_x, _mc_neutrino_vertex_y, _mc_neutrino_vertex_z;
     float _mc_kaon_decay_x, _mc_kaon_decay_y, _mc_kaon_decay_z;
@@ -77,6 +74,8 @@ private:
 
     std::string _mc_piplus_endprocess;
     std::string _mc_piminus_endprocess;
+
+    bool _mc_is_kaon_decay_pionic;
 };
 
 NeutralDecayAnalysis::NeutralDecayAnalysis(const fhicl::ParameterSet &pset)
@@ -95,10 +94,6 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
     if (fData) return;
 
     std::cout << "[NeutralDecayAnalysis] Analysing event..." << std::endl;
-
-    _mc_event = e.event();
-    _mc_subrun = e.subRun();
-    _mc_run = e.run();
   
     // Load generator truth 
     auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -123,106 +118,104 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
 
     TVector3 neutrino_vertex(_mc_neutrino_vertex_x, _mc_neutrino_vertex_y, _mc_neutrino_vertex_z);
 
-    // Track transition from K0 to K0-short or K0-long in GEANT4 
+    _mc_is_kaon_decay_pionic = false;
+
     size_t mct_n_part = mct.NParticles();
-    for (size_t i = 0; i < mct_n_part; i++)
+    for (size_t i = 0; i < mct_n_part; i++) 
     {
         auto const &t_part = mct.GetParticle(i);
 
         // Look for K0 at the generator level
-        if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode())
+        if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode() && t_part.Process() == "primary" && !_mc_is_kaon_decay_pionic) 
         {
-            // Find the corresponding K0-short or K0-long from GEANT4 
-            size_t mcp_n_part = mcp_h->size();
-            for (size_t j = 0; j < mcp_n_part; j++)
+            // Find the corresponding K0-short or K0-long from GEANT4
+            for (size_t j = 0; j < mcp_h->size(); j++) 
             {
                 auto const &g_part = mcp_h->at(j);
 
-                if (g_part.Mother() == t_part.TrackId())
+                if (g_part.PdgCode() == kaon_short->PdgCode() && g_part.EndProcess() == "Decay" && !_mc_is_kaon_decay_pionic) 
                 {
-                    if (g_part.PdgCode() == kaon_short->PdgCode())
+                    art::Ptr<simb::MCParticle> kaon_ptr(mcp_h, j);
+
+                    auto daughters = common::GetDaughters(kaon_ptr, mcp_map);
+                    if (daughters.size() == 2) 
                     {
-                        art::Ptr<simb::MCParticle> kaon_ptr(mcp_h, j);
+                        std::vector<int> exp_dtrs = {-211, 211};
+                        std::vector<int> fnd_dtrs;
 
-                        auto dtrs = common::GetDaughters(kaon_ptr, mcp_map);
-                        if (dtrs.size() == 2)
+                        for (const auto &dtr : daughters) 
                         {
-                            std::vector<int> exp_dtrs = {-211, 211};
-                            std::vector<int> fnd_dtrs;
-                            for (const auto &dtr : dtrs)
+                            fnd_dtrs.push_back(dtr->PdgCode());
+                        }
+
+                        std::sort(exp_dtrs.begin(), exp_dtrs.end());
+                        std::sort(fnd_dtrs.begin(), fnd_dtrs.end());
+
+                        if (fnd_dtrs == exp_dtrs) 
+                        {
+                            _mc_kshrt_total_energy = kaon_ptr->E();
+
+                            _mc_kaon_decay_x = kaon_ptr->EndX();
+                            _mc_kaon_decay_y = kaon_ptr->EndY();
+                            _mc_kaon_decay_z = kaon_ptr->EndZ();
+
+                            TVector3 kaon_decay(_mc_kaon_decay_x, _mc_kaon_decay_y, _mc_kaon_decay_z);
+                            float decay_length = (kaon_decay - neutrino_vertex).Mag();
+                            float phi_h = std::atan2(kaon_decay.Y(), kaon_decay.X());
+
+                            _mc_kaon_decay_distance = decay_length;
+
+                            for (const auto &dtr : daughters) 
                             {
-                                fnd_dtrs.push_back(dtr->PdgCode());
-                            }
+                                std::cout << dtr->PdgCode() << std::endl;
+                                TVector3 pion_mom(dtr->Px(), dtr->Py(), dtr->Pz());
+                                float phi_i = std::atan2(pion_mom.Y(), pion_mom.X());
+                                float d_0 = decay_length * std::sin(phi_i - phi_h);
 
-                            std::sort(exp_dtrs.begin(), exp_dtrs.end());
-                            std::sort(fnd_dtrs.begin(), fnd_dtrs.end());
-                        
-                            if (fnd_dtrs == exp_dtrs)
-                            {
-                                _mc_num_daughters = dtrs.size();
-                                _mc_kshrt_total_energy = kaon_ptr->E();
+                                unsigned int n_elas = 0;
+                                unsigned int n_inelas = 0;
+    
+                                art::Ptr<simb::MCParticle> scat_part;
+                                std::string scat_end_process;
 
-                                // Set the K0 decay position
-                                _mc_kaon_decay_x = kaon_ptr->EndX();
-                                _mc_kaon_decay_y = kaon_ptr->EndY();
-                                _mc_kaon_decay_z = kaon_ptr->EndZ();
+                                common::GetNScatters(mcp_h, dtr, scat_part, n_elas, n_inelas);
+                                scat_end_process = common::GetEndState(dtr, mcp_h);
+                                std::cout << scat_end_process << std::endl;
 
-                                TVector3 kaon_decay(_mc_kaon_decay_x, _mc_kaon_decay_y, _mc_kaon_decay_z);
-                                
-                                float decay_length = (kaon_decay - neutrino_vertex).Mag();
-                                float phi_h = std::atan2(kaon_decay.Y() - neutrino_vertex.Y(), kaon_decay.X() - neutrino_vertex.X());
-
-                                _mc_kaon_decay_distance = decay_length;
-
-                                // Fill pion information, calculate impact parameters, and count scatters
-                                for (const auto &dtr : dtrs)
-                                {
-                                    TVector3 pion_mom(dtr->Px(), dtr->Py(), dtr->Pz());
-
-                                    float phi_i = std::atan2(pion_mom.Y(), pion_mom.X());
-                                    float d_0 = decay_length * std::sin(phi_i - phi_h);
-
-                                    unsigned int n_elas = 0;
-                                    unsigned int n_inelas = 0;
-                                    art::Ptr<simb::MCParticle> scat_part;
-
-                                    common::GetNScatters(mcp_h, dtr, scat_part, n_elas, n_inelas);
-
-                                    if (dtr->PdgCode() == 211) // pion-plus
-                                    {
-                                        _mc_kshrt_piplus_pdg = dtr->PdgCode();
-                                        _mc_kshrt_piplus_energy = dtr->E();
-                                        _mc_kshrt_piplus_px = dtr->Px();
-                                        _mc_kshrt_piplus_py = dtr->Py();
-                                        _mc_kshrt_piplus_pz = dtr->Pz();
-                                        _mc_piplus_impact_param = d_0;
-                                        _mc_piplus_n_elas = n_elas;
-                                        _mc_piplus_n_inelas = n_inelas;
-                                        _mc_piplus_endprocess = dtr->EndProcess();
-
-                                        std::cout << dtr->EndProcess() << std::endl;
-                                    }
-                                    else if (dtr->PdgCode() == -211) // pion-minus
-                                    {
-                                        _mc_kshrt_piminus_pdg = dtr->PdgCode();
-                                        _mc_kshrt_piminus_energy = dtr->E();
-                                        _mc_kshrt_piminus_px = dtr->Px();
-                                        _mc_kshrt_piminus_py = dtr->Py();
-                                        _mc_kshrt_piminus_pz = dtr->Pz();
-                                        _mc_piminus_impact_param = d_0;
-                                        _mc_piminus_n_elas = n_elas;
-                                        _mc_piminus_n_inelas = n_inelas;
-                                        _mc_piplus_endprocess = dtr->EndProcess();
-                                        
-                                        std::cout << dtr->EndProcess() << std::endl;
-                                    }
+                                if (dtr->PdgCode() == 211) // pion-plus
+                                { 
+                                    _mc_kshrt_piplus_pdg = dtr->PdgCode();
+                                    _mc_kshrt_piplus_energy = dtr->E();
+                                    _mc_kshrt_piplus_px = dtr->Px();
+                                    _mc_kshrt_piplus_py = dtr->Py();
+                                    _mc_kshrt_piplus_pz = dtr->Pz();
+                                    _mc_piplus_impact_param = d_0;
+                                    _mc_piplus_n_elas = n_elas;
+                                    _mc_piplus_n_inelas = n_inelas;
+                                    _mc_piplus_endprocess = scat_end_process;
+                                } 
+                                else if (dtr->PdgCode() == -211) // pion-minus
+                                { 
+                                    _mc_kshrt_piminus_pdg = dtr->PdgCode();
+                                    _mc_kshrt_piminus_energy = dtr->E();
+                                    _mc_kshrt_piminus_px = dtr->Px();
+                                    _mc_kshrt_piminus_py = dtr->Py();
+                                    _mc_kshrt_piminus_pz = dtr->Pz();
+                                    _mc_piminus_impact_param = d_0;
+                                    _mc_piminus_n_elas = n_elas;
+                                    _mc_piminus_n_inelas = n_inelas;
+                                    _mc_piminus_endprocess = scat_end_process;
                                 }
                             }
+
+                            _mc_is_kaon_decay_pionic = true;
                         }
                     }
                 }
             }
         }
+
+        if (_mc_is_kaon_decay_pionic) break;  
     }
 }
 
@@ -252,7 +245,6 @@ void NeutralDecayAnalysis::setBranches(TTree *_tree)
     _tree->Branch("mc_kshrt_piminus_pz", &_mc_kshrt_piminus_pz, "mc_kshrt_piminus_pz/F");
 
     _tree->Branch("mc_kshrt_total_energy", &_mc_kshrt_total_energy, "mc_kshrt_total_energy/F");
-    _tree->Branch("mc_num_daughters", &_mc_num_daughters, "mc_num_daughters/I");
 
     _tree->Branch("mc_neutrino_vertex_x", &_mc_neutrino_vertex_x, "mc_neutrino_vertex_x/F");
     _tree->Branch("mc_neutrino_vertex_y", &_mc_neutrino_vertex_y, "mc_neutrino_vertex_y/F");
@@ -268,6 +260,8 @@ void NeutralDecayAnalysis::setBranches(TTree *_tree)
 
     _tree->Branch("mc_piplus_endprocess", &_mc_piplus_endprocess); 
     _tree->Branch("mc_piminus_endprocess", &_mc_piminus_endprocess); 
+
+    _tree->Branch("mc_is_pionic_kaon", &_mc_is_kaon_decay_pionic);
 }
 
 void NeutralDecayAnalysis::resetTTree(TTree *_tree)
@@ -290,7 +284,6 @@ void NeutralDecayAnalysis::resetTTree(TTree *_tree)
     _mc_kshrt_piminus_pz = std::numeric_limits<float>::lowest();
 
     _mc_kshrt_total_energy = std::numeric_limits<float>::lowest();
-    _mc_num_daughters = 0;
 
     _mc_neutrino_vertex_x = std::numeric_limits<float>::lowest();
     _mc_neutrino_vertex_y = std::numeric_limits<float>::lowest();
@@ -306,6 +299,8 @@ void NeutralDecayAnalysis::resetTTree(TTree *_tree)
 
     _mc_piplus_endprocess = ""; 
     _mc_piminus_endprocess = "";
+
+    _mc_is_kaon_decay_pionic = false;
 }
 
 DEFINE_ART_CLASS_TOOL(NeutralDecayAnalysis)

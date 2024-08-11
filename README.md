@@ -1,3 +1,3 @@
 # searchingforstrangeness
 
-lar -c run_PionMomentumLikelihood.fcl -s <.root>
+lar -c run_neutrinoselectionfilter.fcl -s <.root>

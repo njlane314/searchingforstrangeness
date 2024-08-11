@@ -29,7 +29,7 @@ source:
 {
     module_type: RootInput  
     fileNames: ["input_file.root"] 
-    maxEvents: -1  
+    maxEvents: -1
 }
 
 physics:
