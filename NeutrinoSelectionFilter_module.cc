@@ -14,9 +14,13 @@
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 
+// selection tool
 #include "SelectionTools/SelectionToolBase.h"
+
+// analysis tool
 #include "AnalysisTools/AnalysisToolBase.h"
 
+// saving output
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
@@ -25,16 +29,22 @@ class NeutrinoSelectionFilter;
 
 class NeutrinoSelectionFilter : public art::EDFilter
 {
+    
 public:
     explicit NeutrinoSelectionFilter(fhicl::ParameterSet const &p);
+    // The compiler-generated destructor is fine for non-base
+    // classes without bare pointers or other resource use.
 
+    // Plugins should not be copied or assigned.
     NeutrinoSelectionFilter(NeutrinoSelectionFilter const &) = delete;
     NeutrinoSelectionFilter(NeutrinoSelectionFilter &&) = delete;
     NeutrinoSelectionFilter &operator=(NeutrinoSelectionFilter const &) = delete;
     NeutrinoSelectionFilter &operator=(NeutrinoSelectionFilter &&) = delete;
 
+    // Required functions.
     bool filter(art::Event &e) override;
 
+    // Selected optional functions.
     bool endSubRun(art::SubRun &subrun) override;
 
     using ProxyPfpColl_t = common::ProxyPfpColl_t;
@@ -47,11 +57,14 @@ private:
     art::InputTag fHITproducer; // hit associated to cluster
     art::InputTag fSHRproducer; // shower associated to PFP
     art::InputTag fVTXproducer; // vertex associated to PFP
-    art::InputTag fPCAproducer;
     art::InputTag fTRKproducer; // track associated to PFP
+    art::InputTag fPCAproducer; // PCAxis associated to PFP
     art::InputTag fMCTproducer;
     bool fVerbose;
     bool fData, fFakeData;
+    bool fFilter;
+    std::string fBDT_branch;
+    float fBDT_cut;
 
     // TTree
     TTree *_tree;
@@ -63,9 +76,13 @@ private:
     int _sub_sr; // The subRun number
     float _pot;  // The total amount of POT for the current sub run
 
+    // a map linking the PFP Self() attribute used for hierarchy building to the PFP index in the event record
     std::map<unsigned int, unsigned int> _pfpmap;
 
+    // selection tool
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
+
+    // analysis tool
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
     void BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -82,8 +99,8 @@ private:
 };
 
 NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
-    : EDFilter{p} 
-{ 
+    : EDFilter{p}
+{
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fSHRproducer = p.get<art::InputTag>("SHRproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
@@ -96,6 +113,9 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
     fVerbose = p.get<bool>("Verbose");
     fData = p.get<bool>("IsData");
     fFakeData = p.get<bool>("IsFakeData",false);
+    fFilter = p.get<bool>("Filter", false);
+    fBDT_branch = p.get<std::string>("BDT_branch", "");
+    fBDT_cut = p.get<float>("BDT_cut", -1);
 
     art::ServiceHandle<art::TFileService> tfs;
     _tree = tfs->make<TTree>("NeutrinoSelectionFilter", "Neutrino Selection TTree");
@@ -111,12 +131,17 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
     if ( (!fData) || (fFakeData) )
         _subrun_tree->Branch("pot", &_pot, "pot/F");
 
+    // configure and construct Selection Tool
     const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
 
+    // pass the TTree to the selection tool so that any branch can be added to it
     _selectionTool->setBranches(_tree);
+
+    // set whether data
     _selectionTool->SetData(fData);
 
+    // configure and construct Analysis Tool
     auto const tool_psets = p.get<fhicl::ParameterSet>("AnalysisTools");
     for (auto const &tool_pset_labels : tool_psets.get_pset_names())
     {
@@ -124,6 +149,7 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
         _analysisToolsVec.push_back(art::make_tool<::analysis::AnalysisToolBase>(tool_pset));
     }
 
+    // pass the TTree to the analysis tool so that any branch can be added to it
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
         _analysisToolsVec[i]->setBranches(_tree);
 }
@@ -140,6 +166,8 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
     _sub = e.subRun();
     _run = e.run();
 
+
+    // grab PFParticles in event
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
                                                         proxy::withAssociated<recob::Cluster>(fCLSproducer),
@@ -154,51 +182,111 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
 
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
     {
-        _analysisToolsVec[i]->analyzeEvent(e, fData);
+        _analysisToolsVec[i]->analyzeEvent(e, fData); 
     }
 
-    //bool keepEvent = false;
+    bool keepEvent = false;
 
+    // loop through PFParticles
     for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy)
     {
-        //const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
 
+        // get metadata for this PFP
+        const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
+
+        //  find neutrino candidate
         if (pfp_pxy->IsPrimary() == false)
-            continue;
+        continue;
 
         auto PDG = fabs(pfp_pxy->PdgCode());
 
-        if ((PDG == 12) || (PDG == 14) || (PDG == 16))
+        if ((PDG == 12) || (PDG == 14))
         {
-            std::vector<ProxyPfpElem_t> slice_pfp_v;
-            AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
 
-            if (fVerbose)
-            {
-                std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
-            }
+        if (fVerbose)
+            printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
 
-            bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
-            if (fVerbose && selected)
-            {
-                std::cout << "Slice was selected!" << std::endl;
-            }
+        // collect PFParticle hierarchy originating from this neutrino candidate
+        std::vector<ProxyPfpElem_t> slice_pfp_v;
+        AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
 
-            if (selected)
-            {
-                //keepEvent = true;
-                _selected = 1;
-            }
-
-            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-                _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, fData, selected);
-            }
+        if (fVerbose)
+        {
+            std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
         }
-    } 
+
+        // create list of tracks and showers associated to this slice
+        std::vector<art::Ptr<recob::Track>> sliceTracks;
+        std::vector<art::Ptr<recob::Shower>> sliceShowers;
+
+        for (auto pfp : slice_pfp_v)
+        {
+            // if there is a track associated to the PFParticle, add it
+            auto const &ass_trk_v = pfp.get<recob::Track>();
+            if (ass_trk_v.size() == 1)
+                sliceTracks.push_back(ass_trk_v.at(0));
+            // if there is a shower associated to the PFParticle, add it
+            auto const &ass_shr_v = pfp.get<recob::Shower>();
+            if (ass_shr_v.size() == 1)
+                sliceShowers.push_back(ass_shr_v.at(0));
+        } // for all PFParticles in the slice
+
+        // run selection on this slice
+        bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
+
+        if (selected)
+        {
+            keepEvent = true;
+            _selected = 1;
+        }
+
+        for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+            _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, fData, selected);
+        }
+
+        } // if a neutrino PFParticle
+    } // for all PFParticles
 
     _tree->Fill();
 
+    if (fBDT_branch!="" && fBDT_cut>0 && fBDT_cut<1) {
+        float* bdtscore = (float*) _tree->GetBranch(fBDT_branch.c_str())->GetAddress();
+        std::cout << "bdtscore=" << *bdtscore << std::endl;
+        keepEvent = keepEvent && ( (*bdtscore)<fBDT_cut );
+    }
+
+    if (fFilter == true)
+        return keepEvent;
+
     return true;
+}
+
+template <typename T>
+void NeutrinoSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
+                                                      const T &pfParticleMetadataList)
+{
+    if (pfParticleMetadataList.size() != 0)
+    {
+
+        for (unsigned int j = 0; j < pfParticleMetadataList.size(); ++j)
+        {
+
+        const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(pfParticleMetadataList.at(j));
+        auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
+        if (!pfParticlePropertiesMap.empty())
+        {
+            if (fVerbose)
+            std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
+            for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it)
+            {
+            if (fVerbose)
+                std::cout << "  - " << it->first << " = " << it->second << std::endl;
+            }
+        }
+        }
+    } 
+
+    return;
 }
 
 void NeutrinoSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
@@ -213,9 +301,11 @@ void NeutrinoSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
     }
 
     return;
-}
+} 
 
-void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v)
+void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
+                                           const ProxyPfpColl_t &pfp_pxy_col,
+                                           std::vector<ProxyPfpElem_t> &slice_v)
 {
     auto daughters = pfp_pxy->Daughters();
 
@@ -226,17 +316,20 @@ void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const 
 
     for (auto const &daughterid : daughters)
     {
+
         if (_pfpmap.find(daughterid) == _pfpmap.end())
         {
-            continue;
+        std::cout << "Did not find DAUGHTERID in map! error" << std::endl;
+        continue;
         }
 
         auto pfp_pxy2 = pfp_pxy_col.begin();
-        for (size_t j = 0; j < _pfpmap.at(daughterid); ++j) 
-            ++pfp_pxy2;
+        for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
+        ++pfp_pxy2;
 
         AddDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
-    } 
+
+    } // for all daughters
 
     return;
 } 
@@ -265,6 +358,7 @@ bool NeutrinoSelectionFilter::endSubRun(art::SubRun &subrun)
     _run_sr = subrun.run();
     _sub_sr = subrun.subRun();
     _subrun_tree->Fill();
+
     return true;
 }
 

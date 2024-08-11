@@ -38,6 +38,11 @@ namespace common
                     proxy::withAssociated<recob::Hit>(std::declval<art::InputTag>())));
     using ProxyClusElem_t = ProxyClusColl_t::element_proxy_t;
 
+    using ProxySliceColl_t = decltype(proxy::getCollection<std::vector<recob::PFParticle> >(
+                std::declval<art::Event>(),std::declval<art::InputTag>(),
+                proxy::withAssociated<larpandoraobj::PFParticleMetadata>(std::declval<art::InputTag>()),
+                proxy::withAssociated<recob::Slice>(std::declval<art::InputTag>())) );
+    using ProxySliceElem_t = ProxySliceColl_t::element_proxy_t;
 
     using ProxyCaloColl_t = decltype(proxy::getCollection<std::vector<recob::Track>>(
         std::declval<art::Event>(), std::declval<art::InputTag>(),
