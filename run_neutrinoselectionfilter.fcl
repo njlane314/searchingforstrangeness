@@ -28,7 +28,7 @@ services.SpaceCharge.EnableSimSpatialSCE: true
 source:
 {
     module_type: RootInput  
-    fileNames: ["input_file.root"] 
+    fileNames: ["/exp/uboone/data/users/cthorpe/K0SAnalysis/analysisOutputFHC_Overlay_GENIE_Kaon_cthorpe_make_k0s_events_numi_fhc_reco2_reco2_reco2.root"] 
     maxEvents: -1
 }
 
@@ -81,10 +81,28 @@ physics:
                     NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
                 }
                 neutral_decay: {
-                    tool_type: "NeutralDecayAnalysis"
+                    tool_type: "StrangenessAnalysis"
                     MCTproducer: "generator"
                     MCRproducer: "largeant"
                     MCPproducer: "largeant"
+                    Hproducer: "gaushit"
+                    BacktrackTag: "gaushitTruthMatch"
+                }
+                calorimetry: {
+                    tool_type: "CalorimetryAnalysis"
+                    TRKproducer: "pandora"
+                    CALOproducer: "pandoracali"
+                    PIDproducer: "pandoracalipid"
+
+                    CLSproducer: "pandora"
+                    Hproducer: "gaushit"
+                    BacktrackTag: "gaushitTruthMatch"
+                    MCRproducer: "mcreco"
+                    MCPproducer: "largeant"
+                    MCTproducer: "generator"
+                    GetCaloID: false
+                    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+                    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
                 }
             }
         }

@@ -16,17 +16,19 @@
 #include "../CommonFuncs/SpaceChargeCorrections.h"
 #include "../CommonFuncs/Scatters.h"
 
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+
 namespace analysis
 {
 
-class NeutralDecayAnalysis : public AnalysisToolBase
+class StrangenessAnalysis : public AnalysisToolBase
 {
 
 public:
   
-    NeutralDecayAnalysis(const fhicl::ParameterSet &pset);
+    StrangenessAnalysis(const fhicl::ParameterSet &pset);
 
-    ~NeutralDecayAnalysis(){};
+    ~StrangenessAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -45,15 +47,24 @@ private:
     art::InputTag fMCTproducer;
     art::InputTag fMCRproducer;
     art::InputTag fMCPproducer;
+    art::InputTag fHproducer;
+    art::InputTag fBacktrackTag;
 
     TParticlePDG *neutral_kaon = TDatabasePDG::Instance()->GetParticle(311);
     TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
     TParticlePDG *kaon_long = TDatabasePDG::Instance()->GetParticle(130);
+    TParticlePDG *lambda = TDatabasePDG::Instance()->GetParticle(3122);
+    TParticlePDG *sigma_plus = TDatabasePDG::Instance()->GetParticle(3222); 
+    TParticlePDG *sigma_minus = TDatabasePDG::Instance()->GetParticle(3112);
+    TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
 
     unsigned int _mc_piplus_n_elas;
     unsigned int _mc_piplus_n_inelas;
     unsigned int _mc_piminus_n_elas;
     unsigned int _mc_piminus_n_inelas;
+
+    int _mc_kshrt_piplus_tid; 
+    int _mc_kshrt_piminus_tid;
 
     int _mc_kshrt_piplus_pdg;
     float _mc_kshrt_piplus_energy;
@@ -75,25 +86,32 @@ private:
     std::string _mc_piplus_endprocess;
     std::string _mc_piminus_endprocess;
 
-    bool _mc_is_kaon_decay_pionic;
+    bool _mc_is_kshort_decay_pionic;
+
+    bool _mc_has_lambda;
+    bool _mc_has_sigma_minus;
+    bool _mc_has_sigma_plus;
+    bool _mc_has_sigma_zero;
 };
 
-NeutralDecayAnalysis::NeutralDecayAnalysis(const fhicl::ParameterSet &pset)
+StrangenessAnalysis::StrangenessAnalysis(const fhicl::ParameterSet &pset)
 {
     fMCTproducer = pset.get<art::InputTag>("MCTproducer", "");
     fMCRproducer = pset.get<art::InputTag>("MCRproducer", "");
     fMCPproducer = pset.get<art::InputTag>("MCPproducer", "");
+    fHproducer = pset.get<art::InputTag>("Hproducer", "");
+    fBacktrackTag = pset.get<art::InputTag>("BacktrackTag", ""); 
 }
 
-void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
+void StrangenessAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
- void NeutralDecayAnalysis::analyzeEvent(art::Event const &e, bool fData)
+ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
     if (fData) return;
 
-    std::cout << "[NeutralDecayAnalysis] Analysing event..." << std::endl;
+    std::cout << "[StrangenessAnalysis] Analysing event..." << std::endl;
   
     // Load generator truth 
     auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -118,22 +136,34 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
 
     TVector3 neutrino_vertex(_mc_neutrino_vertex_x, _mc_neutrino_vertex_y, _mc_neutrino_vertex_z);
 
-    _mc_is_kaon_decay_pionic = false;
+    _mc_is_kshort_decay_pionic = false;
 
     size_t mct_n_part = mct.NParticles();
     for (size_t i = 0; i < mct_n_part; i++) 
     {
         auto const &t_part = mct.GetParticle(i);
 
+        if (abs(t_part.PdgCode()) == lambda->PdgCode() && t_part.Process() == "primary")
+            _mc_has_lambda = true;
+
+        if (abs(t_part.PdgCode()) == sigma_plus->PdgCode() && t_part.Process() == "primary")
+            _mc_has_sigma_plus = true;
+
+        if (abs(t_part.PdgCode()) == sigma_zero->PdgCode() && t_part.Process() == "primary")
+            _mc_has_sigma_zero = true;
+
+        if (abs(t_part.PdgCode()) == sigma_minus->PdgCode() && t_part.Process() == "primary")
+            _mc_has_sigma_minus = true;
+
         // Look for K0 at the generator level
-        if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode() && t_part.Process() == "primary" && !_mc_is_kaon_decay_pionic) 
+        if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode() && t_part.Process() == "primary" && !_mc_is_kshort_decay_pionic) 
         {
             // Find the corresponding K0-short or K0-long from GEANT4
             for (size_t j = 0; j < mcp_h->size(); j++) 
             {
                 auto const &g_part = mcp_h->at(j);
 
-                if (g_part.PdgCode() == kaon_short->PdgCode() && g_part.EndProcess() == "Decay" && !_mc_is_kaon_decay_pionic) 
+                if (g_part.PdgCode() == kaon_short->PdgCode() && g_part.EndProcess() == "Decay" && !_mc_is_kshort_decay_pionic) 
                 {
                     art::Ptr<simb::MCParticle> kaon_ptr(mcp_h, j);
 
@@ -184,6 +214,7 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
 
                                 if (dtr->PdgCode() == 211) // pion-plus
                                 { 
+                                    _mc_kshrt_piplus_tid = dtr->TrackId();
                                     _mc_kshrt_piplus_pdg = dtr->PdgCode();
                                     _mc_kshrt_piplus_energy = dtr->E();
                                     _mc_kshrt_piplus_px = dtr->Px();
@@ -196,6 +227,7 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
                                 } 
                                 else if (dtr->PdgCode() == -211) // pion-minus
                                 { 
+                                    _mc_kshrt_piminus_tid = dtr->TrackId();
                                     _mc_kshrt_piminus_pdg = dtr->PdgCode();
                                     _mc_kshrt_piminus_energy = dtr->E();
                                     _mc_kshrt_piminus_px = dtr->Px();
@@ -208,25 +240,71 @@ void NeutralDecayAnalysis::configure(fhicl::ParameterSet const &pset)
                                 }
                             }
 
-                            _mc_is_kaon_decay_pionic = true;
+                            _mc_is_kshort_decay_pionic = true;
                         }
                     }
                 }
             }
         }
 
-        if (_mc_is_kaon_decay_pionic) break;  
+        if (_mc_is_kshort_decay_pionic) break;  
     }
 }
 
-void NeutralDecayAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void StrangenessAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
+    /*common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer,
+                                                                                            proxy::withAssociated<recob::Hit>(fCLSproducer));
+    // somehow proxies don't work for the slice-hit association, so go back to old assns
+    art::ValidHandle<std::vector<recob::Slice>> inputSlice = e.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+    auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(new art::FindManyP<recob::Hit>(inputSlice, e, fSLCproducer));*/
 
-  return;
+    // Build larpandora info:
+    /*lar_pandora::LArPandoraHelper larpandora;
+    lar_pandora::PFParticleVector pfparticles;
+    lar_pandora::PFParticleMap particleMap;
+    larpandora.CollectPFParticles(e, "pandora", pfparticles);
+    larpandora.BuildPFParticleMap(pfparticles, particleMap);
+
+    // load backtrack information
+    std::vector<common::BtPart> btparts_v;
+    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
+    if (!fData)
+    {
+        const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
+        const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
+        art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHproducer);
+        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBacktrackTag));
+        btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
+    }*/
+
+    /*size_t pfpidx = 0;
+    _n_pfps = 0;
+    for (auto pfp : slice_pfp_v)
+    {
+        if (pfp->IsPrimary()) 
+            continue;
+        
+        auto trkshrscore = common::GetTrackShowerScore(pfp_pxy);
+        if (trkshrscore > 0.5)
+        {
+	        unsigned int trk_hits = 0;
+            for (const auto &trk : pfp_pxy.get<recob::Track>())
+            {
+                
+            }
+        }
+    }*/
+
+    return;
 }
 
-void NeutralDecayAnalysis::setBranches(TTree *_tree)
+
+void StrangenessAnalysis::setBranches(TTree *_tree)
 {
+    _tree->Branch("mc_piplus_tid", &_mc_kshrt_piplus_tid, "mc_piplus_tid/i");
+    _tree->Branch("mc_piminus_tid", &_mc_kshrt_piminus_tid, "mc_piminus_tid/i");
+
     _tree->Branch("mc_piplus_n_elas", &_mc_piplus_n_elas, "mc_piplus_n_elas/i");
     _tree->Branch("mc_piplus_n_inelas", &_mc_piplus_n_inelas, "mc_piplus_n_inelas/i");
     _tree->Branch("mc_piminus_n_elas", &_mc_piminus_n_elas, "mc_piminus_n_elas/i");
@@ -261,10 +339,15 @@ void NeutralDecayAnalysis::setBranches(TTree *_tree)
     _tree->Branch("mc_piplus_endprocess", &_mc_piplus_endprocess); 
     _tree->Branch("mc_piminus_endprocess", &_mc_piminus_endprocess); 
 
-    _tree->Branch("mc_is_pionic_kaon", &_mc_is_kaon_decay_pionic);
+    _tree->Branch("mc_is_pionic_kaon", &_mc_is_kshort_decay_pionic);
+
+    _tree->Branch("mc_has_lambda", &_mc_has_lambda);
+    _tree->Branch("mc_has_sigma_plus", &_mc_has_sigma_plus);
+    _tree->Branch("mc_has_sigma_minus", &_mc_has_sigma_minus);
+    _tree->Branch("mc_has_sigma_zero", &_mc_has_sigma_zero);
 }
 
-void NeutralDecayAnalysis::resetTTree(TTree *_tree)
+void StrangenessAnalysis::resetTTree(TTree *_tree)
 {
     _mc_piplus_n_elas = 0;
     _mc_piplus_n_inelas = 0;
@@ -300,10 +383,18 @@ void NeutralDecayAnalysis::resetTTree(TTree *_tree)
     _mc_piplus_endprocess = ""; 
     _mc_piminus_endprocess = "";
 
-    _mc_is_kaon_decay_pionic = false;
+    _mc_kshrt_piminus_tid = -1;
+    _mc_kshrt_piplus_tid = -1;
+
+    _mc_is_kshort_decay_pionic = false;
+
+    _mc_has_lambda = false;
+    _mc_has_sigma_plus = false;
+    _mc_has_sigma_minus = false;
+    _mc_has_sigma_zero = false;
 }
 
-DEFINE_ART_CLASS_TOOL(NeutralDecayAnalysis)
+DEFINE_ART_CLASS_TOOL(StrangenessAnalysis)
 } 
 
 #endif

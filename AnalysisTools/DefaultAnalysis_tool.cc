@@ -58,6 +58,7 @@ public:
     void resetTTree(TTree *_tree) override;
 
 private:
+
     TParticlePDG *proton = TDatabasePDG::Instance()->GetParticle(2212);
     TParticlePDG *neutron = TDatabasePDG::Instance()->GetParticle(2112);
     TParticlePDG *electron = TDatabasePDG::Instance()->GetParticle(11);
@@ -98,7 +99,6 @@ private:
     // kinematic thresholds to define signal
     float fProtonThreshold;
     float fPionThreshold;
-    //float fPi0Threshold;
     float fElectronThreshold;
     float fMuonThreshold;
 
@@ -259,6 +259,10 @@ private:
     float _true_p_visible;
     float _true_e_visible;
     float _leeweight;
+
+    std::vector<float> _trk_sep_v;
+    std::vector<float> _trk_phi_v;
+    std::vector<float> _trk_d_v;
 };
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p)
@@ -622,6 +626,35 @@ void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Prox
             _n_showers++;
         }
         _trk_score_v.push_back(trkscore);
+
+        auto trk_v = pfp.get<recob::Track>();
+        if (trk_v.size() == 1 )
+        {
+            auto trk = trk_v.at(0);
+
+            auto trk_strt = trk->Start();
+            float trk_strt_sce[3];
+            common::ApplySCECorrectionXYZ(trk_strt.X(), trk_strt.Y(), trk_strt.Z(), trk_strt_sce);
+            float phi_h = std::atan2(trk_strt_sce[0], trk_strt_sce[1]);
+
+            auto trk_end = trk->End();
+            float trk_end_sce[3];
+            common::ApplySCECorrectionXYZ(trk_end.X(), trk_end.Y(), trk_end.Z(), trk_end_sce);
+
+            float trk_sep = common::distance3d(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, trk_end_sce[0], trk_end_sce[1], trk_end_sce[2]);
+            float trk_phi = std::atan2(trk_end_sce[0], trk_end_sce[1]);
+            float trk_d = trk_sep * sin(trk_phi - phi_h);
+
+            _trk_sep_v.push_back(trk_sep); 
+            _trk_phi_v.push_back(trk_phi);
+            _trk_d_v.push_back(trk_d);
+        }
+        else 
+        {
+            _trk_sep_v.push_back(std::numeric_limits<float>::lowest()); 
+            _trk_phi_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_d_v.push_back(std::numeric_limits<float>::lowest());
+        }
 
         // get hits associated to this PFParticle through the clusters
         std::vector<art::Ptr<recob::Hit>> hit_v;
@@ -1007,6 +1040,10 @@ void DefaultAnalysis::setBranches(TTree *_tree)
     _tree->Branch("endmuonprocess", &_endmuonprocess);
 
     _tree->Branch("endmuonmichel", &_endmuonmichel, "endmuonmichel/F");
+
+    _tree->Branch("pfp_trk_sep", "std::vector<float>", &_trk_sep_v);
+    _tree->Branch("pfp_trk_phi", "std::vector<float>", &_trk_phi_v);
+    _tree->Branch("pfp_trk_d", "std::vector<float>", &_trk_d_v);
 }
 
 void DefaultAnalysis::resetTTree(TTree *_tree)
@@ -1195,6 +1232,10 @@ void DefaultAnalysis::resetTTree(TTree *_tree)
     _true_p_visible = 0;
 
     _true_e_visible = 0;
+
+    _trk_sep_v.clear();
+    _trk_phi_v.clear();
+    _trk_d_v.clear();
 }
 
 void DefaultAnalysis::SaveTruth(art::Event const &e)
