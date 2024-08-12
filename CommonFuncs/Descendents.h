@@ -31,6 +31,7 @@ namespace common
         GetDownstreamParticles(particle, pfParticleMap, downstreamParticles);
         for (const auto &downstreamParticle : downstreamParticles)
             if (downstreamParticle != particle) nDescendents++;
+            
         return nDescendents;
     }
 } 

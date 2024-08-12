@@ -190,60 +190,58 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
     // loop through PFParticles
     for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy)
     {
-
         // get metadata for this PFP
         const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
 
         //  find neutrino candidate
         if (pfp_pxy->IsPrimary() == false)
-        continue;
+            continue;
 
         auto PDG = fabs(pfp_pxy->PdgCode());
 
         if ((PDG == 12) || (PDG == 14))
         {
 
-        if (fVerbose)
-            printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
+            if (fVerbose)
+                printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
 
-        // collect PFParticle hierarchy originating from this neutrino candidate
-        std::vector<ProxyPfpElem_t> slice_pfp_v;
-        AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
+            // collect PFParticle hierarchy originating from this neutrino candidate
+            std::vector<ProxyPfpElem_t> slice_pfp_v;
+            AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
 
-        if (fVerbose)
-        {
-            std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
-        }
+            if (fVerbose)
+            {
+                std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
+            }
 
-        // create list of tracks and showers associated to this slice
-        std::vector<art::Ptr<recob::Track>> sliceTracks;
-        std::vector<art::Ptr<recob::Shower>> sliceShowers;
+            // create list of tracks and showers associated to this slice
+            std::vector<art::Ptr<recob::Track>> sliceTracks;
+            std::vector<art::Ptr<recob::Shower>> sliceShowers;
 
-        for (auto pfp : slice_pfp_v)
-        {
-            // if there is a track associated to the PFParticle, add it
-            auto const &ass_trk_v = pfp.get<recob::Track>();
-            if (ass_trk_v.size() == 1)
-                sliceTracks.push_back(ass_trk_v.at(0));
-            // if there is a shower associated to the PFParticle, add it
-            auto const &ass_shr_v = pfp.get<recob::Shower>();
-            if (ass_shr_v.size() == 1)
-                sliceShowers.push_back(ass_shr_v.at(0));
-        } // for all PFParticles in the slice
+            for (auto pfp : slice_pfp_v)
+            {
+                // if there is a track associated to the PFParticle, add it
+                auto const &ass_trk_v = pfp.get<recob::Track>();
+                if (ass_trk_v.size() == 1)
+                    sliceTracks.push_back(ass_trk_v.at(0));
+                // if there is a shower associated to the PFParticle, add it
+                auto const &ass_shr_v = pfp.get<recob::Shower>();
+                if (ass_shr_v.size() == 1)
+                    sliceShowers.push_back(ass_shr_v.at(0));
+            } // for all PFParticles in the slice
 
-        // run selection on this slice
-        bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
+            // run selection on this slice
+            bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
 
-        if (selected)
-        {
-            keepEvent = true;
-            _selected = 1;
-        }
+            if (selected)
+            {
+                keepEvent = true;
+                _selected = 1;
+            }
 
-        for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-            _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, fData, selected);
-        }
-
+            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+                _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, fData, selected);
+            }
         } // if a neutrino PFParticle
     } // for all PFParticles
 
@@ -271,18 +269,18 @@ void NeutrinoSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_
         for (unsigned int j = 0; j < pfParticleMetadataList.size(); ++j)
         {
 
-        const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(pfParticleMetadataList.at(j));
-        auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
-        if (!pfParticlePropertiesMap.empty())
-        {
-            if (fVerbose)
-            std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
-            for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it)
+            const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(pfParticleMetadataList.at(j));
+            auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
+            if (!pfParticlePropertiesMap.empty())
             {
-            if (fVerbose)
-                std::cout << "  - " << it->first << " = " << it->second << std::endl;
+                if (fVerbose)
+                std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
+                for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it)
+                {
+                if (fVerbose)
+                    std::cout << "  - " << it->first << " = " << it->second << std::endl;
+                }
             }
-        }
         }
     } 
 
