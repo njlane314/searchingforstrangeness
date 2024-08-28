@@ -22,6 +22,7 @@
 #include "../CommonFuncs/ProximityClustering.h"
 #include "../CommonFuncs/Descendents.h"
 #include "../CommonFuncs/Scatters.h"
+#include "../CommonFuncs/PandoraFuncs.h"
 
 // save info associated to common optical filter
 #include "ubobj/Optical/UbooneOpticalFilter.h"
@@ -106,9 +107,11 @@ private:
 
     float _true_nu_vtx_t, _true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z;
     float _true_nu_vtx_sce_x, _true_nu_vtx_sce_y, _true_nu_vtx_sce_z;
+    float _true_nu_vtx_sce_u_wire, _true_nu_vtx_sce_w_wire, _true_nu_vtx_sce_v_wire;
     float _true_nu_px, _true_nu_py, _true_nu_pz; /**< True momentum components for the incoming neutrino [GeV/c] */
     float _reco_nu_vtx_x, _reco_nu_vtx_y, _reco_nu_vtx_z;
     float _reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z;
+    float _reco_nu_vtx_sce_u_wire, _reco_nu_vtx_sce_v_wire, _reco_nu_vtx_sce_w_wire;
 
     // has the swtrigger fired?
     int _swtrig;
@@ -572,6 +575,10 @@ void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Prox
                 _reco_nu_vtx_sce_x = _reco_nu_vtx_sce[0];
                 _reco_nu_vtx_sce_y = _reco_nu_vtx_sce[1];
                 _reco_nu_vtx_sce_z = _reco_nu_vtx_sce[2];
+
+                _reco_nu_vtx_sce_u_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_U)).Z();
+                _reco_nu_vtx_sce_v_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_V)).Z();
+                _reco_nu_vtx_sce_w_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_W)).Z();
             }
 
             continue;
@@ -628,7 +635,7 @@ void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Prox
         _trk_score_v.push_back(trkscore);
 
         auto trk_v = pfp.get<recob::Track>();
-        if (trk_v.size() == 1 )
+        if (trk_v.size() == 1)
         {
             auto trk = trk_v.at(0);
 
@@ -892,6 +899,9 @@ void DefaultAnalysis::setBranches(TTree *_tree)
     _tree->Branch("true_nu_vtx_sce_x", &_true_nu_vtx_sce_x, "true_nu_vtx_sce_x/F");
     _tree->Branch("true_nu_vtx_sce_y", &_true_nu_vtx_sce_y, "true_nu_vtx_sce_y/F");
     _tree->Branch("true_nu_vtx_sce_z", &_true_nu_vtx_sce_z, "true_nu_vtx_sce_z/F");
+    _tree->Branch("true_nu_vtx_sce_u_wire", &_true_nu_vtx_sce_u_wire, "true_nu_vtx_sce_u_wire/F");
+    _tree->Branch("true_nu_vtx_sce_v_wire", &_true_nu_vtx_sce_v_wire, "true_nu_vtx_sce_v_wire/F"); 
+    _tree->Branch("true_nu_vtx_sce_w_wire", &_true_nu_vtx_sce_w_wire, "true_nu_vtx_sce_w_wire/F");
 
     _tree->Branch("reco_nu_vtx_x", &_reco_nu_vtx_x, "reco_nu_vtx_x/F");
     _tree->Branch("reco_nu_vtx_y", &_reco_nu_vtx_y, "reco_nu_vtx_y/F");
@@ -899,6 +909,9 @@ void DefaultAnalysis::setBranches(TTree *_tree)
     _tree->Branch("reco_nu_vtx_sce_x", &_reco_nu_vtx_sce_x, "reco_nu_vtx_sce_x/F");
     _tree->Branch("reco_nu_vtx_sce_y", &_reco_nu_vtx_sce_y, "reco_nu_vtx_sce_y/F");
     _tree->Branch("reco_nu_vtx_sce_z", &_reco_nu_vtx_sce_z, "reco_nu_vtx_sce_z/F");
+    _tree->Branch("reco_nu_vtx_sce_u_wire", &_reco_nu_vtx_sce_u_wire, "reco_nu_vtx_sce_u_wire/F");
+    _tree->Branch("reco_nu_vtx_sce_v_wire", &_reco_nu_vtx_sce_v_wire, "reco_nu_vtx_sce_v_wire/F");
+    _tree->Branch("reco_nu_vtx_sce_w_wire", &_reco_nu_vtx_sce_w_wire, "reco_nu_vtx_sce_v_wire/F");
 
     // individual particles in the neutrino slice
     // legend:
@@ -1328,6 +1341,10 @@ void DefaultAnalysis::SaveTruth(art::Event const &e)
         _true_nu_vtx_sce_x = _true_nu_vtx_sce[0];
         _true_nu_vtx_sce_y = _true_nu_vtx_sce[1];
         _true_nu_vtx_sce_z = _true_nu_vtx_sce[2];
+        
+        _true_nu_vtx_sce_u_wire = (common::ProjectToWireView(_true_nu_vtx_sce_x, _true_nu_vtx_sce_y, _true_nu_vtx_sce_z, common::TPC_VIEW_U)).Z(); 
+        _true_nu_vtx_sce_v_wire = (common::ProjectToWireView(_true_nu_vtx_sce_x, _true_nu_vtx_sce_y, _true_nu_vtx_sce_z, common::TPC_VIEW_V)).Z(); 
+        _true_nu_vtx_sce_w_wire = (common::ProjectToWireView(_true_nu_vtx_sce_x, _true_nu_vtx_sce_y, _true_nu_vtx_sce_z, common::TPC_VIEW_W)).Z(); 
 
         _theta = neutrino.Theta();
         _nu_pt = neutrino.Pt();

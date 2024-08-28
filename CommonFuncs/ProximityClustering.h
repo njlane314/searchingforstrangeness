@@ -204,7 +204,9 @@ namespace common
 
         size_t maxClusterID = 0;
 
-        for (int pl=0; pl < 3; pl++){
+        //for (int pl=0; pl < 3; pl++){
+
+            int pl = 2; // change to just look at the collection plane
         
             MakeHitMap(hit_ptr_v,pl,_time2cm, _wire2cm, _cellSize, _hitMap);
         
@@ -296,7 +298,7 @@ namespace common
                         maxClusterID += 1;
                     }
                 }// 1st loop through hits in the cell
-            }// loop through all cells
+            //}// loop through all cells
         }// loop through all planes
 
         // make a vector for the clusters
@@ -314,4 +316,5 @@ namespace common
         return true;
     }
 }
+
 #endif

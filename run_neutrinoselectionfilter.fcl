@@ -53,8 +53,18 @@ physics:
             Filter: true
             BDT_branch: ""
             BDT_cut: -1
+            ProximateRadius: 50
             SelectionTool: {
-                tool_type: "EmptySelection"  
+                tool_type: "NeutralDecaySelection"  
+                PFPproducer: "pandora"
+                SHRproducer: "pandora"
+                HITproducer: "gaushit"
+                CLSproducer: "pandora"
+                SLCproducer: "pandora"
+                VTXproducer: "pandora"
+                TRKproducer: "pandora"
+                PCAproducer: "pandora"
+                MCTproducer: "generator"
             }
             AnalysisTools: {
                 default: {
@@ -82,6 +92,13 @@ physics:
                 }
                 neutral_decay: {
                     tool_type: "StrangenessAnalysis"
+                    PFPproducer: "pandora"
+                    CLSproducer: "pandora"
+                    SLCproducer: "pandora"
+                    TRKproducer: "pandora"
+                    VTXproducer: "pandora"
+                    PCAproducer: "pandora"
+                    SHRproducer: "pandora"
                     MCTproducer: "generator"
                     MCRproducer: "largeant"
                     MCPproducer: "largeant"
