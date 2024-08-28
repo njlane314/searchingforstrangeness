@@ -25,6 +25,9 @@
 #include "TTree.h"
 #include "TVector3.h"
 
+#include "CommonFuncs/Geometry.h"
+#include "CommonFuncs/SpaceChargeCorrections.h"
+
 class NeutrinoSelectionFilter;
 
 class NeutrinoSelectionFilter : public art::EDFilter
@@ -65,6 +68,7 @@ private:
     bool fFilter;
     std::string fBDT_branch;
     float fBDT_cut;
+    float fProximateRadius;
 
     // TTree
     TTree *_tree;
@@ -95,6 +99,10 @@ private:
                         const ProxyPfpColl_t &pfp_pxy_col,
                         std::vector<ProxyPfpElem_t> &slice_v);
 
+    void AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
+                                    const ProxyPfpColl_t &pfp_pxy_col,
+                                    std::vector<ProxyPfpElem_t> &slice_v);
+
     void ResetTTree();
 };
 
@@ -116,6 +124,7 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
     fFilter = p.get<bool>("Filter", false);
     fBDT_branch = p.get<std::string>("BDT_branch", "");
     fBDT_cut = p.get<float>("BDT_cut", -1);
+    fProximateRadius = p.get<float>("ProximateRadius", 30);
 
     art::ServiceHandle<art::TFileService> tfs;
     _tree = tfs->make<TTree>("NeutrinoSelectionFilter", "Neutrino Selection TTree");
@@ -166,7 +175,6 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
     _sub = e.subRun();
     _run = e.run();
 
-
     // grab PFParticles in event
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
@@ -207,7 +215,8 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
 
             // collect PFParticle hierarchy originating from this neutrino candidate
             std::vector<ProxyPfpElem_t> slice_pfp_v;
-            AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
+            //AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
+            AddProximateParticles(pfp_pxy, pfp_proxy, slice_pfp_v);
 
             if (fVerbose)
             {
@@ -317,13 +326,13 @@ void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
 
         if (_pfpmap.find(daughterid) == _pfpmap.end())
         {
-        std::cout << "Did not find DAUGHTERID in map! error" << std::endl;
-        continue;
+            std::cout << "Did not find DAUGHTERID in map! error" << std::endl;
+            continue;
         }
 
         auto pfp_pxy2 = pfp_pxy_col.begin();
         for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
-        ++pfp_pxy2;
+            ++pfp_pxy2;
 
         AddDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
 
@@ -331,6 +340,53 @@ void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
 
     return;
 } 
+
+void NeutrinoSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
+                                                    const ProxyPfpColl_t &pfp_pxy_col,
+                                                    std::vector<ProxyPfpElem_t> &slice_v)
+{
+    slice_v.push_back(nu_pfp);
+
+    auto const &vtx_v = nu_pfp.get<recob::Vertex>();
+    if (vtx_v.size() != 1) {
+        return;
+    }
+    auto const &vtx = vtx_v.at(0);
+
+    double vtx_xyz[3];
+    vtx->XYZ(vtx_xyz);
+    float vtx_x = vtx_xyz[0];
+    float vtx_y = vtx_xyz[1];
+    float vtx_z = vtx_xyz[2];
+
+    common::ApplySCECorrectionXYZ(vtx_x, vtx_y, vtx_z);
+
+    for (const auto &pfp_pxy : pfp_pxy_col)
+    {
+        if (pfp_pxy->IsPrimary())
+            continue;
+
+        auto const &pfp_vtx_v = pfp_pxy.get<recob::Vertex>();
+        if (pfp_vtx_v.size() != 1) {
+            continue;
+        }
+        auto const &pfp_vtx = pfp_vtx_v.at(0);
+
+        double pfp_xyz[3];
+        pfp_vtx->XYZ(pfp_xyz);
+        float pfp_x = pfp_xyz[0];
+        float pfp_y = pfp_xyz[1];
+        float pfp_z = pfp_xyz[2];
+
+        common::ApplySCECorrectionXYZ(pfp_x, pfp_y, pfp_z);
+
+        float d = common::distance3d(vtx_x, vtx_y, vtx_z, pfp_x, pfp_y, pfp_z);
+        if (d < fProximateRadius)
+        {
+            slice_v.push_back(pfp_pxy);
+        }
+    }
+}
 
 void NeutrinoSelectionFilter::ResetTTree()
 {

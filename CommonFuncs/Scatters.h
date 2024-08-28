@@ -3,7 +3,7 @@
 
 namespace common
 {
-    std::vector< art::Ptr<simb::MCParticle>> GetDaughters(const art::Ptr<simb::MCParticle> &particle, const std::map<int, art::Ptr<simb::MCParticle> > &mcParticleMap)
+    std::vector<art::Ptr<simb::MCParticle>> GetDaughters(const art::Ptr<simb::MCParticle> &particle, const std::map<int, art::Ptr<simb::MCParticle> > &mcParticleMap)
     {
         std::vector< art::Ptr<simb::MCParticle>> daughters;
         for (int i = 0; i < particle->NumberDaughters(); ++i)
