@@ -7,14 +7,12 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 
-#include "../CommonFuncs/TypeDefs.h"
-
-// backtracking tools
-#include "../CommonFuncs/BacktrackingFuncs.h"
-#include "../CommonFuncs/Geometry.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/TrackShowerScoreFuncs.h"
-#include "../CommonFuncs/PIDFuncs.h"
+#include "../CommonFunctions/TypeDefs.h"
+#include "../CommonFunctions/BacktrackingFuncs.h"
+#include "../CommonFunctions/Geometry.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/TrackShowerScoreFuncs.h"
+#include "../CommonFunctions/PIDFuncs.h"
 
 #include "lardataobj/AnalysisBase/T0.h"
 

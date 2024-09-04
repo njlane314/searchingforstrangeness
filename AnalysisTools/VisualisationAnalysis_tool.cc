@@ -10,12 +10,12 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
 
-#include "../CommonFuncs/BacktrackingFuncs.h"
-#include "../CommonFuncs/TrackShowerScoreFuncs.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/Scatters.h"
-#include "../CommonFuncs/PandoraFuncs.h"
-#include "../CommonFuncs/TypeDefs.h"
+#include "../CommonFunctions/BacktrackingFuncs.h"
+#include "../CommonFunctions/TrackShowerScoreFuncs.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/PandoraFuncs.h"
+#include "../CommonFunctions/TypeDefs.h"
 
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
@@ -81,7 +81,7 @@ private:
     std::string _BacktrackModuleLabel;
     std::string _FlashMatchModuleLabel;
 
-    art::InputTag _ClusterModuleLabel;
+    art::InputTag _CLSproducer;
 };
 
 VisualisationAnalysis::VisualisationAnalysis(const fhicl::ParameterSet &pset)
@@ -92,7 +92,7 @@ VisualisationAnalysis::VisualisationAnalysis(const fhicl::ParameterSet &pset)
     _BacktrackModuleLabel = pset.get<std::string>("BacktrackModuleLabel");
     _FlashMatchModuleLabel = pset.get<std::string>("FlashMatchModuleLabel");
 
-    _ClusterModuleLabel = pset.get<art::InputTag>("ClusterModuleLabel");
+    _CLSproducer = pset.get<art::InputTag>("CLSproducer");
 }
 
 void VisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
@@ -204,8 +204,8 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 
 void VisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
-    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _ClusterModuleLabel,
-                                                                                            proxy::withAssociated<recob::Hit>(_ClusterModuleLabel));
+    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
+                                                                                            proxy::withAssociated<recob::Hit>(_CLSproducer));
 
     for (const auto& pfp : slice_pfp_v)
     {

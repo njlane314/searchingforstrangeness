@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_STRANGENESS_CXX
-#define ANALYSIS_STRANGENESS_CXX
+#ifndef ANALYSIS_SIGNAL_CXX
+#define ANALYSIS_SIGNAL_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -11,31 +11,31 @@
 #include "lardataobj/MCBase/MCShower.h"
 #include "TVector3.h"
 
-#include "../CommonFuncs/BacktrackingFuncs.h"
-#include "../CommonFuncs/TrackShowerScoreFuncs.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/Scatters.h"
-#include "../CommonFuncs/Geometry.h"
+#include "../CommonFunctions/BacktrackingFuncs.h"
+#include "../CommonFunctions/TrackShowerScoreFuncs.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/Geometry.h"
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 namespace analysis
 {
 
-class StrangenessAnalysis : public AnalysisToolBase
+class SignalAnalysis : public AnalysisToolBase
 {
 
 public:
   
-    StrangenessAnalysis(const fhicl::ParameterSet &pset);
+    SignalAnalysis(const fhicl::ParameterSet &pset);
 
-    ~StrangenessAnalysis(){};
+    ~SignalAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
-    void analyzeEvent(art::Event const &e, bool fData) override;
+    void analyzeEvent(art::Event const &e, bool is_data) override;
 
-    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
 
     void setBranches(TTree *_tree) override;
 
@@ -43,18 +43,18 @@ public:
 
 private:
 
-    art::InputTag fMCTproducer;
-    art::InputTag fMCRproducer;
-    art::InputTag fMCPproducer;
-    art::InputTag fHproducer;
-    art::InputTag fBacktrackTag;
-    art::InputTag fPFPproducer;
-    art::InputTag fCLSproducer; 
-    art::InputTag fSLCproducer;
-    art::InputTag fTRKproducer;
-    art::InputTag fVTXproducer;
-    art::InputTag fPCAproducer;
-    art::InputTag fSHRproducer;
+    art::InputTag _MCTproducer;
+    art::InputTag _MCRproducer;
+    art::InputTag _MCPproducer;
+    art::InputTag _Hproducer;
+    art::InputTag _BacktrackTag;
+    art::InputTag _PFPproducer;
+    art::InputTag _CLSproducer; 
+    art::InputTag _SLCproducer;
+    art::InputTag _TRKproducer;
+    art::InputTag _VTXproducer;
+    art::InputTag _PCAproducer;
+    art::InputTag _SHRproducer;
 
     TParticlePDG *neutral_kaon = TDatabasePDG::Instance()->GetParticle(311);
     TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
@@ -107,37 +107,36 @@ private:
     std::vector<float> _pfp_trk_d_v;
 };
 
-StrangenessAnalysis::StrangenessAnalysis(const fhicl::ParameterSet &pset)
+SignalAnalysis::SignalAnalysis(const fhicl::ParameterSet &pset)
 {
-    fPFPproducer = pset.get<art::InputTag>("PFPproducer");
-    fCLSproducer = pset.get<art::InputTag>("CLSproducer");
-    fSLCproducer = pset.get<art::InputTag>("SLCproducer");
-    fTRKproducer = pset.get<art::InputTag>("TRKproducer");
-    fVTXproducer = pset.get<art::InputTag>("VTXproducer");
-    fPCAproducer = pset.get<art::InputTag>("PCAproducer");
-    fSHRproducer = pset.get<art::InputTag>("SHRproducer");
-    fMCTproducer = pset.get<art::InputTag>("MCTproducer", "");
-    fMCRproducer = pset.get<art::InputTag>("MCRproducer", "");
-    fMCPproducer = pset.get<art::InputTag>("MCPproducer", "");
-    fHproducer = pset.get<art::InputTag>("Hproducer", "");
-    fBacktrackTag = pset.get<art::InputTag>("BacktrackTag", ""); 
+    _PFPproducer = pset.get<art::InputTag>("PFPproducer");
+    _CLSproducer = pset.get<art::InputTag>("CLSproducer");
+    _SLCproducer = pset.get<art::InputTag>("SLCproducer");
+    _TRKproducer = pset.get<art::InputTag>("TRKproducer");
+    _VTXproducer = pset.get<art::InputTag>("VTXproducer");
+    _PCAproducer = pset.get<art::InputTag>("PCAproducer");
+    _SHRproducer = pset.get<art::InputTag>("SHRproducer");
+    _MCTproducer = pset.get<art::InputTag>("MCTproducer", "");
+    _MCRproducer = pset.get<art::InputTag>("MCRproducer", "");
+    _MCPproducer = pset.get<art::InputTag>("MCPproducer", "");
+    _Hproducer = pset.get<art::InputTag>("Hproducer", "");
+    _BacktrackTag = pset.get<art::InputTag>("BacktrackTag", ""); 
 }
 
-void StrangenessAnalysis::configure(fhicl::ParameterSet const &pset)
+void SignalAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 {
-    if (fData) return;
-
-    std::cout << "[StrangenessAnalysis] Analysing event..." << std::endl;
+    if (is_data) 
+        return;
   
     // Load generator truth 
-    auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
+    auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
 
     // Load transportation truth
-    auto const &mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(fMCRproducer);
+    auto const &mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCRproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
     for (size_t d = 0; d < mcp_h->size(); d++)
@@ -145,8 +144,6 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
         const art::Ptr<simb::MCParticle> mcp(mcp_h, d);
         mcp_map[mcp->TrackId()] = mcp;
     }
-    
-    std::cout << "[StrangenessAnalysis] Number of truth events " << mct_h->size() << std::endl;
 
     auto mct = mct_h->at(0);
     auto neutrino = mct.GetNeutrino();
@@ -212,17 +209,8 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
                         _mc_kaon_decay_x = g_part->EndX();
                         _mc_kaon_decay_y = g_part->EndY();
                         _mc_kaon_decay_z = g_part->EndZ();
-
-                        std::cout << "[StrangenessAnalysis] The kaon decay was found at " 
-                                    << _mc_kaon_decay_x << ", "
-                                    << _mc_kaon_decay_y << ", " 
-                                    << _mc_kaon_decay_z << std::endl;
                         
                         float phi_h = std::atan2(kaon_decay.Y(), kaon_decay.X());
-
-                        std::cout << "[StrangenessAnalysis] The separation is "
-                                    << decay_length << std::endl;
-
                         _mc_kaon_decay_distance = decay_length;
 
                         for (const auto &dtr : daughters) 
@@ -232,9 +220,6 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
                             float phi_i = std::atan2(pion_mom.Y(), pion_mom.X());
                             float d_0 = decay_length * std::sin(phi_i - phi_h);
 
-                            std::cout << "Mom " << pion_mom.X() << " " << pion_mom.Y() << std::endl;
-                            std::cout << "Phi " << phi_i << std::endl;
-
                             unsigned int n_elas = 0;
                             unsigned int n_inelas = 0;
 
@@ -243,7 +228,6 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
 
                             common::GetNScatters(mcp_h, dtr, scat_part, n_elas, n_inelas);
                             scat_end_process = common::GetEndState(dtr, mcp_h);
-                            std::cout << scat_end_process << std::endl;
 
                             if (dtr->PdgCode() == 211) // pion-plus
                             { 
@@ -272,13 +256,10 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
                                 _mc_piminus_n_elas = n_elas;
                                 _mc_piminus_n_inelas = n_inelas;
                                 _mc_piminus_endprocess = scat_end_process;
-
-                                std::cout << _mc_piminus_phi << std::endl;
                             }
                         }
 
                         _mc_is_kshort_decay_pionic = true;
-                        std::cout << "Found pionic kaon short decay!" << std::endl;
                     }
                 }
             }
@@ -288,17 +269,17 @@ void StrangenessAnalysis::analyzeEvent(art::Event const &e, bool fData)
     }
 }
 
-void StrangenessAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
-    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
-                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
-                                                        proxy::withAssociated<recob::Cluster>(fCLSproducer),
-                                                        proxy::withAssociated<recob::Slice>(fSLCproducer),
-                                                        proxy::withAssociated<recob::Track>(fTRKproducer),
-                                                        proxy::withAssociated<recob::Vertex>(fVTXproducer),
-                                                        proxy::withAssociated<recob::PCAxis>(fPCAproducer),
-                                                        proxy::withAssociated<recob::Shower>(fSHRproducer),
-                                                        proxy::withAssociated<recob::SpacePoint>(fPFPproducer));
+    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
+                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
+                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
+                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
+                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
+                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
+                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
+                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
+                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
 
     for (const common::ProxyPfpElem_t &pfp_pxy : pfp_proxy)
     {
@@ -363,7 +344,7 @@ void StrangenessAnalysis::analyzeSlice(art::Event const &e, std::vector<common::
 }
 
 
-void StrangenessAnalysis::setBranches(TTree *_tree)
+void SignalAnalysis::setBranches(TTree *_tree)
 {
     _tree->Branch("mc_piplus_tid", &_mc_kshrt_piplus_tid, "mc_piplus_tid/i");
     _tree->Branch("mc_piminus_tid", &_mc_kshrt_piminus_tid, "mc_piminus_tid/i");
@@ -417,7 +398,7 @@ void StrangenessAnalysis::setBranches(TTree *_tree)
     _tree->Branch("all_pfp_trk_phi", &_pfp_trk_phi_v);
 }
 
-void StrangenessAnalysis::resetTTree(TTree *_tree)
+void SignalAnalysis::resetTTree(TTree *_tree)
 {
     _mc_piplus_n_elas = 0;
     _mc_piplus_n_inelas = 0;
@@ -471,7 +452,7 @@ void StrangenessAnalysis::resetTTree(TTree *_tree)
     _pfp_trk_sep_v.clear();
 }
 
-DEFINE_ART_CLASS_TOOL(StrangenessAnalysis)
+DEFINE_ART_CLASS_TOOL(SignalAnalysis)
 } 
 
 #endif

@@ -25,8 +25,8 @@
 #include "TTree.h"
 #include "TVector3.h"
 
-#include "CommonFuncs/Geometry.h"
-#include "CommonFuncs/SpaceChargeCorrections.h"
+#include "CommonFunctions/Geometry.h"
+#include "CommonFunctions/SpaceChargeCorrections.h"
 
 class StrangenessSelectionFilter;
 

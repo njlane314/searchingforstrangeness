@@ -6,10 +6,10 @@
 
 #include "SelectionToolBase.h"
 
-#include "../CommonFuncs/ProximityClustering.h"
-#include "../CommonFuncs/Geometry.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/PositionToWire.h"
+#include "../CommonFunctions/ProximityClustering.h"
+#include "../CommonFunctions/Geometry.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/PositionToWire.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
