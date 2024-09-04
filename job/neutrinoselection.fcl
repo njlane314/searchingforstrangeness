@@ -1,0 +1,98 @@
+#include "reco_uboone_data_mcc9_8.fcl"
+#include "services_microboone.fcl"   
+#include "mcreco.fcl"
+#include "proximityclustering.fcl"
+#include "eventweight_microboone_genie_knobs.fcl"
+
+DefaultAnalysisTool: {
+    tool_type: "DefaultAnalysis"  
+    PFPproducer: "pandora"   # Add the PFPproducer here again if needed
+    CLSproducer: "pandora"
+    MCTproducer: "generator"
+    MCFluxproducer: "generator"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+    MCRproducer: "mcreco"
+    SLCproducer: "pandora"
+    MCPproducer: "largeant"
+    ProtonThreshold: 0.04 # GeV
+    fidvolXstart: 10.0
+    fidvolXend: 10.0
+    fidvolYstart: 15.0
+    fidvolYend: 15.0
+    fidvolZstart: 10.0
+    fidvolZend: 50.0
+    makeNuMINtuple: false
+    ignoreMCFlux: false
+    NuMIOpFiltProcName: "DataStage1Optical"
+    NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
+}
+
+CalorimetryAnalysisTool: {
+    tool_type: "CalorimetryAnalysis"
+    TRKproducer: "pandora"
+    CALOproducer: "pandoracali"
+    PIDproducer: "pandoracalipid"
+
+    CLSproducer: "pandora"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+    MCRproducer: "mcreco"
+    MCPproducer: "largeant"
+    MCTproducer: "generator"
+    GetCaloID: false
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
+}
+
+SliceAnalysisTool: {
+    tool_type: "SliceAnalysis"
+    MCParticleModuleLabel:      "largeant"
+    HitModuleLabel:             "gaushit"
+    BacktrackModuleLabel:       "gaushitTruthMatch"
+    FlashMatchModuleLabel:      "pandora"
+    PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
+}
+
+VisualisationAnalysisTool: {
+    tool_type: "VisualisationAnalysis"
+    MCParticleModuleLabel:      "largeant"
+    HitModuleLabel:             "gaushit"
+    BacktrackModuleLabel:       "gaushitTruthMatch"
+    FlashMatchModuleLabel:      "pandora"
+    PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
+
+    CLSproducer: "pandora"
+}
+
+StrangenessSelectionFilter: {
+    module_type: StrangenessSelectionFilter 
+    PFPproducer: "pandora"
+    SHRproducer: "pandora"
+    HITproducer: "gaushit"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    VTXproducer: "pandora"
+    TRKproducer: "pandora"
+    PCAproducer: "pandora"
+    MCTproducer: "generator"
+    Verbose: true
+    IsData: false
+    IsFakeData: false
+    Filter: true
+    BDT_branch: ""
+    BDT_cut: -1
+    ProximateRadius: 50
+    SelectionTool: {
+        tool_type: "EmptySelection"
+    }
+    AnalysisTools: {
+        default: @local::DefaultAnalysisTool
+        calorimetry: @local::CalorimetryAnalysisTool
+        slice: @local::SliceAnalysisTool
+        visualisation: @local::VisualisationAnalysisTool
+    }
+}
+
+StrangenessSelectionFilterEmpty: @local::StrangenessSelectionFilter
+StrangenessSelectionFilterEmpty.SelectionTool: { tool_type: "EmptySelection" }

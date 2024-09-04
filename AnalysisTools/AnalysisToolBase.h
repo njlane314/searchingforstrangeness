@@ -9,7 +9,7 @@
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Principal/Event.h"
 
-#include "../CommonFuncs/TypeDefs.h"
+#include "../CommonFunctions/TypeDefs.h"
 
 #include "TTree.h"
 #include <limits>

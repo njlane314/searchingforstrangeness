@@ -14,15 +14,15 @@
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 
 // backtracking tools
-#include "../CommonFuncs/BacktrackingFuncs.h"
-#include "../CommonFuncs/Geometry.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/Containment.h"
-#include "../CommonFuncs/TrackShowerScoreFuncs.h"
-#include "../CommonFuncs/ProximityClustering.h"
-#include "../CommonFuncs/Descendents.h"
-#include "../CommonFuncs/Scatters.h"
-#include "../CommonFuncs/PandoraFuncs.h"
+#include "../CommonFunctions/BacktrackingFuncs.h"
+#include "../CommonFunctions/Geometry.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/Containment.h"
+#include "../CommonFunctions/TrackShowerScoreFuncs.h"
+#include "../CommonFunctions/ProximityClustering.h"
+#include "../CommonFunctions/Descendents.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/PandoraFuncs.h"
 
 // save info associated to common optical filter
 #include "ubobj/Optical/UbooneOpticalFilter.h"

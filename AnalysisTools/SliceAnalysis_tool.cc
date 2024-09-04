@@ -10,11 +10,11 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
 
-#include "../CommonFuncs/BacktrackingFuncs.h"
-#include "../CommonFuncs/TrackShowerScoreFuncs.h"
-#include "../CommonFuncs/SpaceChargeCorrections.h"
-#include "../CommonFuncs/Scatters.h"
-#include "../CommonFuncs/PandoraFuncs.h"
+#include "../CommonFunctions/BacktrackingFuncs.h"
+#include "../CommonFunctions/TrackShowerScoreFuncs.h"
+#include "../CommonFunctions/SpaceChargeCorrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/PandoraFuncs.h"
 
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
