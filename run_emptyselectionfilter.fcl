@@ -55,16 +55,7 @@ physics:
             BDT_cut: -1
             ProximateRadius: 50
             SelectionTool: {
-                tool_type: "NeutralDecaySelection"  
-                PFPproducer: "pandora"
-                SHRproducer: "pandora"
-                HITproducer: "gaushit"
-                CLSproducer: "pandora"
-                SLCproducer: "pandora"
-                VTXproducer: "pandora"
-                TRKproducer: "pandora"
-                PCAproducer: "pandora"
-                MCTproducer: "generator"
+                tool_type: "EmptySelection"  
             }
             AnalysisTools: {
                 default: {
@@ -123,6 +114,7 @@ physics:
                 }
                 slice_analysis: {
                     tool_type: "SliceAnalysis"
+                    DebugMode: "true"
                     MCParticleModuleLabel:      "largeant"
                     HitModuleLabel:             "gaushit"
                     BacktrackModuleLabel:       "gaushitTruthMatch"
@@ -137,7 +129,7 @@ physics:
                     FlashMatchModuleLabel:      "pandora"
                     PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
 
-                    CLSproducer: "pandora"
+                    ClusterModuleLabel:         "pandora"
                 }
             }
         }
