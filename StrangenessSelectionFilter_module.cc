@@ -28,21 +28,21 @@
 #include "CommonFuncs/Geometry.h"
 #include "CommonFuncs/SpaceChargeCorrections.h"
 
-class NeutrinoSelectionFilter;
+class StrangenessSelectionFilter;
 
-class NeutrinoSelectionFilter : public art::EDFilter
+class StrangenessSelectionFilter : public art::EDFilter
 {
     
 public:
-    explicit NeutrinoSelectionFilter(fhicl::ParameterSet const &p);
+    explicit StrangenessSelectionFilter(fhicl::ParameterSet const &p);
     // The compiler-generated destructor is fine for non-base
     // classes without bare pointers or other resource use.
 
     // Plugins should not be copied or assigned.
-    NeutrinoSelectionFilter(NeutrinoSelectionFilter const &) = delete;
-    NeutrinoSelectionFilter(NeutrinoSelectionFilter &&) = delete;
-    NeutrinoSelectionFilter &operator=(NeutrinoSelectionFilter const &) = delete;
-    NeutrinoSelectionFilter &operator=(NeutrinoSelectionFilter &&) = delete;
+    StrangenessSelectionFilter(StrangenessSelectionFilter const &) = delete;
+    StrangenessSelectionFilter(StrangenessSelectionFilter &&) = delete;
+    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter const &) = delete;
+    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter &&) = delete;
 
     // Required functions.
     bool filter(art::Event &e) override;
@@ -106,7 +106,7 @@ private:
     void ResetTTree();
 };
 
-NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
+StrangenessSelectionFilter::StrangenessSelectionFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}
 {
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
@@ -127,7 +127,7 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
     fProximateRadius = p.get<float>("ProximateRadius", 30);
 
     art::ServiceHandle<art::TFileService> tfs;
-    _tree = tfs->make<TTree>("NeutrinoSelectionFilter", "Neutrino Selection TTree");
+    _tree = tfs->make<TTree>("StrangenessSelectionFilter", "Neutrino Selection TTree");
     _tree->Branch("selected", &_selected, "selected/I");
     _tree->Branch("run", &_run, "run/I");
     _tree->Branch("sub", &_sub, "sub/I");
@@ -163,7 +163,7 @@ NeutrinoSelectionFilter::NeutrinoSelectionFilter(fhicl::ParameterSet const &p)
         _analysisToolsVec[i]->setBranches(_tree);
 }
 
-bool NeutrinoSelectionFilter::filter(art::Event &e)
+bool StrangenessSelectionFilter::filter(art::Event &e)
 {
     ResetTTree();
 
@@ -215,8 +215,8 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
 
             // collect PFParticle hierarchy originating from this neutrino candidate
             std::vector<ProxyPfpElem_t> slice_pfp_v;
-            //AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
-            AddProximateParticles(pfp_pxy, pfp_proxy, slice_pfp_v);
+            AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
+            //AddProximateParticles(pfp_pxy, pfp_proxy, slice_pfp_v);
 
             if (fVerbose)
             {
@@ -269,7 +269,7 @@ bool NeutrinoSelectionFilter::filter(art::Event &e)
 }
 
 template <typename T>
-void NeutrinoSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
+void StrangenessSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
                                                       const T &pfParticleMetadataList)
 {
     if (pfParticleMetadataList.size() != 0)
@@ -296,7 +296,7 @@ void NeutrinoSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_
     return;
 }
 
-void NeutrinoSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
+void StrangenessSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
 {
     _pfpmap.clear();
 
@@ -310,7 +310,7 @@ void NeutrinoSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
     return;
 } 
 
-void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
+void StrangenessSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
                                            const ProxyPfpColl_t &pfp_pxy_col,
                                            std::vector<ProxyPfpElem_t> &slice_v)
 {
@@ -341,7 +341,7 @@ void NeutrinoSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
     return;
 } 
 
-void NeutrinoSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
+void StrangenessSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
                                                     const ProxyPfpColl_t &pfp_pxy_col,
                                                     std::vector<ProxyPfpElem_t> &slice_v)
 {
@@ -388,7 +388,7 @@ void NeutrinoSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp
     }
 }
 
-void NeutrinoSelectionFilter::ResetTTree()
+void StrangenessSelectionFilter::ResetTTree()
 {
     _selected = 0;
     _run = std::numeric_limits<int>::lowest();
@@ -400,13 +400,13 @@ void NeutrinoSelectionFilter::ResetTTree()
         _analysisToolsVec[i]->resetTTree(_tree);
 }
 
-bool NeutrinoSelectionFilter::endSubRun(art::SubRun &subrun)
+bool StrangenessSelectionFilter::endSubRun(art::SubRun &subrun)
 {
     if ( (!fData) || (fFakeData) )
     {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
         _pot = subrun.getByLabel(fMCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
-        std::cout << "[NeutrinoSelectionFilter::endSubRun] Storing POT info!" << std::endl;
+        std::cout << "[StrangenessSelectionFilter::endSubRun] Storing POT info!" << std::endl;
     }
 
     _run_sr = subrun.run();
@@ -416,4 +416,4 @@ bool NeutrinoSelectionFilter::endSubRun(art::SubRun &subrun)
     return true;
 }
 
-DEFINE_ART_MODULE(NeutrinoSelectionFilter)
+DEFINE_ART_MODULE(StrangenessSelectionFilter)
