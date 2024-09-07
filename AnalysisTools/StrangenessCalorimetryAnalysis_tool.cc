@@ -25,14 +25,14 @@
 namespace analysis
 {
 
-class CalorimetryAnalysis : public AnalysisToolBase
+class StrangenessCalorimetryAnalysis : public AnalysisToolBase
 {
 
 public:
 
-    CalorimetryAnalysis(const fhicl::ParameterSet &pset);
+    StrangenessCalorimetryAnalysis(const fhicl::ParameterSet &pset);
 
-    ~CalorimetryAnalysis(){};
+    ~StrangenessCalorimetryAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -243,7 +243,7 @@ private:
     std::vector<bool> _is_hit_montecarlo_y;
 };
 
-CalorimetryAnalysis::CalorimetryAnalysis(const fhicl::ParameterSet &p) :
+StrangenessCalorimetryAnalysis::StrangenessCalorimetryAnalysis(const fhicl::ParameterSet &p) :
 _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::ParameterSet>("mcsfitmu")))
 {
     fPFPproducer  = p.get< art::InputTag > ("PFPproducer","pandora");
@@ -266,20 +266,19 @@ _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::Paramete
     fADCtoE = p.get<std::vector<float>>("ADCtoE");
 
     art::ServiceHandle<art::TFileService> tfs;
-
-    _calo_tree = tfs->make<TTree>("CalorimetryAnalyzer", "Calo Tree");
+    _calo_tree = tfs->make<TTree>("CalorimetryAnalysis", "Calorimetry Tree");
 }
 
-void CalorimetryAnalysis::configure(fhicl::ParameterSet const &p)
+void StrangenessCalorimetryAnalysis::configure(fhicl::ParameterSet const &p)
 {
 }
 
-void CalorimetryAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void StrangenessCalorimetryAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
     _evt = e.event();
     _sub = e.subRun();
     _run = e.run();
-    std::cout << "[CalorimetryAnalysis::analyzeEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: "<< _evt << std::endl;
+    std::cout << "[StrangenessCalorimetryAnalysis::analyzeEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: "<< _evt << std::endl;
 
     if (fT0producer == "")
         return;
@@ -369,7 +368,7 @@ void CalorimetryAnalysis::analyzeEvent(art::Event const &e, bool fData)
     }// for all PFParticles
 }// analyzeEvent
 
-void CalorimetryAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void StrangenessCalorimetryAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
     // if fT0producer was specified -> means we don't want to run on neutrino candidate tracks -> skip
     if (fT0producer != "")
@@ -541,7 +540,7 @@ void CalorimetryAnalysis::analyzeSlice(art::Event const &e, std::vector<common::
     } // for all PFParticles
 }
 
-void CalorimetryAnalysis::fillDefault()
+void StrangenessCalorimetryAnalysis::fillDefault()
 {
     // backtracking information
     _backtracked_pdg = std::numeric_limits<int>::lowest();            // PDG code of backtracked particle
@@ -687,7 +686,7 @@ void CalorimetryAnalysis::fillDefault()
     _is_hit_montecarlo_y.clear();
 }
 
-void CalorimetryAnalysis::setBranches(TTree *_tree)
+void StrangenessCalorimetryAnalysis::setBranches(TTree *_tree)
 {
     _calo_tree->Branch("run", &_run, "run/i");
     _calo_tree->Branch("sub", &_sub, "sub/i");
@@ -847,11 +846,11 @@ void CalorimetryAnalysis::setBranches(TTree *_tree)
     _calo_tree->Branch("is_hit_montecarlo_y", "std::vector<bool>", &_is_hit_montecarlo_y);
 }
 
-void CalorimetryAnalysis::resetTTree(TTree *_tree)
+void StrangenessCalorimetryAnalysis::resetTTree(TTree *_tree)
 {
 }
 
-void CalorimetryAnalysis::FillCalorimetry(art::Event const &e,
+void StrangenessCalorimetryAnalysis::FillCalorimetry(art::Event const &e,
             const common::ProxyPfpElem_t pfp,
             const common::ProxyCaloColl_t calo_proxy,
             const common::ProxyPIDColl_t pid_proxy,
@@ -1154,7 +1153,7 @@ void CalorimetryAnalysis::FillCalorimetry(art::Event const &e,
   _calo_tree->Fill();
 }
 
-DEFINE_ART_CLASS_TOOL(CalorimetryAnalysis)
+DEFINE_ART_CLASS_TOOL(StrangenessCalorimetryAnalysis)
 } 
 
 #endif
