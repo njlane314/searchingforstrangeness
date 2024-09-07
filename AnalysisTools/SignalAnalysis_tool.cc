@@ -136,7 +136,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
 
     // Load transportation truth
-    auto const &mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCRproducer);
+    auto const &mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
     for (size_t d = 0; d < mcp_h->size(); d++)

@@ -58,22 +58,22 @@ public:
     void resetTTree(TTree *_tree) override;
 
 private:
-    std::vector<double> _true_hits_u_wire;
-    std::vector<double> _true_hits_u_drift;
-    std::vector<double> _true_hits_u_owner;
-    std::vector<double> _true_hits_v_wire;
-    std::vector<double> _true_hits_v_drift;
-    std::vector<double> _true_hits_v_owner;
-    std::vector<double> _true_hits_w_wire;
-    std::vector<double> _true_hits_w_drift;
-    std::vector<double> _true_hits_w_owner;
+    std::vector<float> _true_hits_u_wire;
+    std::vector<float> _true_hits_u_drift;
+    std::vector<float> _true_hits_u_owner;
+    std::vector<float> _true_hits_v_wire;
+    std::vector<float> _true_hits_v_drift;
+    std::vector<float> _true_hits_v_owner;
+    std::vector<float> _true_hits_w_wire;
+    std::vector<float> _true_hits_w_drift;
+    std::vector<float> _true_hits_w_owner;
 
-    std::vector<double> _slice_hits_u_wire;
-    std::vector<double> _slice_hits_u_drift;
-    std::vector<double> _slice_hits_v_wire;
-    std::vector<double> _slice_hits_v_drift;
-    std::vector<double> _slice_hits_w_wire;
-    std::vector<double> _slice_hits_w_drift;
+    std::vector<std::vector<float>> _slice_hits_u_wire;
+    std::vector<std::vector<float>> _slice_hits_u_drift;
+    std::vector<std::vector<float>> _slice_hits_v_wire;
+    std::vector<std::vector<float>> _slice_hits_v_drift;
+    std::vector<std::vector<float>> _slice_hits_w_wire;
+    std::vector<std::vector<float>> _slice_hits_w_drift;
 
     std::string _SimulationModuleLabel;
     std::string _PandoraModuleLabel;
@@ -101,7 +101,7 @@ void VisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
 
 void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 {
-    art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
+     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
     lar_pandora::MCParticleMap mc_particle_map;
 
@@ -175,29 +175,30 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
         common::PandoraView pandora_view = common::GetPandoraView(hit);
         TVector3 pandora_pos = common::GetPandoraHitPosition(e, hit, pandora_view);
 
+        auto hit_to_track_it = hits_to_track_map.find(hit.key());
+        if (hit_to_track_it == hits_to_track_map.end()) {
+            continue; 
+        }
+
+        int owner_pdg_code = mc_particle_map.at(hit_to_track_it->second)->PdgCode();
+
         if (pandora_view == common::TPC_VIEW_U) {
             // Store hit information for the U-plane
             _true_hits_u_wire.push_back(pandora_pos.Z());
             _true_hits_u_drift.push_back(pandora_pos.X());
-            _true_hits_u_owner.push_back((hits_to_track_map.find(hit.key()) == hits_to_track_map.end()) ?
-                                        std::numeric_limits<double>::lowest() :
-                                        mc_particle_map.at(hits_to_track_map.at(hit.key()))->PdgCode());
+            _true_hits_u_owner.push_back(owner_pdg_code);
         }
         else if (pandora_view == common::TPC_VIEW_V) {
             // Store hit information for the V-plane
             _true_hits_v_wire.push_back(pandora_pos.Z());
             _true_hits_v_drift.push_back(pandora_pos.X());
-            _true_hits_v_owner.push_back((hits_to_track_map.find(hit.key()) == hits_to_track_map.end()) ?
-                                        std::numeric_limits<double>::lowest() :
-                                        mc_particle_map.at(hits_to_track_map.at(hit.key()))->PdgCode());
+            _true_hits_v_owner.push_back(owner_pdg_code);
         }
         else if (pandora_view == common::TPC_VIEW_W) {
             // Store hit information for the W-plane
             _true_hits_w_wire.push_back(pandora_pos.Z());
             _true_hits_w_drift.push_back(pandora_pos.X());
-            _true_hits_w_owner.push_back((hits_to_track_map.find(hit.key()) == hits_to_track_map.end()) ?
-                                        std::numeric_limits<double>::lowest() :
-                                        mc_particle_map.at(hits_to_track_map.at(hit.key()))->PdgCode());
+            _true_hits_w_owner.push_back(owner_pdg_code);
         }
     }
 }
@@ -207,10 +208,19 @@ void VisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(_CLSproducer));
 
+    std::cout << "Size of slice " << slice_pfp_v.size() << std::endl;
+
     for (const auto& pfp : slice_pfp_v)
     {
         if (pfp->IsPrimary())
             continue;
+
+        std::vector<float> pfp_slice_hits_u_wire;
+        std::vector<float> pfp_slice_hits_u_drift;
+        std::vector<float> pfp_slice_hits_v_wire;
+        std::vector<float> pfp_slice_hits_v_drift;
+        std::vector<float> pfp_slice_hits_w_wire;
+        std::vector<float> pfp_slice_hits_w_drift;
 
         std::vector<art::Ptr<recob::Hit>> hit_v;
         auto clus_pxy_v = pfp.get<recob::Cluster>();
@@ -233,21 +243,28 @@ void VisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common
 
             if (pandora_view == common::TPC_VIEW_U)
             {
-                _slice_hits_u_wire.push_back(pandora_pos.Z());
-                _slice_hits_u_drift.push_back(pandora_pos.X());
+                pfp_slice_hits_u_wire.push_back(pandora_pos.Z());
+                pfp_slice_hits_u_drift.push_back(pandora_pos.X());
             }
             else if (pandora_view == common::TPC_VIEW_V)
             {
-                _slice_hits_v_wire.push_back(pandora_pos.Z());
-                _slice_hits_v_drift.push_back(pandora_pos.X());
+                pfp_slice_hits_v_wire.push_back(pandora_pos.Z());
+                pfp_slice_hits_v_drift.push_back(pandora_pos.X());
             }
             else if (pandora_view == common::TPC_VIEW_W)
             {
-                _slice_hits_w_wire.push_back(pandora_pos.Z());
-                _slice_hits_w_drift.push_back(pandora_pos.X());
+                pfp_slice_hits_w_wire.push_back(pandora_pos.Z());
+                pfp_slice_hits_w_drift.push_back(pandora_pos.X());
             }
         }
-    }
+
+        _slice_hits_u_wire.push_back(pfp_slice_hits_u_wire);
+        _slice_hits_u_drift.push_back(pfp_slice_hits_u_drift);
+        _slice_hits_v_wire.push_back(pfp_slice_hits_v_wire);
+        _slice_hits_v_drift.push_back(pfp_slice_hits_v_drift);
+        _slice_hits_w_wire.push_back(pfp_slice_hits_w_wire);
+        _slice_hits_w_drift.push_back(pfp_slice_hits_w_drift);
+    }    
 }
 
 void VisualisationAnalysis::setBranches(TTree *_tree)

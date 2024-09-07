@@ -4,7 +4,7 @@ process_name: SignalSelectionProcess
 
 services:
 {
-    TFileService: { fileName: "neutrino_selection_output.root" }  
+    TFileService: { fileName: "ana_output.root" }  
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -37,7 +37,7 @@ physics:
         nuselection: @local::StrangenessSelectionFilterEmpty
     }
     
-    p1: [ nuselection ]  # Applies the filter
+    p1: [ nuselection ] 
 
     trigger_paths: [ p1 ]
 }

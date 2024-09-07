@@ -37,14 +37,14 @@
 namespace analysis
 {
 
-class DefaultAnalysis : public AnalysisToolBase
+class StrangenessDefaultAnalysis : public AnalysisToolBase
 {
 
 public:
 
-    DefaultAnalysis(const fhicl::ParameterSet &pset);
+    StrangenessDefaultAnalysis(const fhicl::ParameterSet &pset);
     
-    ~DefaultAnalysis(){};
+    ~StrangenessDefaultAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -268,7 +268,7 @@ private:
     std::vector<float> _trk_d_v;
 };
 
-DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p)
+StrangenessDefaultAnalysis::StrangenessDefaultAnalysis(const fhicl::ParameterSet &p)
 {
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fCRTVetoproducer = p.get<art::InputTag>("CRTVetoproducer", ""); // default is no CRT veto
@@ -303,13 +303,13 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p)
     NuMISWTrigProd   = p.get<std::string>("NuMISWTriggerProcName","" );
 }
 
-void DefaultAnalysis::configure(fhicl::ParameterSet const &p)
+void StrangenessDefaultAnalysis::configure(fhicl::ParameterSet const &p)
 {
 }
 
-void DefaultAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void StrangenessDefaultAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
-    std::cout << "[DefaultAnalysis::analyzeEvent] Run: " << e.run() << ", SubRun: " << e.subRun() << ", Event: " << e.event() << std::endl;
+    std::cout << "[StrangenessDefaultAnalysis::analyzeEvent] Run: " << e.run() << ", SubRun: " << e.subRun() << ", Event: " << e.event() << std::endl;
     
     common::ProxySliceColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
                                                             proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
@@ -496,7 +496,7 @@ void DefaultAnalysis::analyzeEvent(art::Event const &e, bool fData)
     evnhits = inputHits->size();
 }
 
-void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void StrangenessDefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(fCLSproducer));
@@ -700,13 +700,13 @@ void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Prox
                 // find cluste with largest fraction of all hits
                 for (size_t nc = 0; nc < out_cluster_v.size(); nc++)
                 {
-                auto clus_hit_idx_v = out_cluster_v.at(nc);
-                int nhitclus = clus_hit_idx_v.size();
-                if (nhitclus > 3.)
-                    nclus += 1;
-                float hitfrac = nhitclus / nhits;
-                if (hitfrac > hitfracmax)
-                    hitfracmax = hitfrac;
+                    auto clus_hit_idx_v = out_cluster_v.at(nc);
+                    int nhitclus = clus_hit_idx_v.size();
+                    if (nhitclus > 3.)
+                        nclus += 1;
+                    float hitfrac = nhitclus / nhits;
+                    if (hitfrac > hitfracmax)
+                        hitfracmax = hitfrac;
                 } // for all sub-clusters
             } // if there are any hits on this plane
 
@@ -846,7 +846,7 @@ void DefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Prox
         _pass = 1;
 }
 
-void DefaultAnalysis::setBranches(TTree *_tree)
+void StrangenessDefaultAnalysis::setBranches(TTree *_tree)
 {
     _tree->Branch("leeweight", &_leeweight, "leeweight/F");
 
@@ -1059,7 +1059,7 @@ void DefaultAnalysis::setBranches(TTree *_tree)
     _tree->Branch("pfp_trk_d", "std::vector<float>", &_trk_d_v);
 }
 
-void DefaultAnalysis::resetTTree(TTree *_tree)
+void StrangenessDefaultAnalysis::resetTTree(TTree *_tree)
 {
     _leeweight = 0;
     _nu_e = std::numeric_limits<float>::lowest();
@@ -1251,7 +1251,7 @@ void DefaultAnalysis::resetTTree(TTree *_tree)
     _trk_d_v.clear();
 }
 
-void DefaultAnalysis::SaveTruth(art::Event const &e)
+void StrangenessDefaultAnalysis::SaveTruth(art::Event const &e)
 {
     // load MCTruth
     auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -1577,7 +1577,7 @@ void DefaultAnalysis::SaveTruth(art::Event const &e)
     return;
 }
 
-DEFINE_ART_CLASS_TOOL(DefaultAnalysis)
+DEFINE_ART_CLASS_TOOL(StrangenessDefaultAnalysis)
 } 
 
 #endif
