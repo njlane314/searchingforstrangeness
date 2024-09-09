@@ -58,6 +58,10 @@ public:
     void resetTTree(TTree *_tree) override;
 
 private:
+
+    bool isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part);
+    int getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map);
+
     std::vector<float> _true_hits_u_wire;
     std::vector<float> _true_hits_u_drift;
     std::vector<float> _true_hits_u_owner;
@@ -163,9 +167,10 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             if (matched_data->isMaxIDE != 1)
                 continue;
 
-            const int track_id = matched_mc_part->TrackId();
-            hits_to_track_map[hit.key()] = track_id;
-            track_to_hits_map[track_id].push_back(hit);
+            const int track_idx = isParticleElectromagnetic(matched_mc_part) ? getLeadElectromagneticTrack(matched_mc_part, mc_particle_map) : matched_mc_part->TrackId();
+
+            hits_to_track_map[hit.key()] = track_idx;
+            track_to_hits_map[track_idx].push_back(hit);
         }
     }
 
@@ -306,6 +311,32 @@ void VisualisationAnalysis::resetTTree(TTree *_tree)
     _slice_hits_w_wire.clear();
     _slice_hits_w_drift.clear();
 }
+
+bool VisualisationAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
+{
+    return ((std::abs(mc_part->PdgCode() == 11) || (mc_part->PdgCode() == 22)));
+}
+
+int VisualisationAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
+{
+    int track_idx = mc_part->TrackId();
+    art::Ptr<simb::MCParticle> mother_mc_part = mc_part;
+
+    do 
+    {
+        track_idx = mother_mc_part->TrackId();
+        const int mother_idx = mother_mc_part->Mother();
+
+        if (mc_particle_map.find(mother_idx) == mc_particle_map.end())
+            break;
+
+        mother_mc_part = mc_particle_map.at(mother_idx);
+    } 
+    while (isParticleElectromagnetic(mother_mc_part));
+
+    return track_idx;
+}
+
 
 DEFINE_ART_CLASS_TOOL(VisualisationAnalysis)
 } 

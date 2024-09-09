@@ -14,7 +14,7 @@ fhiclfile=/exp/uboone/app/users/nlane/production/KaonShortProduction01/srcs/uban
 output_directory="/exp/uboone/data/users/nlane/analysis"
 combined_output="${output_directory}/analysis_${samdef}.root"
 tempdir="${output_directory}/temp_root_files"
-num_files=1
+num_files=40
 
 mkdir -p $tempdir
 
@@ -72,7 +72,7 @@ for file in $files; do
     outputfile="$tempdir/output_${counter}.root"
 
     echo -e "${BLUE}Running: lar -c $fhiclfile -s $filepath -T $outputfile${DEFAULT}"
-    lar -c $fhiclfile -s $filepath -T $outputfile -n 10
+    lar -c $fhiclfile -s $filepath -T $outputfile
 
     if [ ! -f $outputfile ]; then
         echo -e "${RED}FHiCL processing failed for file: $file${DEFAULT}"

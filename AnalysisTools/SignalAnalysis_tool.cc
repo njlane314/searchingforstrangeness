@@ -63,6 +63,21 @@ private:
     TParticlePDG *sigma_plus = TDatabasePDG::Instance()->GetParticle(3222); 
     TParticlePDG *sigma_minus = TDatabasePDG::Instance()->GetParticle(3112);
     TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
+    TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
+
+    bool _mc_has_muon;
+    int _mc_muon_tid;
+    int _mc_muon_pdg;
+    float _mc_muon_energy;
+    float _mc_muon_px; 
+    float _mc_muon_py;
+    float _mc_muon_pz;
+    float _mc_muon_startx;
+    float _mc_muon_starty;
+    float _mc_muon_startz;
+    float _mc_muon_endx;
+    float _mc_muon_endy;
+    float _mc_muon_endz;
 
     unsigned int _mc_piplus_n_elas;
     unsigned int _mc_piplus_n_inelas;
@@ -75,10 +90,14 @@ private:
     int _mc_kshrt_piplus_pdg;
     float _mc_kshrt_piplus_energy;
     float _mc_kshrt_piplus_px, _mc_kshrt_piplus_py, _mc_kshrt_piplus_pz;
+    float _mc_kshrt_piplus_startx, _mc_kshrt_piplus_starty, _mc_kshrt_piplus_startz;
+    float _mc_kshrt_piplus_endx, _mc_kshrt_piplus_endy, _mc_kshrt_piplus_endz;
 
     int _mc_kshrt_piminus_pdg;
     float _mc_kshrt_piminus_energy;
     float _mc_kshrt_piminus_px, _mc_kshrt_piminus_py, _mc_kshrt_piminus_pz;
+    float _mc_kshrt_piminus_startx, _mc_kshrt_piminus_starty, _mc_kshrt_piminus_startz;
+    float _mc_kshrt_piminus_endx, _mc_kshrt_piminus_endy, _mc_kshrt_piminus_endz;
 
     float _mc_kshrt_total_energy;
 
@@ -91,6 +110,13 @@ private:
 
     float _mc_piplus_phi;
     float _mc_piminus_phi;
+
+    std::vector<float> _pfp_muon_purity_v;
+    std::vector<float> _pfp_muon_completeness_v;
+    std::vector<float> _pfp_piplus_purity_v;
+    std::vector<float> _pfp_piplus_completeness_v;
+    std::vector<float> _pfp_piminus_purity_v;
+    std::vector<float> _pfp_piminus_completeness_v;
 
     std::string _mc_piplus_endprocess;
     std::string _mc_piminus_endprocess;
@@ -172,6 +198,24 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
         if (abs(t_part.PdgCode()) == sigma_minus->PdgCode() && t_part.Process() == "primary")
             _mc_has_sigma_minus = true;
 
+        // Look for primary muon at the generator level
+        if (abs(t_part.PdgCode()) == muon->PdgCode() && t_part.Process() == "primary")
+        {
+            _mc_has_muon = true;
+            _mc_muon_tid = t_part.TrackId();
+            _mc_muon_pdg = t_part.PdgCode();
+            _mc_muon_energy = t_part.E();
+            _mc_muon_px = t_part.Px(); 
+            _mc_muon_py = t_part.Py();
+            _mc_muon_pz = t_part.Pz();
+            _mc_muon_startx = t_part.Vx();
+            _mc_muon_starty = t_part.Vy();
+            _mc_muon_startz = t_part.Vz();
+            _mc_muon_endx = t_part.EndX();
+            _mc_muon_endy = t_part.EndY();
+            _mc_muon_endz = t_part.EndZ();
+        }
+
         // Look for K0 at the generator level
         if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode() && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !_mc_is_kshort_decay_pionic) 
         {
@@ -180,7 +224,6 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
                 continue; 
 
             auto g_part = dtrs.at(0);
-
             if (g_part->PdgCode() == kaon_short->PdgCode() && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2 && !_mc_is_kshort_decay_pionic)
             {
                 auto daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
@@ -237,6 +280,12 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
                                 _mc_kshrt_piplus_px = dtr->Px();
                                 _mc_kshrt_piplus_py = dtr->Py();
                                 _mc_kshrt_piplus_pz = dtr->Pz();
+                                _mc_kshrt_piplus_startx = dtr->Vx();
+                                _mc_kshrt_piplus_starty = dtr->Vy();
+                                _mc_kshrt_piplus_startz = dtr->Vz();
+                                _mc_kshrt_piplus_endx = dtr->EndX();
+                                _mc_kshrt_piplus_endy = dtr->EndY();
+                                _mc_kshrt_piplus_endz = dtr->EndZ();
                                 _mc_piplus_phi = phi_i;
                                 _mc_piplus_impact_param = d_0;
                                 _mc_piplus_n_elas = n_elas;
@@ -251,6 +300,12 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
                                 _mc_kshrt_piminus_px = dtr->Px();
                                 _mc_kshrt_piminus_py = dtr->Py();
                                 _mc_kshrt_piminus_pz = dtr->Pz();
+                                _mc_kshrt_piminus_startx = dtr->Vx();
+                                _mc_kshrt_piminus_starty = dtr->Vy();
+                                _mc_kshrt_piminus_startz = dtr->Vz();
+                                _mc_kshrt_piminus_endx = dtr->EndX();
+                                _mc_kshrt_piminus_endy = dtr->EndY();
+                                _mc_kshrt_piminus_endz = dtr->EndZ();
                                 _mc_piminus_phi = phi_i;
                                 _mc_piminus_impact_param = d_0;
                                 _mc_piminus_n_elas = n_elas;
@@ -280,6 +335,21 @@ void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Proxy
                                                         proxy::withAssociated<recob::PCAxis>(_PCAproducer),
                                                         proxy::withAssociated<recob::Shower>(_SHRproducer),
                                                         proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
+
+    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
+                                                                                            proxy::withAssociated<recob::Hit>(_CLSproducer));
+
+    std::vector<common::BtPart> btparts_v;
+    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
+
+    if (!is_data)
+    {
+        const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(_MCRproducer));
+        const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(_MCRproducer));
+        art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(_Hproducer);
+        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, _BacktrackTag));
+        btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
+    }
 
     for (const common::ProxyPfpElem_t &pfp_pxy : pfp_proxy)
     {
@@ -331,6 +401,73 @@ void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Proxy
             _pfp_trk_sep_v.push_back(trk_sep); 
             _pfp_trk_phi_v.push_back(trk_phi);
             _pfp_trk_d_v.push_back(trk_d);
+
+            std::vector<art::Ptr<recob::Hit>> hit_v;
+            auto clus_pxy_v = pfp_pxy.get<recob::Cluster>();
+
+            for (auto ass_clus : clus_pxy_v)
+            {
+                const auto &clus = clus_proxy[ass_clus.key()];
+                auto clus_hit_v = clus.get<recob::Hit>();
+                hit_v.insert(hit_v.end(), clus_hit_v.begin(), clus_hit_v.end());
+            }
+
+            if (!is_data)
+            {
+                // Muon
+                if (_mc_muon_tid != -1 && !hit_v.empty())
+                {
+                    float purity = 0.0, completeness = 0.0;
+                    int muon_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_muon_tid, hit_v, *assocMCPart, purity, completeness);
+                    if (muon_bt_index >= 0)
+                    {
+                        _pfp_muon_purity_v.push_back(purity);
+                        _pfp_muon_completeness_v.push_back(completeness);
+
+                        std::cout << "muon purity " << purity << std::endl;
+                        std::cout << "muon completeness " << completeness << std::endl;
+                    }
+                    else
+                    {
+                        _pfp_muon_purity_v.push_back(0.0);
+                        _pfp_muon_completeness_v.push_back(0.0);
+                    }
+                }
+
+                // Pi-plus
+                if (_mc_kshrt_piplus_tid != -1 && !hit_v.empty())
+                {
+                    float purity = 0.0, completeness = 0.0;
+                    int piplus_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_kshrt_piplus_tid, hit_v, *assocMCPart, purity, completeness);
+                    if (piplus_bt_index >= 0)
+                    {
+                        _pfp_piplus_purity_v.push_back(purity);
+                        _pfp_piplus_completeness_v.push_back(completeness);
+                    }
+                    else
+                    {
+                        _pfp_piplus_purity_v.push_back(0.0);
+                        _pfp_piplus_completeness_v.push_back(0.0);
+                    }
+                }
+
+                // Pi-minus
+                if (_mc_kshrt_piminus_tid != -1 && !hit_v.empty())
+                {
+                    float purity = 0.0, completeness = 0.0;
+                    int piminus_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_kshrt_piminus_tid, hit_v, *assocMCPart, purity, completeness);
+                    if (piminus_bt_index >= 0)
+                    {
+                        _pfp_piminus_purity_v.push_back(purity);
+                        _pfp_piminus_completeness_v.push_back(completeness);
+                    }
+                    else
+                    {
+                        _pfp_piminus_purity_v.push_back(0.0);
+                        _pfp_piminus_completeness_v.push_back(0.0);
+                    }
+                }
+            }
         }
         else 
         {
@@ -339,15 +476,40 @@ void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Proxy
             _pfp_trk_d_v.push_back(std::numeric_limits<float>::lowest());
         }
     }
-
     return;
 }
 
-
 void SignalAnalysis::setBranches(TTree *_tree)
 {
+    _tree->Branch("mc_muon_tid", &_mc_muon_tid, "mc_muon_tid/I");
+    _tree->Branch("mc_muon_pdg", &_mc_muon_pdg, "mc_muon_pdg/I");
+    _tree->Branch("mc_muon_energy", &_mc_muon_energy, "mc_muon_energy/F");
+    _tree->Branch("mc_muon_px", &_mc_muon_px, "mc_muon_px/F");
+    _tree->Branch("mc_muon_py", &_mc_muon_py, "mc_muon_py/F");
+    _tree->Branch("mc_muon_pz", &_mc_muon_pz, "mc_muon_pz/F");
+    _tree->Branch("mc_muon_startx", &_mc_muon_startx, "mc_muon_startx/F");
+    _tree->Branch("mc_muon_starty", &_mc_muon_starty, "mc_muon_starty/F");
+    _tree->Branch("mc_muon_startz", &_mc_muon_startz, "mc_muon_startz/F");
+    _tree->Branch("mc_muon_endx", &_mc_muon_endx, "mc_muon_endx/F");
+    _tree->Branch("mc_muon_endy", &_mc_muon_endy, "mc_muon_endy/F");
+    _tree->Branch("mc_muon_endz", &_mc_muon_endz, "mc_muon_endz/F");
+
     _tree->Branch("mc_piplus_tid", &_mc_kshrt_piplus_tid, "mc_piplus_tid/i");
     _tree->Branch("mc_piminus_tid", &_mc_kshrt_piminus_tid, "mc_piminus_tid/i");
+
+    _tree->Branch("mc_kshrt_piplus_startx", &_mc_kshrt_piplus_startx, "mc_kshrt_piplus_startx/F");
+    _tree->Branch("mc_kshrt_piplus_starty", &_mc_kshrt_piplus_starty, "mc_kshrt_piplus_starty/F");
+    _tree->Branch("mc_kshrt_piplus_startz", &_mc_kshrt_piplus_startz, "mc_kshrt_piplus_startz/F");
+    _tree->Branch("mc_kshrt_piminus_startx", &_mc_kshrt_piminus_startx, "mc_kshrt_piminus_startx/F");
+    _tree->Branch("mc_kshrt_piminus_starty", &_mc_kshrt_piminus_starty, "mc_kshrt_piminus_starty/F");
+    _tree->Branch("mc_kshrt_piminus_startz", &_mc_kshrt_piminus_startz, "mc_kshrt_piminus_startz/F");
+
+    _tree->Branch("mc_kshrt_piplus_endx", &_mc_kshrt_piplus_endx, "mc_kshrt_piplus_endx/F");
+    _tree->Branch("mc_kshrt_piplus_endy", &_mc_kshrt_piplus_endy, "mc_kshrt_piplus_endy/F");
+    _tree->Branch("mc_kshrt_piplus_endz", &_mc_kshrt_piplus_endz, "mc_kshrt_piplus_endz/F");
+    _tree->Branch("mc_kshrt_piminus_endx", &_mc_kshrt_piminus_endx, "mc_kshrt_piminus_endx/F");
+    _tree->Branch("mc_kshrt_piminus_endy", &_mc_kshrt_piminus_endy, "mc_kshrt_piminus_endy/F");
+    _tree->Branch("mc_kshrt_piminus_endz", &_mc_kshrt_piminus_endz, "mc_kshrt_piminus_endz/F");
 
     _tree->Branch("mc_piplus_n_elas", &_mc_piplus_n_elas, "mc_piplus_n_elas/i");
     _tree->Branch("mc_piplus_n_inelas", &_mc_piplus_n_inelas, "mc_piplus_n_inelas/i");
@@ -380,6 +542,13 @@ void SignalAnalysis::setBranches(TTree *_tree)
     _tree->Branch("mc_piplus_impact_param", &_mc_piplus_impact_param, "mc_piplus_impact_param/F");
     _tree->Branch("mc_piminus_impact_param", &_mc_piminus_impact_param, "mc_piminus_impact_param/F");
 
+    _tree->Branch("pfp_muon_purity", &_pfp_muon_purity_v, "pfp_muon_purity/F");
+    _tree->Branch("pfp_muon_completeness", &_pfp_muon_completeness_v, "pfp_muon_completeness"); 
+    _tree->Branch("pfp_piplus_purity", &_pfp_piplus_purity_v);
+    _tree->Branch("pfp_piplus_completeness", &_pfp_piplus_completeness_v);
+    _tree->Branch("pfp_piminus_purity", &_pfp_piminus_purity_v);
+    _tree->Branch("pfp_piminus_completeness", &_pfp_piminus_completeness_v);
+
     _tree->Branch("mc_piplus_phi", &_mc_piplus_phi, "mc_piplus_phi/F");
     _tree->Branch("mc_piminus_phi", &_mc_piminus_phi, "mc_piminus_phi/F");
 
@@ -388,6 +557,7 @@ void SignalAnalysis::setBranches(TTree *_tree)
 
     _tree->Branch("mc_is_kshort_decay_pionic", &_mc_is_kshort_decay_pionic);
 
+    _tree->Branch("mc_has_muon", &_mc_has_muon);
     _tree->Branch("mc_has_lambda", &_mc_has_lambda);
     _tree->Branch("mc_has_sigma_plus", &_mc_has_sigma_plus);
     _tree->Branch("mc_has_sigma_minus", &_mc_has_sigma_minus);
@@ -400,6 +570,19 @@ void SignalAnalysis::setBranches(TTree *_tree)
 
 void SignalAnalysis::resetTTree(TTree *_tree)
 {
+    _mc_muon_tid = -1;
+    _mc_muon_pdg = 0;
+    _mc_muon_energy = std::numeric_limits<float>::lowest();
+    _mc_muon_px = std::numeric_limits<float>::lowest();
+    _mc_muon_py = std::numeric_limits<float>::lowest();
+    _mc_muon_pz = std::numeric_limits<float>::lowest();
+    _mc_muon_startx = std::numeric_limits<float>::lowest();
+    _mc_muon_starty = std::numeric_limits<float>::lowest();
+    _mc_muon_startz = std::numeric_limits<float>::lowest();
+    _mc_muon_endx = std::numeric_limits<float>::lowest();
+    _mc_muon_endy = std::numeric_limits<float>::lowest();
+    _mc_muon_endz = std::numeric_limits<float>::lowest();
+
     _mc_piplus_n_elas = 0;
     _mc_piplus_n_inelas = 0;
     _mc_piminus_n_elas = 0;
@@ -411,11 +594,27 @@ void SignalAnalysis::resetTTree(TTree *_tree)
     _mc_kshrt_piplus_py = std::numeric_limits<float>::lowest();
     _mc_kshrt_piplus_pz = std::numeric_limits<float>::lowest();
 
+    _mc_kshrt_piplus_startx = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piplus_starty = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piplus_startz = std::numeric_limits<float>::lowest();
+
+    _mc_kshrt_piplus_endx = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piplus_endy = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piplus_endz = std::numeric_limits<float>::lowest();
+
     _mc_kshrt_piminus_pdg = 0;
     _mc_kshrt_piminus_energy = std::numeric_limits<float>::lowest();
     _mc_kshrt_piminus_px = std::numeric_limits<float>::lowest();
     _mc_kshrt_piminus_py = std::numeric_limits<float>::lowest();
     _mc_kshrt_piminus_pz = std::numeric_limits<float>::lowest();
+
+    _mc_kshrt_piminus_startx = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piminus_starty = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piminus_startz = std::numeric_limits<float>::lowest();
+
+    _mc_kshrt_piminus_endx = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piminus_endy = std::numeric_limits<float>::lowest();
+    _mc_kshrt_piminus_endz = std::numeric_limits<float>::lowest();
 
     _mc_kshrt_total_energy = std::numeric_limits<float>::lowest();
 
@@ -442,6 +641,7 @@ void SignalAnalysis::resetTTree(TTree *_tree)
 
     _mc_is_kshort_decay_pionic = false;
 
+    _mc_has_muon = false;
     _mc_has_lambda = false;
     _mc_has_sigma_plus = false;
     _mc_has_sigma_minus = false;

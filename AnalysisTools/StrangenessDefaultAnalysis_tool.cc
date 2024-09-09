@@ -989,7 +989,6 @@ void StrangenessDefaultAnalysis::setBranches(TTree *_tree)
 
     _tree->Branch("swtrig",          &_swtrig,          "swtrig/I");
 
-
     _tree->Branch("evnhits", &evnhits, "evnhits/I");
     _tree->Branch("slpdg", &slpdg, "slpdg/I");
     _tree->Branch("slnhits", &slnhits, "slnhits/I");
