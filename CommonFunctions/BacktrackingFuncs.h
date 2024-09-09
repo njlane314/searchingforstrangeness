@@ -288,6 +288,69 @@ bool isHitBtMonteCarlo(const size_t hit_index,
     return found_mc_hit;
 }
 
-} 
+int findBtPartAndComputeMetrics(
+    const std::vector<BtPart>& btpartsv,
+    const int track_id,
+    const std::vector<art::Ptr<recob::Hit>>& hits,
+    const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& assocMCPart,
+    float& purity,
+    float& completeness)
+{
+    purity = 0.0;
+    completeness = 0.0;
+
+    int btpart_index = -1;
+
+    for (unsigned int i = 0; i < btpartsv.size(); ++i)
+    {
+        const BtPart& btp = btpartsv[i];
+        if (std::find(btp.tids.begin(), btp.tids.end(), track_id) != btp.tids.end())
+        {
+            btpart_index = i;
+            break;
+        }
+    }
+
+    if (btpart_index == -1)
+    {
+        return -1;
+    }
+
+    const BtPart& btpart = btpartsv[btpart_index];
+    int total_hits = hits.size();
+    int btpart_hits = 0;
+
+    for (auto& hit : hits)
+    {
+        std::vector<art::Ptr<simb::MCParticle>> mc_particles = assocMCPart.at(hit.key());
+        std::vector<anab::BackTrackerHitMatchingData const*> match_data = assocMCPart.data(hit.key());
+
+        for (unsigned int i = 0; i < mc_particles.size(); ++i)
+        {
+            if (match_data[i]->isMaxIDE != 1)
+                continue;
+
+            if (std::find(btpart.tids.begin(), btpart.tids.end(), mc_particles[i]->TrackId()) != btpart.tids.end())
+            {
+                btpart_hits++;
+                break;
+            }
+        }
+    }
+
+    if (total_hits > 0)
+        purity = static_cast<float>(btpart_hits) / static_cast<float>(total_hits);
+    else
+        purity = 0.0;
+
+    if (btpart.nhits > 0)
+        completeness = static_cast<float>(btpart_hits) / static_cast<float>(btpart.nhits);
+    else
+        completeness = 0.0;
+
+    return btpart_index;
+}
+
+}
 
 #endif

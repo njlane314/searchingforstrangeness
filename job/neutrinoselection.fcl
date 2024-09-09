@@ -52,6 +52,9 @@ SliceAnalysisTool: {
     BacktrackModuleLabel:       "gaushitTruthMatch"
     FlashMatchModuleLabel:      "pandora"
     PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
+    FlashLabel:                 "simpleFlashBeam"
+    SpacePointModuleLabel:      "pandora"
+    PFParticleModuleLabel:      "pandora"
 }
 
 VisualisationAnalysisTool: {
