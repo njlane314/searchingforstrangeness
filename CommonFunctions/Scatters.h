@@ -120,6 +120,37 @@ namespace common
 
         return type;
     }
+
+    std::vector<art::Ptr<simb::MCParticle>> GetPionChain(const art::Ptr<simb::MCParticle> &particle, const std::map<int, art::Ptr<simb::MCParticle>> &mcParticleMap)
+    {
+        std::vector<art::Ptr<simb::MCParticle>> pion_chain;
+
+        // Check if the particle is a pion
+        if (abs(particle->PdgCode()) == 211)
+        {
+            // Add this pion to the chain
+            pion_chain.push_back(particle);
+
+            // Get its daughters
+            std::vector<art::Ptr<simb::MCParticle>> daughters = common::GetDaughters(particle, mcParticleMap);
+
+            // Recursively look for daughter pions
+            for (const auto &daughter : daughters)
+            {
+                if (abs(daughter->PdgCode()) == 211) // If the daughter is a pion
+                {
+                    // Get the pion chain for this daughter
+                    std::vector<art::Ptr<simb::MCParticle>> daughter_chain = GetPionChain(daughter, mcParticleMap);
+
+                    // Append the daughter chain to the current pion chain
+                    pion_chain.insert(pion_chain.end(), daughter_chain.begin(), daughter_chain.end());
+                }
+            }
+        }
+
+        return pion_chain;
+    }
+
 }
 
 #endif
