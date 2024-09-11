@@ -85,6 +85,23 @@ SignalAnalysisTool: {
     BacktrackTag: "gaushitTruthMatch"
 }
 
+BacktrackerAnalysisTool: {
+    tool_type: "BacktrackerAnalysis"
+    PFPproducer: "pandora"
+    SHRproducer: "pandora"
+    HITproducer: "gaushit"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    VTXproducer: "pandora"
+    TRKproducer: "pandora"
+    PCAproducer: "pandora"
+    MCTproducer: "generator"
+    MCRproducer: "mcreco"
+    MCPproducer: "largeant"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+}
+
 StrangenessSelectionFilter: {
     module_type: StrangenessSelectionFilter 
     PFPproducer: "pandora"
@@ -112,6 +129,7 @@ StrangenessSelectionFilter: {
         calorimetry: @local::CalorimetryAnalysisTool
         slice: @local::SliceAnalysisTool
         visualisation: @local::VisualisationAnalysisTool
+        backtracker: @local::BacktrackerAnalysisTool
     }
 }
 

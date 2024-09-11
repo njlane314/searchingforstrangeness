@@ -64,6 +64,7 @@ private:
     TParticlePDG *sigma_minus = TDatabasePDG::Instance()->GetParticle(3112);
     TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
     TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
+    TParticlePDG *pion = TDatabasePDG::Instance()->GetParticle(211);
 
     bool _mc_has_muon;
     int _mc_muon_tid;
@@ -226,6 +227,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             auto g_part = dtrs.at(0);
             if (g_part->PdgCode() == kaon_short->PdgCode() && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2 && !_mc_is_kshort_decay_pionic)
             {
+                std::cout << "[SignalAnalysis::analyzeEvent] Found kaon-short..." << std::endl;
                 auto daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
                 if (daughters.size() == 2) 
                 {
@@ -244,8 +246,6 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
                     {
                         TVector3 kaon_decay(g_part->EndX(), g_part->EndY(), g_part->EndZ());
                         float decay_length = (kaon_decay - neutrino_vertex).Mag();
-
-                        if (decay_length > 50) continue;
 
                         _mc_kshrt_total_energy = g_part->E();
 
@@ -274,6 +274,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 
                             if (dtr->PdgCode() == 211) // pion-plus
                             { 
+                                std::cout << "[SignalAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
                                 _mc_kshrt_piplus_tid = dtr->TrackId();
                                 _mc_kshrt_piplus_pdg = dtr->PdgCode();
                                 _mc_kshrt_piplus_energy = dtr->E();
@@ -294,6 +295,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
                             } 
                             else if (dtr->PdgCode() == -211) // pion-minus
                             { 
+                                std::cout << "[SignalAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
                                 _mc_kshrt_piminus_tid = dtr->TrackId();
                                 _mc_kshrt_piminus_pdg = dtr->PdgCode();
                                 _mc_kshrt_piminus_energy = dtr->E();
@@ -320,7 +322,8 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             }
         }
 
-        if (_mc_is_kshort_decay_pionic) break;  
+        if (_mc_is_kshort_decay_pionic)
+            break;
     }
 }
 
@@ -339,143 +342,159 @@ void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Proxy
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(_CLSproducer));
 
-    std::vector<common::BtPart> btparts_v;
-    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
-
-    if (!is_data)
+    if (_mc_is_kshort_decay_pionic)
     {
-        const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(_MCRproducer));
-        const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(_MCRproducer));
-        art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(_Hproducer);
-        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, _BacktrackTag));
-        btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
-    }
-
-    for (const common::ProxyPfpElem_t &pfp_pxy : pfp_proxy)
-    {
-        double reco_nu_vtx_sce_x; 
-        double reco_nu_vtx_sce_y;
-        double reco_nu_vtx_sce_z;
-
-        if (pfp_pxy->IsPrimary()) 
+        std::cout << slice_pfp_v.size() << std::endl;
+        for (const common::ProxyPfpElem_t &pfp_pxy : slice_pfp_v)
         {
-            double xyz[3] = {};
+            double reco_nu_vtx_sce_x; 
+            double reco_nu_vtx_sce_y;
+            double reco_nu_vtx_sce_z;
 
-            auto vtx = pfp_pxy.get<recob::Vertex>();
-            if (vtx.size() == 1)
+            if (pfp_pxy->IsPrimary()) 
             {
-                vtx.at(0)->XYZ(xyz);
-                auto nuvtx = TVector3(xyz[0], xyz[1], xyz[2]);
+                double xyz[3] = {};
 
-                double reco_nu_vtx_x = nuvtx.X();
-                double reco_nu_vtx_y = nuvtx.Y();
-                double reco_nu_vtx_z = nuvtx.Z();
+                auto vtx = pfp_pxy.get<recob::Vertex>();
+                if (vtx.size() == 1)
+                {
+                    vtx.at(0)->XYZ(xyz);
+                    auto nuvtx = TVector3(xyz[0], xyz[1], xyz[2]);
 
-                float reco_nu_vtx_sce[3];
-                common::ApplySCECorrectionXYZ(reco_nu_vtx_x, reco_nu_vtx_y, reco_nu_vtx_z, reco_nu_vtx_sce);
-                reco_nu_vtx_sce_x = reco_nu_vtx_sce[0];
-                reco_nu_vtx_sce_y = reco_nu_vtx_sce[1];
-                reco_nu_vtx_sce_z = reco_nu_vtx_sce[2];
+                    double reco_nu_vtx_x = nuvtx.X();
+                    double reco_nu_vtx_y = nuvtx.Y();
+                    double reco_nu_vtx_z = nuvtx.Z();
+
+                    float reco_nu_vtx_sce[3];
+                    common::ApplySCECorrectionXYZ(reco_nu_vtx_x, reco_nu_vtx_y, reco_nu_vtx_z, reco_nu_vtx_sce);
+                    reco_nu_vtx_sce_x = reco_nu_vtx_sce[0];
+                    reco_nu_vtx_sce_y = reco_nu_vtx_sce[1];
+                    reco_nu_vtx_sce_z = reco_nu_vtx_sce[2];
+                }
+            }
+            
+            auto trk_v = pfp_pxy.get<recob::Track>();
+
+            if (trk_v.size() == 1) 
+            {
+                auto trk = trk_v.at(0);
+
+                auto trk_strt = trk->Start();
+                float trk_strt_sce[3];
+                common::ApplySCECorrectionXYZ(trk_strt.X(), trk_strt.Y(), trk_strt.Z(), trk_strt_sce);
+                float phi_h = std::atan2(trk_strt_sce[0], trk_strt_sce[1]);
+
+                auto trk_end = trk->End();
+                float trk_end_sce[3];
+                common::ApplySCECorrectionXYZ(trk_end.X(), trk_end.Y(), trk_end.Z(), trk_end_sce);
+
+                float trk_sep = common::distance3d(reco_nu_vtx_sce_x, reco_nu_vtx_sce_y, reco_nu_vtx_sce_z, trk_end_sce[0], trk_end_sce[1], trk_end_sce[2]);
+                float trk_phi = std::atan2(trk_end_sce[0], trk_end_sce[1]);
+                float trk_d = trk_sep * sin(trk_phi - phi_h);
+
+                _pfp_trk_sep_v.push_back(trk_sep); 
+                _pfp_trk_phi_v.push_back(trk_phi);
+                _pfp_trk_d_v.push_back(trk_d);
+            }
+            else 
+            {
+                _pfp_trk_sep_v.push_back(std::numeric_limits<float>::lowest()); 
+                _pfp_trk_phi_v.push_back(std::numeric_limits<float>::lowest());
+                _pfp_trk_d_v.push_back(std::numeric_limits<float>::lowest());
             }
         }
-        
-        auto trk_v = pfp_pxy.get<recob::Track>();
 
-        if (trk_v.size() == 1) 
+        art::ValidHandle<std::vector<recob::Hit>> in_hits = e.getValidHandle<std::vector<recob::Hit>>(_Hproducer);
+        std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> mcp_bkth_assoc = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(in_hits, e, _BacktrackTag));
+
+        int mcp_mu_hits = 0;
+        int mcp_piplus_hits = 0;
+        int mcp_piminus_hits = 0;
+
+        for (unsigned int ih = 0; ih < in_hits->size(); ih++)
         {
-            auto trk = trk_v.at(0);
+            auto assmcp = mcp_bkth_assoc->at(ih);
+            auto assmdt = mcp_bkth_assoc->data(ih);
+            for (unsigned int ia = 0; ia < assmcp.size(); ++ia)
+            {
+                auto mcp = assmcp[ia];
+                auto amd = assmdt[ia];
+                if (amd->isMaxIDE != 1)
+                    continue;
 
-            auto trk_strt = trk->Start();
-            float trk_strt_sce[3];
-            common::ApplySCECorrectionXYZ(trk_strt.X(), trk_strt.Y(), trk_strt.Z(), trk_strt_sce);
-            float phi_h = std::atan2(trk_strt_sce[0], trk_strt_sce[1]);
+                if (mcp->TrackId() == _mc_muon_tid)
+                    mcp_mu_hits++;
+                else if (mcp->TrackId() == _mc_kshrt_piplus_tid)
+                    mcp_piplus_hits++;
+                else if (mcp->TrackId() == _mc_kshrt_piminus_tid)
+                    mcp_piminus_hits++;
+            }
+        }
 
-            auto trk_end = trk->End();
-            float trk_end_sce[3];
-            common::ApplySCECorrectionXYZ(trk_end.X(), trk_end.Y(), trk_end.Z(), trk_end_sce);
-
-            float trk_sep = common::distance3d(reco_nu_vtx_sce_x, reco_nu_vtx_sce_y, reco_nu_vtx_sce_z, trk_end_sce[0], trk_end_sce[1], trk_end_sce[2]);
-            float trk_phi = std::atan2(trk_end_sce[0], trk_end_sce[1]);
-            float trk_d = trk_sep * sin(trk_phi - phi_h);
-
-            _pfp_trk_sep_v.push_back(trk_sep); 
-            _pfp_trk_phi_v.push_back(trk_phi);
-            _pfp_trk_d_v.push_back(trk_d);
-
-            std::vector<art::Ptr<recob::Hit>> hit_v;
+        for (const common::ProxyPfpElem_t &pfp_pxy : slice_pfp_v)
+        {
+            std::vector<art::Ptr<recob::Hit>> pfp_hits;
             auto clus_pxy_v = pfp_pxy.get<recob::Cluster>();
 
             for (auto ass_clus : clus_pxy_v)
             {
                 const auto &clus = clus_proxy[ass_clus.key()];
                 auto clus_hit_v = clus.get<recob::Hit>();
-                hit_v.insert(hit_v.end(), clus_hit_v.begin(), clus_hit_v.end());
-            }
 
-            if (!is_data)
+                for (const auto &hit : clus_hit_v)
+                {
+                    pfp_hits.push_back(hit);
+                }
+            } 
+
+            std::vector<simb::MCParticle> assmcp;
+            std::vector<anab::BackTrackerHitMatchingData> amd;
+
+            int pfp_mu_hits = 0; 
+            int pfp_piplus_hits = 0;
+            int pfp_piminus_hits = 0;
+
+            for (auto hit : pfp_hits)
             {
-                // Muon
-                if (_mc_muon_tid != -1 && !hit_v.empty())
+                auto assmcp = mcp_bkth_assoc->at(hit.key());       
+                auto assmdt = mcp_bkth_assoc->data(hit.key());    
+                for (size_t i = 0; i < assmcp.size(); i++)
                 {
-                    float purity = 0.0, completeness = 0.0;
-                    int muon_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_muon_tid, hit_v, *assocMCPart, purity, completeness);
-                    if (muon_bt_index >= 0)
-                    {
-                        _pfp_muon_purity_v.push_back(purity);
-                        _pfp_muon_completeness_v.push_back(completeness);
+                    if (assmdt[i]->isMaxIDE != 1) 
+                        continue;
 
-                        std::cout << "muon purity " << purity << std::endl;
-                        std::cout << "muon completeness " << completeness << std::endl;
-                    }
-                    else
-                    {
-                        _pfp_muon_purity_v.push_back(0.0);
-                        _pfp_muon_completeness_v.push_back(0.0);
-                    }
-                }
-
-                // Pi-plus
-                if (_mc_kshrt_piplus_tid != -1 && !hit_v.empty())
-                {
-                    float purity = 0.0, completeness = 0.0;
-                    int piplus_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_kshrt_piplus_tid, hit_v, *assocMCPart, purity, completeness);
-                    if (piplus_bt_index >= 0)
-                    {
-                        _pfp_piplus_purity_v.push_back(purity);
-                        _pfp_piplus_completeness_v.push_back(completeness);
-                    }
-                    else
-                    {
-                        _pfp_piplus_purity_v.push_back(0.0);
-                        _pfp_piplus_completeness_v.push_back(0.0);
-                    }
-                }
-
-                // Pi-minus
-                if (_mc_kshrt_piminus_tid != -1 && !hit_v.empty())
-                {
-                    float purity = 0.0, completeness = 0.0;
-                    int piminus_bt_index = common::findBtPartAndComputeMetrics(btparts_v, _mc_kshrt_piminus_tid, hit_v, *assocMCPart, purity, completeness);
-                    if (piminus_bt_index >= 0)
-                    {
-                        _pfp_piminus_purity_v.push_back(purity);
-                        _pfp_piminus_completeness_v.push_back(completeness);
-                    }
-                    else
-                    {
-                        _pfp_piminus_purity_v.push_back(0.0);
-                        _pfp_piminus_completeness_v.push_back(0.0);
-                    }
+                    const int track_id = assmcp[i]->TrackId();
+                    if (track_id == _mc_muon_tid)
+                        pfp_mu_hits++;
+                    else if (track_id == _mc_kshrt_piplus_tid)
+                        pfp_piplus_hits++;
+                    else if (track_id == _mc_kshrt_piminus_tid)
+                        pfp_piminus_hits++;
                 }
             }
-        }
-        else 
-        {
-            _pfp_trk_sep_v.push_back(std::numeric_limits<float>::lowest()); 
-            _pfp_trk_phi_v.push_back(std::numeric_limits<float>::lowest());
-            _pfp_trk_d_v.push_back(std::numeric_limits<float>::lowest());
+
+            float muon_purity = (pfp_hits.size() > 0) ? static_cast<float>(pfp_mu_hits) / pfp_hits.size() : 0.0f;
+            float muon_completeness = (mcp_mu_hits > 0) ? static_cast<float>(pfp_mu_hits) / mcp_mu_hits : 0.0f;
+
+            float piplus_purity = (pfp_hits.size() > 0) ? static_cast<float>(pfp_piplus_hits) / pfp_hits.size() : 0.0f;
+            float piplus_completeness = (mcp_piplus_hits > 0) ? static_cast<float>(pfp_piplus_hits) / mcp_piplus_hits : 0.0f;
+
+            float piminus_purity = (pfp_hits.size() > 0) ? static_cast<float>(pfp_piminus_hits) / pfp_hits.size() : 0.0f;
+            float piminus_completeness = (mcp_piminus_hits > 0) ? static_cast<float>(pfp_piminus_hits) / mcp_piminus_hits : 0.0f;
+
+            _pfp_muon_purity_v.push_back(muon_purity);
+            _pfp_muon_completeness_v.push_back(muon_completeness);
+            _pfp_piplus_purity_v.push_back(piplus_purity);
+            _pfp_piplus_completeness_v.push_back(piplus_completeness);
+            _pfp_piminus_purity_v.push_back(piminus_purity);
+            _pfp_piminus_completeness_v.push_back(piminus_completeness);
+            
+            std::cout << "Muon Purity: " << muon_purity << ", Muon Completeness: " << muon_completeness << std::endl;
+            std::cout << "Pion+ Purity: " << piplus_purity << ", Pion+ Completeness: " << piplus_completeness << std::endl;
+            std::cout << "Pion- Purity: " << piminus_purity << ", Pion- Completeness: " << piminus_completeness << std::endl;
         }
     }
+
     return;
 }
 
@@ -542,8 +561,8 @@ void SignalAnalysis::setBranches(TTree *_tree)
     _tree->Branch("mc_piplus_impact_param", &_mc_piplus_impact_param, "mc_piplus_impact_param/F");
     _tree->Branch("mc_piminus_impact_param", &_mc_piminus_impact_param, "mc_piminus_impact_param/F");
 
-    _tree->Branch("pfp_muon_purity", &_pfp_muon_purity_v, "pfp_muon_purity/F");
-    _tree->Branch("pfp_muon_completeness", &_pfp_muon_completeness_v, "pfp_muon_completeness"); 
+    _tree->Branch("pfp_muon_purity", &_pfp_muon_purity_v);
+    _tree->Branch("pfp_muon_completeness", &_pfp_muon_completeness_v); 
     _tree->Branch("pfp_piplus_purity", &_pfp_piplus_purity_v);
     _tree->Branch("pfp_piplus_completeness", &_pfp_piplus_completeness_v);
     _tree->Branch("pfp_piminus_purity", &_pfp_piminus_purity_v);
@@ -650,6 +669,13 @@ void SignalAnalysis::resetTTree(TTree *_tree)
     _pfp_trk_d_v.clear();
     _pfp_trk_phi_v.clear();
     _pfp_trk_sep_v.clear();
+
+    _pfp_muon_purity_v.clear();
+    _pfp_muon_completeness_v.clear();
+    _pfp_piplus_purity_v.clear();
+    _pfp_piplus_completeness_v.clear();
+    _pfp_piminus_purity_v.clear();
+    _pfp_piminus_completeness_v.clear();
 }
 
 DEFINE_ART_CLASS_TOOL(SignalAnalysis)
