@@ -33,13 +33,20 @@ public:
 
     void configure(fhicl::ParameterSet const &pset);
 
-    void analyzeEvent(art::Event const &e, bool is_data) override;
+    void analyzeEvent(art::Event const &e, bool fData) override;
 
-    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
 
     void setBranches(TTree *_tree) override;
 
     void resetTTree(TTree *_tree) override;
+
+    bool passesAnalysis(art::Event const &e, bool fData)
+    {
+        const_cast<SignalAnalysis*>(this)->analyzeEvent(e, fData);
+        
+        return _event_is_signal;
+    }
 
 private:
 
@@ -65,6 +72,11 @@ private:
     TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
     TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
     TParticlePDG *pion = TDatabasePDG::Instance()->GetParticle(211);
+
+    bool _event_analysed = false;
+    bool _event_is_signal = false;
+
+    int _ccnc;
 
     bool _mc_has_muon;
     int _mc_muon_tid;
@@ -154,9 +166,12 @@ void SignalAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
+void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
-    if (is_data) 
+    std::cout << "Analysing event in signal analysis module....." << std::endl;
+    _event_analysed = true;
+
+    if (fData) 
         return;
   
     // Load generator truth 
@@ -175,6 +190,8 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     auto mct = mct_h->at(0);
     auto neutrino = mct.GetNeutrino();
     auto nu = neutrino.Nu();
+        
+    _ccnc = neutrino.CCNC();
 
     _mc_neutrino_vertex_x = nu.Vx();
     _mc_neutrino_vertex_y = nu.Vy();
@@ -322,12 +339,14 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             }
         }
 
+        _event_is_signal = (_ccnc == simb::kCC && _mc_is_kshort_decay_pionic);
+
         if (_mc_is_kshort_decay_pionic)
             break;
     }
 }
 
-void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
+void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),

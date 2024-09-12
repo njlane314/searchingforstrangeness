@@ -37,7 +37,6 @@ void StrangenessEmptySelection::configure(fhicl::ParameterSet const & pset)
 
 bool StrangenessEmptySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v)
 {
-    
     return true;
 }
 
