@@ -1,0 +1,21 @@
+#include "reco_uboone_mcc9_8_driver_overlay_numi_stage2.fcl"
+process_name: OverlayRecoStage2ReRun
+
+// Drop all of the last reco2 stage, so we add in all new products.
+source.inputCommands: [
+    "keep *_*_*_*",
+    "drop *_*_*_OverlayRecoStage2"
+]
+
+physics.producers.pandoraPatRec.ConfigFile: "PandoraSettings_Master_MicroBooNE_DLVertexing.xml"
+physics.producers.pandoraPatRec.BackTrackerModuleLabel: "gaushitTruthMatch"
+physics.producers.pandoraPatRec.EnableMCParticles:      true
+# physics.producers.pandoraPatRec.EnableProduction:       false
+physics.producers.pandoraPatRec.SliceIdTool:              @local::flash_neutrino_id_tool_overlay
+
+services.BackTrackerService:             @local::microboone_backtrackerservice
+services.ParticleInventoryService:       @local::standard_particleinventoryservice
+services.DetectorClocksService.TrigModuleName: "triggersim"
+
+services.SpaceCharge.EnableSimSpatialSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true

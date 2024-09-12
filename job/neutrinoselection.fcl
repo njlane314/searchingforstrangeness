@@ -135,3 +135,12 @@ StrangenessSelectionFilter: {
 
 StrangenessSelectionFilterEmpty: @local::StrangenessSelectionFilter
 StrangenessSelectionFilterEmpty.SelectionTool: { tool_type: "StrangenessEmptySelection" }
+
+StrangenessSignalFilter: {
+    module_type: StrangenessSignalFilter 
+    Filter: true
+
+    SignalDefinition: {
+        signal: @local::SignalAnalysisTool
+    }
+}
