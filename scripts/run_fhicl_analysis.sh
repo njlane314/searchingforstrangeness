@@ -25,7 +25,7 @@ fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
 #fhiclfile=/exp/uboone/app/users/nlane/production/KaonShortProduction01/srcs/ubana/ubana/searchingforstrangeness/run_emptyselectionfilter.fcl
 output_directory="/exp/uboone/data/users/nlane/analysis"
-combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_analysis.root"
+combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
 tempdir="${output_directory}/temp_root_files"
 #num_files=1
 

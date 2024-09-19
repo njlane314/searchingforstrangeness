@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_VISUALISATION_CXX
-#define ANALYSIS_VISUALISATION_CXX
+#ifndef ANALYSIS_SLICE_VISUALISATION_CXX
+#define ANALYSIS_SLICE_VISUALISATION_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -10,12 +10,12 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
 
-#include "../CommonFunctions/BacktrackingFuncs.h"
-#include "../CommonFunctions/TrackShowerScoreFuncs.h"
-#include "../CommonFunctions/SpaceChargeCorrections.h"
-#include "../CommonFunctions/Scatters.h"
-#include "../CommonFunctions/PandoraFuncs.h"
-#include "../CommonFunctions/TypeDefs.h"
+#include "CommonFunctions/Backtracking.h"
+#include "CommonFunctions/Scores.h"
+#include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Pandora.h"
+#include "CommonFunctions/Types.h"
 
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
@@ -36,14 +36,14 @@
 namespace analysis
 {
 
-class VisualisationAnalysis : public AnalysisToolBase
+class SliceVisualisationAnalysis : public AnalysisToolBase
 {
 
 public:
   
-    VisualisationAnalysis(const fhicl::ParameterSet &pset);
+    SliceVisualisationAnalysis(const fhicl::ParameterSet &pset);
 
-    ~VisualisationAnalysis(){};
+    ~SliceVisualisationAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -88,7 +88,7 @@ private:
     art::InputTag _CLSproducer;
 };
 
-VisualisationAnalysis::VisualisationAnalysis(const fhicl::ParameterSet &pset)
+SliceVisualisationAnalysis::SliceVisualisationAnalysis(const fhicl::ParameterSet &pset)
 {
     _SimulationModuleLabel = pset.get<std::string>("MCParticleModuleLabel");
     _PandoraModuleLabel = pset.get<std::string>("PandoraModuleLabel");
@@ -99,18 +99,18 @@ VisualisationAnalysis::VisualisationAnalysis(const fhicl::ParameterSet &pset)
     _CLSproducer = pset.get<art::InputTag>("CLSproducer");
 }
 
-void VisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
+void SliceVisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
+void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 {
      art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
     lar_pandora::MCParticleMap mc_particle_map;
 
     if (!e.getByLabel(_SimulationModuleLabel, mc_particle_handle))
-        throw cet::exception("VisualisationAnalysis") << "failed to find any mc particles in event" << std::endl;
+        throw cet::exception("SliceVisualisationAnalysis") << "failed to find any mc particles in event" << std::endl;
     art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
     lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
 
@@ -119,7 +119,7 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     lar_pandora::PFParticleMap pf_particle_map;
     
     if (!e.getByLabel(_PandoraModuleLabel, pf_particle_handle))
-        throw cet::exception("VisualisationAnalysis") << "failed to find any pandora-slice pf particles in event" << std::endl;
+        throw cet::exception("SliceVisualisationAnalysis") << "failed to find any pandora-slice pf particles in event" << std::endl;
     art::fill_ptr_vector(pf_particle_vector, pf_particle_handle);
     lar_pandora::LArPandoraHelper::BuildPFParticleMap(pf_particle_vector, pf_particle_map);
 
@@ -127,7 +127,7 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::vector<art::Ptr<recob::Hit>> hit_vector;
     
     if (!e.getByLabel(_HitModuleLabel, hit_handle))
-        throw cet::exception("VisualisationAnalysis") << "failed to find any hits in event" << std::endl;
+        throw cet::exception("SliceVisualisationAnalysis") << "failed to find any hits in event" << std::endl;
     art::fill_ptr_vector(hit_vector, hit_handle);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackModuleLabel);
 
@@ -135,7 +135,7 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::vector<art::Ptr<recob::Slice>> slice_vector;
 
     if (!e.getByLabel(_PandoraModuleLabel, slice_handle))
-        throw cet::exception("VisualisationAnalysis") << "failed to find any pandora slices in event" << std::endl;
+        throw cet::exception("SliceVisualisationAnalysis") << "failed to find any pandora slices in event" << std::endl;
     art::FindManyP<recob::Hit> hit_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PandoraModuleLabel);
     art::fill_ptr_vector(slice_vector, slice_handle);
     art::FindManyP<recob::PFParticle> pf_part_slice_assoc = art::FindManyP<recob::PFParticle>(slice_handle, e, _PandoraModuleLabel);
@@ -146,7 +146,7 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::vector<art::Ptr<recob::PFParticle>> flash_nu_pf_particle_vector;
 
     if (!e.getByLabel(_FlashMatchModuleLabel, flash_match_pf_particle_handle))
-        throw cet::exception("VisualisationAnalysis") << "failed to find any flash-matched pf particles" << std::endl;
+        throw cet::exception("SliceVisualisationAnalysis") << "failed to find any flash-matched pf particles" << std::endl;
     art::fill_ptr_vector(flash_match_pf_particle_vector, flash_match_pf_particle_handle);
     lar_pandora::LArPandoraHelper::SelectNeutrinoPFParticles(flash_match_pf_particle_vector, flash_nu_pf_particle_vector);
 
@@ -208,7 +208,7 @@ void VisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     }
 }
 
-void VisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
+void SliceVisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(_CLSproducer));
@@ -272,7 +272,7 @@ void VisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common
     }    
 }
 
-void VisualisationAnalysis::setBranches(TTree *_tree)
+void SliceVisualisationAnalysis::setBranches(TTree *_tree)
 {
     _tree->Branch("true_hits_u_wire", &_true_hits_u_wire);
     _tree->Branch("true_hits_u_drift", &_true_hits_u_drift);
@@ -292,7 +292,7 @@ void VisualisationAnalysis::setBranches(TTree *_tree)
     _tree->Branch("slice_hits_w_drift", &_slice_hits_w_drift);
 }
 
-void VisualisationAnalysis::resetTTree(TTree *_tree)
+void SliceVisualisationAnalysis::resetTTree(TTree *_tree)
 {
     _true_hits_u_wire.clear();
     _true_hits_u_drift.clear();
@@ -312,12 +312,12 @@ void VisualisationAnalysis::resetTTree(TTree *_tree)
     _slice_hits_w_drift.clear();
 }
 
-bool VisualisationAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
+bool SliceVisualisationAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
 {
     return ((std::abs(mc_part->PdgCode() == 11) || (mc_part->PdgCode() == 22)));
 }
 
-int VisualisationAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
+int SliceVisualisationAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
 {
     int track_idx = mc_part->TrackId();
     art::Ptr<simb::MCParticle> mother_mc_part = mc_part;
@@ -338,7 +338,7 @@ int VisualisationAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCPa
 }
 
 
-DEFINE_ART_CLASS_TOOL(VisualisationAnalysis)
+DEFINE_ART_CLASS_TOOL(SliceVisualisationAnalysis)
 } 
 
 #endif

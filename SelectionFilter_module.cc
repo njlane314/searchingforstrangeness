@@ -26,23 +26,23 @@
 #include "TVector3.h"
 
 #include "CommonFunctions/Geometry.h"
-#include "CommonFunctions/SpaceChargeCorrections.h"
+#include "CommonFunctions/Corrections.h"
 
-class StrangenessSelectionFilter;
+class SelectionFilter;
 
-class StrangenessSelectionFilter : public art::EDFilter
+class SelectionFilter : public art::EDFilter
 {
     
 public:
-    explicit StrangenessSelectionFilter(fhicl::ParameterSet const &p);
+    explicit SelectionFilter(fhicl::ParameterSet const &p);
     // The compiler-generated destructor is fine for non-base
     // classes without bare pointers or other resource use.
 
     // Plugins should not be copied or assigned.
-    StrangenessSelectionFilter(StrangenessSelectionFilter const &) = delete;
-    StrangenessSelectionFilter(StrangenessSelectionFilter &&) = delete;
-    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter const &) = delete;
-    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter &&) = delete;
+    SelectionFilter(SelectionFilter const &) = delete;
+    SelectionFilter(SelectionFilter &&) = delete;
+    SelectionFilter &operator=(SelectionFilter const &) = delete;
+    SelectionFilter &operator=(SelectionFilter &&) = delete;
 
     // Required functions.
     bool filter(art::Event &e) override;
@@ -106,7 +106,7 @@ private:
     void ResetTTree();
 };
 
-StrangenessSelectionFilter::StrangenessSelectionFilter(fhicl::ParameterSet const &p)
+SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}
 {
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
@@ -127,7 +127,7 @@ StrangenessSelectionFilter::StrangenessSelectionFilter(fhicl::ParameterSet const
     fProximateRadius = p.get<float>("ProximateRadius", 30);
 
     art::ServiceHandle<art::TFileService> tfs;
-    _tree = tfs->make<TTree>("StrangenessSelectionFilter", "Neutrino Selection TTree");
+    _tree = tfs->make<TTree>("SelectionFilter", "Neutrino Selection TTree");
     _tree->Branch("selected", &_selected, "selected/I");
     _tree->Branch("run", &_run, "run/I");
     _tree->Branch("sub", &_sub, "sub/I");
@@ -163,7 +163,7 @@ StrangenessSelectionFilter::StrangenessSelectionFilter(fhicl::ParameterSet const
         _analysisToolsVec[i]->setBranches(_tree);
 }
 
-bool StrangenessSelectionFilter::filter(art::Event &e)
+bool SelectionFilter::filter(art::Event &e)
 {
     ResetTTree();
 
@@ -269,7 +269,7 @@ bool StrangenessSelectionFilter::filter(art::Event &e)
 }
 
 template <typename T>
-void StrangenessSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
+void SelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
                                                       const T &pfParticleMetadataList)
 {
     if (pfParticleMetadataList.size() != 0)
@@ -296,7 +296,7 @@ void StrangenessSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &p
     return;
 }
 
-void StrangenessSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
+void SelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
 {
     _pfpmap.clear();
 
@@ -310,7 +310,7 @@ void StrangenessSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
     return;
 } 
 
-void StrangenessSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
+void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
                                            const ProxyPfpColl_t &pfp_pxy_col,
                                            std::vector<ProxyPfpElem_t> &slice_v)
 {
@@ -341,7 +341,7 @@ void StrangenessSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
     return;
 } 
 
-void StrangenessSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
+void SelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
                                                     const ProxyPfpColl_t &pfp_pxy_col,
                                                     std::vector<ProxyPfpElem_t> &slice_v)
 {
@@ -388,7 +388,7 @@ void StrangenessSelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_
     }
 }
 
-void StrangenessSelectionFilter::ResetTTree()
+void SelectionFilter::ResetTTree()
 {
     _selected = 0;
     _run = std::numeric_limits<int>::lowest();
@@ -400,13 +400,13 @@ void StrangenessSelectionFilter::ResetTTree()
         _analysisToolsVec[i]->resetTTree(_tree);
 }
 
-bool StrangenessSelectionFilter::endSubRun(art::SubRun &subrun)
+bool SelectionFilter::endSubRun(art::SubRun &subrun)
 {
     if ( (!fData) || (fFakeData) )
     {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
         _pot = subrun.getByLabel(fMCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
-        std::cout << "[StrangenessSelectionFilter::endSubRun] Storing POT info!" << std::endl;
+        std::cout << "[SelectionFilter::endSubRun] Storing POT info!" << std::endl;
     }
 
     _run_sr = subrun.run();
@@ -416,4 +416,4 @@ bool StrangenessSelectionFilter::endSubRun(art::SubRun &subrun)
     return true;
 }
 
-DEFINE_ART_MODULE(StrangenessSelectionFilter)
+DEFINE_ART_MODULE(SelectionFilter)

@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_DEFAULTANALYSIS_CXX
-#define ANALYSIS_DEFAULTANALYSIS_CXX
+#ifndef ANALYSIS_NEUTRINO_INTERACTION_CXX
+#define ANALYSIS_NEUTRINO_INTERACTION_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -14,15 +14,15 @@
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 
 // backtracking tools
-#include "../CommonFunctions/BacktrackingFuncs.h"
-#include "../CommonFunctions/Geometry.h"
-#include "../CommonFunctions/SpaceChargeCorrections.h"
-#include "../CommonFunctions/Containment.h"
-#include "../CommonFunctions/TrackShowerScoreFuncs.h"
-#include "../CommonFunctions/ProximityClustering.h"
-#include "../CommonFunctions/Descendents.h"
-#include "../CommonFunctions/Scatters.h"
-#include "../CommonFunctions/PandoraFuncs.h"
+#include "CommonFunctions/Backtracking.h"
+#include "CommonFunctions/Geometry.h"
+#include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Containment.h"
+#include "CommonFunctions/Scores.h"
+#include "CommonFunctions/Clustering.h"
+#include "CommonFunctions/Descendents.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Pandora.h"
 
 // save info associated to common optical filter
 #include "ubobj/Optical/UbooneOpticalFilter.h"
@@ -37,14 +37,14 @@
 namespace analysis
 {
 
-class StrangenessDefaultAnalysis : public AnalysisToolBase
+class NeutrinoInteractionAnalysis : public AnalysisToolBase
 {
 
 public:
 
-    StrangenessDefaultAnalysis(const fhicl::ParameterSet &pset);
+    NeutrinoInteractionAnalysis(const fhicl::ParameterSet &pset);
     
-    ~StrangenessDefaultAnalysis(){};
+    ~NeutrinoInteractionAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -131,6 +131,13 @@ private:
 
     int _nu_pdg;           /**< neutrino PDG code */
     int _ccnc;             /**< CC or NC tag from GENIE */
+    int _target;
+    int _hitnucleon;
+    double _W;
+    double _X;
+    double _Y;
+    double _QSqr;
+    
     int _nu_parent_pdg;    /**< neutrino parent's PDG code [http://www.hep.utexas.edu/~zarko/wwwgnumi/v19/] */
     int _nu_hadron_pdg;    /**< PDG code of hadron eventually producing neutrino [http://www.hep.utexas.edu/~zarko/wwwgnumi/v19/] */
     int _nu_decay_mode;    /**< decay mode that lead to this neutrino in beam simulation [http://www.hep.utexas.edu/~zarko/wwwgnumi/v19/] */
@@ -268,7 +275,7 @@ private:
     std::vector<float> _trk_d_v;
 };
 
-StrangenessDefaultAnalysis::StrangenessDefaultAnalysis(const fhicl::ParameterSet &p)
+NeutrinoInteractionAnalysis::NeutrinoInteractionAnalysis(const fhicl::ParameterSet &p)
 {
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fCRTVetoproducer = p.get<art::InputTag>("CRTVetoproducer", ""); // default is no CRT veto
@@ -303,13 +310,13 @@ StrangenessDefaultAnalysis::StrangenessDefaultAnalysis(const fhicl::ParameterSet
     NuMISWTrigProd   = p.get<std::string>("NuMISWTriggerProcName","" );
 }
 
-void StrangenessDefaultAnalysis::configure(fhicl::ParameterSet const &p)
+void NeutrinoInteractionAnalysis::configure(fhicl::ParameterSet const &p)
 {
 }
 
-void StrangenessDefaultAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void NeutrinoInteractionAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
-    std::cout << "[StrangenessDefaultAnalysis::analyzeEvent] Run: " << e.run() << ", SubRun: " << e.subRun() << ", Event: " << e.event() << std::endl;
+    std::cout << "[NeutrinoInteractionAnalysis::analyzeEvent] Run: " << e.run() << ", SubRun: " << e.subRun() << ", Event: " << e.event() << std::endl;
     
     common::ProxySliceColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
                                                             proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
@@ -496,7 +503,7 @@ void StrangenessDefaultAnalysis::analyzeEvent(art::Event const &e, bool fData)
     evnhits = inputHits->size();
 }
 
-void StrangenessDefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void NeutrinoInteractionAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(fCLSproducer));
@@ -846,7 +853,7 @@ void StrangenessDefaultAnalysis::analyzeSlice(art::Event const &e, std::vector<c
         _pass = 1;
 }
 
-void StrangenessDefaultAnalysis::setBranches(TTree *_tree)
+void NeutrinoInteractionAnalysis::setBranches(TTree *_tree)
 {
     _tree->Branch("leeweight", &_leeweight, "leeweight/F");
 
@@ -864,6 +871,13 @@ void StrangenessDefaultAnalysis::setBranches(TTree *_tree)
     // neutrino information
     _tree->Branch("nu_pdg", &_nu_pdg, "nu_pdg/I");
     _tree->Branch("ccnc", &_ccnc, "ccnc/I");
+    _tree->Branch("target", &_target, "target/I");
+    _tree->Branch("hitnucleon", &_hitnucleon, "hitnucleon/I");
+    _tree->Branch("W", &_W, "W/F");
+    _tree->Branch("X", &_X, "X/F");
+    _tree->Branch("Y", &_Y, "Y/F");
+    _tree->Branch("QSqr", &_QSqr, "QSqr/F");
+
     _tree->Branch("nu_parent_pdg", &_nu_parent_pdg, "nu_parent_pdg/I");
     _tree->Branch("nu_hadron_pdg", &_nu_hadron_pdg, "nu_hadron_pdg/I");
     _tree->Branch("nu_decay_mode", &_nu_decay_mode, "nu_decay_mode/I");
@@ -1058,7 +1072,7 @@ void StrangenessDefaultAnalysis::setBranches(TTree *_tree)
     _tree->Branch("pfp_trk_d", "std::vector<float>", &_trk_d_v);
 }
 
-void StrangenessDefaultAnalysis::resetTTree(TTree *_tree)
+void NeutrinoInteractionAnalysis::resetTTree(TTree *_tree)
 {
     _leeweight = 0;
     _nu_e = std::numeric_limits<float>::lowest();
@@ -1078,6 +1092,13 @@ void StrangenessDefaultAnalysis::resetTTree(TTree *_tree)
 
     _nu_pdg = std::numeric_limits<int>::lowest();
     _ccnc = std::numeric_limits<int>::lowest();
+    _target = std::numeric_limits<int>::lowest(); 
+    _hitnucleon = std::numeric_limits<int>::lowest();
+    _W = std::numeric_limits<float>::lowest();
+    _X = std::numeric_limits<float>::lowest();
+    _Y = std::numeric_limits<float>::lowest();
+    _QSqr = std::numeric_limits<float>::lowest();
+
     _nu_parent_pdg = std::numeric_limits<int>::lowest();
     _nu_hadron_pdg = std::numeric_limits<int>::lowest();
     _nu_decay_mode = std::numeric_limits<int>::lowest();
@@ -1250,7 +1271,7 @@ void StrangenessDefaultAnalysis::resetTTree(TTree *_tree)
     _trk_d_v.clear();
 }
 
-void StrangenessDefaultAnalysis::SaveTruth(art::Event const &e)
+void NeutrinoInteractionAnalysis::SaveTruth(art::Event const &e)
 {
     // load MCTruth
     auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -1318,6 +1339,14 @@ void StrangenessDefaultAnalysis::SaveTruth(art::Event const &e)
         
         _ccnc = neutrino.CCNC();
         _interaction = neutrino.Mode();
+        _target = neutrino.Target();
+        _hitnucleon = neutrino.HitNuc();
+        _W = neutrino.W();
+        std::cout << "Invariant mass: " << _W << std::endl;
+        _X = neutrino.X();
+        _Y = neutrino.Y();
+        _QSqr = neutrino.QSqr();
+
         _nu_pdg = nu.PdgCode();
         _nu_e = nu.Trajectory().E(0);
 
@@ -1576,7 +1605,7 @@ void StrangenessDefaultAnalysis::SaveTruth(art::Event const &e)
     return;
 }
 
-DEFINE_ART_CLASS_TOOL(StrangenessDefaultAnalysis)
+DEFINE_ART_CLASS_TOOL(NeutrinoInteractionAnalysis)
 } 
 
 #endif
