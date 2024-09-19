@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_SLICE_CXX
-#define ANALYSIS_SLICE_CXX
+#ifndef ANALYSIS_PRESELECTION_CXX
+#define ANALYSIS_PRESELECTION_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -10,11 +10,11 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
 
-#include "../CommonFunctions/BacktrackingFuncs.h"
-#include "../CommonFunctions/TrackShowerScoreFuncs.h"
-#include "../CommonFunctions/SpaceChargeCorrections.h"
-#include "../CommonFunctions/Scatters.h"
-#include "../CommonFunctions/PandoraFuncs.h"
+#include "CommonFunctions/Backtracking.h"
+#include "CommonFunctions/Scores.h"
+#include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Pandora.h"
 
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
@@ -36,14 +36,14 @@
 namespace analysis
 {
 
-class SliceAnalysis : public AnalysisToolBase
+class PreSelectionAnalysis : public AnalysisToolBase
 {
 
 public:
   
-    SliceAnalysis(const fhicl::ParameterSet &pset);
+    PreSelectionAnalysis(const fhicl::ParameterSet &pset);
 
-    ~SliceAnalysis(){};
+    ~PreSelectionAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -120,7 +120,7 @@ private:
     bool _debug;
 };
 
-SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet &pset)
+PreSelectionAnalysis::PreSelectionAnalysis(const fhicl::ParameterSet &pset)
     : _debug(pset.get<bool>("DebugMode", false))
 {
     _SimulationModuleLabel = pset.get<std::string>("MCParticleModuleLabel", "largeant");
@@ -135,14 +135,14 @@ SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet &pset)
     _FlashLabel = pset.get<std::string>("FlashLabel", "simpleFlashBeam");
 
     art::ServiceHandle<art::TFileService> tfs;
-    _slice_tree = tfs->make<TTree>("SliceAnalysis", "Slice Tree");
+    _slice_tree = tfs->make<TTree>("PreSelectionAnalysis", "Slice Tree");
 }
 
-void SliceAnalysis::configure(fhicl::ParameterSet const &pset)
+void PreSelectionAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
@@ -151,7 +151,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     lar_pandora::MCParticleMap mc_particle_map; 
 
     if (!e.getByLabel(_SimulationModuleLabel, mc_particle_handle))
-        throw cet::exception("SliceAnalysis") << "Failed to find any MC particles in event" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Failed to find any MC particles in event" << std::endl;
     art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
     lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
 
@@ -159,7 +159,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     std::vector<art::Ptr<recob::PFParticle>> pf_particle_vector;
 
     if (!e.getByLabel(_PandoraModuleLabel, pf_particle_handle))
-        throw cet::exception("SliceAnalysis") << "Failed to find any Pandora-slice PFParticles in event" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Failed to find any Pandora-slice PFParticles in event" << std::endl;
     art::fill_ptr_vector(pf_particle_vector, pf_particle_handle);
     lar_pandora::LArPandoraHelper::BuildPFParticleMap(pf_particle_vector, pf_particle_map);
 
@@ -167,7 +167,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     std::vector<art::Ptr<recob::Hit>> hit_vector;
 
     if (!e.getByLabel(_HitModuleLabel, hit_handle))
-        throw cet::exception("SliceAnalysis") << "Failed to find any hits in event" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Failed to find any hits in event" << std::endl;
     art::fill_ptr_vector(hit_vector, hit_handle);
 
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackModuleLabel);
@@ -175,7 +175,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     art::Handle<std::vector<recob::Slice>> slice_handle; 
     std::vector<art::Ptr<recob::Slice>> slice_vector;
     if (!e.getByLabel(_PandoraModuleLabel, slice_handle))
-        throw cet::exception("SliceAnalysis") << "Failed to find any Pandora slices in event" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Failed to find any Pandora slices in event" << std::endl;
 
     art::FindManyP<recob::Hit> hit_slice_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PandoraModuleLabel);
     art::FindManyP<recob::SpacePoint> sp_slice_assoc = art::FindManyP<recob::SpacePoint>(slice_handle, e, _PandoraModuleLabel);
@@ -189,7 +189,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     std::vector<art::Ptr<recob::PFParticle>> flash_nu_pfp_vector;
 
     if (!e.getByLabel(_FlashMatchModuleLabel, flash_match_pfp_handle))
-        throw cet::exception("SliceAnalysis") << "Failed to find any flash-matched PFParticles" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Failed to find any flash-matched PFParticles" << std::endl;
 
     art::fill_ptr_vector(flash_match_pfp_vector, flash_match_pfp_handle);
     lar_pandora::LArPandoraHelper::SelectNeutrinoPFParticles(flash_match_pfp_vector, flash_nu_pfp_vector);
@@ -299,7 +299,7 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     // find flash match slice
     if (flash_nu_pfp_vector.size() > 1) 
     {
-        throw cet::exception("SliceAnalysis") << "Too many neutrinos found" << std::endl;
+        throw cet::exception("PreSelectionAnalysis") << "Too many neutrinos found" << std::endl;
     }
     else if (flash_nu_pfp_vector.size() == 1)
     {
@@ -514,11 +514,11 @@ void SliceAnalysis::analyzeEvent(art::Event const &e, bool fData)
     _slice_tree->Fill();
 }
 
-void SliceAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void PreSelectionAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
 }
 
-void SliceAnalysis::setBranches(TTree *_tree)
+void PreSelectionAnalysis::setBranches(TTree *_tree)
 {
     _slice_tree->Branch("flash_time", &_flash_time_v);
     _slice_tree->Branch("flash_total_pe", &_flash_total_pe_v);
@@ -564,7 +564,7 @@ void SliceAnalysis::setBranches(TTree *_tree)
     _slice_tree->Branch("pandora_slice_found", &_pandora_slice_found, "pandora_slice_found/O");
 }
 
-void SliceAnalysis::resetTTree(TTree *_tree)
+void PreSelectionAnalysis::resetTTree(TTree *_tree)
 {
     _flash_time_v.clear();
     _flash_total_pe_v.clear();
@@ -610,12 +610,12 @@ void SliceAnalysis::resetTTree(TTree *_tree)
     _pandora_slice_found = false;
 }
 
-bool SliceAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
+bool PreSelectionAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
 {
     return ((std::abs(mc_part->PdgCode() == 11) || (mc_part->PdgCode() == 22)));
 }
 
-int SliceAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
+int PreSelectionAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
 {
     int track_idx = mc_part->TrackId();
     art::Ptr<simb::MCParticle> mother_mc_part = mc_part;
@@ -635,7 +635,7 @@ int SliceAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> 
     return track_idx;
 }
 
-DEFINE_ART_CLASS_TOOL(SliceAnalysis)
+DEFINE_ART_CLASS_TOOL(PreSelectionAnalysis)
 } 
 
 #endif

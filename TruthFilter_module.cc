@@ -10,15 +10,15 @@
 
 #include "AnalysisTools/AnalysisToolBase.h"
 
-class StrangenessSignalFilter : public art::EDFilter
+class TruthFilter : public art::EDFilter
 {
 public:
-    explicit StrangenessSignalFilter(fhicl::ParameterSet const &p);
+    explicit TruthFilter(fhicl::ParameterSet const &p);
 
-    StrangenessSignalFilter(StrangenessSignalFilter const &) = delete;
-    StrangenessSignalFilter(StrangenessSignalFilter &&) = delete;
-    StrangenessSignalFilter &operator=(StrangenessSignalFilter const &) = delete;
-    StrangenessSignalFilter &operator=(StrangenessSignalFilter &&) = delete;
+    TruthFilter(TruthFilter const &) = delete;
+    TruthFilter(TruthFilter &&) = delete;
+    TruthFilter &operator=(TruthFilter const &) = delete;
+    TruthFilter &operator=(TruthFilter &&) = delete;
 
     bool filter(art::Event &e) override;
 
@@ -27,7 +27,7 @@ private:
     std::unique_ptr<::analysis::AnalysisToolBase> _analysisTool;
 };
 
-StrangenessSignalFilter::StrangenessSignalFilter(fhicl::ParameterSet const &p)
+TruthFilter::TruthFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}, fFilter(p.get<bool>("Filter", false))
 {
     auto const tool_psets = p.get<fhicl::ParameterSet>("SignalDefinition");
@@ -35,7 +35,7 @@ StrangenessSignalFilter::StrangenessSignalFilter(fhicl::ParameterSet const &p)
     _analysisTool = art::make_tool<::analysis::AnalysisToolBase>(sig_ana_pset);
 }
 
-bool StrangenessSignalFilter::filter(art::Event &e)
+bool TruthFilter::filter(art::Event &e)
 {
     if (_analysisTool) 
     {
@@ -44,10 +44,10 @@ bool StrangenessSignalFilter::filter(art::Event &e)
     }
     else 
     {
-        throw cet::exception("StrangenessSignalFilter") << "SignalAnalysis tool configuration failed.";
+        throw cet::exception("TruthFilter") << "SignalAnalysis tool configuration failed.";
         
         return false;
     }
 }
 
-DEFINE_ART_MODULE(StrangenessSignalFilter)
+DEFINE_ART_MODULE(TruthFilter)

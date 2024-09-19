@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_SIGNAL_CXX
-#define ANALYSIS_SIGNAL_CXX
+#ifndef ANALYSIS_SIGNAL_DEFINITION_CXX
+#define ANALYSIS_SIGNAL_DEFINITION_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -11,25 +11,25 @@
 #include "lardataobj/MCBase/MCShower.h"
 #include "TVector3.h"
 
-#include "../CommonFunctions/BacktrackingFuncs.h"
-#include "../CommonFunctions/TrackShowerScoreFuncs.h"
-#include "../CommonFunctions/SpaceChargeCorrections.h"
-#include "../CommonFunctions/Scatters.h"
-#include "../CommonFunctions/Geometry.h"
+#include "CommonFunctions/Backtracking.h"
+#include "CommonFunctions/Scores.h"
+#include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Geometry.h"
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 namespace analysis
 {
 
-class SignalAnalysis : public AnalysisToolBase
+class SignalDefinitionAnalysis : public AnalysisToolBase
 {
 
 public:
   
-    SignalAnalysis(const fhicl::ParameterSet &pset);
+    SignalDefinitionAnalysis(const fhicl::ParameterSet &pset);
 
-    ~SignalAnalysis(){};
+    ~SignalDefinitionAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
 
@@ -43,7 +43,7 @@ public:
 
     bool passesAnalysis(art::Event const &e, bool fData)
     {
-        const_cast<SignalAnalysis*>(this)->analyzeEvent(e, fData);
+        const_cast<SignalDefinitionAnalysis*>(this)->analyzeEvent(e, fData);
         
         return _event_is_signal;
     }
@@ -146,7 +146,7 @@ private:
     std::vector<float> _pfp_trk_d_v;
 };
 
-SignalAnalysis::SignalAnalysis(const fhicl::ParameterSet &pset)
+SignalDefinitionAnalysis::SignalDefinitionAnalysis(const fhicl::ParameterSet &pset)
 {
     _PFPproducer = pset.get<art::InputTag>("PFPproducer");
     _CLSproducer = pset.get<art::InputTag>("CLSproducer");
@@ -162,11 +162,11 @@ SignalAnalysis::SignalAnalysis(const fhicl::ParameterSet &pset)
     _BacktrackTag = pset.get<art::InputTag>("BacktrackTag", ""); 
 }
 
-void SignalAnalysis::configure(fhicl::ParameterSet const &pset)
+void SignalDefinitionAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void SignalDefinitionAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
     std::cout << "Analysing event in signal analysis module....." << std::endl;
     _event_analysed = true;
@@ -244,7 +244,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
             auto g_part = dtrs.at(0);
             if (g_part->PdgCode() == kaon_short->PdgCode() && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2 && !_mc_is_kshort_decay_pionic)
             {
-                std::cout << "[SignalAnalysis::analyzeEvent] Found kaon-short..." << std::endl;
+                std::cout << "[SignalDefinitionAnalysis::analyzeEvent] Found kaon-short..." << std::endl;
                 auto daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
                 if (daughters.size() == 2) 
                 {
@@ -291,7 +291,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
 
                             if (dtr->PdgCode() == 211) // pion-plus
                             { 
-                                std::cout << "[SignalAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
+                                std::cout << "[SignalDefinitionAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
                                 _mc_kshrt_piplus_tid = dtr->TrackId();
                                 _mc_kshrt_piplus_pdg = dtr->PdgCode();
                                 _mc_kshrt_piplus_energy = dtr->E();
@@ -312,7 +312,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
                             } 
                             else if (dtr->PdgCode() == -211) // pion-minus
                             { 
-                                std::cout << "[SignalAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
+                                std::cout << "[SignalDefinitionAnalysis::analyzeEvent] Found decay pion-minus with track identifier " << dtr->TrackId() << "..." << std::endl;
                                 _mc_kshrt_piminus_tid = dtr->TrackId();
                                 _mc_kshrt_piminus_pdg = dtr->PdgCode();
                                 _mc_kshrt_piminus_energy = dtr->E();
@@ -346,7 +346,7 @@ void SignalAnalysis::analyzeEvent(art::Event const &e, bool fData)
     }
 }
 
-void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void SignalDefinitionAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
@@ -517,7 +517,7 @@ void SignalAnalysis::analyzeSlice(art::Event const &e, std::vector<common::Proxy
     return;
 }
 
-void SignalAnalysis::setBranches(TTree *_tree)
+void SignalDefinitionAnalysis::setBranches(TTree *_tree)
 {
     _tree->Branch("mc_muon_tid", &_mc_muon_tid, "mc_muon_tid/I");
     _tree->Branch("mc_muon_pdg", &_mc_muon_pdg, "mc_muon_pdg/I");
@@ -606,7 +606,7 @@ void SignalAnalysis::setBranches(TTree *_tree)
     _tree->Branch("all_pfp_trk_phi", &_pfp_trk_phi_v);
 }
 
-void SignalAnalysis::resetTTree(TTree *_tree)
+void SignalDefinitionAnalysis::resetTTree(TTree *_tree)
 {
     _mc_muon_tid = -1;
     _mc_muon_pdg = 0;
@@ -697,7 +697,7 @@ void SignalAnalysis::resetTTree(TTree *_tree)
     _pfp_piminus_completeness_v.clear();
 }
 
-DEFINE_ART_CLASS_TOOL(SignalAnalysis)
+DEFINE_ART_CLASS_TOOL(SignalDefinitionAnalysis)
 } 
 
 #endif

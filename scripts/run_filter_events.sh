@@ -28,6 +28,8 @@
 
 # input: please check if variables correspond to your case
 
+set -e
+
 # format: "run subrun event"
 runsubrunlist=/uboone/app/users/nlane/ana/run_subrun_event_kaons.txt
 

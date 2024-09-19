@@ -1,5 +1,6 @@
 include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
+include_directories( $ENV{SEARCH_TOP} )
 
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)

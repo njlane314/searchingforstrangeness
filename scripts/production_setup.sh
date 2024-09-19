@@ -8,3 +8,6 @@ source /exp/uboone/app/users/nlane/production/KaonShortProduction01/localProduct
 mrbslp
 
 alias cdt="cd ${MRB_TOP}"
+
+export SEARCH_TOP="/exp/uboone/app/users/nlane/production/KaonShortProduction01/srcs/ubana/ubana/searchingforstrangeness"
+alias cds="cd ${SEARCH_TOP}"
