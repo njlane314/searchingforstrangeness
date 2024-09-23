@@ -10,15 +10,15 @@
 
 #include "AnalysisTools/AnalysisToolBase.h"
 
-class TruthFilter : public art::EDFilter
+class SignalFilter : public art::EDFilter
 {
 public:
-    explicit TruthFilter(fhicl::ParameterSet const &p);
+    explicit SignalFilter(fhicl::ParameterSet const &p);
 
-    TruthFilter(TruthFilter const &) = delete;
-    TruthFilter(TruthFilter &&) = delete;
-    TruthFilter &operator=(TruthFilter const &) = delete;
-    TruthFilter &operator=(TruthFilter &&) = delete;
+    SignalFilter(SignalFilter const &) = delete;
+    SignalFilter(SignalFilter &&) = delete;
+    SignalFilter &operator=(SignalFilter const &) = delete;
+    SignalFilter &operator=(SignalFilter &&) = delete;
 
     bool filter(art::Event &e) override;
 
@@ -27,7 +27,7 @@ private:
     std::unique_ptr<::analysis::AnalysisToolBase> _analysisTool;
 };
 
-TruthFilter::TruthFilter(fhicl::ParameterSet const &p)
+SignalFilter::SignalFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}, fFilter(p.get<bool>("Filter", false))
 {
     auto const tool_psets = p.get<fhicl::ParameterSet>("SignalDefinition");
@@ -35,7 +35,7 @@ TruthFilter::TruthFilter(fhicl::ParameterSet const &p)
     _analysisTool = art::make_tool<::analysis::AnalysisToolBase>(sig_ana_pset);
 }
 
-bool TruthFilter::filter(art::Event &e)
+bool SignalFilter::filter(art::Event &e)
 {
     if (_analysisTool) 
     {
@@ -44,10 +44,10 @@ bool TruthFilter::filter(art::Event &e)
     }
     else 
     {
-        throw cet::exception("TruthFilter") << "SignalAnalysis tool configuration failed.";
+        throw cet::exception("SignalFilter") << "SignalAnalysis tool configuration failed.";
         
         return false;
     }
 }
 
-DEFINE_ART_MODULE(TruthFilter)
+DEFINE_ART_MODULE(SignalFilter)

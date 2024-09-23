@@ -6,12 +6,12 @@
 
 namespace selection
 {
-class StrangenessEmptySelection : public SelectionToolBase {
+class EmptySelection : public SelectionToolBase {
 
 public:
 
-    StrangenessEmptySelection(const fhicl::ParameterSet& pset);
-    ~StrangenessEmptySelection(){};
+    EmptySelection(const fhicl::ParameterSet& pset);
+    ~EmptySelection(){};
     
     void configure(fhicl::ParameterSet const & pset);
 
@@ -27,21 +27,21 @@ private:
     
 };
 
-StrangenessEmptySelection::StrangenessEmptySelection(const fhicl::ParameterSet& pset)
+EmptySelection::EmptySelection(const fhicl::ParameterSet& pset)
 {
 }
 
-void StrangenessEmptySelection::configure(fhicl::ParameterSet const & pset)
+void EmptySelection::configure(fhicl::ParameterSet const & pset)
 {
 }
 
-bool StrangenessEmptySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v)
+bool EmptySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v)
 {
     return true;
 }
 
 
-DEFINE_ART_CLASS_TOOL(StrangenessEmptySelection)
+DEFINE_ART_CLASS_TOOL(EmptySelection)
 } 
 
 #endif

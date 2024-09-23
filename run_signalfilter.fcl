@@ -34,8 +34,8 @@ physics:
 {
     filters:
     {
-        signalfilter: @local::StrangenessSignalFilter
-        emptyselectionfilter: @local::StrangenessSelectionFilterEmpty
+        signalfilter: @local::SignalFilter
+        emptyselectionfilter: @local::SelectionFilterEmpty
     }
 
     p1: [ signalfilter, emptyselectionfilter ]
