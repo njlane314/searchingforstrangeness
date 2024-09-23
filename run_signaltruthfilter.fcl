@@ -1,4 +1,4 @@
-#include "neutrinoselection.fcl"  
+#include "selectionconfig.fcl"  
 
 process_name: SignalAndEmptySelectionProcess
 
@@ -34,11 +34,11 @@ physics:
 {
     filters:
     {
-        signalfilter: @local::SignalFilter
+        signaltruthfilter: @local::SignalTruthFilter
         emptyselectionfilter: @local::SelectionFilterEmpty
     }
 
-    p1: [ signalfilter, emptyselectionfilter ]
+    p1: [ signaltruthfilter, emptyselectionfilter ]
 
     trigger_paths: [ p1 ]
 }

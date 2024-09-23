@@ -1,10 +1,10 @@
-#include "neutrinoselection.fcl"
+#include "selectionconfig.fcl"
 
 process_name: SignalSelectionProcess  
 
 services:
 {
-    TFileService: { fileName: "ana_output.root" }  
+    TFileService: { fileName: "filtered_output.root" }  
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -34,10 +34,10 @@ physics:
 {
     filters:
     {
-        nuselection: @local::StrangenessSelectionFilterEmpty
+        emptyselectionfilter: @local::SelectionFilterEmpty
     }
     
-    p1: [ nuselection ] 
+    p1: [ emptyselectionfilter ] 
 
     trigger_paths: [ p1 ]
 }
