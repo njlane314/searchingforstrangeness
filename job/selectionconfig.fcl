@@ -118,7 +118,10 @@ SelectionFilter: {
 SelectionFilterEmpty: @local::SelectionFilter
 SelectionFilterEmpty.SelectionTool: { tool_type: "EmptySelection" }
 
-SignalFilter: {
-    module_type: SignalFilter 
-    Filter: true
+SignalTruthFilter: {
+    module_type: SignalTruthFilter
+    MCTproducer: "generator"
+    MCPproducer: "largeant"
+    PionThreshold: 0.1
+    MuonThreshold: 0.1
 }

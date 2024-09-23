@@ -1,4 +1,4 @@
-#ifndef TRUTHCONTAINMENT_H
+#ifndef CONTAINMENT_H
 #define CONTAINMENT_H
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
@@ -19,7 +19,7 @@
 namespace common
 {
 
-    bool isFiducial(const double x[3], 
+    bool point_inside_fv(const double x[3], 
             const double fid_x_start, const double fid_y_start, const double fid_z_start,
             const double fid_x_end, const double fid_y_end, const double fid_z_end)
     {
@@ -34,7 +34,7 @@ namespace common
         return is_x && is_y && is_z;
     }
 
-    bool TruthContained(const float& FVxS, const float& FVyS, const float& FVzS,
+    bool truth_contained(const float& FVxS, const float& FVyS, const float& FVzS,
 		      const float& FVxE, const float& FVyE, const float& FVzE,
 		      const std::vector<sim::MCShower> &inputMCShower,
 		      const std::vector<sim::MCTrack> &inputMCTrack ) 
@@ -72,10 +72,10 @@ namespace common
                 end[2] = mc_step_track_end.Z();
                 
                 
-                if (isFiducial(start,FVxS,FVyS,FVzS,FVxE,FVyE,FVzE) == false) {
+                if (point_inside_fv(start,FVxS,FVyS,FVzS,FVxE,FVyE,FVzE) == false) {
                     return false;
                 }
-                if (isFiducial(end  ,FVxS,FVyS,FVzS,FVxE,FVyE,FVzE) == false) {
+                if (point_inside_fv(end  ,FVxS,FVyS,FVzS,FVxE,FVyE,FVzE) == false) {
                     return false;
                 }
             }

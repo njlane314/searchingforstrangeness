@@ -484,7 +484,7 @@ void NeutrinoInteractionAnalysis::analyzeEvent(art::Event const &e, bool fData)
 
         const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
         const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
-        _truthFiducial = common::TruthContained(fFidvolXstart, fFidvolYstart, fFidvolZstart,
+        _truthFiducial = common::truth_contained(fFidvolXstart, fFidvolYstart, fFidvolZstart,
                                                 fFidvolXend, fFidvolYend, fFidvolZend,
                                                 inputMCShower, inputMCTrack);
 
@@ -1378,7 +1378,7 @@ void NeutrinoInteractionAnalysis::SaveTruth(art::Event const &e)
         _nu_pt = neutrino.Pt();
 
         double vtx[3] = {_true_nu_vtx_x, _true_nu_vtx_y, _true_nu_vtx_z};
-        _isVtxInFiducial = common::isFiducial(vtx,
+        _isVtxInFiducial = common::point_inside_fv(vtx,
                                                 fFidvolXstart, fFidvolYstart, fFidvolZstart,
                                                 fFidvolXend, fFidvolYend, fFidvolZend);
     }
