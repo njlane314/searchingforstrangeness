@@ -4,8 +4,8 @@
 #include "proximityclustering.fcl"
 #include "eventweight_microboone_genie_knobs.fcl"
 
-DefaultAnalysisTool: {
-    tool_type: "StrangenessDefaultAnalysis"  
+NeutrinoInteractionAnalysisTool: {
+    tool_type: "NeutrinoInteractionAnalysis"  
     PFPproducer: "pandora"  
     CLSproducer: "pandora"
     MCTproducer: "generator"
@@ -28,8 +28,8 @@ DefaultAnalysisTool: {
     NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
 }
 
-CalorimetryAnalysisTool: {
-    tool_type: "StrangenessCalorimetryAnalysis"
+TrackCalorimetryAnalysisTool: {
+    tool_type: "TrackCalorimetryAnalysis"
     TRKproducer: "pandora"
     CALOproducer: "pandoracali"
     PIDproducer: "pandoracalipid"
@@ -45,8 +45,8 @@ CalorimetryAnalysisTool: {
     mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
 }
 
-SliceAnalysisTool: {
-    tool_type: "SliceAnalysis"
+PreSelectionAnalysisTool: {
+    tool_type: "PreSelectionAnalysis"
     MCParticleModuleLabel:      "largeant"
     HitModuleLabel:             "gaushit"
     BacktrackModuleLabel:       "gaushitTruthMatch"
@@ -57,8 +57,8 @@ SliceAnalysisTool: {
     PFParticleModuleLabel:      "pandora"
 }
 
-VisualisationAnalysisTool: {
-    tool_type: "VisualisationAnalysis"
+SliceVisualisationAnalysisTool: {
+    tool_type: "SliceVisualisationAnalysis"
     MCParticleModuleLabel:      "largeant"
     HitModuleLabel:             "gaushit"
     BacktrackModuleLabel:       "gaushitTruthMatch"
@@ -68,8 +68,8 @@ VisualisationAnalysisTool: {
     CLSproducer: "pandora"
 }
 
-SignalAnalysisTool: {
-    tool_type: "SignalAnalysis"
+SignalDefinitionAnalysisTool: {
+    tool_type: "SignalDefinitionAnalysis"
     PFPproducer: "pandora"
     SHRproducer: "pandora"
     HITproducer: "gaushit"
@@ -85,25 +85,8 @@ SignalAnalysisTool: {
     BacktrackTag: "gaushitTruthMatch"
 }
 
-BacktrackerAnalysisTool: {
-    tool_type: "BacktrackerAnalysis"
-    PFPproducer: "pandora"
-    SHRproducer: "pandora"
-    HITproducer: "gaushit"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    VTXproducer: "pandora"
-    TRKproducer: "pandora"
-    PCAproducer: "pandora"
-    MCTproducer: "generator"
-    MCRproducer: "mcreco"
-    MCPproducer: "largeant"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
-}
-
-StrangenessSelectionFilter: {
-    module_type: StrangenessSelectionFilter 
+SelectionFilter: {
+    module_type: SelectionFilter 
     PFPproducer: "pandora"
     SHRproducer: "pandora"
     HITproducer: "gaushit"
@@ -121,26 +104,21 @@ StrangenessSelectionFilter: {
     BDT_cut: -1
     ProximateRadius: 50
     SelectionTool: {
-        tool_type: "StrangenessEmptySelection"
+        tool_type: "EmptySelection"
     }
     AnalysisTools: {
-        default: @local::DefaultAnalysisTool
-        signal: @local::SignalAnalysisTool
-        calorimetry: @local::CalorimetryAnalysisTool
-        slice: @local::SliceAnalysisTool
-        visualisation: @local::VisualisationAnalysisTool
-        backtracker: @local::BacktrackerAnalysisTool
+        interaction: @local::NeutrinoInteractionAnalysisTool
+        signal: @local::SignalDefinitionAnalysisTool
+        calorimetry: @local::TrackCalorimetryAnalysisTool
+        preselection: @local::PreSelectionAnalysisTool
+        visualisation: @local::SliceVisualisationAnalysisTool
     }
 }
 
-StrangenessSelectionFilterEmpty: @local::StrangenessSelectionFilter
-StrangenessSelectionFilterEmpty.SelectionTool: { tool_type: "StrangenessEmptySelection" }
+SelectionFilterEmpty: @local::SelectionFilter
+SelectionFilterEmpty.SelectionTool: { tool_type: "EmptySelection" }
 
-StrangenessSignalFilter: {
-    module_type: StrangenessSignalFilter 
+SignalFilter: {
+    module_type: SignalFilter 
     Filter: true
-
-    SignalDefinition: {
-        signal: @local::SignalAnalysisTool
-    }
 }
