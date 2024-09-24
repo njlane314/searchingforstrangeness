@@ -4,114 +4,34 @@
 #include "proximityclustering.fcl"
 #include "eventweight_microboone_genie_knobs.fcl"
 
-NeutrinoInteractionAnalysisTool: {
-    tool_type: "NeutrinoInteractionAnalysis"  
-    PFPproducer: "pandora"  
-    CLSproducer: "pandora"
-    MCTproducer: "generator"
-    MCFluxproducer: "generator"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
-    MCRproducer: "mcreco"
-    SLCproducer: "pandora"
-    MCPproducer: "largeant"
-    ProtonThreshold: 0.04 # GeV
-    fidvolXstart: 10.0
-    fidvolXend: 10.0
-    fidvolYstart: 15.0
-    fidvolYend: 15.0
-    fidvolZstart: 10.0
-    fidvolZend: 50.0
-    makeNuMINtuple: false
-    ignoreMCFlux: false
-    NuMIOpFiltProcName: "DataStage1Optical"
-    NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
+EventCategoryAnalysisTool: {
+    tool_type: "EventCategoryAnalysis"  
 }
 
 TrackCalorimetryAnalysisTool: {
     tool_type: "TrackCalorimetryAnalysis"
-    TRKproducer: "pandora"
-    CALOproducer: "pandoracali"
-    PIDproducer: "pandoracalipid"
-
-    CLSproducer: "pandora"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
-    MCRproducer: "mcreco"
-    MCPproducer: "largeant"
-    MCTproducer: "generator"
-    GetCaloID: false
     ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
     mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
 }
 
 PreSelectionAnalysisTool: {
     tool_type: "PreSelectionAnalysis"
-    MCParticleModuleLabel:      "largeant"
-    HitModuleLabel:             "gaushit"
-    BacktrackModuleLabel:       "gaushitTruthMatch"
-    FlashMatchModuleLabel:      "pandora"
-    PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
-    FlashLabel:                 "simpleFlashBeam"
-    SpacePointModuleLabel:      "pandora"
-    PFParticleModuleLabel:      "pandora"
 }
 
 SliceVisualisationAnalysisTool: {
     tool_type: "SliceVisualisationAnalysis"
-    MCParticleModuleLabel:      "largeant"
-    HitModuleLabel:             "gaushit"
-    BacktrackModuleLabel:       "gaushitTruthMatch"
-    FlashMatchModuleLabel:      "pandora"
-    PandoraModuleLabel:         "pandoraPatRec:allOutcomes"
-
-    CLSproducer: "pandora"
-}
-
-EventCategoryAnalysisTool: {
-    tool_type: "EventCategoryAnalysis"
-    PFPproducer: "pandora"
-    SHRproducer: "pandora"
-    HITproducer: "gaushit"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    VTXproducer: "pandora"
-    TRKproducer: "pandora"
-    PCAproducer: "pandora"
-    MCTproducer: "generator"
-    MCRproducer: "mcreco"
-    MCPproducer: "largeant"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
 }
 
 SelectionFilter: {
     module_type: SelectionFilter 
-    PFPproducer: "pandora"
-    SHRproducer: "pandora"
-    HITproducer: "gaushit"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    VTXproducer: "pandora"
-    TRKproducer: "pandora"
-    PCAproducer: "pandora"
-    MCTproducer: "generator"
-    Verbose: true
-    IsData: false
-    IsFakeData: false
-    Filter: true
-    BDT_branch: ""
-    BDT_cut: -1
-    ProximateRadius: 50
     SelectionTool: {
         tool_type: "EmptySelection"
     }
     AnalysisTools: {
-        interaction: @local::NeutrinoInteractionAnalysisTool
-        eventcategory: @local::EventCategoryAnalysisTool
-        calorimetry: @local::TrackCalorimetryAnalysisTool
         preselection: @local::PreSelectionAnalysisTool
         visualisation: @local::SliceVisualisationAnalysisTool
+        eventcategory: @local::EventCategoryAnalysisTool
+        calorimetry: @local::TrackCalorimetryAnalysisTool
     }
 }
 
@@ -120,8 +40,4 @@ SelectionFilterEmpty.SelectionTool: { tool_type: "EmptySelection" }
 
 SignalTruthFilter: {
     module_type: SignalTruthFilter
-    MCTproducer: "generator"
-    MCPproducer: "largeant"
-    PionThreshold: 0.1
-    MuonThreshold: 0.1
 }

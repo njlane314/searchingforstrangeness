@@ -169,9 +169,9 @@ private:
 
 TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet &p) : _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::ParameterSet>("mcsfitmu")))
 {
-    _CALOproducer = p.get<art::InputTag>("CALOproducer");
-    _PIDproducer = p.get<art::InputTag>("PIDproducer");
-    _TRKproducer = p.get<art::InputTag>("TRKproducer");
+    _CALOproducer = p.get<art::InputTag>("CALOproducer", "pandoracali");
+    _PIDproducer = p.get<art::InputTag>("PIDproducer", "pandoracalipid");
+    _TRKproducer = p.get<art::InputTag>("TRKproducer", "pandora");
     _BacktrackTag = p.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch");
     _Hproducer = p.get<art::InputTag>("Hproducer", "gaushit");
     _CLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
