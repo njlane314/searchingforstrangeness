@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_SLICE_VISUALISATION_CXX
-#define ANALYSIS_SLICE_VISUALISATION_CXX
+#ifndef ANALYSIS_SLICEVISUALISATION_CXX
+#define ANALYSIS_SLICEVISUALISATION_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -40,28 +40,17 @@ class SliceVisualisationAnalysis : public AnalysisToolBase
 {
 
 public:
-  
     SliceVisualisationAnalysis(const fhicl::ParameterSet &pset);
-
     ~SliceVisualisationAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
-
     void analyzeEvent(art::Event const &e, bool is_data) override;
-
     void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
-
     void SaveTruth(art::Event const &e);
-
     void setBranches(TTree *_tree) override;
-
     void resetTTree(TTree *_tree) override;
 
 private:
-
-    bool isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part);
-    int getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map);
-
     std::vector<float> _true_hits_u_wire;
     std::vector<float> _true_hits_u_drift;
     std::vector<float> _true_hits_u_owner;
@@ -79,23 +68,21 @@ private:
     std::vector<std::vector<float>> _slice_hits_w_wire;
     std::vector<std::vector<float>> _slice_hits_w_drift;
 
-    std::string _SimulationModuleLabel;
-    std::string _PandoraModuleLabel;
-    std::string _HitModuleLabel;
-    std::string _BacktrackModuleLabel;
-    std::string _FlashMatchModuleLabel;
-
+    art::InputTag _MCTproducer;
+    art::InputTag _PFPproducer;
+    art::InputTag _Hproducer;
+    art::InputTag _BacktrackTag;
+    art::InputTag _FMproducer;
     art::InputTag _CLSproducer;
 };
 
 SliceVisualisationAnalysis::SliceVisualisationAnalysis(const fhicl::ParameterSet &pset)
 {
-    _SimulationModuleLabel = pset.get<std::string>("MCParticleModuleLabel");
-    _PandoraModuleLabel = pset.get<std::string>("PandoraModuleLabel");
-    _HitModuleLabel = pset.get<std::string>("HitModuleLabel");
-    _BacktrackModuleLabel = pset.get<std::string>("BacktrackModuleLabel");
-    _FlashMatchModuleLabel = pset.get<std::string>("FlashMatchModuleLabel");
-
+    _MCTproducer = pset.get<art::InputTag>("MCTproducer");
+    _PFPproducer = pset.get<art::InputTag>("PFPproducer");
+    _Hproducer = pset.get<art::InputTag>("Hproducer");
+    _BacktrackTag = pset.get<art::InputTag>("BacktrackTag");
+    _FMproducer = pset.get<art::InputTag>("FMproducer");
     _CLSproducer = pset.get<art::InputTag>("CLSproducer");
 }
 
@@ -109,7 +96,7 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
     lar_pandora::MCParticleMap mc_particle_map;
 
-    if (!e.getByLabel(_SimulationModuleLabel, mc_particle_handle))
+    if (!e.getByLabel(_MCTproducer, mc_particle_handle))
         throw cet::exception("SliceVisualisationAnalysis") << "failed to find any mc particles in event" << std::endl;
     art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
     lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
@@ -118,7 +105,7 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::vector<art::Ptr<recob::PFParticle>> pf_particle_vector;
     lar_pandora::PFParticleMap pf_particle_map;
     
-    if (!e.getByLabel(_PandoraModuleLabel, pf_particle_handle))
+    if (!e.getByLabel(_PFPproducer, pf_particle_handle))
         throw cet::exception("SliceVisualisationAnalysis") << "failed to find any pandora-slice pf particles in event" << std::endl;
     art::fill_ptr_vector(pf_particle_vector, pf_particle_handle);
     lar_pandora::LArPandoraHelper::BuildPFParticleMap(pf_particle_vector, pf_particle_map);
@@ -126,26 +113,25 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     art::Handle<std::vector<recob::Hit>> hit_handle;
     std::vector<art::Ptr<recob::Hit>> hit_vector;
     
-    if (!e.getByLabel(_HitModuleLabel, hit_handle))
+    if (!e.getByLabel(_Hproducer, hit_handle))
         throw cet::exception("SliceVisualisationAnalysis") << "failed to find any hits in event" << std::endl;
     art::fill_ptr_vector(hit_vector, hit_handle);
-    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackModuleLabel);
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackTag);
 
     art::Handle<std::vector<recob::Slice>> slice_handle;
     std::vector<art::Ptr<recob::Slice>> slice_vector;
 
-    if (!e.getByLabel(_PandoraModuleLabel, slice_handle))
+    if (!e.getByLabel(_PFPproducer, slice_handle))
         throw cet::exception("SliceVisualisationAnalysis") << "failed to find any pandora slices in event" << std::endl;
-    art::FindManyP<recob::Hit> hit_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PandoraModuleLabel);
+    art::FindManyP<recob::Hit> hit_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PFPproducer);
     art::fill_ptr_vector(slice_vector, slice_handle);
-    art::FindManyP<recob::PFParticle> pf_part_slice_assoc = art::FindManyP<recob::PFParticle>(slice_handle, e, _PandoraModuleLabel);
-    //art::FindManyP<lardataobj::PFParticleMetadata> pf_part_metadata_assoc = art::FindManyP<lardataobj::PFParticleMetadata>(pf_particle_handle, e, _PandoraModuleLabel);
+    art::FindManyP<recob::PFParticle> pf_part_slice_assoc = art::FindManyP<recob::PFParticle>(slice_handle, e, _PFPproducer);
 
     art::Handle<std::vector<recob::PFParticle>> flash_match_pf_particle_handle;
     std::vector<art::Ptr<recob::PFParticle>> flash_match_pf_particle_vector;
     std::vector<art::Ptr<recob::PFParticle>> flash_nu_pf_particle_vector;
 
-    if (!e.getByLabel(_FlashMatchModuleLabel, flash_match_pf_particle_handle))
+    if (!e.getByLabel(_FMproducer, flash_match_pf_particle_handle))
         throw cet::exception("SliceVisualisationAnalysis") << "failed to find any flash-matched pf particles" << std::endl;
     art::fill_ptr_vector(flash_match_pf_particle_vector, flash_match_pf_particle_handle);
     lar_pandora::LArPandoraHelper::SelectNeutrinoPFParticles(flash_match_pf_particle_vector, flash_nu_pf_particle_vector);
@@ -167,7 +153,7 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             if (matched_data->isMaxIDE != 1)
                 continue;
 
-            const int track_idx = isParticleElectromagnetic(matched_mc_part) ? getLeadElectromagneticTrack(matched_mc_part, mc_particle_map) : matched_mc_part->TrackId();
+            const int track_idx = common::isParticleElectromagnetic(matched_mc_part) ? common::getLeadElectromagneticTrack(matched_mc_part, mc_particle_map) : matched_mc_part->TrackId();
 
             hits_to_track_map[hit.key()] = track_idx;
             track_to_hits_map[track_idx].push_back(hit);
@@ -212,8 +198,6 @@ void SliceVisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<c
 {
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
                                                                                             proxy::withAssociated<recob::Hit>(_CLSproducer));
-
-    std::cout << "Size of slice " << slice_pfp_v.size() << std::endl;
 
     for (const auto& pfp : slice_pfp_v)
     {
@@ -311,32 +295,6 @@ void SliceVisualisationAnalysis::resetTTree(TTree *_tree)
     _slice_hits_w_wire.clear();
     _slice_hits_w_drift.clear();
 }
-
-bool SliceVisualisationAnalysis::isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
-{
-    return ((std::abs(mc_part->PdgCode() == 11) || (mc_part->PdgCode() == 22)));
-}
-
-int SliceVisualisationAnalysis::getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
-{
-    int track_idx = mc_part->TrackId();
-    art::Ptr<simb::MCParticle> mother_mc_part = mc_part;
-
-    do 
-    {
-        track_idx = mother_mc_part->TrackId();
-        const int mother_idx = mother_mc_part->Mother();
-
-        if (mc_particle_map.find(mother_idx) == mc_particle_map.end())
-            break;
-
-        mother_mc_part = mc_particle_map.at(mother_idx);
-    } 
-    while (isParticleElectromagnetic(mother_mc_part));
-
-    return track_idx;
-}
-
 
 DEFINE_ART_CLASS_TOOL(SliceVisualisationAnalysis)
 } 

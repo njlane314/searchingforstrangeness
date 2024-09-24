@@ -6,7 +6,6 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
-
 namespace common
 {
     void ApplySCEMappingXYZ(float& x, float& y, float& z)

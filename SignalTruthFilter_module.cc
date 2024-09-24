@@ -91,23 +91,23 @@ bool SignalTruthFilter::filter(art::Event &e)
             g_part->EndProcess() != "Decay" || g_part->NumberDaughters() != 2) 
             continue;
 
-        auto decay_daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
-        if (decay_daughters.size() != 2) continue;
+        auto decays = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
+        if (decays.size() != 2) continue;
 
-        std::vector<int> expected_pdg = {-211, 211};  
-        std::vector<int> found_pdg;
+        std::vector<int> exp_dtrs = {-211, 211};  
+        std::vector<int> fnd_dtrs;
 
-        for (const auto &dtr : decay_daughters) 
+        for (const auto &dtr : decays) 
         {
-            found_pdg.push_back(dtr->PdgCode());
+            fnd_dtrs.push_back(dtr->PdgCode());
         }
 
-        std::sort(expected_pdg.begin(), expected_pdg.end());
-        std::sort(found_pdg.begin(), found_pdg.end());
+        std::sort(exp_dtrs.begin(), exp_dtrs.end());
+        std::sort(fnd_dtrs.begin(), fnd_dtrs.end());
 
-        if (found_pdg != expected_pdg) continue; 
+        if (fnd_dtrs != exp_dtrs) continue; 
 
-        found_signature = std::all_of(decay_daughters.begin(), decay_daughters.end(), [&](const auto &dtr) 
+        found_signature = std::all_of(decays.begin(), decays.end(), [&](const auto &dtr) 
         {
             return TVector3(dtr->Px(), dtr->Py(), dtr->Pz()).Mag() >= _PionThreshold;
         });

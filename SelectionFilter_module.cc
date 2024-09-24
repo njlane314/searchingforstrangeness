@@ -14,13 +14,9 @@
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 
-// selection tool
 #include "SelectionTools/SelectionToolBase.h"
-
-// analysis tool
 #include "AnalysisTools/AnalysisToolBase.h"
 
-// saving output
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
@@ -35,42 +31,33 @@ class SelectionFilter : public art::EDFilter
     
 public:
     explicit SelectionFilter(fhicl::ParameterSet const &p);
-    // The compiler-generated destructor is fine for non-base
-    // classes without bare pointers or other resource use.
 
-    // Plugins should not be copied or assigned.
     SelectionFilter(SelectionFilter const &) = delete;
     SelectionFilter(SelectionFilter &&) = delete;
     SelectionFilter &operator=(SelectionFilter const &) = delete;
     SelectionFilter &operator=(SelectionFilter &&) = delete;
 
-    // Required functions.
     bool filter(art::Event &e) override;
-
-    // Selected optional functions.
     bool endSubRun(art::SubRun &subrun) override;
 
     using ProxyPfpColl_t = common::ProxyPfpColl_t;
     using ProxyPfpElem_t = common::ProxyPfpElem_t;
 
 private:
-    art::InputTag fPFPproducer;
-    art::InputTag fCLSproducer; // cluster associated to PFP
-    art::InputTag fSLCproducer; // slice associated to PFP
-    art::InputTag fHITproducer; // hit associated to cluster
-    art::InputTag fSHRproducer; // shower associated to PFP
-    art::InputTag fVTXproducer; // vertex associated to PFP
-    art::InputTag fTRKproducer; // track associated to PFP
-    art::InputTag fPCAproducer; // PCAxis associated to PFP
-    art::InputTag fMCTproducer;
-    bool fVerbose;
-    bool fData, fFakeData;
-    bool fFilter;
-    std::string fBDT_branch;
-    float fBDT_cut;
-    float fProximateRadius;
+    art::InputTag _PFPproducer;
+    art::InputTag _CLSproducer; // cluster associated to PFP
+    art::InputTag _SLCproducer; // slice associated to PFP
+    art::InputTag _HITproducer; // hit associated to cluster
+    art::InputTag _SHRproducer; // shower associated to PFP
+    art::InputTag _VTXproducer; // vertex associated to PFP
+    art::InputTag _TRKproducer; // track associated to PFP
+    art::InputTag _PCAproducer; // PCAxis associated to PFP
+    art::InputTag _MCTproducer;
+    bool _is_data, _is_fake_data;
+    bool _filter;
+    std::string _bdt_branch;
+    float _bdt_cut;
 
-    // TTree
     TTree *_tree;
     int _run, _sub, _evt;
     int _selected;
@@ -80,13 +67,9 @@ private:
     int _sub_sr; // The subRun number
     float _pot;  // The total amount of POT for the current sub run
 
-    // a map linking the PFP Self() attribute used for hierarchy building to the PFP index in the event record
     std::map<unsigned int, unsigned int> _pfpmap;
 
-    // selection tool
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
-
-    // analysis tool
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
     void BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -109,25 +92,23 @@ private:
 SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}
 {
-    fPFPproducer = p.get<art::InputTag>("PFPproducer");
-    fSHRproducer = p.get<art::InputTag>("SHRproducer");
-    fHITproducer = p.get<art::InputTag>("HITproducer");
-    fCLSproducer = p.get<art::InputTag>("CLSproducer");
-    fSLCproducer = p.get<art::InputTag>("SLCproducer");
-    fVTXproducer = p.get<art::InputTag>("VTXproducer");
-    fPCAproducer = p.get<art::InputTag>("PCAproducer");
-    fTRKproducer = p.get<art::InputTag>("TRKproducer");
-    fMCTproducer = p.get<art::InputTag>("MCTproducer");
-    fVerbose = p.get<bool>("Verbose");
-    fData = p.get<bool>("IsData");
-    fFakeData = p.get<bool>("IsFakeData",false);
-    fFilter = p.get<bool>("Filter", false);
-    fBDT_branch = p.get<std::string>("BDT_branch", "");
-    fBDT_cut = p.get<float>("BDT_cut", -1);
-    fProximateRadius = p.get<float>("ProximateRadius", 30);
+    _PFPproducer = p.get<art::InputTag>("PFPproducer");
+    _SHRproducer = p.get<art::InputTag>("SHRproducer");
+    _HITproducer = p.get<art::InputTag>("HITproducer");
+    _CLSproducer = p.get<art::InputTag>("CLSproducer");
+    _SLCproducer = p.get<art::InputTag>("SLCproducer");
+    _VTXproducer = p.get<art::InputTag>("VTXproducer");
+    _PCAproducer = p.get<art::InputTag>("PCAproducer");
+    _TRKproducer = p.get<art::InputTag>("TRKproducer");
+    _MCTproducer = p.get<art::InputTag>("MCTproducer");
+    _is_data = p.get<bool>("IsData");
+    _is_fake_data = p.get<bool>("IsFakeData",false);
+    _filter = p.get<bool>("Filter", false);
+    _bdt_branch = p.get<std::string>("BDT_branch", "");
+    _bdt_cut = p.get<float>("BDT_cut", -1);
 
     art::ServiceHandle<art::TFileService> tfs;
-    _tree = tfs->make<TTree>("SelectionFilter", "Neutrino Selection TTree");
+    _tree = tfs->make<TTree>("SelectionFilter", "Selection TTree");
     _tree->Branch("selected", &_selected, "selected/I");
     _tree->Branch("run", &_run, "run/I");
     _tree->Branch("sub", &_sub, "sub/I");
@@ -137,20 +118,16 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     _subrun_tree->Branch("run", &_run_sr, "run/I");
     _subrun_tree->Branch("subRun", &_sub_sr, "subRun/I");
 
-    if ( (!fData) || (fFakeData) )
+    if ( (!_is_data) || (_is_fake_data) )
         _subrun_tree->Branch("pot", &_pot, "pot/F");
 
-    // configure and construct Selection Tool
     const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
 
-    // pass the TTree to the selection tool so that any branch can be added to it
+
     _selectionTool->setBranches(_tree);
+    _selectionTool->SetData(_is_data);
 
-    // set whether data
-    _selectionTool->SetData(fData);
-
-    // configure and construct Analysis Tool
     auto const tool_psets = p.get<fhicl::ParameterSet>("AnalysisTools");
     for (auto const &tool_pset_labels : tool_psets.get_pset_names())
     {
@@ -158,7 +135,6 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
         _analysisToolsVec.push_back(art::make_tool<::analysis::AnalysisToolBase>(tool_pset));
     }
 
-    // pass the TTree to the analysis tool so that any branch can be added to it
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
         _analysisToolsVec[i]->setBranches(_tree);
 }
@@ -167,41 +143,35 @@ bool SelectionFilter::filter(art::Event &e)
 {
     ResetTTree();
 
-    if (fVerbose)
-    {
-        std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
-    }
+    std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
+    
     _evt = e.event();
     _sub = e.subRun();
     _run = e.run();
 
-    // grab PFParticles in event
-    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
-                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
-                                                        proxy::withAssociated<recob::Cluster>(fCLSproducer),
-                                                        proxy::withAssociated<recob::Slice>(fSLCproducer),
-                                                        proxy::withAssociated<recob::Track>(fTRKproducer),
-                                                        proxy::withAssociated<recob::Vertex>(fVTXproducer),
-                                                        proxy::withAssociated<recob::PCAxis>(fPCAproducer),
-                                                        proxy::withAssociated<recob::Shower>(fSHRproducer),
-                                                        proxy::withAssociated<recob::SpacePoint>(fPFPproducer));
+    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
+                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
+                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
+                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
+                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
+                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
+                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
+                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
+                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
 
     BuildPFPMap(pfp_proxy);
 
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
     {
-        _analysisToolsVec[i]->analyzeEvent(e, fData); 
+        _analysisToolsVec[i]->analyzeEvent(e, _is_data); 
     }
 
     bool keepEvent = false;
 
-    // loop through PFParticles
     for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy)
     {
-        // get metadata for this PFP
         const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
 
-        //  find neutrino candidate
         if (pfp_pxy->IsPrimary() == false)
             continue;
 
@@ -209,37 +179,25 @@ bool SelectionFilter::filter(art::Event &e)
 
         if ((PDG == 12) || (PDG == 14))
         {
+            printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
 
-            if (fVerbose)
-                printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
-
-            // collect PFParticle hierarchy originating from this neutrino candidate
             std::vector<ProxyPfpElem_t> slice_pfp_v;
             AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
-            //AddProximateParticles(pfp_pxy, pfp_proxy, slice_pfp_v);
 
-            if (fVerbose)
-            {
-                std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
-            }
-
-            // create list of tracks and showers associated to this slice
             std::vector<art::Ptr<recob::Track>> sliceTracks;
             std::vector<art::Ptr<recob::Shower>> sliceShowers;
 
             for (auto pfp : slice_pfp_v)
             {
-                // if there is a track associated to the PFParticle, add it
                 auto const &ass_trk_v = pfp.get<recob::Track>();
                 if (ass_trk_v.size() == 1)
                     sliceTracks.push_back(ass_trk_v.at(0));
-                // if there is a shower associated to the PFParticle, add it
+               
                 auto const &ass_shr_v = pfp.get<recob::Shower>();
                 if (ass_shr_v.size() == 1)
                     sliceShowers.push_back(ass_shr_v.at(0));
-            } // for all PFParticles in the slice
+            } 
 
-            // run selection on this slice
             bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
 
             if (selected)
@@ -248,21 +206,22 @@ bool SelectionFilter::filter(art::Event &e)
                 _selected = 1;
             }
 
-            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-                _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, fData, selected);
+            for (size_t i = 0; i < _analysisToolsVec.size(); i++) 
+            {
+                _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, _is_data, selected);
             }
         } // if a neutrino PFParticle
     } // for all PFParticles
 
     _tree->Fill();
 
-    if (fBDT_branch!="" && fBDT_cut>0 && fBDT_cut<1) {
-        float* bdtscore = (float*) _tree->GetBranch(fBDT_branch.c_str())->GetAddress();
+    if (_bdt_branch != "" && _bdt_cut > 0 && _bdt_cut < 1) {
+        float* bdtscore = (float*) _tree->GetBranch(_bdt_branch.c_str())->GetAddress();
         std::cout << "bdtscore=" << *bdtscore << std::endl;
-        keepEvent = keepEvent && ( (*bdtscore)<fBDT_cut );
+        keepEvent = keepEvent && ( (*bdtscore) < _bdt_cut );
     }
 
-    if (fFilter == true)
+    if (_filter == true)
         return keepEvent;
 
     return true;
@@ -282,11 +241,9 @@ void SelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
             auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
             if (!pfParticlePropertiesMap.empty())
             {
-                if (fVerbose)
                 std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
                 for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it)
                 {
-                if (fVerbose)
                     std::cout << "  - " << it->first << " = " << it->second << std::endl;
                 }
             }
@@ -318,17 +275,13 @@ void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
 
     slice_v.push_back(pfp_pxy);
 
-    if (fVerbose)
-        std::cout << "\t PFP w/ PdgCode " << pfp_pxy->PdgCode() << " has " << daughters.size() << " daughters" << std::endl;
+    std::cout << "\t PFP w/ PdgCode " << pfp_pxy->PdgCode() << " has " << daughters.size() << " daughters" << std::endl;
 
     for (auto const &daughterid : daughters)
     {
 
         if (_pfpmap.find(daughterid) == _pfpmap.end())
-        {
-            std::cout << "Did not find DAUGHTERID in map! error" << std::endl;
             continue;
-        }
 
         auto pfp_pxy2 = pfp_pxy_col.begin();
         for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
@@ -340,54 +293,6 @@ void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
 
     return;
 } 
-
-void SelectionFilter::AddProximateParticles(const ProxyPfpElem_t &nu_pfp,
-                                                    const ProxyPfpColl_t &pfp_pxy_col,
-                                                    std::vector<ProxyPfpElem_t> &slice_v)
-{
-    slice_v.push_back(nu_pfp);
-
-    auto const &vtx_v = nu_pfp.get<recob::Vertex>();
-    if (vtx_v.size() != 1) {
-        return;
-    }
-    auto const &vtx = vtx_v.at(0);
-
-    double vtx_xyz[3];
-    vtx->XYZ(vtx_xyz);
-    float vtx_x = vtx_xyz[0];
-    float vtx_y = vtx_xyz[1];
-    float vtx_z = vtx_xyz[2];
-
-    common::ApplySCECorrectionXYZ(vtx_x, vtx_y, vtx_z);
-
-    for (const auto &pfp_pxy : pfp_pxy_col)
-    {
-        if (pfp_pxy->IsPrimary())
-            continue;
-
-        auto const &pfp_vtx_v = pfp_pxy.get<recob::Vertex>();
-        if (pfp_vtx_v.size() != 1) {
-            continue;
-        }
-        auto const &pfp_vtx = pfp_vtx_v.at(0);
-
-        double pfp_xyz[3];
-        pfp_vtx->XYZ(pfp_xyz);
-        float pfp_x = pfp_xyz[0];
-        float pfp_y = pfp_xyz[1];
-        float pfp_z = pfp_xyz[2];
-
-        common::ApplySCECorrectionXYZ(pfp_x, pfp_y, pfp_z);
-
-        float d = common::distance3d(vtx_x, vtx_y, vtx_z, pfp_x, pfp_y, pfp_z);
-        if (d < fProximateRadius)
-        {
-            slice_v.push_back(pfp_pxy);
-        }
-    }
-}
-
 void SelectionFilter::ResetTTree()
 {
     _selected = 0;
@@ -402,11 +307,11 @@ void SelectionFilter::ResetTTree()
 
 bool SelectionFilter::endSubRun(art::SubRun &subrun)
 {
-    if ( (!fData) || (fFakeData) )
+    if ( (!_is_data) || (_is_fake_data) )
     {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
-        _pot = subrun.getByLabel(fMCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
-        std::cout << "[SelectionFilter::endSubRun] Storing POT info!" << std::endl;
+        _pot = subrun.getByLabel(_MCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
+        std::cout << "Storing POT info!" << std::endl;
     }
 
     _run_sr = subrun.run();

@@ -16,7 +16,6 @@
 
 namespace common
 {
-
     void ApplyDetectorOffsets(const float _vtx_t, const float _vtx_x, const float _vtx_y, const float _vtx_z, float &_xtimeoffset, float &_xsceoffset, float &_ysceoffset, float &_zsceoffset)
     {
         auto const &detProperties = lar::providerFrom<detinfo::DetectorPropertiesService>();
