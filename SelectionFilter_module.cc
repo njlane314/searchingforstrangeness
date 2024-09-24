@@ -92,16 +92,16 @@ private:
 SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     : EDFilter{p}
 {
-    _PFPproducer = p.get<art::InputTag>("PFPproducer");
-    _SHRproducer = p.get<art::InputTag>("SHRproducer");
-    _HITproducer = p.get<art::InputTag>("HITproducer");
-    _CLSproducer = p.get<art::InputTag>("CLSproducer");
-    _SLCproducer = p.get<art::InputTag>("SLCproducer");
-    _VTXproducer = p.get<art::InputTag>("VTXproducer");
-    _PCAproducer = p.get<art::InputTag>("PCAproducer");
-    _TRKproducer = p.get<art::InputTag>("TRKproducer");
-    _MCTproducer = p.get<art::InputTag>("MCTproducer");
-    _is_data = p.get<bool>("IsData");
+    _PFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
+    _SHRproducer = p.get<art::InputTag>("SHRproducer", "pandora");
+    _HITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
+    _CLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
+    _SLCproducer = p.get<art::InputTag>("SLCproducer", "pandora");
+    _VTXproducer = p.get<art::InputTag>("VTXproducer", "pandora");
+    _PCAproducer = p.get<art::InputTag>("PCAproducer", "pandora");
+    _TRKproducer = p.get<art::InputTag>("TRKproducer", "pandora");
+    _MCTproducer = p.get<art::InputTag>("MCTproducer", "generator");
+    _is_data = p.get<bool>("IsData", false);
     _is_fake_data = p.get<bool>("IsFakeData",false);
     _filter = p.get<bool>("Filter", false);
     _bdt_branch = p.get<std::string>("BDT_branch", "");

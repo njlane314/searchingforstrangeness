@@ -51,12 +51,14 @@ public:
     void resetTTree(TTree *_tree) override;
 
 private:
-    art::InputTag _MCTproducer;
-    art::InputTag _PFPproducer;
-    art::InputTag _Hproducer;
-    art::InputTag _BacktrackTag;
-    art::InputTag _FMproducer;
-    art::InputTag _SPproducer;
+    art::InputTag _SimulationModuleLabel;
+    art::InputTag _PandoraModuleLabel;
+    art::InputTag _HitModuleLabel;
+    art::InputTag _BacktrackModuleLabel;
+    art::InputTag _FlashMatchModuleLabel;
+    art::InputTag _SpacePointModuleLabel;
+    art::InputTag _PFParticleModuleLabel;
+    art::InputTag _FlashLabel;
 
     TTree* _slice_tree;
 
@@ -109,13 +111,14 @@ private:
 PreSelectionAnalysis::PreSelectionAnalysis(const fhicl::ParameterSet &pset)
     : _debug(pset.get<bool>("DebugMode", false))
 {
-    _MCTproducer = pset.get<std::string>("MCParticleModuleLabel", "largeant");
-    _PFPproducer = pset.get<std::string>("PandoraModuleLabel", "pandora");
-    _Hproducer = pset.get<std::string>("HitModuleLabel", "gaushit");
-    _BacktrackTag = pset.get<std::string>("BacktrackModuleLabel", "gaushitTruthMatch");
-    _FMproducer = pset.get<std::string>("FlashMatchModuleLabel", "flashmatch");
-    _SPproducer = pset.get<std::string>("SpacePointModuleLabel", "pandora"); 
-    _FMproducer = pset.get<std::string>("FlashLabel", "simpleFlashBeam");
+    _SimulationModuleLabel = pset.get<std::string>("MCParticleModuleLabel", "largeant");
+    _PandoraModuleLabel = pset.get<std::string>("PandoraModuleLabel", "pandora");
+    _HitModuleLabel = pset.get<std::string>("HitModuleLabel", "gaushit");
+    _BacktrackModuleLabel = pset.get<std::string>("BacktrackModuleLabel", "gaushitTruthMatch");
+    _FlashMatchModuleLabel = pset.get<std::string>("FlashMatchModuleLabel", "pandora");
+    _PFParticleModuleLabel = pset.get<std::string>("PFParticleModuleLabel", "pandora");
+    _SpacePointModuleLabel = pset.get<std::string>("SpacePointModuleLabel", "pandora"); 
+    _FlashLabel = pset.get<std::string>("FlashLabel", "simpleFlashBeam");
 
     art::ServiceHandle<art::TFileService> tfs;
     _slice_tree = tfs->make<TTree>("PreSelectionAnalysis", "Slice Tree");
@@ -133,7 +136,7 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     lar_pandora::PFParticleMap pf_particle_map;
     lar_pandora::MCParticleMap mc_particle_map; 
 
-    if (!e.getByLabel(_MCTproducer, mc_particle_handle))
+    if (!e.getByLabel(_SimulationModuleLabel, mc_particle_handle))
         throw cet::exception("PreSelectionAnalysis") << "Failed to find any MC particles in event" << std::endl;
     art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
     lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
@@ -141,7 +144,7 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     art::Handle<std::vector<recob::PFParticle>> pf_particle_handle;
     std::vector<art::Ptr<recob::PFParticle>> pf_particle_vector;
 
-    if (!e.getByLabel(_PFPproducer, pf_particle_handle))
+    if (!e.getByLabel(_PandoraModuleLabel, pf_particle_handle))
         throw cet::exception("PreSelectionAnalysis") << "Failed to find any Pandora-slice PFParticles in event" << std::endl;
     art::fill_ptr_vector(pf_particle_vector, pf_particle_handle);
     lar_pandora::LArPandoraHelper::BuildPFParticleMap(pf_particle_vector, pf_particle_map);
@@ -149,41 +152,41 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     art::Handle<std::vector<recob::Hit>> hit_handle;
     std::vector<art::Ptr<recob::Hit>> hit_vector;
 
-    if (!e.getByLabel(_Hproducer, hit_handle))
+    if (!e.getByLabel(_HitModuleLabel, hit_handle))
         throw cet::exception("PreSelectionAnalysis") << "Failed to find any hits in event" << std::endl;
     art::fill_ptr_vector(hit_vector, hit_handle);
 
-    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackTag);
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackModuleLabel);
 
     art::Handle<std::vector<recob::Slice>> slice_handle; 
     std::vector<art::Ptr<recob::Slice>> slice_vector;
-    if (!e.getByLabel(_PFPproducer, slice_handle))
+    if (!e.getByLabel(_PandoraModuleLabel, slice_handle))
         throw cet::exception("PreSelectionAnalysis") << "Failed to find any Pandora slices in event" << std::endl;
 
-    art::FindManyP<recob::Hit> hit_slice_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PFPproducer);
-    art::FindManyP<recob::SpacePoint> sp_slice_assoc = art::FindManyP<recob::SpacePoint>(slice_handle, e, _PFPproducer);
+    art::FindManyP<recob::Hit> hit_slice_assoc = art::FindManyP<recob::Hit>(slice_handle, e, _PandoraModuleLabel);
+    art::FindManyP<recob::SpacePoint> sp_slice_assoc = art::FindManyP<recob::SpacePoint>(slice_handle, e, _PandoraModuleLabel);
     art::fill_ptr_vector(slice_vector, slice_handle);
 
-    art::FindManyP<recob::PFParticle> pf_part_slice_assoc = art::FindManyP<recob::PFParticle>(slice_handle, e, _PFPproducer);
-    art::FindManyP<larpandoraobj::PFParticleMetadata> pf_part_metadata_assoc = art::FindManyP<larpandoraobj::PFParticleMetadata>(pf_particle_handle, e, _PFPproducer);
+    art::FindManyP<recob::PFParticle> pf_part_slice_assoc = art::FindManyP<recob::PFParticle>(slice_handle, e, _PandoraModuleLabel);
+    art::FindManyP<larpandoraobj::PFParticleMetadata> pf_part_metadata_assoc = art::FindManyP<larpandoraobj::PFParticleMetadata>(pf_particle_handle, e, _PandoraModuleLabel);
 
     art::Handle<std::vector<recob::PFParticle>> flash_match_pfp_handle;
     std::vector<art::Ptr<recob::PFParticle>> flash_match_pfp_vector;
     std::vector<art::Ptr<recob::PFParticle>> flash_nu_pfp_vector;
 
-    if (!e.getByLabel(_FMproducer, flash_match_pfp_handle))
+    if (!e.getByLabel(_FlashMatchModuleLabel, flash_match_pfp_handle))
         throw cet::exception("PreSelectionAnalysis") << "Failed to find any flash-matched PFParticles" << std::endl;
 
     art::fill_ptr_vector(flash_match_pfp_vector, flash_match_pfp_handle);
     lar_pandora::LArPandoraHelper::SelectNeutrinoPFParticles(flash_match_pfp_vector, flash_nu_pfp_vector);
 
-    art::InputTag flash_tag(_FMproducer);
+    art::InputTag flash_tag(_FlashLabel);
     const auto flashes(*e.getValidHandle<std::vector<recob::OpFlash>>(flash_tag));
 
-    auto const& pfp_handle = e.getValidHandle<std::vector<recob::PFParticle>>(_PFPproducer);
-    auto const& sp_handle = e.getValidHandle<std::vector<recob::SpacePoint>>(_SPproducer);
-    art::FindManyP<recob::SpacePoint> sp_pfp_assoc(pfp_handle, e, _PFPproducer);
-    art::FindManyP<recob::Hit> hit_sp_assoc(sp_handle, e, _SPproducer);
+    auto const& pfp_handle = e.getValidHandle<std::vector<recob::PFParticle>>(_PFParticleModuleLabel);
+    auto const& sp_handle = e.getValidHandle<std::vector<recob::SpacePoint>>(_SpacePointModuleLabel);
+    art::FindManyP<recob::SpacePoint> sp_pfp_assoc(pfp_handle, e, _PFParticleModuleLabel);
+    art::FindManyP<recob::Hit> hit_sp_assoc(sp_handle, e, _SpacePointModuleLabel);
 
     for (const auto& op_flash : flashes)
     {
@@ -288,7 +291,7 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     {
         //bool found = false;
 
-        art::FindManyP<recob::Slice> flash_match_slice_assoc = art::FindManyP<recob::Slice>(flash_match_pfp_handle, e, _FMproducer);
+        art::FindManyP<recob::Slice> flash_match_slice_assoc = art::FindManyP<recob::Slice>(flash_match_pfp_handle, e, _FlashMatchModuleLabel);
         const std::vector<art::Ptr<recob::Slice>> &flash_match_slice_vector = flash_match_slice_assoc.at(flash_nu_pfp_vector[0].key());
 
         if (!flash_match_slice_vector.empty())
@@ -338,7 +341,7 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
         if (nu_pfp_vector.size() != 1)
             continue;
 
-        art::FindManyP<recob::Vertex> vertex_assoc = art::FindManyP<recob::Vertex>(pf_particle_handle, e, _PFPproducer);
+        art::FindManyP<recob::Vertex> vertex_assoc = art::FindManyP<recob::Vertex>(pf_particle_handle, e, _PandoraModuleLabel);
         const std::vector<art::Ptr<recob::Vertex>> &nu_vertex(vertex_assoc.at(nu_pfp_vector.at(0).key()));
 
         if (nu_vertex.empty())

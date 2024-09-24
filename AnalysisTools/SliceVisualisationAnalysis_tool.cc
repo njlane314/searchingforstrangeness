@@ -78,12 +78,12 @@ private:
 
 SliceVisualisationAnalysis::SliceVisualisationAnalysis(const fhicl::ParameterSet &pset)
 {
-    _MCTproducer = pset.get<art::InputTag>("MCTproducer");
-    _PFPproducer = pset.get<art::InputTag>("PFPproducer");
-    _Hproducer = pset.get<art::InputTag>("Hproducer");
-    _BacktrackTag = pset.get<art::InputTag>("BacktrackTag");
-    _FMproducer = pset.get<art::InputTag>("FMproducer");
-    _CLSproducer = pset.get<art::InputTag>("CLSproducer");
+    _MCTproducer = pset.get<art::InputTag>("MCTproducer", "largeant");
+    _PFPproducer = pset.get<art::InputTag>("PFPproducer", "pandoraPatRec:allOutcomes");
+    _Hproducer = pset.get<art::InputTag>("Hproducer", "gaushit");
+    _BacktrackTag = pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch");
+    _FMproducer = pset.get<art::InputTag>("FMproducer", "pandora");
+    _CLSproducer = pset.get<art::InputTag>("CLSproducer", "pandora");
 }
 
 void SliceVisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
