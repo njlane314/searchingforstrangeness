@@ -1,6 +1,9 @@
 #ifndef SCATTERSFUNCS_H
 #define SCATTERSFUNCS_H
 
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+#include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
+
 namespace common
 {
     std::vector<art::Ptr<simb::MCParticle>> GetDaughters(const art::Ptr<simb::MCParticle> &particle, const std::map<int, art::Ptr<simb::MCParticle> > &mcParticleMap)
@@ -125,30 +128,48 @@ namespace common
     {
         std::vector<art::Ptr<simb::MCParticle>> pion_chain;
 
-        // Check if the particle is a pion
         if (abs(particle->PdgCode()) == 211)
         {
-            // Add this pion to the chain
             pion_chain.push_back(particle);
 
-            // Get its daughters
             std::vector<art::Ptr<simb::MCParticle>> daughters = common::GetDaughters(particle, mcParticleMap);
 
-            // Recursively look for daughter pions
             for (const auto &daughter : daughters)
             {
-                if (abs(daughter->PdgCode()) == 211) // If the daughter is a pion
+                if (abs(daughter->PdgCode()) == 211) 
                 {
-                    // Get the pion chain for this daughter
                     std::vector<art::Ptr<simb::MCParticle>> daughter_chain = GetPionChain(daughter, mcParticleMap);
-
-                    // Append the daughter chain to the current pion chain
                     pion_chain.insert(pion_chain.end(), daughter_chain.begin(), daughter_chain.end());
                 }
             }
         }
 
         return pion_chain;
+    }
+
+    bool isParticleElectromagnetic(const art::Ptr<simb::MCParticle> &mc_part)
+    {
+        return ((std::abs(mc_part->PdgCode() == 11) || (mc_part->PdgCode() == 22)));
+    }
+
+    int getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const lar_pandora::MCParticleMap &mc_particle_map)
+    {
+        int track_idx = mc_part->TrackId();
+        art::Ptr<simb::MCParticle> mother_mc_part = mc_part;
+
+        do 
+        {
+            track_idx = mother_mc_part->TrackId();
+            const int mother_idx = mother_mc_part->Mother();
+
+            if (mc_particle_map.find(mother_idx) == mc_particle_map.end())
+                break;
+
+            mother_mc_part = mc_particle_map.at(mother_idx);
+        } 
+        while (isParticleElectromagnetic(mother_mc_part));
+
+        return track_idx;
     }
 
 }

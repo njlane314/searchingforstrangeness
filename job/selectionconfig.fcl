@@ -68,8 +68,8 @@ SliceVisualisationAnalysisTool: {
     CLSproducer: "pandora"
 }
 
-SignalDefinitionAnalysisTool: {
-    tool_type: "SignalDefinitionAnalysis"
+EventCategoryAnalysisTool: {
+    tool_type: "EventCategoryAnalysis"
     PFPproducer: "pandora"
     SHRproducer: "pandora"
     HITproducer: "gaushit"
@@ -108,7 +108,7 @@ SelectionFilter: {
     }
     AnalysisTools: {
         interaction: @local::NeutrinoInteractionAnalysisTool
-        signal: @local::SignalDefinitionAnalysisTool
+        eventcategory: @local::EventCategoryAnalysisTool
         calorimetry: @local::TrackCalorimetryAnalysisTool
         preselection: @local::PreSelectionAnalysisTool
         visualisation: @local::SliceVisualisationAnalysisTool

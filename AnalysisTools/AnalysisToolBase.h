@@ -31,12 +31,6 @@ public:
     virtual void setBranches(TTree* _tree) = 0;
     
     virtual void resetTTree(TTree* _tree) = 0;
-
-    virtual bool passesAnalysis(const art::Event& e, bool is_data)
-    {
-        return true;
-    }
-
 };
 
 } 
