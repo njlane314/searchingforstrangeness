@@ -59,7 +59,9 @@ physics:
         signaltruthfilter: @local::SignalTruthFilter
     }
 
-    p1: [ signaltruthfilter, convnetworkalgo ]
+    p1: [ signaltruthfilter ]   
+    e1: [ convnetworkalgo ]     
 
-    trigger_paths: [ p1 ]
+    trigger_paths: [ p1 ]       
+    end_paths: [ e1 ]           
 }
