@@ -9,18 +9,12 @@ namespace selection
 class EmptySelection : public SelectionToolBase {
 
 public:
-
     EmptySelection(const fhicl::ParameterSet& pset);
     ~EmptySelection(){};
     
     void configure(fhicl::ParameterSet const & pset);
-
-    bool selectEvent(art::Event const& e,
-            const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
-
-
+    bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
     void setBranches(TTree* _tree){};
-
     void resetTTree(TTree* _tree){};
     
 private:

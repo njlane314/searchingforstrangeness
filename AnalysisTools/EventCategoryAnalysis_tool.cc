@@ -318,6 +318,42 @@ void EventCategoryAnalysis::analyzeSlice(art::Event const &e, std::vector<common
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
                                                         proxy::withAssociated<recob::Hit>(_CLSproducer));
 
+    for (const common::ProxyPfpElem_t &pfp_pxy : slice_pfp_v)
+    {
+        if (pfp_pxy->IsPrimary())
+        {
+            double xyz[3] = {};
+            auto vtx = pfp_pxy.get<recob::Vertex>();
+            if (vtx.size() == 1)
+            {
+                vtx.at(0)->XYZ(xyz);
+                auto nuvtx = TVector3(xyz[0], xyz[1], xyz[2]);
+
+                float _reco_nu_vtx_sce[3];
+                common::ApplySCECorrectionXYZ(nuvtx.X(), nuvtx.Y(), nuvtx.Z(), _reco_nu_vtx_sce);
+                _reco_nu_vtx_sce_x = _reco_nu_vtx_sce[0];
+                _reco_nu_vtx_sce_y = _reco_nu_vtx_sce[1];
+                _reco_nu_vtx_sce_z = _reco_nu_vtx_sce[2];
+
+                _reco_nu_vtx_sce_u_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_U)).Z();
+                _reco_nu_vtx_sce_v_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_V)).Z();
+                _reco_nu_vtx_sce_w_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_W)).Z();
+            }
+
+            continue;
+        }
+
+        float trkscore = common::GetTrackShowerScore(pfp_pxy);
+        if ((trkscore >= 0) && (trkscore >= 0.5))
+        {
+            _n_tracks++;
+        }
+        else if ((trkscore >= 0) && (trkscore < 0.5))
+        {
+            _n_showers++;
+        }
+    }
+
     if (_found_signature)
     {
         art::ValidHandle<std::vector<recob::Hit>> in_hits = e.getValidHandle<std::vector<recob::Hit>>(_Hproducer);
@@ -347,37 +383,7 @@ void EventCategoryAnalysis::analyzeSlice(art::Event const &e, std::vector<common
         for (const common::ProxyPfpElem_t &pfp_pxy : slice_pfp_v)
         {
             if (pfp_pxy->IsPrimary())
-            {
-                double xyz[3] = {};
-                auto vtx = pfp_pxy.get<recob::Vertex>();
-                if (vtx.size() == 1)
-                {
-                    vtx.at(0)->XYZ(xyz);
-                    auto nuvtx = TVector3(xyz[0], xyz[1], xyz[2]);
-
-                    float _reco_nu_vtx_sce[3];
-                    common::ApplySCECorrectionXYZ(nuvtx.X(), nuvtx.Y(), nuvtx.Z(), _reco_nu_vtx_sce);
-                    _reco_nu_vtx_sce_x = _reco_nu_vtx_sce[0];
-                    _reco_nu_vtx_sce_y = _reco_nu_vtx_sce[1];
-                    _reco_nu_vtx_sce_z = _reco_nu_vtx_sce[2];
-
-                    _reco_nu_vtx_sce_u_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_U)).Z();
-                    _reco_nu_vtx_sce_v_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_V)).Z();
-                    _reco_nu_vtx_sce_w_wire = (common::ProjectToWireView(_reco_nu_vtx_sce_x, _reco_nu_vtx_sce_y, _reco_nu_vtx_sce_z, common::TPC_VIEW_W)).Z();
-                }
-
                 continue;
-            }
-
-            float trkscore = common::GetTrackShowerScore(pfp_pxy);
-            if ((trkscore >= 0) && (trkscore >= 0.5))
-            {
-                _n_tracks++;
-            }
-            else if ((trkscore >= 0) && (trkscore < 0.5))
-            {
-                _n_showers++;
-            }
 
             std::vector<art::Ptr<recob::Hit>> pfp_hits;
             auto clus_pxy_v = pfp_pxy.get<recob::Cluster>();
@@ -469,12 +475,13 @@ void EventCategoryAnalysis::setBranches(TTree *_tree)
     _tree->Branch("n_tracks", &_n_tracks, "n_tracks/I");
     _tree->Branch("n_showers", &_n_showers, "n_showers/I");
 
+    _tree->Branch("mcp_final_state", &_final_state);
+    _tree->Branch("mcp_found_signature", &_found_signature);
+
     setParticleBranches(_tree, "mcp_muon", _mcp_mu);
     setParticleBranches(_tree, "mcp_kshort", _mcp_kshort);
     setParticleBranches(_tree, "mcp_piplus", _mcp_piplus);
     setParticleBranches(_tree, "mcp_piminus", _mcp_piminus);
-
-    _tree->Branch("mcp_final_state", &_final_state);
 
     _tree->Branch("mcp_pfp_id", &_mcp_pfp_id_v);
     _tree->Branch("mcp_muon_purity", &_mcp_mu_purity_v);
@@ -515,6 +522,7 @@ void EventCategoryAnalysis::resetTTree(TTree *_tree)
     _mcp_piminus = Particle();
 
     _final_state.clear();
+    _found_signature = false;
 
     _reco_nu_vtx_sce_x = std::numeric_limits<float>::lowest();
     _reco_nu_vtx_sce_y = std::numeric_limits<float>::lowest();
