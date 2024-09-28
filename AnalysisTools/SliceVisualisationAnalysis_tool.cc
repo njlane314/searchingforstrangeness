@@ -197,7 +197,7 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 void SliceVisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
-                                                                                            proxy::withAssociated<recob::Hit>(_CLSproducer));
+                                                proxy::withAssociated<recob::Hit>(_CLSproducer));
 
     for (const auto& pfp : slice_pfp_v)
     {

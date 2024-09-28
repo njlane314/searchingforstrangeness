@@ -124,7 +124,6 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
 
-
     _selectionTool->setBranches(_tree);
     _selectionTool->SetData(_is_data);
 
