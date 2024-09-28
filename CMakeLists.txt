@@ -11,6 +11,11 @@ set(TORCH_LIBRARIES $ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/
 set(LIBTORCH_LIB_DIR /cvmfs/uboone.opensciencegrid.org/products/libtorch/v1_0_1/Linux64bit+3.10-2.17-e17-prof/lib/python2.7/site-packages/torch/lib)
 file(GLOB LIBTORCH_LIBRARIES "${LIBTORCH_LIB_DIR}/*.so")
 
+include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/include/python2.7)
+
+set(PYTHON_LIB_DIR /cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib)
+set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
+
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(job)
@@ -59,6 +64,7 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
 			   larpandora_LArPandoraInterface
                            ${TORCH_LIBRARIES}
                            ${LIBTORCH_LIBRARIES}
+                           ${PYTHON_LIBRARY}
                            larreco_Calorimetry
                            pthread
         )
