@@ -11,12 +11,17 @@
 
 namespace common
 {
-    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W};
+    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W, TPC_VIEW_UNKNOWN};
 
     PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
     {
+        art::ServiceHandle<geo::Geometry> geo;
         const geo::WireID hit_wire(hit->WireID());
         const geo::View_t hit_view(hit->View());
+
+        if (hit_wire.Cryostat >= geo->Ncryostats() || hit_wire.TPC >= geo->NTPC(hit_wire.Cryostat) || hit_wire.Wire >= geo->Nwires(hit_wire) || (hit_view != geo::kU && hit_view != geo::kV && hit_view != geo::kW && hit_view != geo::kY)) 
+            return TPC_VIEW_UNKNOWN;
+
         const geo::View_t pandora_view(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_wire.Cryostat, hit_wire.TPC, hit_view));
 
         if (pandora_view == geo::kW || pandora_view == geo::kY)
@@ -26,7 +31,7 @@ namespace common
         else if (pandora_view == geo::kV)
             return TPC_VIEW_V;
         else
-            throw cet::exception("PandoraFuncs") << "wire view not recognised";
+            return TPC_VIEW_UNKNOWN;
     }
 
     float YZtoU(const float y_coord, const float z_coord)
@@ -63,6 +68,9 @@ namespace common
 
         const geo::WireID hit_wire(hit->WireID());
         const double hit_time(hit->PeakTime());
+
+        if (hit_wire.Wire >= geo->Nwires(hit_wire))
+            return TVector3(0, 0, 0);
 
         const double x_coord = det->ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
         TVector3 xyz = geo->Cryostat(hit_wire.Cryostat).TPC(hit_wire.TPC).Plane(hit_wire.Plane).Wire(hit_wire.Wire).GetCenter();

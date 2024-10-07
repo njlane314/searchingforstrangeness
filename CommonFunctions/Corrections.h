@@ -6,6 +6,10 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
+#include "lardataobj/RecoBase/Track.h"
+
+#include <vector>
+
 namespace common
 {
     void ApplySCEMappingXYZ(float& x, float& y, float& z)

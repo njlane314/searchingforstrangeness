@@ -17,6 +17,7 @@
 
 #include "CommonFunctions/Pandora.h"
 #include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Corrections.h"
 
 #include "TDatabasePDG.h"
 
@@ -66,6 +67,8 @@ private:
 
     float _PionThreshold, _MuonThreshold;
 
+    int _verbosity;
+
     TParticlePDG *neutral_kaon = TDatabasePDG::Instance()->GetParticle(311);
     TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
     TParticlePDG *kaon_long = TDatabasePDG::Instance()->GetParticle(130);
@@ -78,10 +81,10 @@ private:
 
     void prepareTrainingSample(art::Event const& evt);
     void infer(art::Event const& evt);
-    void produceTrainingSample(const std::string& filename, const std::vector<float>& feature_vector);
+    void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::vector<std::pair<int, int>>& pixel_vector);
     void getHitRegion(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
-    void identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature);
+    void identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature, std::array<float, 3>& nu_vtx, std::array<float, 3>& muon_p, std::array<float, 3>& piplus_p, std::array<float, 3>& piminus_p);
 };
 
 ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
@@ -102,13 +105,16 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
     , _PionThreshold{pset.get<float>("PionThreshold", 0.1)}
     , _MuonThreshold{pset.get<float>("MuonThreshold", 0.1)}
 {
-    if (!_training_mode)
-    {
-        _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
-        _model_v = torch::jit::load(pset.get<std::string>("ModelFileV"));
-        _model_w = torch::jit::load(pset.get<std::string>("ModelFileW"));
+    try {
+        if (!_training_mode) {
+            _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
+            _model_v = torch::jit::load(pset.get<std::string>("ModelFileV"));
+            _model_w = torch::jit::load(pset.get<std::string>("ModelFileW"));
+        }
+    } catch (const c10::Error& e) {
+        throw cet::exception("ConvNetworkAlgorithm") << "Error loading Torch models: " << e.what() << "\n";
     }
-   
+
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
 
     _wire_pitch = {
@@ -125,6 +131,8 @@ void ConvNetworkAlgorithm::analyze(art::Event const& evt)
     {
         art::fill_ptr_vector(_hit_list, hit_handle);
         _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_handle, evt, _BacktrackTag);
+
+        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << _hit_list.size();
     }
   
     if (_training_mode)
@@ -135,78 +143,140 @@ void ConvNetworkAlgorithm::analyze(art::Event const& evt)
 
 void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt) 
 {
+    mf::LogInfo("ConvNetworkAlgorithm") << "Preparing training sample...";
+
     int muon_tid, piplus_tid, piminus_tid;
     bool found_signature;
+    std::array<float, 3> nu_vtx, muon_p, piplus_p, piminus_p;
 
-    this->identifySignalParticles(evt, muon_tid, piplus_tid, piminus_tid, found_signature);
-    if (!found_signature) 
-        return;
+    this->identifySignalParticles(evt, muon_tid, piplus_tid, piminus_tid, found_signature, nu_vtx, muon_p, piplus_p, piminus_p);
+    if (!found_signature) return;
 
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> hit_view_map;
-    for (const auto& hit : _hit_list)
-        hit_view_map[common::GetPandoraView(hit)].push_back(hit);
+    for (const auto& hit : _hit_list) {
+        common::PandoraView view = common::GetPandoraView(hit);
+        if (view != common::TPC_VIEW_UNKNOWN) 
+            hit_view_map[view].push_back(hit);
+    }    
 
     for (const auto& [view, hits] : hit_view_map)
     {
         float drift_min = std::numeric_limits<float>::max();
         float drift_max = -std::numeric_limits<float>::max();
         float wire_min, wire_max;
-
         this->getHitRegion(evt, hits, drift_min, drift_max, wire_min, wire_max);
 
-        std::vector<float> feature_vector = {
-            drift_min, drift_max, wire_min, wire_max
-        };
+        std::cout << "Minimum drift " << drift_min << std::endl;
+        std::cout << "Maximum drift " << drift_max << std::endl;
+        std::cout << "Minimum wire " << wire_min << std::endl;
+        std::cout << "Maximum wire " << wire_max << std::endl;
 
-        unsigned int n_hits = 0;
-        std::unordered_map<int, int> particle_to_flag = {
-            {muon_tid, 0},    
-            {piplus_tid, 1},  
-            {piminus_tid, 2}  
-        };
+        float x_vtx = nu_vtx[0];
+        float z_vtx = (common::ProjectToWireView(nu_vtx[0], nu_vtx[1], nu_vtx[2], view)).Z();
 
-        for (unsigned int ih = 0; ih < hits.size(); ih++)
-        {
-            const auto hit = hits.at(ih);
-            const auto hit_pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
-            float x = hit_pos.X();
-            float z = hit_pos.Z();
-            float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
+        if (x_vtx > (drift_min - 1.f) && x_vtx < (drift_max + 1.f) && z_vtx > (wire_min - 1.f) && z_vtx < (wire_max + 1.f))
+        {            
+            std::vector<float> feat_vec = { x_vtx, z_vtx, 
+                                            drift_min, drift_max, 
+                                            wire_min, wire_max, 
+                                            muon_p[0], muon_p[1], muon_p[2], 
+                                            piplus_p[0], piplus_p[1], piplus_p[2], 
+                                            piminus_p[0], piminus_p[1], piminus_p[2] };
 
-            feature_vector.insert(feature_vector.end(), {x, z, q});
+            unsigned int n_hits = 0;
+            unsigned int n_muon_hits = 0;
+            unsigned int n_piplus_hits = 0;
+            unsigned int n_piminus_hits = 0;
+            for (unsigned int ih = 0; ih < hits.size(); ih++)
+            {   
+                const auto hit = hits.at(ih);
+                const geo::WireID hit_wire(hit->WireID());
 
-            std::array<float, 3> particle_flags = {0.0f, 0.0f, 0.0f};
-            auto const& assmcp = _mcp_bkth_assoc->at(ih);
-            auto const& assmdt = _mcp_bkth_assoc->data(ih);
+                if (hit_wire.Wire >= art::ServiceHandle<geo::Geometry>()->Nwires(hit_wire)) continue;
+                const auto hit_pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
+                float x = hit_pos.X();
+                float z = hit_pos.Z();
+                float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-            for (unsigned int ia = 0; ia < assmcp.size(); ++ia) 
-            {
-                auto mcp = assmcp[ia]; 
-                auto amd = assmdt[ia];
+                if (q < 1e3) continue;
+                feat_vec.insert(feat_vec.end(), {x, z, q});
 
-                if (amd->isMaxIDE != 1) 
-                    continue;
+                std::array<float, 3> sig_flags = {0.0f, 0.0f, 0.0f};
+                if (_mcp_bkth_assoc != nullptr && ih < _mcp_bkth_assoc->size()) 
+                {
+                    auto const& assmcp = _mcp_bkth_assoc->at(ih);
+                    auto const& assmdt = _mcp_bkth_assoc->data(ih);
 
-                if (particle_to_flag.count(mcp->TrackId())) 
-                    particle_flags[particle_to_flag[mcp->TrackId()]] = 1.0f;
+                    if (!assmcp.empty() && !assmdt.empty()) 
+                    {
+                        for (unsigned int ia = 0; ia < assmcp.size(); ++ia) 
+                        {   
+                            auto mcp = assmcp[ia]; 
+                            auto amd = assmdt[ia];
+
+                            if (amd->isMaxIDE == 1) 
+                            {
+                                if (mcp->TrackId() == muon_tid)
+                                {
+                                    sig_flags[0] = 1.0f;
+                                    ++n_muon_hits;
+                                }
+                                else if (mcp->TrackId() == piplus_tid)
+                                {
+                                    sig_flags[1] = 1.0f;
+                                    ++n_piplus_hits;
+                                }
+                                else if (mcp->TrackId() == piminus_tid) 
+                                {
+                                    sig_flags[2] = 1.0f;
+                                    ++n_piminus_hits;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ++n_hits;
+                feat_vec.insert(feat_vec.end(), sig_flags.begin(), sig_flags.end());
             }
 
-            feature_vector.insert(feature_vector.end(), particle_flags.begin(), particle_flags.end());
-            ++n_hits;
+            std::cout << "n_muon_hits: " << n_muon_hits << std::endl;
+            std::cout << "n_piplus_hits: " << n_piplus_hits << std::endl;
+            std::cout << "n_piminus_hits: " << n_piminus_hits << std::endl;
+
+            feat_vec.insert(feat_vec.begin() + 7, static_cast<float>(n_hits));
+
+            if (n_muon_hits > 10 && n_piplus_hits > 10 && n_piminus_hits > 10) 
+            {
+                std::string view_string = "";
+                switch (view) {
+                    case common::TPC_VIEW_U:
+                        view_string = "U";
+                        break;
+                    case common::TPC_VIEW_V:
+                        view_string = "V";
+                        break;
+                    case common::TPC_VIEW_W:
+                        view_string = "W";
+                        break;
+                    default:
+                        break;
+                }
+
+                std::string training_filename = _training_output_file + "_" + view_string + ".csv";
+                this->produceTrainingSample(training_filename, feat_vec, true);
+            }
         }
-
-        if (n_hits < 10) 
-            continue;
-
-        std::string training_filename = _training_output_file + "_" + std::to_string(view) + ".csv";
-        this->produceTrainingSample(training_filename, feature_vector);
     }
 }
 
-
-void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int &muon_tid, int &piplus_tid, int &piminus_tid, bool &found_signature)
+void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature, std::array<float, 3>& nu_vtx, std::array<float, 3>& muon_p, std::array<float, 3>& piplus_p, std::array<float, 3>& piminus_p)
 {
     muon_tid = piplus_tid = piminus_tid = -1;
+    std::fill(muon_p.begin(), muon_p.end(), 0.0f);
+    std::fill(piplus_p.begin(), piplus_p.end(), 0.0f);
+    std::fill(piminus_p.begin(), piminus_p.end(), 0.0f);
+
     found_signature = false;
 
     auto const &mct_h = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
@@ -223,12 +293,15 @@ void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int &m
     if (!mct.NeutrinoSet()) return;
 
     auto const &neutrino = mct.GetNeutrino();
+    auto const &nu = neutrino.Nu();
+    common::True2RecoMappingXYZ(nu.T(), nu.Vx(), nu.Vy(), nu.Vz(), nu_vtx.data());
+
     if (neutrino.CCNC() != simb::kCC) return;
     const simb::MCParticle& lepton = neutrino.Lepton();
 
     if (abs(lepton.PdgCode()) != muon->PdgCode() || lepton.Momentum().Vect().Mag() < _MuonThreshold) return;
-    
     muon_tid = lepton.TrackId();
+    muon_p = {static_cast<float>(lepton.Px()), static_cast<float>(lepton.Py()), static_cast<float>(lepton.Pz())};
 
     for (const auto &t_part : *mcp_h) 
     {
@@ -256,10 +329,15 @@ void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int &m
                     for (const auto &dtr : daughters) 
                     {
                         if (dtr->PdgCode() == 211) // pion-plus
+                        {
                             piplus_tid = dtr->TrackId();
-                        
+                            piplus_p = {static_cast<float>(dtr->Px()), static_cast<float>(dtr->Py()), static_cast<float>(dtr->Pz())};
+                        }
                         else if (dtr->PdgCode() == -211) // pion-minus
+                        {
                             piminus_tid = dtr->TrackId();
+                            piminus_p = {static_cast<float>(dtr->Px()), static_cast<float>(dtr->Py()), static_cast<float>(dtr->Pz())};
+                        }   
                     }
 
                     found_signature = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
@@ -274,7 +352,7 @@ void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int &m
 }
 
 void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
-{
+{   
     x_min = std::numeric_limits<float>::max();
     x_max = -std::numeric_limits<float>::max();
     z_min = std::numeric_limits<float>::max();
@@ -283,7 +361,10 @@ void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector
     for (const art::Ptr<recob::Hit> &hit : hit_v)
     {
         common::PandoraView view = common::GetPandoraView(hit);
+        if (view == common::TPC_VIEW_UNKNOWN) continue;
+
         TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
+        if (pos == TVector3(0, 0, 0)) continue; 
 
         x_min = std::min<float>(x_min, static_cast<float>(pos.X()));
         x_max = std::max<float>(x_max, static_cast<float>(pos.X()));
@@ -292,18 +373,19 @@ void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector
     }
 }
 
-void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, const std::vector<float>& feature_vector)
+void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
-    std::ofstream out_file(_training_output_file, std::ios_base::app);
+    std::ofstream out_file(filename, std::ios_base::app);
+    if (!out_file.is_open()) return;
 
-    if (!out_file.is_open())
-        return;
+    std::string delimiter = ",";
+    auto current_time = std::time(nullptr);
+    out_file << std::put_time(std::localtime(&current_time), "%Y-%m-%d %H:%M:%S") << delimiter;
 
-    for (const float &feature : feature_vector)
-        out_file << feature << ",";
-    
-    //out_file << static_cast<int>(result) << "\n";
+    for (const float &feature : feat_vec)
+        out_file << feature << delimiter;
 
+    out_file << static_cast<int>(result) << '\n';
     out_file.close();
 }
 
@@ -342,12 +424,9 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
             const auto& hit = hits[i];
             int predicted_class = predicted_classes[0][pixel_vector[i].first][pixel_vector[i].second].item<int>();
 
-            if (predicted_class == 1) 
-                muon_hits.push_back(hit); 
-            else if (predicted_class == 2) 
-                pion_plus_hits.push_back(hit);  
-            else if (predicted_class == 3) 
-                pion_minus_hits.push_back(hit);  
+            if (predicted_class == 1) muon_hits.push_back(hit); 
+            else if (predicted_class == 2) pion_plus_hits.push_back(hit);  
+            else if (predicted_class == 3) pion_minus_hits.push_back(hit);  
         }
     }
 }
