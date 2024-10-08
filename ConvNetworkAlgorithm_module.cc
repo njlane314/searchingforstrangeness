@@ -56,11 +56,10 @@ private:
     int _width, _height;
     float _drift_step;
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
-
     std::map<common::PandoraView, float> _wire_pitch;
 
     art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
-    std::vector<art::Ptr<recob::Hit>> _hit_list;
+    std::vector<art::Ptr<recob::Hit>> _event_hits;
 
     calo::CalorimetryAlg* _calo_alg;
     std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
@@ -83,7 +82,7 @@ private:
     void infer(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::vector<std::pair<int, int>>& pixel_vector);
-    void getHitRegion(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
+    void findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
     void identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature, std::array<float, 3>& nu_vtx, std::array<float, 3>& muon_p, std::array<float, 3>& piplus_p, std::array<float, 3>& piminus_p);
 };
 
@@ -126,13 +125,16 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
 
 void ConvNetworkAlgorithm::analyze(art::Event const& evt) 
 {   
+    _event_hits.clear(); 
+    _mcp_bkth_assoc.reset();
+
     art::Handle<std::vector<recob::Hit>> hit_handle;
     if (evt.getByLabel(_HitProducer, hit_handle))
     {
-        art::fill_ptr_vector(_hit_list, hit_handle);
+        art::fill_ptr_vector(_event_hits, hit_handle);
         _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_handle, evt, _BacktrackTag);
 
-        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << _hit_list.size();
+        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << _event_hits.size();
     }
   
     if (_training_mode)
@@ -150,35 +152,49 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
     std::array<float, 3> nu_vtx, muon_p, piplus_p, piminus_p;
 
     this->identifySignalParticles(evt, muon_tid, piplus_tid, piminus_tid, found_signature, nu_vtx, muon_p, piplus_p, piminus_p);
-    if (!found_signature) return;
+    if (!found_signature) return; // remove this when training the network
 
-    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> hit_view_map;
-    for (const auto& hit : _hit_list) {
-        common::PandoraView view = common::GetPandoraView(hit);
-        if (view != common::TPC_VIEW_UNKNOWN) 
-            hit_view_map[view].push_back(hit);
-    }    
+    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> intr_hits;
+    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
 
-    for (const auto& [view, hits] : hit_view_map)
+    for (const art::Ptr<recob::Hit>& hit : _event_hits) 
     {
-        float drift_min = std::numeric_limits<float>::max();
-        float drift_max = -std::numeric_limits<float>::max();
-        float wire_min, wire_max;
-        this->getHitRegion(evt, hits, drift_min, drift_max, wire_min, wire_max);
+        common::PandoraView view = common::GetPandoraView(hit);
+        if (view == common::TPC_VIEW_UNKNOWN) continue;
 
-        std::cout << "Minimum drift " << drift_min << std::endl;
-        std::cout << "Maximum drift " << drift_max << std::endl;
-        std::cout << "Minimum wire " << wire_min << std::endl;
-        std::cout << "Maximum wire " << wire_max << std::endl;
+        evt_hits[view].push_back(hit);
+
+        const std::vector<art::Ptr<simb::MCParticle>>& mc_particle_vector = _mcp_bkth_assoc->at(hit.key());
+        const auto& matching_data_vector = _mcp_bkth_assoc->data(hit.key());
+
+        for (size_t i_p = 0; i_p < mc_particle_vector.size(); ++i_p) 
+        {
+            if (matching_data_vector[i_p]->isMaxIDE == 1) 
+            {
+                intr_hits[view].push_back(hit);
+                break;  
+            }
+        }
+    }
+
+    for (const auto& [view, evt_view_hits] : evt_hits)
+    {
+        float intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max;
+        this->findRegionExtent(evt, intr_hits[view], intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max);
+
+        float evt_drft_min, evt_drft_max, evt_wire_min, evt_wire_max;
+        this->findRegionExtent(evt, evt_view_hits, evt_drft_min, evt_drft_max, evt_wire_min, evt_wire_max);
 
         float x_vtx = nu_vtx[0];
         float z_vtx = (common::ProjectToWireView(nu_vtx[0], nu_vtx[1], nu_vtx[2], view)).Z();
 
-        if (x_vtx > (drift_min - 1.f) && x_vtx < (drift_max + 1.f) && z_vtx > (wire_min - 1.f) && z_vtx < (wire_max + 1.f))
+        if (x_vtx > (evt_drft_min - 1.f) && x_vtx < (evt_drft_max + 1.f) && z_vtx > (evt_wire_min - 1.f) && z_vtx < (evt_wire_max + 1.f))
         {            
             std::vector<float> feat_vec = { x_vtx, z_vtx, 
-                                            drift_min, drift_max, 
-                                            wire_min, wire_max, 
+                                            evt_drft_min, evt_drft_max, 
+                                            evt_wire_min, evt_wire_max, 
+                                            intr_drft_min, intr_drft_max,
+                                            intr_wire_min, intr_wire_max,
                                             muon_p[0], muon_p[1], muon_p[2], 
                                             piplus_p[0], piplus_p[1], piplus_p[2], 
                                             piminus_p[0], piminus_p[1], piminus_p[2] };
@@ -187,9 +203,9 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
             unsigned int n_muon_hits = 0;
             unsigned int n_piplus_hits = 0;
             unsigned int n_piminus_hits = 0;
-            for (unsigned int ih = 0; ih < hits.size(); ih++)
+            for (unsigned int ih = 0; ih < evt_view_hits.size(); ih++)
             {   
-                const auto hit = hits.at(ih);
+                const auto hit = evt_view_hits.at(ih);
                 const geo::WireID hit_wire(hit->WireID());
 
                 if (hit_wire.Wire >= art::ServiceHandle<geo::Geometry>()->Nwires(hit_wire)) continue;
@@ -240,11 +256,7 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
                 feat_vec.insert(feat_vec.end(), sig_flags.begin(), sig_flags.end());
             }
 
-            std::cout << "n_muon_hits: " << n_muon_hits << std::endl;
-            std::cout << "n_piplus_hits: " << n_piplus_hits << std::endl;
-            std::cout << "n_piminus_hits: " << n_piminus_hits << std::endl;
-
-            feat_vec.insert(feat_vec.begin() + 7, static_cast<float>(n_hits));
+            feat_vec.insert(feat_vec.begin() + 10, static_cast<float>(n_hits));
 
             if (n_muon_hits > 10 && n_piplus_hits > 10 && n_piminus_hits > 10) 
             {
@@ -351,7 +363,7 @@ void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int& m
     }
 }
 
-void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
+void ConvNetworkAlgorithm::findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
 {   
     x_min = std::numeric_limits<float>::max();
     x_max = -std::numeric_limits<float>::max();
@@ -361,10 +373,12 @@ void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector
     for (const art::Ptr<recob::Hit> &hit : hit_v)
     {
         common::PandoraView view = common::GetPandoraView(hit);
-        if (view == common::TPC_VIEW_UNKNOWN) continue;
+        if (view == common::TPC_VIEW_UNKNOWN) 
+            continue;
 
         TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
-        if (pos == TVector3(0, 0, 0)) continue; 
+        if (pos == TVector3(0, 0, 0)) 
+            continue; 
 
         x_min = std::min<float>(x_min, static_cast<float>(pos.X()));
         x_max = std::max<float>(x_max, static_cast<float>(pos.X()));
@@ -376,7 +390,8 @@ void ConvNetworkAlgorithm::getHitRegion(const art::Event& evt, const std::vector
 void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
     std::ofstream out_file(filename, std::ios_base::app);
-    if (!out_file.is_open()) return;
+    if (!out_file.is_open()) 
+        return;
 
     std::string delimiter = ",";
     auto current_time = std::time(nullptr);
@@ -395,20 +410,20 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
     std::vector<art::Ptr<recob::Hit>> pion_plus_hits;
     std::vector<art::Ptr<recob::Hit>> pion_minus_hits;
 
-    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> hit_view_map;
-    for (const auto& hit : _hit_list)
-        hit_view_map[common::GetPandoraView(hit)].push_back(hit);
+    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
+    for (const auto& hit : _event_hits)
+        evt_hits[common::GetPandoraView(hit)].push_back(hit);
 
-    for (const auto& [view, hits] : hit_view_map)
+    for (const auto& [view, evt_view_hits] : evt_hits)
     {
         float drift_min = std::numeric_limits<float>::max();
         float drift_max = -std::numeric_limits<float>::max();
         float wire_min, wire_max;
-        this->getHitRegion(evt, hits, drift_min, drift_max, wire_min, wire_max);
+        this->findRegionExtent(evt, evt_view_hits, drift_min, drift_max, wire_min, wire_max);
 
         torch::Tensor network_input;
         std::vector<std::pair<int, int>> pixel_vector;
-        this->makeNetworkInput(evt, hits, view, drift_min, drift_max, wire_min, wire_max, network_input, pixel_vector);
+        this->makeNetworkInput(evt, evt_view_hits, view, drift_min, drift_max, wire_min, wire_max, network_input, pixel_vector);
 
         torch::Tensor output;
         if (view == common::TPC_VIEW_U)
@@ -419,9 +434,9 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
             output = _model_w->forward({network_input}).toTensor();
 
         torch::Tensor predicted_classes = torch::argmax(output, 1); 
-        for (size_t i = 0; i < hits.size(); ++i)
+        for (size_t i = 0; i < evt_view_hits.size(); ++i)
         {
-            const auto& hit = hits[i];
+            const auto& hit = evt_view_hits[i];
             int predicted_class = predicted_classes[0][pixel_vector[i].first][pixel_vector[i].second].item<int>();
 
             if (predicted_class == 1) muon_hits.push_back(hit); 
