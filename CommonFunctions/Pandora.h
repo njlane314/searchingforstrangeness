@@ -11,17 +11,13 @@
 
 namespace common
 {
-    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W, TPC_VIEW_UNKNOWN};
+    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W};
 
     PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
     {
         art::ServiceHandle<geo::Geometry> geo;
         const geo::WireID hit_wire(hit->WireID());
         const geo::View_t hit_view(hit->View());
-
-        if (hit_wire.Cryostat >= geo->Ncryostats() || hit_wire.TPC >= geo->NTPC(hit_wire.Cryostat) || hit_wire.Wire >= geo->Nwires(hit_wire) || (hit_view != geo::kU && hit_view != geo::kV && hit_view != geo::kW && hit_view != geo::kY)) 
-            return TPC_VIEW_UNKNOWN;
-
         const geo::View_t pandora_view(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_wire.Cryostat, hit_wire.TPC, hit_view));
 
         if (pandora_view == geo::kW || pandora_view == geo::kY)
@@ -31,7 +27,7 @@ namespace common
         else if (pandora_view == geo::kV)
             return TPC_VIEW_V;
         else
-            return TPC_VIEW_UNKNOWN;
+            throw cet::exception("Pandora") << "wire view not recognised.";
     }
 
     float YZtoU(const float y_coord, const float z_coord)
@@ -52,12 +48,8 @@ namespace common
         return (z_coord * std::cos(m_wWireAngle)) - (y_coord * std::sin(m_wWireAngle));
     }
 
-    TVector3 ProjectToWireView(const float input_x, const float input_y, const float input_z, const PandoraView pandora_view)
+    TVector3 ProjectToWireView(const float x_coord, const float y_coord, const float z_coord, const PandoraView pandora_view)
     {
-        const float x_coord = input_x;
-        const float y_coord = input_y;
-        const float z_coord = input_z;
-
         return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(y_coord, z_coord) : pandora_view == TPC_VIEW_V ? YZtoV(y_coord, z_coord) : YZtoW(y_coord, z_coord));
     }
 
@@ -68,9 +60,6 @@ namespace common
 
         const geo::WireID hit_wire(hit->WireID());
         const double hit_time(hit->PeakTime());
-
-        if (hit_wire.Wire >= geo->Nwires(hit_wire))
-            return TVector3(0, 0, 0);
 
         const double x_coord = det->ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
         TVector3 xyz = geo->Cryostat(hit_wire.Cryostat).TPC(hit_wire.TPC).Plane(hit_wire.Plane).Wire(hit_wire.Wire).GetCenter();

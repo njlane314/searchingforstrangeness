@@ -160,8 +160,6 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
     for (const art::Ptr<recob::Hit>& hit : _event_hits) 
     {
         common::PandoraView view = common::GetPandoraView(hit);
-        if (view == common::TPC_VIEW_UNKNOWN) continue;
-
         evt_hits[view].push_back(hit);
 
         const std::vector<art::Ptr<simb::MCParticle>>& mc_particle_vector = _mcp_bkth_assoc->at(hit.key());
@@ -264,12 +262,15 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
                 switch (view) {
                     case common::TPC_VIEW_U:
                         view_string = "U";
+                        std::cout << "-- For U-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
                         break;
                     case common::TPC_VIEW_V:
                         view_string = "V";
+                        std::cout << "-- For V-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
                         break;
                     case common::TPC_VIEW_W:
                         view_string = "W";
+                        std::cout << "-- For W-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
                         break;
                     default:
                         break;
@@ -373,12 +374,7 @@ void ConvNetworkAlgorithm::findRegionExtent(const art::Event& evt, const std::ve
     for (const art::Ptr<recob::Hit> &hit : hit_v)
     {
         common::PandoraView view = common::GetPandoraView(hit);
-        if (view == common::TPC_VIEW_UNKNOWN) 
-            continue;
-
         TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
-        if (pos == TVector3(0, 0, 0)) 
-            continue; 
 
         x_min = std::min<float>(x_min, static_cast<float>(pos.X()));
         x_max = std::max<float>(x_max, static_cast<float>(pos.X()));
@@ -394,8 +390,6 @@ void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, co
         return;
 
     std::string delimiter = ",";
-    auto current_time = std::time(nullptr);
-    out_file << std::put_time(std::localtime(&current_time), "%Y-%m-%d %H:%M:%S") << delimiter;
 
     for (const float &feature : feat_vec)
         out_file << feature << delimiter;
