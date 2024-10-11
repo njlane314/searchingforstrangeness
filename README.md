@@ -1,3 +1,3 @@
-# searchingforstrangeness
+# **searchingforstrangeness**
 
-lar -c run_neutrinoselectionfilter.fcl -s <.root>
+_This code is a [Pandora](https://github.com/PandoraPFA/larpandora) neutrino selection framework, built with [LArSoft](https://github.com/LArSoft/larsoft), using the design implemented in [searchingfornues](https://github.com/ubneutrinos/searchingfornues). The framework loads a candidate neutrino slice given by Pandora, runs a single selection tool for each event, and a series of analysis tools for each slice. The selection and analysis tools are configurable at run, and the output is to a single root file. This implementation is specifically designed to search for rare neutrino processes that give distinct topologies or identifiable pattern signatures within the MicroBooNE detector; these signatures are identified using a visual deep-learning network that processes each of the wire planes independently. 

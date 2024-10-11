@@ -48,8 +48,12 @@ namespace common
         return (z_coord * std::cos(m_wWireAngle)) - (y_coord * std::sin(m_wWireAngle));
     }
 
-    TVector3 ProjectToWireView(const float x_coord, const float y_coord, const float z_coord, const PandoraView pandora_view)
+    TVector3 ProjectToWireView(const float input_x, const float input_y, const float input_z, const PandoraView pandora_view)
     {
+        const float x_coord = input_x;
+        const float y_coord = input_y;
+        const float z_coord = input_z;
+
         return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(y_coord, z_coord) : pandora_view == TPC_VIEW_V ? YZtoV(y_coord, z_coord) : YZtoW(y_coord, z_coord));
     }
 

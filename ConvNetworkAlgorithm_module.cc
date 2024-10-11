@@ -94,9 +94,9 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
     , _width{pset.get<int>("ImageWidth", 256)}
     , _height{pset.get<int>("ImageHeight", 256)}
     , _drift_step{pset.get<float>("DriftStep", 0.5)}
-    , _wire_pitch_u{pset.get<float>("WirePitchU", 0.46669998765)}
-    , _wire_pitch_v{pset.get<float>("WirePitchU", 0.46669998765)}
-    , _wire_pitch_w{pset.get<float>("WirePitchU", 0.46669998765)}
+    , _wire_pitch_u{pset.get<float>("WirePitchU", 0.3)}
+    , _wire_pitch_v{pset.get<float>("WirePitchU", 0.3)}
+    , _wire_pitch_w{pset.get<float>("WirePitchU", 0.3)}
     , _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
