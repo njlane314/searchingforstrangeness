@@ -28,7 +28,7 @@ source:
 {
     module_type: RootInput  
     maxEvents: -1  
-    fileNames: [ "input_file.root" ] # Replace with your input file name
+    fileNames: [ "input_file.root" ] 
 }
 
 physics:
