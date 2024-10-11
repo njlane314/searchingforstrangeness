@@ -42,15 +42,11 @@ SignalTruthFilter: {
     module_type: SignalTruthFilter
 }
 
-// for calo alg
 microboone_calo_mcc9_data:
 {
-  #   Update (1/24/23): in v08_00_00_63, the collection
-  #   plane scale factor in data is 4.10e-3 (??)
-  #CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.26e-3 ]
-  CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
-  CalAmpConstants:  [ 9.2e-4, 1.062e-3, 1.08e-3 ]
-  CaloDoLifeTimeCorrection: false
-  CaloLifeTimeForm: 0
-  CaloUseModBox: true
+    CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
+    CalAmpConstants:  [ 9.2e-4, 1.062e-3, 1.08e-3 ]
+    CaloDoLifeTimeCorrection: false
+    CaloLifeTimeForm: 0
+    CaloUseModBox: true
 }
