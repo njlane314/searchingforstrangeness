@@ -81,7 +81,7 @@ private:
     void prepareTrainingSample(art::Event const& evt);
     void infer(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
-    void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::vector<std::pair<int, int>>& pixel_vector);
+    void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel);
     void findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
     void identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature, std::array<float, 3>& nu_vtx, std::array<float, 3>& muon_p, std::array<float, 3>& piplus_p, std::array<float, 3>& piminus_p);
 };
@@ -106,9 +106,12 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
 {
     try {
         if (!_training_mode) {
+          std::cout << "In testing mode!" << std::endl;
+          std::cout << pset.get<std::string>("ModelFileU") << std::endl;
             _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
             _model_v = torch::jit::load(pset.get<std::string>("ModelFileV"));
             _model_w = torch::jit::load(pset.get<std::string>("ModelFileW"));
+            std::cout << "Loaded models" << std::endl;
         }
     } catch (const c10::Error& e) {
         throw cet::exception("ConvNetworkAlgorithm") << "Error loading Torch models: " << e.what() << "\n";
@@ -139,7 +142,7 @@ void ConvNetworkAlgorithm::analyze(art::Event const& evt)
   
     if (_training_mode)
         this->prepareTrainingSample(evt);
-    else
+    else 
         this->infer(evt);
 }
 
@@ -400,6 +403,7 @@ void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, co
 
 void ConvNetworkAlgorithm::infer(art::Event const& evt) 
 {
+        std::cout << "Startig infer" << std::endl;
     std::vector<art::Ptr<recob::Hit>> muon_hits;
     std::vector<art::Ptr<recob::Hit>> pion_plus_hits;
     std::vector<art::Ptr<recob::Hit>> pion_minus_hits;
@@ -416,9 +420,12 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
         this->findRegionExtent(evt, evt_view_hits, drift_min, drift_max, wire_min, wire_max);
 
         torch::Tensor network_input;
-        std::vector<std::pair<int, int>> pixel_vector;
-        this->makeNetworkInput(evt, evt_view_hits, view, drift_min, drift_max, wire_min, wire_max, network_input, pixel_vector);
+        std::map<art::Ptr<recob::Hit>,std::pair<int, int>> calohit_pixel;
+        std::cout << "About to call makeNetworkInput" << std::endl;
+        this->makeNetworkInput(evt, evt_view_hits, view, drift_min, drift_max, wire_min, wire_max, network_input, calohit_pixel);
+        std::cout << "Called makeNetworkInput" << std::endl;
 
+       
         torch::Tensor output;
         if (view == common::TPC_VIEW_U)
             output = _model_u->forward({network_input}).toTensor();
@@ -427,20 +434,34 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
         else if (view == common::TPC_VIEW_W)
             output = _model_w->forward({network_input}).toTensor();
 
+        std::cout << "Made output" << std::endl;
+
         torch::Tensor predicted_classes = torch::argmax(output, 1); 
+        auto classesAccessor{predicted_classes.accessor<int64_t,4>()};
+        
         for (size_t i = 0; i < evt_view_hits.size(); ++i)
         {
             const auto& hit = evt_view_hits[i];
-            int predicted_class = predicted_classes[0][pixel_vector[i].first][pixel_vector[i].second].item<int>();
+
+            const auto pixel = calohit_pixel.at(hit);
+            int predicted_class = predicted_classes[0][pixel.first][pixel.second].item<int>();
+            float prob_null = classesAccessor[0][0][pixel.first][pixel.second];
+            float prob_muon = classesAccessor[0][1][pixel.first][pixel.second];
+            float prob_pip = classesAccessor[0][2][pixel.first][pixel.second];
+            float prob_pim = classesAccessor[0][3][pixel.first][pixel.second];
+            std::cout << "prob_null=" << prob_null << " prob_muon=" << prob_muon << " prob_pip=" <<  prob_pip << " prob_pim=" << prob_pim << std::endl; 
 
             if (predicted_class == 1) muon_hits.push_back(hit); 
             else if (predicted_class == 2) pion_plus_hits.push_back(hit);  
             else if (predicted_class == 3) pion_minus_hits.push_back(hit);  
         }
     }
+
+  std::cout << "Ending infer" << std::endl;
+
 }
 
-void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::vector<std::pair<int, int>>& pixel_vector)
+void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel)
 {
     const float pitch = _wire_pitch[view];
     std::vector<double> x_bin_edges(_width + 1);
@@ -473,17 +494,9 @@ void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::ve
         const int pixel_x{static_cast<int>(std::floor((x - x_bin_edges[0]) / dx))};
         const int pixel_z{static_cast<int>(std::floor((z - z_bin_edges[0]) / dz))};
         accessor[0][0][pixel_z][pixel_x] += q;
+        m_calohit_pixel.insert({hit,{pixel_z,pixel_x}});
     }
 
-    for (int row = 0; row < _height; ++row)
-    {
-        for (int col = 0; col < _width; ++col)
-        {
-            const float value{accessor[0][0][row][col]};
-            if (value > 0)
-                pixel_vector.emplace_back(std::make_pair(row, col));
-        }
-    }
 }
 
 void ConvNetworkAlgorithm::beginJob() 
