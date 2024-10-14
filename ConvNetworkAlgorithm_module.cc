@@ -148,14 +148,14 @@ void ConvNetworkAlgorithm::analyze(art::Event const& evt)
 
 void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt) 
 {
-    mf::LogInfo("ConvNetworkAlgorithm") << "Preparing training sample...";
+    std::cout << "Preparing training sample..." << std::endl;
 
     int muon_tid, piplus_tid, piminus_tid;
     bool found_signature;
     std::array<float, 3> nu_vtx, muon_p, piplus_p, piminus_p;
 
     this->identifySignalParticles(evt, muon_tid, piplus_tid, piminus_tid, found_signature, nu_vtx, muon_p, piplus_p, piminus_p);
-    if (!found_signature) return; // remove this when training the network
+    if (!found_signature) return;
 
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> intr_hits;
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
@@ -180,6 +180,7 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
 
     for (const auto& [view, evt_view_hits] : evt_hits)
     {
+        std::cout << "Hits in view " << evt_view_hits.size() << std::endl;
         float intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max;
         this->findRegionExtent(evt, intr_hits[view], intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max);
 
@@ -215,14 +216,13 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
                 float z = hit_pos.Z();
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-                if (q < 1e3) continue;
                 feat_vec.insert(feat_vec.end(), {x, z, q});
 
                 std::array<float, 3> sig_flags = {0.0f, 0.0f, 0.0f};
-                if (_mcp_bkth_assoc != nullptr && ih < _mcp_bkth_assoc->size()) 
+                if (_mcp_bkth_assoc != nullptr) 
                 {
-                    auto const& assmcp = _mcp_bkth_assoc->at(ih);
-                    auto const& assmdt = _mcp_bkth_assoc->data(ih);
+                    const auto& assmcp = _mcp_bkth_assoc->at(hit.key());
+                    const auto& assmdt = _mcp_bkth_assoc->data(hit.key());
 
                     if (!assmcp.empty() && !assmdt.empty()) 
                     {
@@ -257,33 +257,38 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
                 feat_vec.insert(feat_vec.end(), sig_flags.begin(), sig_flags.end());
             }
 
+            std::cout << "muon hits " << n_muon_hits << std::endl;
+            std::cout << "piplus hits " << n_piplus_hits << std::endl;
+            std::cout << "piminus hits " << n_piminus_hits << std::endl;
+
             feat_vec.insert(feat_vec.begin() + 10, static_cast<float>(n_hits));
 
-            if (n_muon_hits > 10 && n_piplus_hits > 10 && n_piminus_hits > 10) 
+            std::string view_string = "";
+            std::string training_filename;
+            switch (view) 
             {
-                std::string view_string = "";
-                switch (view) {
-                    case common::TPC_VIEW_U:
-                        view_string = "U";
-                        std::cout << "-- For U-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
-                        break;
-                    case common::TPC_VIEW_V:
-                        view_string = "V";
-                        std::cout << "-- For V-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
-                        break;
-                    case common::TPC_VIEW_W:
-                        view_string = "W";
-                        std::cout << "-- For W-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
-                        break;
-                    default:
-                        break;
-                }
-
-                std::string training_filename = _training_output_file + "_" + view_string + ".csv";
-                this->produceTrainingSample(training_filename, feat_vec, true);
+                case common::TPC_VIEW_U:
+                    view_string = "U";
+                    std::cout << "-- For U-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
+                    break;
+                case common::TPC_VIEW_V:
+                    view_string = "V";
+                    std::cout << "-- For V-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
+                    break;
+                case common::TPC_VIEW_W:
+                    view_string = "W";
+                    std::cout << "-- For W-plane, the number of hits is " << n_muon_hits << ", " << n_piplus_hits << ", " << n_piminus_hits << std::endl;
+                    break;
+                default:
+                    break;
             }
+
+            training_filename = _training_output_file + "_" + view_string + ".csv";
+            this->produceTrainingSample(training_filename, feat_vec, true);
         }
     }
+
+    std::cout << "Finished preparing training sample!" << std::endl;
 }
 
 void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int& muon_tid, int& piplus_tid, int& piminus_tid, bool& found_signature, std::array<float, 3>& nu_vtx, std::array<float, 3>& muon_p, std::array<float, 3>& piplus_p, std::array<float, 3>& piminus_p)
@@ -316,11 +321,22 @@ void ConvNetworkAlgorithm::identifySignalParticles(art::Event const& evt, int& m
     const simb::MCParticle& lepton = neutrino.Lepton();
 
     if (abs(lepton.PdgCode()) != muon->PdgCode() || lepton.Momentum().Vect().Mag() < _MuonThreshold) return;
-    muon_tid = lepton.TrackId();
-    muon_p = {static_cast<float>(lepton.Px()), static_cast<float>(lepton.Py()), static_cast<float>(lepton.Pz())};
 
     for (const auto &t_part : *mcp_h) 
     {
+        if (abs(t_part.PdgCode()) == muon->PdgCode())
+        {
+            std::cout << "PDG " << t_part.PdgCode() << std::endl;
+            std::cout << "TrackId " << t_part.TrackId() << std::endl;
+        }
+
+        if (abs(t_part.PdgCode()) == muon->PdgCode() && t_part.Process() == "primary" && t_part.Momentum().Vect().Mag() > _MuonThreshold)
+        {
+            muon_tid = t_part.TrackId();
+            std::cout << "Muon TrackId " << muon_tid << std::endl;
+            muon_p = {static_cast<float>(t_part.Px()), static_cast<float>(t_part.Py()), static_cast<float>(t_part.Pz())};
+        }
+
         if (abs(t_part.PdgCode()) == neutral_kaon->PdgCode() && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !found_signature) 
         {
             std::vector<art::Ptr<simb::MCParticle>> dtrs = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
@@ -388,9 +404,12 @@ void ConvNetworkAlgorithm::findRegionExtent(const art::Event& evt, const std::ve
 
 void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
+    std::cout << "Attempting to open file: " << filename << std::endl;
     std::ofstream out_file(filename, std::ios_base::app);
-    if (!out_file.is_open()) 
+    if (!out_file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
         return;
+    }
 
     std::string delimiter = ",";
 
@@ -398,12 +417,14 @@ void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, co
         out_file << feature << delimiter;
 
     out_file << static_cast<int>(result) << '\n';
+
+    std::cout << "Saving the training output!" << std::endl;
     out_file.close();
 }
 
 void ConvNetworkAlgorithm::infer(art::Event const& evt) 
 {
-        std::cout << "Startig infer" << std::endl;
+    std::cout << "Startig infer" << std::endl;
     std::vector<art::Ptr<recob::Hit>> muon_hits;
     std::vector<art::Ptr<recob::Hit>> pion_plus_hits;
     std::vector<art::Ptr<recob::Hit>> pion_minus_hits;

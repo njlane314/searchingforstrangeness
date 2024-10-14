@@ -191,6 +191,7 @@ void TrackAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 
 void TrackAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
+    std::cout << "Analysing slice in TrackCalorimetry..." << std::endl;
     common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, _TRKproducer,
                                                 proxy::withAssociated<anab::Calorimetry>(_CALOproducer));
 
@@ -497,6 +498,8 @@ void TrackAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyP
             fillDefault();
         }
     } 
+
+    std::cout << "Finished analysing slice in TrackCalorimetry!" << std::endl;
 }
 
 void TrackAnalysis::fillDefault()

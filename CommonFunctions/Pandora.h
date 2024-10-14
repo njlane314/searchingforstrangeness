@@ -15,7 +15,6 @@ namespace common
 
     PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
     {
-        art::ServiceHandle<geo::Geometry> geo;
         const geo::WireID hit_wire(hit->WireID());
         const geo::View_t hit_view(hit->View());
         const geo::View_t pandora_view(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_wire.Cryostat, hit_wire.TPC, hit_view));
@@ -27,7 +26,7 @@ namespace common
         else if (pandora_view == geo::kV)
             return TPC_VIEW_V;
         else
-            throw cet::exception("Pandora") << "wire view not recognised.";
+            throw cet::exception("PandoraFuncs") << "wire view not recognised";
     }
 
     float YZtoU(const float y_coord, const float z_coord)

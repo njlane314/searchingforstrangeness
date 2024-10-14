@@ -130,6 +130,7 @@ void PreSelectionAnalysis::configure(fhicl::ParameterSet const &pset)
 
 void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
 {
+    std::cout << "Analysing event in PreSelection..." << std::endl;
     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
 
@@ -498,6 +499,8 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     }
 
     _slice_tree->Fill();
+
+    std::cout << "Finished analysing event in PreSelection!" << std::endl;
 }
 
 void PreSelectionAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
