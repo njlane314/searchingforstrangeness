@@ -92,7 +92,9 @@ void SliceVisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
 
 void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 {
-     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
+    std::cout << "Analysing event in SliceVisualisation..." << std::endl;
+
+    art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
     lar_pandora::MCParticleMap mc_particle_map;
 
@@ -192,12 +194,15 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
             _true_hits_w_owner.push_back(owner_pdg_code);
         }
     }
+
+    std::cout << "Finished analysing event in SliceVisualisation!" << std::endl;
 }
 
 void SliceVisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
+    std::cout << "Analysisng slice in SliceVisualisation..." << std::endl;
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
-                                                proxy::withAssociated<recob::Hit>(_CLSproducer));
+                                                                                            proxy::withAssociated<recob::Hit>(_CLSproducer));
 
     for (const auto& pfp : slice_pfp_v)
     {

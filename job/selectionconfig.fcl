@@ -31,7 +31,7 @@ SelectionFilter: {
         preselection: @local::PreSelectionAnalysisTool
         visualisation: @local::SliceVisualisationAnalysisTool
         eventcategory: @local::EventCategoryAnalysisTool
-        calorimetry: @local::TrackCalorimetryAnalysisTool
+        #calorimetry: @local::TrackCalorimetryAnalysisTool
     }
 }
 

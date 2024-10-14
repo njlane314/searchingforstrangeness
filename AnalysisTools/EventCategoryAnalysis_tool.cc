@@ -302,6 +302,7 @@ void EventCategoryAnalysis::analyzeEvent(art::Event const &e, bool is_data)
 
 void EventCategoryAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
+    std::cout << "Analysing slice in EventCategory..." << std::endl;
     if (selected)
         _pass_preselection = true;
 
@@ -438,6 +439,8 @@ void EventCategoryAnalysis::analyzeSlice(art::Event const &e, std::vector<common
             _mcp_piminus_comple_v.push_back(piminus_comple);
         }
     }
+
+    std::cout << "Finished analysing slice in EventCategory!" << std::endl;
 
     return;
 }
