@@ -23,13 +23,9 @@ public:
     virtual ~AnalysisToolBase() noexcept = default;
     
     void configure(const fhicl::ParameterSet&){};
-
     virtual void analyzeEvent(art::Event const& e, bool fData) = 0;
-
     virtual void analyzeSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool fData, bool selected) = 0;
-
     virtual void setBranches(TTree* _tree) = 0;
-    
     virtual void resetTTree(TTree* _tree) = 0;
 };
 
