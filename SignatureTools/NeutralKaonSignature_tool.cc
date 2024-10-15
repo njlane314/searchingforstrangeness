@@ -17,7 +17,7 @@ public:
     void configure(fhicl::ParameterSet const & pset) override;
 
 protected:
-    void findSignature(art::Event const& evt, std::vector<Particle>& particle_elements, bool& found_signature) override;
+    void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
 
 private:
     art::InputTag _HitProducer;
@@ -40,7 +40,7 @@ void NeutralKaonSignature::configure(fhicl::ParameterSet const & pset)
     SignatureToolBase::configure(pset);
 }
 
-void NeutralKaonSignature::findSignature(art::Event const& evt, std::vector<Particle>& particle_elements, bool& found_signature)
+void NeutralKaonSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
     auto const &mct_h = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
@@ -60,8 +60,8 @@ void NeutralKaonSignature::findSignature(art::Event const& evt, std::vector<Part
     if (neutrino.CCNC() != simb::kCC) return;
 
     for (const auto &t_part : *mcp_h) {
-        if (abs(t_part.PdgCode()) == 13 && t_part.Process() == "primary" && aboveThreshold(t_part)) {
-            fillParticle(t_part, particle_elements);
+        if (abs(t_part.PdgCode()) == 13 && t_part.Process() == "primary" && this->aboveThreshold(t_part)) {
+            this->fillTrace(t_part, trace_coll);
         }
 
         if (abs(t_part.PdgCode()) == 310 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !found_signature) {
@@ -79,14 +79,14 @@ void NeutralKaonSignature::findSignature(art::Event const& evt, std::vector<Part
                 if (fnd_dtrs == exp_dtrs) 
                 {
                     bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
-                        return checkThreshold(*dtr);
+                        return this->aboveThreshold(*dtr);
                     });
 
                     if (all_above_threshold) 
                     {
                         found_signature = true;
                         for (const auto &dtr : daughters) 
-                            fillParticle(dtr, particle_elements);
+                            this->fillTrace(dtr, trace_coll);
 
                         break;
                     }
