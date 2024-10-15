@@ -20,6 +20,7 @@ add_subdirectory(CommonFunctions)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(job)
+add_subdirectory(scripts)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
 message("Compiler: ${CMAKE_CXX_COMPILER}")
