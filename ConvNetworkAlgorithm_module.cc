@@ -516,7 +516,6 @@ void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::ve
         accessor[0][0][pixel_z][pixel_x] += q;
         m_calohit_pixel.insert({hit,{pixel_z,pixel_x}});
     }
-
 }
 
 void ConvNetworkAlgorithm::beginJob() 
