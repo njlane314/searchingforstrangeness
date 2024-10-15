@@ -479,7 +479,6 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
     }
 
   std::cout << "Ending infer" << std::endl;
-
 }
 
 void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel)

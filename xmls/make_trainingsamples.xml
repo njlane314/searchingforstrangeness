@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<!-- Production Project -->
+<!DOCTYPE project [
+<!ENTITY release "v08_00_00_83">
+<!ENTITY file_type "mc">
+<!ENTITY run_type "physics">
+<!ENTITY user "nlane">
+<!ENTITY name "make_trainingsamples_test">
+]>
+
+<job>
+
+<project name="&name;">
+
+  <!-- Project size -->
+  <numevents>-1</numevents>
+
+  <!-- Operating System -->
+  <os>SL7</os>
+
+  <!-- Batch resources -->
+  <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+
+  <!-- Larsoft information -->
+  <larsoft>
+    <tag>&release;</tag>
+    <qual>e17:prof</qual>
+    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/KaonShortProduction04.tar</local>
+  </larsoft>
+  
+  <check>0</check>
+  <copy>0</copy>
+  <version>prod_&release;</version>
+
+  <!-- Project stages -->
+  <stage name="analyse">
+  <inputlist>/pnfs/uboone/scratch/users/cthorpe/kaon_dl/v08_00_00_83/make_k0signal_nocosmic/log/artroot_files.list</inputlist>
+  <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+  <fcl>run_networktraining.fcl</fcl>
+  <dirlevels>1</dirlevels>
+  <dirsize>100</dirsize>
+  <outdir>/pnfs/uboone/scratch/users/nlane/kaon_dl/&release;/&name;/make_csv/out</outdir>
+  <logdir>/pnfs/uboone/scratch/users/nlane/kaon_dl/&release;/&name;/make_csv/log</logdir>
+  <workdir>/pnfs/uboone/scratch/users/nlane/work/kaon_dl/&release;/&name;/make_csv</workdir>
+  <datatier>generated</datatier>
+  <datafiletypes>root</datafiletypes>
+  <prestart>1</prestart>
+  <filelistdef>1</filelistdef>
+  <maxfilesperjob>1</maxfilesperjob>
+  <numjobs>20</numjobs>
+  <memory>4000</memory>
+  <disk>20GB</disk>
+  <maxfluxfilemb>0</maxfluxfilemb>
+  <jobsub>--expected-lifetime=24h</jobsub>
+  </stage>
+
+  <!-- file type -->
+  <filetype>&file_type;</filetype>
+
+  <!-- run type -->
+  <runtype>&run_type;</runtype>
+
+</project>
+
+
+</job>
