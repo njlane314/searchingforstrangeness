@@ -37,16 +37,6 @@ class SignatureToolBase
 public:
 
     virtual ~SignatureToolBase() noexcept = default;
-
-    /*TParticlePDG *neutral_kaon = TDatabasePDG::Instance()->GetParticle(311);
-    TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
-    TParticlePDG *kaon_long = TDatabasePDG::Instance()->GetParticle(130);
-    TParticlePDG *lambda = TDatabasePDG::Instance()->GetParticle(3122);
-    TParticlePDG *sigma_plus = TDatabasePDG::Instance()->GetParticle(3222); 
-    TParticlePDG *sigma_minus = TDatabasePDG::Instance()->GetParticle(3112);
-    TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
-    TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
-    TParticlePDG *pion = TDatabasePDG::Instance()->GetParticle(211);*/
     
     virtual void configure(fhicl::ParameterSet const& pset)
     {
