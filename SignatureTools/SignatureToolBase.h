@@ -13,6 +13,14 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+
+#include "CommonFunctions/Pandora.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Corrections.h"
+
 namespace signature {
 
 struct Trace
@@ -24,17 +32,30 @@ struct Trace
 
 using TraceCollection = std::vector<Trace>&;
 
-class SignatureToolBase {
-
+class SignatureToolBase 
+{
 public:
 
     virtual ~SignatureToolBase() noexcept = default;
+
+    /*TParticlePDG *neutral_kaon = TDatabasePDG::Instance()->GetParticle(311);
+    TParticlePDG *kaon_short = TDatabasePDG::Instance()->GetParticle(310);
+    TParticlePDG *kaon_long = TDatabasePDG::Instance()->GetParticle(130);
+    TParticlePDG *lambda = TDatabasePDG::Instance()->GetParticle(3122);
+    TParticlePDG *sigma_plus = TDatabasePDG::Instance()->GetParticle(3222); 
+    TParticlePDG *sigma_minus = TDatabasePDG::Instance()->GetParticle(3112);
+    TParticlePDG *sigma_zero = TDatabasePDG::Instance()->GetParticle(3212);
+    TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
+    TParticlePDG *pion = TDatabasePDG::Instance()->GetParticle(211);*/
     
-    void configure(const fhicl::ParameterSet&){
+    virtual void configure(fhicl::ParameterSet const& pset)
+    {
         _thresh_map[211] = pset.get<float>("PionThreshold", 0.1);
         _thresh_map[13] = pset.get<float>("MuonThreshold", 0.1);
         _thresh_map[2212] = pset.get<float>("ProtonThreshold", 0.1);
         _thresh_map[321] = pset.get<float>("KaonThreshold", 0.1);
+        _thresh_map[13] = pset.get<float>("MuonThreshold", 0.1);
+        _thresh_map[11] = pset.get<float>("ElectronThreshold", 0.1);
 
         _thresh_map[3222] = pset.get<float>("SigmaPlusThreshold", 0.1);     
         _thresh_map[3112] = pset.get<float>("SigmaMinusThreshold", 0.1);   
@@ -133,8 +154,8 @@ protected:
         return is_hyperon && (particle_info->Charge() != 0);
     }
 
-    template<typename ParticleCheckFunc>
-    bool hasAdditionalParticles(art::Event const& evt, const TraceCollection& trace_coll, ParticleCheckFunc particle_check) const 
+    template<typename TraceFilter>
+    bool hasAdditionalParticles(art::Event const& evt, const TraceCollection& trace_coll, TraceFilter trace_filter) const 
     {
         auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);  
         std::set<int> primary_track_ids;
@@ -144,7 +165,7 @@ protected:
 
         for (const auto& mc_particle : *mcp_h) 
         {
-            if (particle_check(mc_particle.PdgCode()) && primary_track_ids.find(mc_particle.TrackId()) == primary_track_ids.end() && aboveThreshold(mc_particle))
+            if (trace_filter(mc_particle.PdgCode()) && primary_track_ids.find(mc_particle.TrackId()) == primary_track_ids.end() && aboveThreshold(mc_particle))
                 return true;
         }
 
