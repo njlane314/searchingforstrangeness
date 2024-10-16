@@ -19,14 +19,14 @@ protected:
     void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
 
 private:
-    std::string _lepton_type;  
+    std::string _lepton;  
     bool _is_charged_current; 
     art::InputTag _MCTproducer;  
 };
 
 LeptonicSignature::LeptonicSignature(const fhicl::ParameterSet& pset)
     : _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-    , _lepton_type{pset.get<std::string>("Lepton", "muon")}
+    , _lepton{pset.get<std::string>("Lepton", "muon")}
     , _is_charged_current{pset.get<bool>("ChargedCurrent", true)}
 {
     configure(pset); 
@@ -52,16 +52,16 @@ void LeptonicSignature::findSignature(art::Event const& evt, TraceCollection& tr
     if (_is_charged_current && neutrino.CCNC() == simb::kNC) return;
     if (!_is_charged_current && neutrino.CCNC() == simb::kCC) return;
 
-    for (const auto& mc_particle : *mcp_h) 
+    for (const auto& t_part : *mcp_h) 
     {
-        int pdg_code = std::abs(mc_particle.PdgCode());
+        int pdg_code = std::abs(t_part.PdgCode());
 
-        if ((_lepton_type == "muon" && pdg_code == 13) ||
-            (_lepton_type == "electron" && pdg_code == 11)) 
+        if ((_lepton == "muon" && pdg_code == 13) ||
+            (_lepton == "electron" && pdg_code == 11)) 
         {
-            if (this->aboveThreshold(mc_particle) && mc_particle.Process() == "primary") 
+            if (this->aboveThreshold(t_part) && t_part.Process() == "primary") 
             {
-                art::Ptr<simb::MCParticle> mc_particle_ptr(mcp_h, &mc_particle - &(*mcp_h)[0]);
+                art::Ptr<simb::MCParticle> mc_particle_ptr(mcp_h, &t_part - &(*mcp_h)[0]);
                 this->fillTrace(mc_particle_ptr, trace_coll);  
                 found_signature = true;
 
@@ -69,7 +69,7 @@ void LeptonicSignature::findSignature(art::Event const& evt, TraceCollection& tr
             }
         }
 
-        if (_lepton_type == "none" && !_is_charged_current) 
+        if (_lepton == "none" && !_is_charged_current) 
         {
             found_signature = true;  
 

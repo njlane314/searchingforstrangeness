@@ -23,8 +23,11 @@ public:
     virtual ~SelectionToolBase() noexcept = default;
 
     void configure(const fhicl::ParameterSet&){};
+
     virtual bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) = 0;
+
     virtual void setBranches(TTree* _tree) = 0;
+    
     virtual void resetTTree(TTree* _tree) = 0;
     
     void SetData(bool isdata) { fData = isdata; }
