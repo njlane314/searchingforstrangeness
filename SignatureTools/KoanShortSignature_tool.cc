@@ -7,12 +7,12 @@
 namespace signature
 {
 
-class NeutralKaonSignature : public SignatureToolBase 
+class KaonShortSignature : public SignatureToolBase 
 {
-
+    
 public:
-    NeutralKaonSignature(const fhicl::ParameterSet& pset);
-    ~NeutralKaonSignature(){};
+    KaonShortSignature(const fhicl::ParameterSet& pset);
+    ~KaonShortSignature(){};
     
     void configure(fhicl::ParameterSet const & pset) override;
 
@@ -26,7 +26,7 @@ private:
     art::InputTag _BacktrackTag;
 };
 
-NeutralKaonSignature::NeutralKaonSignature(const fhicl::ParameterSet& pset)
+KaonShortSignature::KaonShortSignature(const fhicl::ParameterSet& pset)
     : _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
@@ -35,14 +35,13 @@ NeutralKaonSignature::NeutralKaonSignature(const fhicl::ParameterSet& pset)
     configure(pset); 
 }
 
-void NeutralKaonSignature::configure(fhicl::ParameterSet const & pset)
+void KaonShortSignature::configure(fhicl::ParameterSet const & pset)
 {
     SignatureToolBase::configure(pset);
 }
 
-void NeutralKaonSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
+void KaonShortSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
-    auto const &mct_h = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
@@ -51,19 +50,8 @@ void NeutralKaonSignature::findSignature(art::Event const& evt, TraceCollection&
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    const simb::MCTruth& mct = mct_h->at(0);
-    if (!mct.NeutrinoSet()) return;
-
-    auto const &neutrino = mct.GetNeutrino();
-    common::True2RecoMappingXYZ(neutrino.Nu().T(), neutrino.Nu().Vx(), neutrino.Nu().Vy(), neutrino.Nu().Vz(), nu_vtx.data());
-
-    if (neutrino.CCNC() != simb::kCC) return;
-
     for (const auto &t_part : *mcp_h) {
-        if (abs(t_part.PdgCode()) == 13 && t_part.Process() == "primary" && this->aboveThreshold(t_part)) {
-            this->fillTrace(t_part, trace_coll);
-        }
-
+       
         if (abs(t_part.PdgCode()) == 310 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !found_signature) {
             auto daughters = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
             if (daughters.size() == 2) {
@@ -96,7 +84,7 @@ void NeutralKaonSignature::findSignature(art::Event const& evt, TraceCollection&
     }
 }
 
-DEFINE_ART_CLASS_TOOL(NeutralKaonSignature)
+DEFINE_ART_CLASS_TOOL(KaonShortSignature)
 } 
 
 #endif
