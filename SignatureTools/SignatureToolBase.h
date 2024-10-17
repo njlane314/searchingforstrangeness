@@ -34,6 +34,7 @@ using TraceCollection = std::vector<Trace>&;
 
 class SignatureToolBase 
 {
+    
 public:
 
     virtual ~SignatureToolBase() noexcept = default;

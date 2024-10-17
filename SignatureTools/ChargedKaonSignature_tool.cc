@@ -8,6 +8,7 @@ namespace signature {
 
 class ChargedKaonSignature : public SignatureToolBase 
 {
+    
 public:
     ChargedKaonSignature(const fhicl::ParameterSet& pset);
     ~ChargedKaonSignature() {}

@@ -16,7 +16,8 @@
 
 namespace selection {
 
-class SelectionToolBase {
+class SelectionToolBase 
+{
 
 public:
 
