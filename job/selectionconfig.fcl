@@ -68,7 +68,7 @@ Thresholds: {
     IncludeHyperons: true
 }
 
-MuonChargedCurrentSignature: 
+MuonSignature: 
 {
     tool_type: "LeptonicSignature"
     Lepton: "muon"
@@ -76,7 +76,7 @@ MuonChargedCurrentSignature:
     @table::Thresholds
 }
 
-NeutralCurrentSignature: 
+NoSignature: 
 {
     tool_type: "LeptonicSignature"
     Lepton: "none"

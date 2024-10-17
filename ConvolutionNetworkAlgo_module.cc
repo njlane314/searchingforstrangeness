@@ -19,6 +19,9 @@
 #include "CommonFunctions/Scatters.h"
 #include "CommonFunctions/Corrections.h"
 
+#include "art/Utilities/ToolMacros.h"
+#include "art/Utilities/make_tool.h"
+
 #include "SignatureTools/SignatureToolBase.h"
 
 #include "TDatabasePDG.h"
@@ -37,18 +40,22 @@
 #include <unordered_map>
 #include <cmath>
 
-class ConvNetworkAlgorithm : public art::EDAnalyzer {
-public:
-    explicit ConvNetworkAlgorithm(fhicl::ParameterSet const& pset);
+class ConvolutionNetworkAlgo : public art::EDAnalyzer 
+{
 
-    ConvNetworkAlgorithm(ConvNetworkAlgorithm const&) = delete;
-    ConvNetworkAlgorithm(ConvNetworkAlgorithm&&) = delete;
-    ConvNetworkAlgorithm& operator=(ConvNetworkAlgorithm const&) = delete;
-    ConvNetworkAlgorithm& operator=(ConvNetworkAlgorithm&&) = delete;
+public:
+    explicit ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset);
+
+    ConvolutionNetworkAlgo(ConvolutionNetworkAlgo const&) = delete;
+    ConvolutionNetworkAlgo(ConvolutionNetworkAlgo&&) = delete;
+    ConvolutionNetworkAlgo& operator=(ConvolutionNetworkAlgo const&) = delete;
+    ConvolutionNetworkAlgo& operator=(ConvolutionNetworkAlgo&&) = delete;
 
     void analyze(art::Event const& e) override;
     void beginJob() override;
     void endJob() override;
+
+    void infer(art::Event const& evt, std::map<int, std::vector<art::Ptr<recob::Hit>>>& classified_hits);
 
 private:
     bool _training_mode;
@@ -71,15 +78,16 @@ private:
 
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
 
+    void initialiseEvent(art::Event const& evt);
     void prepareTrainingSample(art::Event const& evt);
-    void infer(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel);
     void findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
     void getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex);
+
 };
 
-ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
+ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
     , _training_mode{pset.get<bool>("TrainingMode", true)}
     , _pass{pset.get<int>("Pass", 1)}
@@ -97,15 +105,15 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
 {
     try {
         if (!_training_mode) {
-          std::cout << "In testing mode!" << std::endl;
-          std::cout << pset.get<std::string>("ModelFileU") << std::endl;
+            std::cout << "In testing mode!" << std::endl;
+            std::cout << pset.get<std::string>("ModelFileU") << std::endl;
             _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
             _model_v = torch::jit::load(pset.get<std::string>("ModelFileV"));
             _model_w = torch::jit::load(pset.get<std::string>("ModelFileW"));
             std::cout << "Loaded models" << std::endl;
         }
     } catch (const c10::Error& e) {
-        throw cet::exception("ConvNetworkAlgorithm") << "Error loading Torch models: " << e.what() << "\n";
+        throw cet::exception("ConvolutionNetworkAlgo") << "Error loading Torch models: " << e.what() << "\n";
     }
 
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
@@ -124,8 +132,13 @@ ConvNetworkAlgorithm::ConvNetworkAlgorithm(fhicl::ParameterSet const& pset)
     }
 }
 
-void ConvNetworkAlgorithm::analyze(art::Event const& evt) 
+void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
 {   
+    this->prepareTrainingSample(evt);
+}
+
+void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
+{
     _event_hits.clear(); 
     _mcp_bkth_assoc.reset();
 
@@ -137,21 +150,16 @@ void ConvNetworkAlgorithm::analyze(art::Event const& evt)
 
         mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << _event_hits.size();
     }
-  
-    if (_training_mode)
-        this->prepareTrainingSample(evt);
-    else 
-        this->infer(evt);
 }
 
-void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt) 
+void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
 {
     std::cout << "Preparing training sample..." << std::endl;
+    this->initialiseEvent(evt);
 
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
-    // apply neutrino interaction fv cut here -- only on signal
     this->getNuVertex(evt, nu_vtx, found_vertex);
     if (!found_vertex) 
         return; 
@@ -264,7 +272,7 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
     }
 }
 
-void ConvNetworkAlgorithm::getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex)
+void ConvolutionNetworkAlgo::getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex)
 {
     found_vertex = false;
 
@@ -279,7 +287,7 @@ void ConvNetworkAlgorithm::getNuVertex(art::Event const& evt, std::array<float, 
     found_vertex = true;
 }
 
-void ConvNetworkAlgorithm::findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
+void ConvolutionNetworkAlgo::findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
 {   
     x_min = std::numeric_limits<float>::max();
     x_max = -std::numeric_limits<float>::max();
@@ -298,7 +306,7 @@ void ConvNetworkAlgorithm::findRegionExtent(const art::Event& evt, const std::ve
     }
 }
 
-void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
+void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
     std::cout << "Attempting to open file: " << filename << std::endl;
     std::ofstream out_file(filename, std::ios_base::app);
@@ -318,10 +326,10 @@ void ConvNetworkAlgorithm::produceTrainingSample(const std::string& filename, co
     out_file.close();
 }
 
-void ConvNetworkAlgorithm::infer(art::Event const& evt) 
+void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vector<art::Ptr<recob::Hit>>>& classified_hits) 
 {
     std::cout << "Startig inference..." << std::endl;
-    std::map<int, std::vector<art::Ptr<recob::Hit>>> classified_hits;
+    this->initialiseEvent(evt);
 
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
     for (const auto& hit : _event_hits)
@@ -369,7 +377,7 @@ void ConvNetworkAlgorithm::infer(art::Event const& evt)
     std::cout << "Ending inference!" << std::endl;
 }
 
-void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel)
+void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel)
 {
     const float pitch = _wire_pitch[view];
     std::vector<double> x_bin_edges(_width + 1);
@@ -406,10 +414,10 @@ void ConvNetworkAlgorithm::makeNetworkInput(const art::Event& evt, const std::ve
     }
 }
 
-void ConvNetworkAlgorithm::beginJob() 
+void ConvolutionNetworkAlgo::beginJob() 
 {}
 
-void ConvNetworkAlgorithm::endJob() 
+void ConvolutionNetworkAlgo::endJob() 
 {}
 
-DEFINE_ART_MODULE(ConvNetworkAlgorithm)
+DEFINE_ART_MODULE(ConvolutionNetworkAlgo)

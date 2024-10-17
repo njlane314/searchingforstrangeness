@@ -16,7 +16,8 @@
 
 namespace analysis {
 
-class AnalysisToolBase {
+class AnalysisToolBase 
+{
 
 public:
 
