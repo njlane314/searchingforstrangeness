@@ -151,6 +151,7 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
+    // apply neutrino interaction fv cut here -- only on signal
     this->getNuVertex(evt, nu_vtx, found_vertex);
     if (!found_vertex) 
         return; 
@@ -209,7 +210,6 @@ void ConvNetworkAlgorithm::prepareTrainingSample(art::Event const& evt)
                                             evt_wire_min, evt_wire_max, 
                                             intr_drft_min, intr_drft_max,
                                             intr_wire_min, intr_wire_max };
-
 
             for (unsigned int ih = 0; ih < evt_view_hits.size(); ih++)
             {   

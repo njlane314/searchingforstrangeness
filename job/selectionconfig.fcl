@@ -89,3 +89,9 @@ KaonShortSignature:
     tool_type: "KaonShortSignature"
     @table::Thresholds
 }
+
+LambdaSignature:
+{
+    tool_type: "LambdaSignature"
+    @table::Thresholds
+}

@@ -44,13 +44,12 @@ public:
         _thresh_map[13] = pset.get<float>("MuonThreshold", 0.1);
         _thresh_map[2212] = pset.get<float>("ProtonThreshold", 0.1);
         _thresh_map[321] = pset.get<float>("KaonThreshold", 0.1);
-        _thresh_map[13] = pset.get<float>("MuonThreshold", 0.1);
         _thresh_map[11] = pset.get<float>("ElectronThreshold", 0.1);
 
         _thresh_map[3222] = pset.get<float>("SigmaPlusThreshold", 0.1);     
         _thresh_map[3112] = pset.get<float>("SigmaMinusThreshold", 0.1);   
-        _thresh_map[3312] = pset.get<float>("XiMinusThreshold", 0.1);       
-        _thresh_map[3334] = pset.get<float>("OmegaMinusThreshold", 0.1); 
+        _thresh_map[3312] = pset.get<float>("XiThreshold", 0.1);       
+        _thresh_map[3334] = pset.get<float>("OmegaThreshold", 0.1); 
 
         _include_mesons = pset.get<bool>("IncludeMesons", true);
         _include_hyperons = pset.get<bool>("IncludeHyperons", true);
@@ -62,6 +61,9 @@ public:
     {
         bool found_signature = false;
         trace_coll.clear();
+
+        // add only single mctruth condition
+        // and requirement on fiducial volume
 
         this->findSignature(evt, trace_coll, found_signature);
 

@@ -57,7 +57,7 @@ physics:
             
             SignatureTools: {
                 leptonic: @local::MuonChargedCurrentSignature
-                kshort: @local::KaonShortSignature
+                kshort: @local::LambdaSignature
             }
         }
     }
