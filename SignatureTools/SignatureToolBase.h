@@ -95,11 +95,13 @@ public:
 
     bool aboveThreshold(const simb::MCParticle& mc_particle) const 
     {
+        std::cout << "Checking threshold..." << std::endl;
         float mom_mag = mc_particle.Momentum().Vect().Mag();
         int abs_pdg = std::abs(mc_particle.PdgCode());
 
         auto it = _thresh_map.find(abs_pdg);
         if (it != _thresh_map.end()) {
+            std::cout << "Momentum " << mom_mag << " and threshold " << it->second << std::endl;
             return mom_mag > it->second;
         }
 
@@ -150,6 +152,7 @@ protected:
     template<typename TraceFilter>
     bool hasAdditionalParticles(art::Event const& evt, const TraceCollection& trace_coll, TraceFilter trace_filter) const 
     {
+        std::cout << "Running additional particles function..." << std::endl;
         auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);  
         std::set<int> primary_track_ids;
 

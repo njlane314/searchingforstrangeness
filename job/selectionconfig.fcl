@@ -90,6 +90,12 @@ KaonShortSignature:
     @table::Thresholds
 }
 
+ChargedKaonSignature:
+{
+    tool_type: "ChargedKaonSignature"
+    @table::Thresholds
+}
+
 LambdaSignature:
 {
     tool_type: "LambdaSignature"

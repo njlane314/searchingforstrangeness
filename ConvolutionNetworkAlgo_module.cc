@@ -174,7 +174,16 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
             found_all_signatures = false;
     }
 
-    if (!found_all_signatures) return;
+    if (!found_all_signatures) 
+    {
+        std::cout << "Didn't find all the signatures!" << std::endl;
+        return;
+    }
+
+    for (auto& trace : trace_coll)
+    {
+        std::cout << "Trace: " << trace.pdg << ", " << trace.trckid << std::endl;
+    }
 
     unsigned int n_flags = trace_coll.size();
 
