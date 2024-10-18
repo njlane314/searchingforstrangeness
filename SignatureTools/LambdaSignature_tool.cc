@@ -38,6 +38,7 @@ void LambdaSignature::configure(fhicl::ParameterSet const & pset)
 
 void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
+    std::cout << "Looking for lambda signature..." << std::endl;
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
@@ -50,11 +51,15 @@ void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trac
         if (abs(t_part.PdgCode()) == 3122 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 2 && !found_signature) {
             auto daughters = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
             if (daughters.size() == 2) {
+                std::cout << "Found lambda particle!" << std::endl;
                 std::vector<int> exp_dtrs = {-211, 2212};
                 std::vector<int> fnd_dtrs;
                 
                 for (const auto &dtr : daughters) 
+                {
+                    std::cout << dtr->PdgCode() << std::endl;
                     fnd_dtrs.push_back(dtr->PdgCode());
+                }
 
                 std::sort(exp_dtrs.begin(), exp_dtrs.end());
                 std::sort(fnd_dtrs.begin(), fnd_dtrs.end());

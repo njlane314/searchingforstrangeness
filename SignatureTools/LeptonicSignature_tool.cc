@@ -39,6 +39,7 @@ void LeptonicSignature::configure(fhicl::ParameterSet const& pset)
 
 void LeptonicSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
+    std::cout << "Looking for a lepton..." << std::endl;
     found_signature = false;
 
     auto const& mct_h = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
@@ -59,6 +60,7 @@ void LeptonicSignature::findSignature(art::Event const& evt, TraceCollection& tr
         if ((_lepton == "muon" && pdg_code == 13) ||
             (_lepton == "electron" && pdg_code == 11)) 
         {
+            std::cout << "Found lepton " << pdg_code << std::endl;
             if (this->aboveThreshold(t_part) && t_part.Process() == "primary") 
             {
                 art::Ptr<simb::MCParticle> mc_particle_ptr(mcp_h, &t_part - &(*mcp_h)[0]);
