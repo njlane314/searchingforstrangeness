@@ -19,6 +19,7 @@ set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
 add_subdirectory(CommonFunctions)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
+add_subdirectory(SignatureTools)
 add_subdirectory(job)
 add_subdirectory(scripts)
 

@@ -6,7 +6,8 @@
 
 namespace selection
 {
-class EmptySelection : public SelectionToolBase {
+class EmptySelection : public SelectionToolBase 
+{
 
 public:
     EmptySelection(const fhicl::ParameterSet& pset);

@@ -35,22 +35,30 @@ physics:
 {
     analyzers:
     {
-        convnetworkalgo: {
-            module_type: ConvNetworkAlgorithm
+        convnetalgo: {
+            module_type: ConvolutionNetworkAlgo
             TrainingMode: true                 
             Pass: 1
             TrainingOutputFile: "training_output"
+            
+            ModelFileU: ""            
+            ModelFileV: ""
+            ModelFileW: ""
+
             ImageWidth: 256
             ImageHeight: 256
+            
             DriftStep: 0.5
             WirePitchU: 0.3
             WirePitchV: 0.3
             WirePitchW: 0.3
-            HitProducer: "gaushit"              
+
             CaloAlg: @local::microboone_calo_mcc9_data
-            ModelFileU: ""            
-            ModelFileV: ""
-            ModelFileW: ""
+            
+            SignatureTools: {
+                leptonic: @local::MuonSignature
+                kshort: @local::LambdaSignature
+            }
         }
     }
 
@@ -60,7 +68,7 @@ physics:
     }
 
     p1: [ signaltruthfilter ]   
-    e1: [ convnetworkalgo ]     
+    e1: [ convnetalgo ]     
 
     trigger_paths: [ p1 ]       
     end_paths: [ e1 ]           
