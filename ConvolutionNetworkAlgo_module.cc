@@ -174,6 +174,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
             found_all_signatures = false;
     }
 
+    if (!found_all_signatures) return;
+
     unsigned int n_flags = trace_coll.size();
 
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> intr_hits;
