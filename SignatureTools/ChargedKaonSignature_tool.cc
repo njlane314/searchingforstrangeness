@@ -50,30 +50,28 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection&
     {
         int pdg_code = std::abs(mc_particle.PdgCode());
 
-        if (pdg_code == 321 && mc_particle.Process() == "primary")
-        {
-            std::cout << "Found a charged kaon..." << std::endl;
-            std::cout << mc_particle.EndProcess() << std::endl;
-            auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
-            for (const auto& dtr : daughters) 
-            {
-                std::cout << dtr->PdgCode() << std::endl;
-            }
-        }
-
         if (pdg_code == 321 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
         {
             auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
-            std::vector<int> expected_dtrs;
+            daughters.erase(std::remove_if(daughters.begin(), daughters.end(), [](const auto& dtr) {
+                return dtr->Process() != "Decay";
+            }), daughters.end());
 
+            for (const auto& dtr : daughters)
+            {
+                std::cout << dtr->PdgCode() << std::endl;
+                std::cout << dtr->Process() << std::endl;
+            }
+
+            std::vector<int> expected_dtrs;
             if (_decay_mode == "muonic")  
             {
-                expected_dtrs = (pdg_code == 321) ? std::vector<int>{+13, +14}  // K+ -> Muon+ + Neutrino
-                                                    : std::vector<int>{-13, -14}; // K- -> Muon- + Antineutrino
+                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{-13, +14}  // K+ -> Muon+ + Neutrino
+                                                    : std::vector<int>{+13, -14}; // K- -> Muon- + Antineutrino
             }
             else if (_decay_mode == "pionic") 
             {
-                expected_dtrs = (pdg_code == 321) ? std::vector<int>{+211, 111}  // K+ -> Pi+ + Pi0
+                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{211, 111}  // K+ -> Pi+ + Pi0
                                                     : std::vector<int>{-211, 111}; // K- -> Pi- + Pi0
             }
 
@@ -84,14 +82,26 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection&
             std::sort(expected_dtrs.begin(), expected_dtrs.end());
             std::sort(found_dtrs.begin(), found_dtrs.end());
 
-            if (found_dtrs == expected_dtrs) 
+            for (auto dtr : found_dtrs)
             {
+                std::cout << dtr << std::endl;
+            }
+
+            for (auto dtr : expected_dtrs)
+            {
+                std::cout << dtr << std::endl;
+            }
+
+            if (found_dtrs == expected_dtrs) 
+            {   
+                std::cout << "Found dtrs = exp" << std::endl;
                 bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
                     return this->aboveThreshold(*dtr);
                 });
 
                 if (all_above_threshold) 
                 {
+                    std::cout << "Found kaon signature" << std::endl;
                     found_signature = true;
                     for (const auto &dtr : daughters) 
                         this->fillTrace(dtr, trace_coll);
