@@ -25,7 +25,7 @@ namespace analysis
 
 class TrackAnalysis : public AnalysisToolBase
 {
-
+    
 public:
     TrackAnalysis(const fhicl::ParameterSet &pset);
     ~TrackAnalysis(){};

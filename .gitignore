@@ -34,5 +34,7 @@
 *.root
 *.csv
 
+build_log.txt
+
 Sandbox/*
 !Sandbox/.keep

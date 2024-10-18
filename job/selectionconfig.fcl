@@ -50,3 +50,54 @@ microboone_calo_mcc9_data:
     CaloLifeTimeForm: 0
     CaloUseModBox: true
 }
+
+Thresholds: {
+    MuonThreshold: 0.1
+    ElectronThreshold: 0.1
+
+    PionThreshold: 0.1
+    ProtonThreshold: 0.1
+    KaonThreshold: 0.1
+
+    SigmaPlusThreshold: 0.1
+    SigmaMinusThreshold: 0.1
+    XiMinusThreshold: 0.1
+    OmegaMinusThreshold: 0.1
+    
+    IncludeMesons: true
+    IncludeHyperons: true
+}
+
+MuonSignature: 
+{
+    tool_type: "LeptonicSignature"
+    Lepton: "muon"
+    ChargedCurrent: true
+    @table::Thresholds
+}
+
+NoSignature: 
+{
+    tool_type: "LeptonicSignature"
+    Lepton: "none"
+    ChargedCurrent: false
+    @table::Thresholds 
+}
+
+KaonShortSignature: 
+{
+    tool_type: "KaonShortSignature"
+    @table::Thresholds
+}
+
+ChargedKaonSignature:
+{
+    tool_type: "ChargedKaonSignature"
+    @table::Thresholds
+}
+
+LambdaSignature:
+{
+    tool_type: "LambdaSignature"
+    @table::Thresholds
+}
