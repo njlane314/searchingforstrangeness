@@ -57,7 +57,7 @@ physics:
             
             SignatureTools: {
                 leptonic: @local::MuonSignature
-                kshort: @local::LambdaSignature
+                kshort: @local::KaonShortSignature
             }
         }
     }
@@ -68,7 +68,7 @@ physics:
     }
 
     p1: [ signaltruthfilter ]   
-    e1: [ convnetworkalgo ]     
+    e1: [ convnetalgo ]     
 
     trigger_paths: [ p1 ]       
     end_paths: [ e1 ]           
