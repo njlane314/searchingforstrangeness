@@ -61,7 +61,7 @@ public:
     bool identifySignalParticles(art::Event const& evt, TraceCollection& trace_coll)
     {
         bool found_signature = false;
-        trace_coll.clear();
+        //trace_coll.clear();
 
         // add only single mctruth condition
         // and requirement on fiducial volume
@@ -170,11 +170,13 @@ protected:
 
     void fillTrace(const art::Ptr<simb::MCParticle>& mc_particle, TraceCollection& trace_coll) 
     {
+        std::cout << "Filling trace..." << std::endl;
         Trace trace;
         trace.pdg = mc_particle->PdgCode();
         trace.trckid = mc_particle->TrackId();
         trace.mom = {static_cast<float>(mc_particle->Px()), static_cast<float>(mc_particle->Py()), static_cast<float>(mc_particle->Pz())};
         trace_coll.push_back(trace);
+        std::cout << trace_coll.size() << std::endl;
     }
 
     virtual void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) = 0;

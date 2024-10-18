@@ -180,6 +180,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
         return;
     }
 
+    std::cout << "size of trace collection " << trace_coll.size() << std::endl;
+
     for (auto& trace : trace_coll)
     {
         std::cout << "Trace: " << trace.pdg << ", " << trace.trckid << std::endl;
@@ -222,6 +224,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
         if (x_vtx > (evt_drft_min - 1.f) && x_vtx < (evt_drft_max + 1.f) && z_vtx > (evt_wire_min - 1.f) && z_vtx < (evt_wire_max + 1.f))
         {            
             unsigned int n_hits = 0;
+            // also store the event, subrun and run numbers to the vector
             std::vector<float> feat_vec = { static_cast<float>(n_hits), 
                                             static_cast<float>(n_flags),
                                             x_vtx, z_vtx, 
