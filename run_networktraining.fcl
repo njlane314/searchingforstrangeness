@@ -35,7 +35,8 @@ physics:
 {
     analyzers:
     {
-        convnetalgo: {
+        convnetalgo: 
+        {
             module_type: ConvolutionNetworkAlgo
             TrainingMode: true                 
             Pass: 1
@@ -55,7 +56,8 @@ physics:
 
             CaloAlg: @local::microboone_calo_mcc9_data
             
-            SignatureTools: {
+            SignatureTools: 
+            {
                 leptonic: @local::MuonSignature
                 kshort: @local::LambdaSignature
             }

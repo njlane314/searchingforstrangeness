@@ -61,7 +61,6 @@ public:
     bool identifySignalParticles(art::Event const& evt, TraceCollection& trace_coll)
     {
         bool found_signature = false;
-        //trace_coll.clear();
 
         // add only single mctruth condition
         // and requirement on fiducial volume

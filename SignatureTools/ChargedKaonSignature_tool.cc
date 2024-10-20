@@ -82,16 +82,6 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection&
             std::sort(expected_dtrs.begin(), expected_dtrs.end());
             std::sort(found_dtrs.begin(), found_dtrs.end());
 
-            for (auto dtr : found_dtrs)
-            {
-                std::cout << dtr << std::endl;
-            }
-
-            for (auto dtr : expected_dtrs)
-            {
-                std::cout << dtr << std::endl;
-            }
-
             if (found_dtrs == expected_dtrs) 
             {   
                 std::cout << "Found dtrs = exp" << std::endl;
