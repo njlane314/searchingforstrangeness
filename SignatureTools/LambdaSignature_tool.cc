@@ -1,5 +1,5 @@
-#ifndef SIGNATURE_LAMBDADECAY_CXX
-#define SIGNATURE_LAMBDADECAY_CXX
+#ifndef SIGNATURE_LAMBDA_CXX
+#define SIGNATURE_LAMBDA_CXX
 
 #include <iostream>
 #include "SignatureToolBase.h"
@@ -9,12 +9,20 @@ namespace signature
 
 class LambdaSignature : public SignatureToolBase 
 {
-    
 public:
-    LambdaSignature(const fhicl::ParameterSet& pset);
-    ~LambdaSignature(){};
+    explicit LambdaSignature(const fhicl::ParameterSet& pset)
+        : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
+        , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
+    {
+        configure(pset);
+    }
+
+    ~LambdaSignature() override = default;
     
-    void configure(fhicl::ParameterSet const & pset) override;
+    void configure(fhicl::ParameterSet const& pset) override
+    {
+        SignatureToolBase::configure(pset);
+    }
 
 protected:
     void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
@@ -24,21 +32,8 @@ private:
     art::InputTag _MCTproducer;
 };
 
-LambdaSignature::LambdaSignature(const fhicl::ParameterSet& pset)
-    : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-{
-    configure(pset);
-}
-
-void LambdaSignature::configure(fhicl::ParameterSet const & pset)
-{
-    SignatureToolBase::configure(pset);
-}
-
 void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
-    std::cout << "Looking for lambda signature..." << std::endl;
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
@@ -51,7 +46,6 @@ void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trac
         if (abs(t_part.PdgCode()) == 3122 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 2 && !found_signature) {
             auto daughters = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
             if (daughters.size() == 2) {
-                std::cout << "Found lambda particle!" << std::endl;
                 std::vector<int> exp_dtrs = {-211, 2212};
                 std::vector<int> fnd_dtrs;
                 
