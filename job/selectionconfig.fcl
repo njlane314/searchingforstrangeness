@@ -70,18 +70,8 @@ Thresholds: {
 
 MuonSignature: 
 {
-    tool_type: "LeptonicSignature"
-    Lepton: "muon"
-    ChargedCurrent: true
+    tool_type: "MuonSignature"
     @table::Thresholds
-}
-
-NoSignature: 
-{
-    tool_type: "LeptonicSignature"
-    Lepton: "none"
-    ChargedCurrent: false
-    @table::Thresholds 
 }
 
 KaonShortSignature: 

@@ -314,6 +314,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                                             static_cast<float>(run), 
                                             static_cast<float>(subrun), 
                                             static_cast<float>(event),
+                                            static_cast<float>(_height),
+                                            static_cast<float>(_width),
                                             x_vtx, z_vtx, 
                                             drift_min, drift_max, 
                                             wire_min, wire_max };
