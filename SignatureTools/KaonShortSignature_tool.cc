@@ -9,12 +9,22 @@ namespace signature
 
 class KaonShortSignature : public SignatureToolBase 
 {
-    
 public:
-    KaonShortSignature(const fhicl::ParameterSet& pset);
-    ~KaonShortSignature(){};
-    
-    void configure(fhicl::ParameterSet const & pset) override;
+    explicit KaonShortSignature(const fhicl::ParameterSet& pset)
+        : _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
+        , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
+        , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
+        , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    {
+        configure(pset);
+    }
+
+    ~KaonShortSignature() override = default;
+
+    void configure(fhicl::ParameterSet const& pset) override
+    {
+        SignatureToolBase::configure(pset);
+    }
 
 protected:
     void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
@@ -26,23 +36,8 @@ private:
     art::InputTag _BacktrackTag;
 };
 
-KaonShortSignature::KaonShortSignature(const fhicl::ParameterSet& pset)
-    : _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
-    , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-    , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
-{
-    configure(pset); 
-}
-
-void KaonShortSignature::configure(fhicl::ParameterSet const & pset)
-{
-    SignatureToolBase::configure(pset);
-}
-
 void KaonShortSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
-    std::cout << "Looking for the kaon-short signature..." << std::endl;
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
@@ -53,14 +48,12 @@ void KaonShortSignature::findSignature(art::Event const& evt, TraceCollection& t
 
     for (const auto &t_part : *mcp_h) {
         if (abs(t_part.PdgCode()) == 311 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !found_signature) {
-            std::cout << "Found a neutral kaon..." << std::endl;
             auto g_dtrs = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
             if (g_dtrs.size() != 1) continue; 
 
             auto g_part = g_dtrs.at(0);
             if (g_part->PdgCode() == 310 && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2 && !found_signature)
             {
-                std::cout << "Found kaon short!" << std::endl;
                 auto daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
                 if (daughters.size() != 2) continue;
                 

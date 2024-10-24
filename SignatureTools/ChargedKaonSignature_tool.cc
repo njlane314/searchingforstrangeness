@@ -10,10 +10,18 @@ class ChargedKaonSignature : public SignatureToolBase
 {
     
 public:
-    ChargedKaonSignature(const fhicl::ParameterSet& pset);
+    explicit ChargedKaonSignature(const fhicl::ParameterSet& pset)
+    : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
+    , _decay_mode{pset.get<std::string>("DecayMode", "muonic")} 
+    {
+        configure(pset); 
+    }
     ~ChargedKaonSignature() {}
 
-    void configure(fhicl::ParameterSet const& pset) override;
+    void configure(fhicl::ParameterSet const& pset) override
+    {
+        SignatureToolBase::configure(pset);
+    }
 
 protected:
     void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
@@ -23,21 +31,8 @@ private:
     std::string _decay_mode;
 };
 
-ChargedKaonSignature::ChargedKaonSignature(const fhicl::ParameterSet& pset)
-    : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _decay_mode{pset.get<std::string>("DecayMode", "muonic")} 
-{
-    configure(pset); 
-}
-
-void ChargedKaonSignature::configure(fhicl::ParameterSet const& pset)
-{
-    SignatureToolBase::configure(pset);
-}
-
 void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
 {
-    std::cout << "Looking for charged-kaon signature..." << std::endl;
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;

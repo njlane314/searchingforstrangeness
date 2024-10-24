@@ -20,6 +20,7 @@
 #include "CommonFunctions/Pandora.h"
 #include "CommonFunctions/Scatters.h"
 #include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Containment.h"
 
 namespace signature {
 
@@ -41,30 +42,49 @@ public:
     
     virtual void configure(fhicl::ParameterSet const& pset)
     {
-        _thresh_map[211] = pset.get<float>("PionThreshold", 0.1);
-        _thresh_map[13] = pset.get<float>("MuonThreshold", 0.1);
-        _thresh_map[2212] = pset.get<float>("ProtonThreshold", 0.1);
-        _thresh_map[321] = pset.get<float>("KaonThreshold", 0.1);
-        _thresh_map[11] = pset.get<float>("ElectronThreshold", 0.1);
-
-        _thresh_map[3222] = pset.get<float>("SigmaPlusThreshold", 0.1);     
-        _thresh_map[3112] = pset.get<float>("SigmaMinusThreshold", 0.1);   
-        _thresh_map[3312] = pset.get<float>("XiThreshold", 0.1);       
-        _thresh_map[3334] = pset.get<float>("OmegaThreshold", 0.1); 
+        const std::vector<int> particle_ids = {211, 13, 2212, 321, 11, 3222, 3112, 3312, 3334};
+        const std::vector<std::string> particle_names = {"Pion", "Muon", "Proton", "Kaon", "Electron", 
+                                                         "SigmaPlus", "SigmaMinus", "Xi", "Omega"};
+        for (size_t i = 0; i < particle_ids.size(); ++i) {
+            _thresh_map[particle_ids[i]] = pset.get<float>(particle_names[i] + "Threshold", 0.1);
+        }
 
         _include_mesons = pset.get<bool>("IncludeMesons", true);
         _include_hyperons = pset.get<bool>("IncludeHyperons", true);
 
-        _MCPproducer = pset.get<art::InputTag>("MCProducerTag", "largeant");
-    };
+        _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
+        _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
+
+        _fv_x_start = pset.get<float>("FvXStart", 10.0);
+        _fv_y_start = pset.get<float>("FvYStart", 10.0);
+        _fv_z_start = pset.get<float>("FvZStart", 10.0);
+        _fv_x_end = pset.get<float>("FvXEnd", 10.0);
+        _fv_y_end = pset.get<float>("FvYEnd", 10.0);
+        _fv_z_end = pset.get<float>("FvZEnd", 10.0);
+    }
 
     bool identifySignalParticles(art::Event const& evt, TraceCollection& trace_coll)
     {
+        auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
+        if (truth_handle->size() != 1) 
+        {
+            mf::LogWarning("Skipping event with more than one truth object.");
+            trace_coll.clear();
+            return false;
+        }
+
+        const simb::MCTruth& truth = truth_handle->at(0);
+        const TLorentzVector& nu_vertex = truth.GetNeutrino().Nu().Position();
+        double vertex[3] = {nu_vertex.X(), nu_vertex.Y(), nu_vertex.Z()};
+
+        if (!common::point_inside_fv(vertex, _fv_x_start, _fv_y_start, _fv_z_start, _fv_x_end, _fv_y_end, _fv_z_end)) 
+        {
+            mf::LogWarning("Neutrino interaction vertex is outside the fiducial volume.");
+            trace_coll.clear();
+            return false;
+        }
+
         bool found_signature = false;
-
-        // add only single mctruth condition
-        // and requirement on fiducial volume
-
         this->findSignature(evt, trace_coll, found_signature);
 
         if (!found_signature)  
@@ -73,17 +93,8 @@ public:
             return false;
         }   
 
-        if (!_include_mesons && this->hasAdditionalParticles(evt, trace_coll, [&](int pdg_code) {
-                return isChargedMeson(pdg_code);
-            })) 
-        {
-            trace_coll.clear();
-            return false;
-        }
-
-        if (!_include_hyperons && this->hasAdditionalParticles(evt, trace_coll, [&](int pdg_code) {
-                return isChargedHyperon(pdg_code);
-            })) 
+        if ((!_include_mesons && hasAdditionalParticles(evt, trace_coll, [&](int pdgCode) { return isChargedMeson(pdgCode); })) ||
+            (!_include_hyperons && hasAdditionalParticles(evt, trace_coll, [&](int pdgCode) { return isChargedHyperon(pdgCode); }))) 
         {
             trace_coll.clear();
             return false;
@@ -92,27 +103,28 @@ public:
         return found_signature;
     }
 
-    bool aboveThreshold(const simb::MCParticle& mc_particle) const 
-    {
-        std::cout << "Checking threshold..." << std::endl;
-        float mom_mag = mc_particle.Momentum().Vect().Mag();
-        int abs_pdg = std::abs(mc_particle.PdgCode());
-
-        auto it = _thresh_map.find(abs_pdg);
-        if (it != _thresh_map.end()) {
-            std::cout << "Momentum " << mom_mag << " and threshold " << it->second << std::endl;
-            return mom_mag > it->second;
-        }
-
-        return mom_mag > 0.1; 
-    }
-
 protected:
     std::unordered_map<int, float> _thresh_map;
     bool _include_mesons;
     bool _include_hyperons;
 
-    art::InputTag _MCPproducer;
+    art::InputTag _MCPproducer, _MCTproducer;
+
+    float _fv_x_start, _fv_y_start, _fv_z_start;
+    float _fv_x_end, _fv_y_end, _fv_z_end;
+
+    bool aboveThreshold(const simb::MCParticle& mc_particle) const 
+    {
+        float mom_mag = mc_particle.Momentum().Vect().Mag();
+        int abs_pdg = std::abs(mc_particle.PdgCode());
+
+        auto it = _thresh_map.find(abs_pdg);
+        if (it != _thresh_map.end()) {
+            return mom_mag > it->second;
+        }
+
+        return mom_mag > 0.1; 
+    }
 
     bool isChargedMeson(int pdg_code) const 
     {
@@ -151,7 +163,6 @@ protected:
     template<typename TraceFilter>
     bool hasAdditionalParticles(art::Event const& evt, const TraceCollection& trace_coll, TraceFilter trace_filter) const 
     {
-        std::cout << "Running additional particles function..." << std::endl;
         auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);  
         std::set<int> primary_track_ids;
 
@@ -169,7 +180,6 @@ protected:
 
     void fillTrace(const art::Ptr<simb::MCParticle>& mc_particle, TraceCollection& trace_coll) 
     {
-        std::cout << "Filling trace..." << std::endl;
         Trace trace;
         trace.pdg = mc_particle->PdgCode();
         trace.trckid = mc_particle->TrackId();
