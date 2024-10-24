@@ -292,6 +292,7 @@ void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
 
     return;
 } 
+
 void SelectionFilter::ResetTTree()
 {
     _selected = 0;

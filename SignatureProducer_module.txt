@@ -13,6 +13,8 @@
 #include <map>
 #include <memory>
 
+#include "ConvolutionNetworkAlgo_module.cc"
+
 class SignatureProducer : public art::EDProducer {
 public:
     explicit SignatureProducer(fhicl::ParameterSet const& pset);
@@ -57,9 +59,7 @@ void SignatureProducer::produce(art::Event& evt)
     std::map<int, std::vector<art::Ptr<recob::Hit>>> class_hits;
     _cnn_algo->infer(evt, class_hits);  
 
-    this->buildSpacePoints(evt, class_hits, *sp_coll, *sp_hit_assns);
-    this->buildClusters(evt, class_hits, *clus_coll, *clus_hit_assns);
-    this->buildPFParticles(evt, *pfp_coll, *pfp_clus_assns, *clus_coll);
+    // build new reconstruction objects 
 
     evt.put(std::move(clus_coll));
     evt.put(std::move(sp_coll));

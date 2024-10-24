@@ -14,10 +14,13 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardata/RecoBaseProxy/ProxyBase.h"
 
 #include "CommonFunctions/Pandora.h"
 #include "CommonFunctions/Scatters.h"
 #include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Region.h"
+#include "CommonFunctions/Types.h"
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
@@ -42,7 +45,6 @@
 
 class ConvolutionNetworkAlgo : public art::EDAnalyzer 
 {
-
 public:
     explicit ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset);
 
@@ -65,26 +67,29 @@ private:
     std::shared_ptr<torch::jit::script::Module> _model_u, _model_v, _model_w;
 
     int _width, _height;
-    float _drift_step;
 
+    float _drift_step;
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
     std::map<common::PandoraView, float> _wire_pitch;
 
-    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
-    std::vector<art::Ptr<recob::Hit>> _event_hits;
+    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+
+    std::map<common::PandoraView, std::array<float, 4>> _region_bounds;
+    std::vector<art::Ptr<recob::Hit>> _region_hits;
+    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
 
     calo::CalorimetryAlg* _calo_alg;
-    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
 
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
 
     void initialiseEvent(art::Event const& evt);
     void prepareTrainingSample(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
-    void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, common::PandoraView view, float x_min, float x_max, float z_min, float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel);
-    void findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, float& x_min, float& x_max, float& z_min, float& z_max) const;
+    void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map);
+    void findRegionBounds(art::Event const& evt);
     void getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex);
-
+    void calculateChargeCentroids(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map);
+    std::tuple<float, float, float, float> getBoundsForView(common::PandoraView view) const;
 };
 
 ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
@@ -92,8 +97,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _training_mode{pset.get<bool>("TrainingMode", true)}
     , _pass{pset.get<int>("Pass", 1)}
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output")}
-    , _width{pset.get<int>("ImageWidth", 256)}
-    , _height{pset.get<int>("ImageHeight", 256)}
+    , _width{pset.get<int>("ImageWidth", 512)}
+    , _height{pset.get<int>("ImageHeight", 512)}
     , _drift_step{pset.get<float>("DriftStep", 0.5)}
     , _wire_pitch_u{pset.get<float>("WirePitchU", 0.3)}
     , _wire_pitch_v{pset.get<float>("WirePitchU", 0.3)}
@@ -102,9 +107,17 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _PFPproducer{pset.get<art::InputTag>("PFPproducer", "pandora")}
+    , _CLSproducer{pset.get<art::InputTag>("CLSproducer", "pandora")}
+    , _SHRproducer{pset.get<art::InputTag>("SHRproducer", "pandora")}
+    , _SLCproducer{pset.get<art::InputTag>("SLCproducer", "pandora")}
+    , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
+    , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
+    , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
 {
     try {
-        if (!_training_mode) {
+        if (!_training_mode) 
+        {
             std::cout << "In testing mode!" << std::endl;
             std::cout << pset.get<std::string>("ModelFileU") << std::endl;
             _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
@@ -134,29 +147,125 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
 
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
 {   
-    this->prepareTrainingSample(evt);
+    this->initialiseEvent(evt); 
+
+    try {
+        if (_training_mode)
+            this->prepareTrainingSample(evt);
+    } catch (const c10::Error& e) {
+        throw cet::exception("ConvolutionNetworkAlgo") << "Error running algorithm: " << e.what() << "\n";
+    }
 }
 
 void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
 {
-    _event_hits.clear(); 
+    _region_bounds.clear();
+    _region_hits.clear(); 
     _mcp_bkth_assoc.reset();
 
     art::Handle<std::vector<recob::Hit>> hit_handle;
     if (evt.getByLabel(_HitProducer, hit_handle))
     {
-        art::fill_ptr_vector(_event_hits, hit_handle);
+        std::vector<art::Ptr<recob::Hit>> all_hits;
+        art::fill_ptr_vector(all_hits, hit_handle);
         _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_handle, evt, _BacktrackTag);
 
-        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << _event_hits.size();
+        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << all_hits.size();
+
+        this->findRegionBounds(evt);
+        for (const auto& hit : all_hits)
+        {
+            common::PandoraView view = common::GetPandoraView(hit);
+            auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
+
+            const auto pos = common::GetPandoraHitPosition(evt, hit, view);
+            float x = pos.X();
+            float z = pos.Z();
+
+            if (x >= drift_min && x <= drift_max && z >= wire_min && z <= wire_max)
+                _region_hits.push_back(hit);
+        }
+
+        mf::LogInfo("ConvNetworkAlgorithm") << "Region Hit size: " << _region_hits.size();
+    }
+}
+
+void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
+{
+    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(evt, _PFPproducer,
+                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
+                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
+                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
+                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
+                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
+                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
+                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
+                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
+
+    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(evt, _CLSproducer,
+                                                proxy::withAssociated<recob::Hit>(_CLSproducer));
+
+    std::vector<art::Ptr<recob::Hit>> nu_slice_hits = common::getNuSliceHits(pfp_proxy, clus_proxy);
+
+    std::map<common::PandoraView, std::array<float, 2>> q_cent_map;
+    std::map<common::PandoraView, float> tot_q_map;
+    common::initialiseChargeMap(q_cent_map, tot_q_map);
+    this->calculateChargeCentroids(evt, nu_slice_hits, q_cent_map, tot_q_map);
+
+    for (const auto& view : {common::TPC_VIEW_U, common::TPC_VIEW_V, common::TPC_VIEW_W}) 
+    {
+        const auto [x_centroid, z_centroid] = q_cent_map[view];
+
+        float x_min = x_centroid - (_height / 2) * _drift_step;
+        float x_max = x_centroid + (_height / 2) * _drift_step;
+        float z_min = z_centroid - (_width / 2) * _wire_pitch[view];
+        float z_max = z_centroid + (_width / 2) * _wire_pitch[view];
+
+        _region_bounds[view] = {x_min, x_max, z_min, z_max};
+
+        mf::LogInfo("ConvNetworkAlgorithm") << "View: " 
+            << (view == common::TPC_VIEW_U ? "U" : (view == common::TPC_VIEW_V ? "V" : "W")) 
+            << ", X bounds: [" << x_min << ", " << x_max << "]"
+            << ", Z bounds: [" << z_min << ", " << z_max << "]";
+    }
+}
+
+std::tuple<float, float, float, float> ConvolutionNetworkAlgo::getBoundsForView(common::PandoraView view) const
+{
+    const auto& bounds = _region_bounds.at(view);  
+    float drift_min = bounds[0]; 
+    float drift_max = bounds[1]; 
+    float wire_min = bounds[2];   
+    float wire_max = bounds[3];   
+    return std::make_tuple(drift_min, drift_max, wire_min, wire_max);
+}
+
+void ConvolutionNetworkAlgo::calculateChargeCentroids(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map)
+{
+    for (const auto& hit : hits)
+    {
+        common::PandoraView view = common::GetPandoraView(hit);
+        const TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
+        float charge = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
+
+        q_cent_map[view][0] += pos.X() * charge;  
+        q_cent_map[view][1] += pos.Z() * charge;  
+        tot_q_map[view] += charge;
+    }
+
+    for (auto& [view, charge_center] : q_cent_map)
+    {
+        if (tot_q_map[view] > 0) 
+        {
+            charge_center[0] /= tot_q_map[view];
+            charge_center[1] /= tot_q_map[view];
+        }
     }
 }
 
 void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
 {
-    std::cout << "Preparing training sample..." << std::endl;
-    this->initialiseEvent(evt);
-
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Preparing training sample...";
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
@@ -174,107 +283,81 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
             found_all_signatures = false;
     }
 
-    if (!found_all_signatures) 
-    {
-        std::cout << "Didn't find all the signatures!" << std::endl;
-        return;
-    }
-
-    std::cout << "size of trace collection " << trace_coll.size() << std::endl;
-
     for (auto& trace : trace_coll)
-    {
-        std::cout << "Trace: " << trace.pdg << ", " << trace.trckid << std::endl;
-    }
+        mf::LogInfo("ConvolutionNetworkAlgo") << "Trace: " << trace.pdg << ", " << trace.trckid;
 
     unsigned int n_flags = trace_coll.size();
+    int run = evt.run();
+    int subrun = evt.subRun();
+    int event = evt.event();
 
-    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> intr_hits;
-    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
-
-    for (const art::Ptr<recob::Hit>& hit : _event_hits) 
+    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> region_hits;
+    for (const art::Ptr<recob::Hit>& hit : _region_hits) 
     {
         common::PandoraView view = common::GetPandoraView(hit);
-        evt_hits[view].push_back(hit);
-
-        const std::vector<art::Ptr<simb::MCParticle>>& mc_particle_vector = _mcp_bkth_assoc->at(hit.key());
-        const auto& matching_data_vector = _mcp_bkth_assoc->data(hit.key());
-
-        for (size_t i_p = 0; i_p < mc_particle_vector.size(); ++i_p) 
-        {
-            if (matching_data_vector[i_p]->isMaxIDE == 1) 
-            {
-                intr_hits[view].push_back(hit);
-                break;  
-            }
-        }
+        region_hits[view].push_back(hit);
     }
 
-    for (const auto& [view, evt_view_hits] : evt_hits)
+    for (const auto& [view, evt_view_hits] : region_hits)
     {
-        float intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max;
-        this->findRegionExtent(evt, intr_hits[view], intr_drft_min, intr_drft_max, intr_wire_min, intr_wire_max);
-
-        float evt_drft_min, evt_drft_max, evt_wire_min, evt_wire_max;
-        this->findRegionExtent(evt, evt_view_hits, evt_drft_min, evt_drft_max, evt_wire_min, evt_wire_max);
-
         float x_vtx = nu_vtx[0];
         float z_vtx = (common::ProjectToWireView(nu_vtx[0], nu_vtx[1], nu_vtx[2], view)).Z();
 
-        if (x_vtx > (evt_drft_min - 1.f) && x_vtx < (evt_drft_max + 1.f) && z_vtx > (evt_wire_min - 1.f) && z_vtx < (evt_wire_max + 1.f))
-        {            
+        auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
+        if (x_vtx > (drift_min - 1.f) && x_vtx < (drift_max + 1.f) && z_vtx > (wire_min - 1.f) && z_vtx < (wire_max + 1.f))
+        {           
             unsigned int n_hits = 0;
-            // also store the event, subrun and run numbers to the vector
+            unsigned int n_meta = 0;
             std::vector<float> feat_vec = { static_cast<float>(n_hits), 
                                             static_cast<float>(n_flags),
+                                            static_cast<float>(n_meta),
+                                            static_cast<float>(run), 
+                                            static_cast<float>(subrun), 
+                                            static_cast<float>(event),
                                             x_vtx, z_vtx, 
-                                            evt_drft_min, evt_drft_max, 
-                                            evt_wire_min, evt_wire_max, 
-                                            intr_drft_min, intr_drft_max,
-                                            intr_wire_min, intr_wire_max };
+                                            drift_min, drift_max, 
+                                            wire_min, wire_max };
 
-            for (unsigned int ih = 0; ih < evt_view_hits.size(); ih++)
-            {   
-                const auto hit = evt_view_hits.at(ih);
+            n_meta = feat_vec.size();
+            feat_vec[2] = static_cast<float>(n_meta);
+
+            for (const auto& hit : evt_view_hits)
+            {
                 const geo::WireID hit_wire(hit->WireID());
-
                 if (hit_wire.Wire >= art::ServiceHandle<geo::Geometry>()->Nwires(hit_wire)) 
                     continue;
 
-                const auto hit_pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
-                float x = hit_pos.X();
-                float z = hit_pos.Z();
+                const auto pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
+                float x = pos.X();
+                float z = pos.Z();
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-                feat_vec.insert(feat_vec.end(), {x, z, q});
-
+                int is_sim = 0;
                 std::vector<float> sig_flags(trace_coll.size(), 0.0f);
+
                 if (_mcp_bkth_assoc != nullptr) 
                 {
                     const auto& assmcp = _mcp_bkth_assoc->at(hit.key());
                     const auto& assmdt = _mcp_bkth_assoc->data(hit.key());
 
-                    if (!assmcp.empty() && !assmdt.empty()) 
+                    for (unsigned int ia = 0; ia < assmcp.size(); ++ia) 
                     {
-                        for (unsigned int ia = 0; ia < assmcp.size(); ++ia) 
-                        {   
-                            auto mcp = assmcp[ia]; 
-                            auto amd = assmdt[ia];
-
-                            if (amd->isMaxIDE == 1) 
+                        if (assmdt[ia]->isMaxIDE == 1) 
+                        {
+                            is_sim = 1;
+                            for (size_t it = 0; it < trace_coll.size(); ++it) 
                             {
-                                for (size_t it = 0; it < trace_coll.size(); ++it) 
-                                {
-                                    if (mcp->TrackId() == trace_coll[it].trckid) 
-                                        sig_flags[it] = 1.0f;
-                                }
+                                if (assmcp[ia]->TrackId() == trace_coll[it].trckid) 
+                                    sig_flags[it] = 1.0f;
                             }
                         }
                     }
                 }
 
-                ++n_hits;
+                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(is_sim)});
                 feat_vec.insert(feat_vec.end(), sig_flags.begin(), sig_flags.end());
+
+                ++n_hits;
             }
 
             feat_vec[0] = static_cast<float>(n_hits);
@@ -301,31 +384,12 @@ void ConvolutionNetworkAlgo::getNuVertex(art::Event const& evt, std::array<float
     found_vertex = true;
 }
 
-void ConvolutionNetworkAlgo::findRegionExtent(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>> &hit_v, float &x_min, float &x_max, float &z_min, float &z_max) const
-{   
-    x_min = std::numeric_limits<float>::max();
-    x_max = -std::numeric_limits<float>::max();
-    z_min = std::numeric_limits<float>::max();
-    z_max = -std::numeric_limits<float>::max();
-
-    for (const art::Ptr<recob::Hit> &hit : hit_v)
-    {
-        common::PandoraView view = common::GetPandoraView(hit);
-        TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
-
-        x_min = std::min<float>(x_min, static_cast<float>(pos.X()));
-        x_max = std::max<float>(x_max, static_cast<float>(pos.X()));
-        z_min = std::min<float>(z_min, static_cast<float>(pos.Z()));
-        z_max = std::max<float>(z_max, static_cast<float>(pos.Z()));
-    }
-}
-
 void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
-    std::cout << "Attempting to open file: " << filename << std::endl;
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Attempting to open file: " << filename;
     std::ofstream out_file(filename, std::ios_base::app);
     if (!out_file.is_open()) {
-        std::cerr << "Error: Could not open file " << filename << std::endl;
+        mf::LogError("ConvolutionNetworkAlgo") << "Error: Could not open file " << filename;
         return;
     }
 
@@ -336,31 +400,24 @@ void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, 
 
     out_file << static_cast<int>(result) << '\n';
 
-    std::cout << "Saving the training output!" << std::endl;
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Saving the training output!";
     out_file.close();
 }
 
 void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vector<art::Ptr<recob::Hit>>>& classified_hits) 
 {
-    std::cout << "Startig inference..." << std::endl;
-    this->initialiseEvent(evt);
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Starting inference...";
+    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> region_hits;
+    for (const auto& hit : _region_hits)
+        region_hits[common::GetPandoraView(hit)].push_back(hit);
 
-    std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> evt_hits;
-    for (const auto& hit : _event_hits)
-        evt_hits[common::GetPandoraView(hit)].push_back(hit);
-
-    for (const auto& [view, evt_view_hits] : evt_hits)
+    for (const auto& [view, evt_view_hits] : region_hits)
     {
-        float drift_min = std::numeric_limits<float>::max();
-        float drift_max = -std::numeric_limits<float>::max();
-        float wire_min, wire_max;
-        this->findRegionExtent(evt, evt_view_hits, drift_min, drift_max, wire_min, wire_max);
-
         torch::Tensor network_input;
         std::map<art::Ptr<recob::Hit>,std::pair<int, int>> calohit_pixel;
 
-        this->makeNetworkInput(evt, evt_view_hits, view, drift_min, drift_max, wire_min, wire_max, network_input, calohit_pixel);
-       
+        this->makeNetworkInput(evt, evt_view_hits, view, network_input, calohit_pixel);
+
         torch::Tensor output;
         if (view == common::TPC_VIEW_U)
             output = _model_u->forward({network_input}).toTensor();
@@ -384,47 +441,46 @@ void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vec
     }
 
     for (const auto& [class_id, hits] : classified_hits)
-    {
-        std::cout << "Class " << class_id << " has " << hits.size() << " hits." << std::endl;
-    }
+        mf::LogInfo("ConvolutionNetworkAlgo") << "Class " << class_id << " has " << hits.size() << " hits.";
 
-    std::cout << "Ending inference!" << std::endl;
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Ending inference!";
 }
 
-void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, const float x_min, const float x_max, const float z_min, const float z_max, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& m_calohit_pixel)
+void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map)
 {
-    const float pitch = _wire_pitch[view];
+    const auto [x_min, x_max, z_min, z_max] = this->getBoundsForView(view);
     std::vector<double> x_bin_edges(_width + 1);
     std::vector<double> z_bin_edges(_height + 1);
-    x_bin_edges[0] = x_min - 0.5f * _drift_step; 
-    const double dx = ((x_max + 0.5f * _drift_step) - x_bin_edges[0]) / _width; 
 
-    for (int i = 1; i <= _width; ++i) 
+    x_bin_edges[0] = x_min;
+    const double dx = (x_max - x_min) / _width;
+
+    for (int i = 1; i <= _width; ++i)
         x_bin_edges[i] = x_bin_edges[i - 1] + dx;
 
-    z_bin_edges[0] = z_min - 0.5f * pitch; 
-    const double dz = ((z_max + 0.5f * pitch) - z_bin_edges[0]) / _height;
+    z_bin_edges[0] = z_min;
+    const double dz = (z_max - z_min) / _height;
 
-    for (int i = 1; i <= _height; ++i) 
+    for (int i = 1; i <= _height; ++i)
         z_bin_edges[i] = z_bin_edges[i - 1] + dz;
 
     network_input = torch::zeros({1, 1, _height, _width});
     auto accessor = network_input.accessor<float, 4>();
-
     for (const auto& hit : hit_list)
     {
-        const auto hit_pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
-        float x = hit_pos.X();
-        float z = hit_pos.Z();
+        const auto pos = common::GetPandoraHitPosition(evt, hit, static_cast<common::PandoraView>(view));
+        float x = pos.X();
+        float z = pos.Z();
 
-        if (_pass > 1 && (x < x_min || x > x_max || z > z_max))
-            continue;
-
-        float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
         const int pixel_x{static_cast<int>(std::floor((x - x_bin_edges[0]) / dx))};
         const int pixel_z{static_cast<int>(std::floor((z - z_bin_edges[0]) / dz))};
-        accessor[0][0][pixel_z][pixel_x] += q;
-        m_calohit_pixel.insert({hit,{pixel_z,pixel_x}});
+
+        if (pixel_x >= 0 && pixel_x < _width && pixel_z >= 0 && pixel_z < _height)
+        {
+            float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
+            accessor[0][0][pixel_z][pixel_x] += q;
+            calohit_pixel_map.insert({hit, {pixel_z, pixel_x}});
+        }
     }
 }
 
