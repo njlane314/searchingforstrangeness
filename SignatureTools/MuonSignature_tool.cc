@@ -24,14 +24,14 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
 
 private:
     art::InputTag _MCPproducer;
     art::InputTag _MCTproducer;
 };
 
-void MuonSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
+void MuonSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
 {
     found_signature = false;
     auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
@@ -41,7 +41,7 @@ void MuonSignature::findSignature(art::Event const& evt, TraceCollection& trace_
         const simb::MCParticle& mcp = mcp_h->at(i);
         if (std::abs(mcp.PdgCode()) == 13 && mcp.Process() == "primary" && this->aboveThreshold(mcp)) 
         {
-            this->fillTrace(art::Ptr<simb::MCParticle>(mcp_h, i), trace_coll);
+            this->fillSignature(art::Ptr<simb::MCParticle>(mcp_h, i), signature_coll);
             found_signature = true;
             break;
         }
