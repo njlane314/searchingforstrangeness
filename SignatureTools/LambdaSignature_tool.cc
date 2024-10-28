@@ -25,14 +25,14 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
 
 private:
     art::InputTag _MCPproducer;
     art::InputTag _MCTproducer;
 };
 
-void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
+void LambdaSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -42,10 +42,13 @@ void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trac
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &t_part : *mcp_h) {
-        if (abs(t_part.PdgCode()) == 3122 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 2 && !found_signature) {
+    for (const auto &t_part : *mcp_h) 
+    {
+        if (abs(t_part.PdgCode()) == 3122 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 2 && !found_signature) 
+        {
             auto daughters = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
-            if (daughters.size() == 2) {
+            if (daughters.size() == 2) 
+            {
                 std::vector<int> exp_dtrs = {-211, 2212};
                 std::vector<int> fnd_dtrs;
                 
@@ -68,7 +71,7 @@ void LambdaSignature::findSignature(art::Event const& evt, TraceCollection& trac
                     {
                         found_signature = true;
                         for (const auto &dtr : daughters) 
-                            this->fillTrace(dtr, trace_coll);
+                            this->fillSignature(dtr, signature_coll);
 
                         break;
                     }
