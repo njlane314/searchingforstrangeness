@@ -50,11 +50,11 @@ public:
         _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
 
         _fv_x_start = pset.get<float>("fidvolXstart", 10.0);
-        _fv_y_start = pset.get<float>("fidvolYstart", 10.0);
+        _fv_y_start = pset.get<float>("fidvolYstart", 15.0);
         _fv_z_start = pset.get<float>("fidvolZstart", 10.0);
         _fv_x_end = pset.get<float>("fidvolXend", 10.0);
-        _fv_y_end = pset.get<float>("fidvolYend", 10.0);
-        _fv_z_end = pset.get<float>("fidvolZend", 10.0);
+        _fv_y_end = pset.get<float>("fidvolYend", 15.0);
+        _fv_z_end = pset.get<float>("fidvolZend", 50.0);
     }
 
     bool identifySignalParticles(art::Event const& evt, SignatureCollection& sig_coll)
