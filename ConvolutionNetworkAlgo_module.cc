@@ -273,20 +273,20 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     if (!found_vertex) 
         return; 
 
-    std::vector<signature::Trace> trace_coll;
+    std::vector<signature::Signature> signature_coll;
     bool found_all_signatures = true;
     for (auto& signatureTool : _signatureToolsVec)
     {
-        bool found_signature = signatureTool->identifySignalParticles(evt, trace_coll);
+        bool found_signature = signatureTool->identifySignalParticles(evt, signature_coll);
 
         if (!found_signature) 
             found_all_signatures = false;
     }
 
-    for (auto& trace : trace_coll)
-        mf::LogInfo("ConvolutionNetworkAlgo") << "Trace: " << trace.pdg << ", " << trace.trckid;
+    for (auto& signature : signature_coll)
+        mf::LogInfo("ConvolutionNetworkAlgo") << "Signature: " << signature.pdg << ", " << signature.trckid;
 
-    unsigned int n_flags = trace_coll.size();
+    unsigned int n_flags = signature_coll.size();
     int run = evt.run();
     int subrun = evt.subRun();
     int event = evt.event();
@@ -334,8 +334,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                 float z = pos.Z();
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-                int is_sim = 0;
-                std::vector<float> sig_flags(trace_coll.size(), 0.0f);
+                int sig_flag = 0;
 
                 if (_mcp_bkth_assoc != nullptr) 
                 {
@@ -346,19 +345,22 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                     {
                         if (assmdt[ia]->isMaxIDE == 1) 
                         {
-                            is_sim = 1;
-                            for (size_t it = 0; it < trace_coll.size(); ++it) 
+                            for (size_t it = 0; it < signature_coll.size(); ++it) 
                             {
-                                if (assmcp[ia]->TrackId() == trace_coll[it].trckid) 
-                                    sig_flags[it] = 1.0f;
+                                if (assmcp[ia]->TrackId() == signature_coll[it].trckid) 
+                                {
+                                    sig_flag = 1;
+                                    break;
+                                }
                             }
                         }
+
+                        if (sig_flag == 1)
+                            break;
                     }
                 }
 
-                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(is_sim)});
-                feat_vec.insert(feat_vec.end(), sig_flags.begin(), sig_flags.end());
-
+                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(sig_flag)});
                 ++n_hits;
             }
 

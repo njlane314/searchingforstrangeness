@@ -24,14 +24,14 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
 
 private:
     art::InputTag _MCPproducer;  
     std::string _decay_mode;
 };
 
-void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection& trace_coll, bool& found_signature)
+void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -89,7 +89,7 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, TraceCollection&
                     std::cout << "Found kaon signature" << std::endl;
                     found_signature = true;
                     for (const auto &dtr : daughters) 
-                        this->fillTrace(dtr, trace_coll);
+                        this->fillSignature(dtr, signature_coll);
 
                     break;
                 }
