@@ -206,6 +206,8 @@ void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
                                                 proxy::withAssociated<recob::Hit>(_CLSproducer));
 
     std::vector<art::Ptr<recob::Hit>> nu_slice_hits = common::getNuSliceHits(pfp_proxy, clus_proxy);
+    if (nu_slice_hits.empty())
+        return;
 
     std::map<common::PandoraView, std::array<float, 2>> q_cent_map;
     std::map<common::PandoraView, float> tot_q_map;
@@ -286,7 +288,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     for (auto& signature : signature_coll)
         mf::LogInfo("ConvolutionNetworkAlgo") << "Signature: " << signature.pdg << ", " << signature.trckid;
 
-    unsigned int n_flags = signature_coll.size();
+    unsigned int n_flags = 1;
     int run = evt.run();
     int subrun = evt.subRun();
     int event = evt.event();
@@ -335,7 +337,6 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
                 int sig_flag = 0;
-
                 if (_mcp_bkth_assoc != nullptr) 
                 {
                     const auto& assmcp = _mcp_bkth_assoc->at(hit.key());
