@@ -88,7 +88,7 @@ private:
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map);
     void findRegionBounds(art::Event const& evt);
     void getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex);
-    void calculateChargeCentroids(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map);
+    void calculateChargeCentroid(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map);
     std::tuple<float, float, float, float> getBoundsForView(common::PandoraView view) const;
 };
 
@@ -148,6 +148,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
 {   
     this->initialiseEvent(evt); 
+    if (_region_hits.empty())
+        return;
 
     try {
         if (_training_mode)
@@ -173,6 +175,9 @@ void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
         mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << all_hits.size();
 
         this->findRegionBounds(evt);
+        if (_region_bounds.empty())
+            return;
+
         for (const auto& hit : all_hits)
         {
             common::PandoraView view = common::GetPandoraView(hit);
@@ -192,6 +197,7 @@ void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
 
 void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
 {
+    std::cout << "Finding bound region..." << std::endl;
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(evt, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
                                                         proxy::withAssociated<recob::Cluster>(_CLSproducer),
@@ -212,7 +218,7 @@ void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
     std::map<common::PandoraView, std::array<float, 2>> q_cent_map;
     std::map<common::PandoraView, float> tot_q_map;
     common::initialiseChargeMap(q_cent_map, tot_q_map);
-    this->calculateChargeCentroids(evt, nu_slice_hits, q_cent_map, tot_q_map);
+    this->calculateChargeCentroid(evt, nu_slice_hits, q_cent_map, tot_q_map);
 
     for (const auto& view : {common::TPC_VIEW_U, common::TPC_VIEW_V, common::TPC_VIEW_W}) 
     {
@@ -225,10 +231,10 @@ void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
 
         _region_bounds[view] = {x_min, x_max, z_min, z_max};
 
-        mf::LogInfo("ConvNetworkAlgorithm") << "View: " 
+        std::cout << "View: " 
             << (view == common::TPC_VIEW_U ? "U" : (view == common::TPC_VIEW_V ? "V" : "W")) 
             << ", X bounds: [" << x_min << ", " << x_max << "]"
-            << ", Z bounds: [" << z_min << ", " << z_max << "]";
+            << ", Z bounds: [" << z_min << ", " << z_max << "]" << std::endl;
     }
 }
 
@@ -242,8 +248,9 @@ std::tuple<float, float, float, float> ConvolutionNetworkAlgo::getBoundsForView(
     return std::make_tuple(drift_min, drift_max, wire_min, wire_max);
 }
 
-void ConvolutionNetworkAlgo::calculateChargeCentroids(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map)
+void ConvolutionNetworkAlgo::calculateChargeCentroid(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map)
 {
+    std::cout << "Calculating charge centroid of neutrino slice..." << std::endl;
     for (const auto& hit : hits)
     {
         common::PandoraView view = common::GetPandoraView(hit);
@@ -267,7 +274,7 @@ void ConvolutionNetworkAlgo::calculateChargeCentroids(const art::Event& evt, con
 
 void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
 {
-    mf::LogInfo("ConvolutionNetworkAlgo") << "Preparing training sample...";
+    std::cout << "Preparing training sample..." << std::endl;
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
@@ -285,8 +292,11 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
             found_all_signatures = false;
     }
 
+    if (!found_all_signatures)
+        signature_coll.clear();
+
     for (auto& signature : signature_coll)
-        mf::LogInfo("ConvolutionNetworkAlgo") << "Signature: " << signature.pdg << ", " << signature.trckid;
+        std::cout << "Signature: " << signature.pdg << ", " << signature.trckid << std::endl;
 
     unsigned int n_flags = 1;
     int run = evt.run();
@@ -391,7 +401,7 @@ void ConvolutionNetworkAlgo::getNuVertex(art::Event const& evt, std::array<float
 
 void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
-    mf::LogInfo("ConvolutionNetworkAlgo") << "Attempting to open file: " << filename;
+    std::cout << "Attempting to open file: " << filename << std::endl;
     std::ofstream out_file(filename, std::ios_base::app);
     if (!out_file.is_open()) {
         mf::LogError("ConvolutionNetworkAlgo") << "Error: Could not open file " << filename;
@@ -405,13 +415,13 @@ void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, 
 
     out_file << static_cast<int>(result) << '\n';
 
-    mf::LogInfo("ConvolutionNetworkAlgo") << "Saving the training output!";
+    std::cout << "Saving the training output!" << std::endl;
     out_file.close();
 }
 
 void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vector<art::Ptr<recob::Hit>>>& classified_hits) 
 {
-    mf::LogInfo("ConvolutionNetworkAlgo") << "Starting inference...";
+    std::cout << "Starting inference..." << std::endl;
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> region_hits;
     for (const auto& hit : _region_hits)
         region_hits[common::GetPandoraView(hit)].push_back(hit);
@@ -446,13 +456,14 @@ void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vec
     }
 
     for (const auto& [class_id, hits] : classified_hits)
-        mf::LogInfo("ConvolutionNetworkAlgo") << "Class " << class_id << " has " << hits.size() << " hits.";
+        std::cout << "Class " << class_id << " has " << hits.size() << " hits.";
 
-    mf::LogInfo("ConvolutionNetworkAlgo") << "Ending inference!";
+    std::cout << "Ending inference!" << std::endl;
 }
 
 void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map)
 {
+    std::cout << "Making network input" << std::endl;
     const auto [x_min, x_max, z_min, z_max] = this->getBoundsForView(view);
     std::vector<double> x_bin_edges(_width + 1);
     std::vector<double> z_bin_edges(_height + 1);
