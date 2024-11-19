@@ -48,7 +48,7 @@ namespace common
         return;
     } 
 
-    std::vector<art::Ptr<recob::Hit>> getNuSliceHits(const common::ProxyPfpColl_t& pfp_proxy, 
+    std::pair<std::vector<art::Ptr<recob::Hit>>, std::vector<ProxyPfpElem_t>> getNuSliceHits(const common::ProxyPfpColl_t& pfp_proxy, 
                                                  const common::ProxyClusColl_t& clus_proxy)
     {
         std::vector<art::Ptr<recob::Hit>> nu_slice_hits;
@@ -80,7 +80,7 @@ namespace common
             }
         }
 
-        return nu_slice_hits;
+        return {nu_slice_hits, nu_slice};
     }
 
     void initialiseChargeMap(

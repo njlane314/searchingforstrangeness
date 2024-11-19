@@ -211,7 +211,7 @@ void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(evt, _CLSproducer,
                                                 proxy::withAssociated<recob::Hit>(_CLSproducer));
 
-    std::vector<art::Ptr<recob::Hit>> nu_slice_hits = common::getNuSliceHits(pfp_proxy, clus_proxy);
+    auto [nu_slice_hits, nu_slice] = common::getNuSliceHits(pfp_proxy, clus_proxy);
     if (nu_slice_hits.empty())
         return;
 
