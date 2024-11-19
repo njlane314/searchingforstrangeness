@@ -33,6 +33,7 @@
 
 *.root
 *.csv
+*.png
 
 build_log.txt
 
