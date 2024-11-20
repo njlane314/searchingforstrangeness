@@ -1,0 +1,65 @@
+#include "selectionconfig.fcl"  
+
+process_name: SignatureIntegrityFilterProcess
+
+services:
+{
+    TFileService: { fileName: "signatureintegrity_output.root" } 
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    ExptGeoHelperInterface: @local::microboone_geometry_helper
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source:
+{
+    module_type: RootInput
+    maxEvents: -1
+    fileNames: [ "input_file.root" ]
+}
+
+physics:
+{
+    filters:
+    {
+        signatureintegrityfilter:
+        {
+            module_type: SignatureIntegrityFilter
+
+            HitProducer: "gaushit"
+            MCPproducer: "largeant"
+            MCTproducer: "generator"
+            BacktrackTag: "gaushitTruthMatch"
+
+            CaloAlg: @local::microboone_calo_mcc9_data
+
+            SignatureTools:
+            {
+                leptonic: @local::MuonSignature
+                kshort: @local::KaonShortSignature
+            }
+
+            HitThreshold: 1000
+            SpatialTolerance: 0.3
+
+            BadChannelFile: "badchannels.txt"
+            VetoBadChannels: true
+        }
+    }
+
+    p1: [ signatureintegrityfilter ]
+
+    trigger_paths: [ p1 ]
+}

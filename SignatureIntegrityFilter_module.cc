@@ -56,8 +56,10 @@ public:
 private:
     art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
 
-    int _hit_threshold;
-    double _spatial_tolerance;
+    int _hit_thresh;
+    double _displaced_thresh;
+    int _channel_proximity;
+    double _length_thresh;
 
     std::string _bad_channel_file;
     bool _veto_bad_channels;
@@ -73,6 +75,11 @@ private:
 
     void initialiseBadChannelMask();
 
+    bool identifySignatures(art::Event& e, signature::SignatureCollection& sig_coll);
+    bool areSignaturesValid(art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool validateDecayVertices(art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool validateFinalStateParticles(art::Event& e, const signature::SignatureCollection& sig_coll);
+
     void getFinalStateParticles(art::Event const& e, std::vector<simb::MCParticle>& fsp);
     void getNuVertex(art::Event const& e, TVector3& nu_vtx);
     void getSimulationHits(art::Event const& e, std::vector<art::Ptr<recob::Hit>>& mc_hits);
@@ -81,7 +88,9 @@ private:
     bool checkPositionActivelyBound(const double x[3]);
 
     bool checkSignatureSensitivity(const art::Event& e, const signature::SignatureCollection& sig_coll); 
-    bool checkPositionSensitivity(const TVector3& pos, int tolerance = 10);
+    bool checkPositionSensitivity(const TVector3& pos);
+
+    bool checkGeometricLength(const art::Event& e, const signature::SignatureCollection& sig_coll);
 };
 
 SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &pset)
@@ -90,16 +99,18 @@ SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &ps
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
-    , _hit_threshold{pset.get<int>("HitThreshold", 1000)}
-    , _spatial_tolerance{pset.get<double>("SpatialTolerance", 0.3)}
+    , _hit_thresh{pset.get<int>("HitThreshold", 1000)}
+    , _displaced_thresh{pset.get<double>("DisplacedThreshold", 0.3)}
+    , _channel_proximity{pset.get<int>("ChannelProximity", 5)}
+    , _length_thresh{pset.get<double>("LengthThreshold", 5)}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
-    , _fid_x_start{pset.get<double>("FiducialXStart", 0.0)}
-    , _fid_y_start{pset.get<double>("FiducialYStart", 0.0)}
-    , _fid_z_start{pset.get<double>("FiducialZStart", 0.0)}
-    , _fid_x_end{pset.get<double>("FiducialXEnd", 0.0)}
-    , _fid_y_end{pset.get<double>("FiducialYEnd", 0.0)}
-    , _fid_z_end{pset.get<double>("FiducialZEnd", 0.0)}
+    , _fid_x_start{pset.get<double>("FiducialXStart", 10.0)}
+    , _fid_y_start{pset.get<double>("FiducialYStart", 15.0)}
+    , _fid_z_start{pset.get<double>("FiducialZStart", 10.0)}
+    , _fid_x_end{pset.get<double>("FiducialXEnd", 10.0)}
+    , _fid_y_end{pset.get<double>("FiducialYEnd", 15.0)}
+    , _fid_z_end{pset.get<double>("FiducialZEnd", 50.0)}
 {
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
 
@@ -148,63 +159,88 @@ void SignatureIntegrityFilter::initialiseBadChannelMask()
 bool SignatureIntegrityFilter::filter(art::Event &e) 
 {
     std::vector<signature::Signature> sig_coll;
-    for (auto& signatureTool : _signatureToolsVec) {
+    if (!this->identifySignatures(e, sig_coll))
+        return false;
+
+    if (!this->areSignaturesValid(e, sig_coll))
+        return false;
+
+    std::vector<art::Ptr<recob::Hit>> mcHits;
+    this->getSimulationHits(e, mcHits);
+    if (mcHits.size() < static_cast<size_t>(_hit_thresh))
+        return false;
+
+    if (!this->validateDecayVertices(e, sig_coll))
+        return false;
+
+    if (!this->validateFinalStateParticles(e, sig_coll))
+        return false;
+
+    return true; 
+}
+
+bool SignatureIntegrityFilter::identifySignatures(art::Event& e, const signature::SignatureCollection& sig_coll)
+{
+    for (auto &signatureTool : _signatureToolsVec) 
+    {
         if (!signatureTool->identifySignalParticles(e, sig_coll))
             return false;
     }
+    return true;
+}
 
-    if (!checkSignatureActivelyBound(e, sig_coll))
-        return false;
+bool SignatureIntegrityFilter::areSignaturesValid(art::Event &e, const signature::SignatureCollection& sig_coll)
+{
+    return this->checkGeometricLength(e, sig_coll) &&
+           this->checkSignatureActivelyBound(e, sig_coll) &&
+           this->checkSignatureSensitivity(e, sig_coll);
+}
 
-    if (!checkSignatureSensitivity(e, sig_coll)) 
-        return false;
-
-    std::vector<art::Ptr<recob::Hit>> mc_hits;
-    this->getSimulationHits(e, mc_hits); 
-
-    if (mc_hits.size() < static_cast<size_t>(_hit_threshold)) 
-        return false;
-
+bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signature::SignatureCollection& sig_coll)
+{
     TVector3 nu_vtx;
     this->getNuVertex(e, nu_vtx);
-    for (const auto& signatureTool : _signatureToolsVec) 
+
+    for (const auto &signatureTool : _signatureToolsVec) 
     {
-        auto* decayTool = dynamic_cast<DecayVertexProvider*>(signatureTool.get());
+        auto *decayTool = dynamic_cast<DecayVertexProvider*>(signatureTool.get());
         if (decayTool) 
         {
             std::optional<TVector3> decay_vtx_opt = decayTool->getDecayVertex(e);
-            if (decay_vtx_opt) {
-                TVector3 decay_vtx = *decay_vtx_opt;
-                double sep = (nu_vtx - decay_vtx).Mag();
-
-                if (sep < _spatial_tolerance)
+            if (decay_vtx_opt) 
+            {
+                double sep = (nu_vtx - *decay_vtx_opt).Mag();
+                if (sep < _displaced_thresh)
                     return false;
-
                 break;
             }
         }
-    }    
+    }
+    return true;
+}
 
-    std::vector<simb::MCParticle> fsp; 
+bool SignatureIntegrityFilter::validateFinalStateParticles(art::Event &e, const signature::SignatureCollection& sig_coll)
+{
+    std::vector<simb::MCParticle> fsp;
     this->getFinalStateParticles(e, fsp);
-    for (const auto& mcp : fsp)
+
+    for (const auto &mcp : fsp) 
     {
-        if (std::any_of(sig_coll.begin(), sig_coll.end(), [&](const auto& sig) {
-            return sig.trckid == mcp.TrackId();
-        })){
-            continue; 
+        if (std::any_of(sig_coll.begin(), sig_coll.end(), [&](const auto &signature) {
+                return signature.trckid == mcp.TrackId();
+            })) {
+            continue;
         }
 
-        TParticlePDG* p_info = TDatabasePDG::Instance()->GetParticle(mcp.PdgCode());
+        TParticlePDG *p_info = TDatabasePDG::Instance()->GetParticle(mcp.PdgCode());
         if (!p_info)
             continue;
 
-        auto p_class = p_info->ParticleClass();
-        if (std::string(p_class) == "meson")
+        if (std::string(p_info->ParticleClass()) == "meson")
             return false;
     }
 
-    return true; 
+    return true;
 }
 
 void SignatureIntegrityFilter::getFinalStateParticles(art::Event const& e, std::vector<simb::MCParticle>& fsp)
@@ -261,16 +297,43 @@ void SignatureIntegrityFilter::getSimulationHits(art::Event const& e, std::vecto
     }
 }
 
+bool SignatureIntegrityFilter::checkGeometricLength(const art::Event& e, const signature::SignatureCollection& sig_coll)
+{
+    auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
+    for (const auto& sig : sig_coll) 
+    {
+        const simb::MCParticle* mcp = nullptr;
+        for (const auto& part : *mcp_h) 
+        {
+            if (part.TrackId() == sig.trckid) {
+                mcp = &part;
+                break;
+            }
+        }
+        if (!mcp) 
+            continue;
+
+        TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
+        TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
+
+        double length = (end - start).Mag();
+        if (length < _length_thresh)
+            return false;
+    }
+
+    return true; 
+}
+
 bool SignatureIntegrityFilter::checkSignatureActivelyBound(const art::Event& e, const signature::SignatureCollection& sig_coll)
 {
     auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     for (const auto& sig : sig_coll) 
     {
         const simb::MCParticle* mcp = nullptr;
-        for (const auto& particle : *mcp_h) 
+        for (const auto& part : *mcp_h) 
         {
-            if (particle.TrackId() == sig.trckid) {
-                mcp = &particle;
+            if (part.TrackId() == sig.trckid) {
+                mcp = &part;
                 break;
             }
         }
@@ -297,11 +360,11 @@ bool SignatureIntegrityFilter::checkSignatureActivelyBound(const art::Event& e, 
 
 bool SignatureIntegrityFilter::checkPositionActivelyBound(const double x[3]) 
 {
-    geo::TPCGeo const &thisTPC = _geo->TPC();
-    geo::BoxBoundedGeo theTpcGeo = thisTPC.ActiveBoundingBox();
+    geo::TPCGeo const &this_tpc = _geo->TPC();
+    geo::BoxBoundedGeo this_tpc_geo = this_tpc.ActiveBoundingBox();
 
-    std::vector<double> bnd = {theTpcGeo.MinX(), theTpcGeo.MaxX(), theTpcGeo.MinY(),
-                               theTpcGeo.MaxY(), theTpcGeo.MinZ(), theTpcGeo.MaxZ()};
+    std::vector<double> bnd = {this_tpc_geo.MinX(), this_tpc_geo.MaxX(), this_tpc_geo.MinY(),
+                               this_tpc_geo.MaxY(), this_tpc_geo.MinZ(), this_tpc_geo.MaxZ()};
 
     bool is_x = x[0] > (bnd[0] + _fid_x_start) && x[0] < (bnd[1] - _fid_x_end);
     bool is_y = x[1] > (bnd[2] + _fid_y_start) && x[1] < (bnd[3] - _fid_y_end);
@@ -316,10 +379,10 @@ bool SignatureIntegrityFilter::checkSignatureSensitivity(const art::Event& e, co
     for (const auto& sig : sig_coll) 
     {
         const simb::MCParticle* mcp = nullptr;
-        for (const auto& particle : *mcp_h) 
+        for (const auto& part : *mcp_h) 
         {
-            if (particle.TrackId() == sig.trckid) {
-                mcp = &particle;
+            if (part.TrackId() == sig.trckid) {
+                mcp = &part;
                 break;
             }
         }
@@ -342,7 +405,7 @@ bool SignatureIntegrityFilter::checkSignatureSensitivity(const art::Event& e, co
     return true;
 }
 
-bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos, int tolerance) 
+bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos) 
 {
     for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) 
     {
@@ -350,7 +413,7 @@ bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos, int
             geo::WireID wire = _geo->NearestWireID(pos, plane);
             raw::ChannelID_t central_channel = _geo->PlaneWireToChannel(wire);
 
-            for (int offset = -tolerance; offset <= tolerance; ++offset) 
+            for (int offset = -_channel_proximity; offset <= _channel_proximity; ++offset) 
             {
                 raw::ChannelID_t neighboring_channel = central_channel + offset;
                 if (neighboring_channel < 0 || static_cast<size_t>(neighboring_channel) >= _geo->Nchannels())
