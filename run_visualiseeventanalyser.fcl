@@ -1,0 +1,51 @@
+#include "selectionconfig.fcl"  
+
+process_name: VisualiseEventAnalysisProcess
+
+services:
+{
+    TFileService: { fileName: "visualiseevent_output.root" } 
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    ExptGeoHelperInterface: @local::microboone_geometry_helper
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source:
+{
+    module_type: RootInput
+    maxEvents: -1
+    fileNames: [ "input_file.root" ]
+}
+
+physics:
+{
+    analyzers:
+    {
+        visana:
+        {
+            module_type: VisualiseEventAnalyser
+
+            TargetEvents: [
+                [12345, 67, 890],  # Run, SubRun, Event
+                [12345, 68, 891], 
+                [12346, 69, 892]   
+            ]
+        }
+    }
+
+    e1: [ visana ]
+    end_paths: [ e1 ]
+}
