@@ -62,12 +62,12 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
             if (_decay_mode == "muonic")  
             {
                 expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{-13, +14}  // K+ -> Muon+ + Neutrino
-                                                    : std::vector<int>{+13, -14}; // K- -> Muon- + Antineutrino
+                                                    : std::vector<int>{+13, -14};            // K- -> Muon- + Antineutrino
             }
             else if (_decay_mode == "pionic") 
             {
                 expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{211, 111}  // K+ -> Pi+ + Pi0
-                                                    : std::vector<int>{-211, 111}; // K- -> Pi- + Pi0
+                                                    : std::vector<int>{-211, 111};           // K- -> Pi- + Pi0
             }
 
             std::vector<int> found_dtrs;
