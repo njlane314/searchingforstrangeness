@@ -51,9 +51,6 @@ physics:
                 kshort: @local::KaonShortSignature
             }
 
-            HitThreshold: 1000
-            SpatialTolerance: 0.3
-
             BadChannelFile: "badchannels.txt"
             VetoBadChannels: true
         }
