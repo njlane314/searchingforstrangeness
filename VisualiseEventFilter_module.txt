@@ -1,4 +1,4 @@
-#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -33,6 +33,8 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Track.h"
 
+#include "SignatureIntegrityFilter.h"
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -50,30 +52,37 @@
 #include <string>
 #include <tuple>
 
-class VisualiseEventAnalyser : public art::EDAnalyzer
+class VisualiseEventFilter : public art::EDFilter
 {
 public:
-    explicit VisualiseEventAnalyser(fhicl::ParameterSet const &pset);
+    explicit VisualiseEventFilter(fhicl::ParameterSet const &pset);
 
-    void analyze(art::Event const &e) override;
-    void beginJob() override;
-    void endJob() override;
+    VisualiseEventFilter(VisualiseEventFilter const &) = delete;
+    VisualiseEventFilter(VisualiseEventFilter &&) = delete;
+    VisualiseEventFilter &operator=(VisualiseEventFilter const &) = delete;
+    VisualiseEventFilter &operator=(VisualiseEventFilter &&) = delete;
+
+    bool filter(art::Event &e) override;
 
 private:
-    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
+    art::InputTag _HitProducer, _MCTproducer, _BacktrackTag;
 
     std::vector<std::tuple<int, int, int>> _target_events;
+    std::string _mode;
+
+    SignatureIntegrityFilter _integrity_filter;
 
     void visualiseEvent(const art::Event &e, const std::string &filename);
     void get_limits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec, float& global_wire_min, float& global_wire_max, float& global_drift_min, float& global_drift_max) const;
 };
 
-VisualiseEventAnalyser::VisualiseEventAnalyser(fhicl::ParameterSet const &pset)
-    : EDAnalyzer{pset}
+VisualiseEventFilter::VisualiseEventFilter(fhicl::ParameterSet const &pset)
+    : EDFilter{pset}
     , _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
-    , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
+    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "largeant")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _mode{pset.get<std::string>("Mode", "target")}
+    , _integrity_filter{pset.get<fhicl::ParameterSet>("signatureintegrityfilter")}
 {
     auto entry_coll = pset.get<std::vector<std::vector<int>>>("TargetEvents");
     for (const auto &entry : entry_coll) 
@@ -81,21 +90,21 @@ VisualiseEventAnalyser::VisualiseEventAnalyser(fhicl::ParameterSet const &pset)
         if (entry.size() == 3) {
             _target_events.emplace_back(entry[0], entry[1], entry[2]);
         } else {
-            throw cet::exception("VisualiseEventAnalyser") << "-- Invalid TargetEvents format. Each entry must contain exactly three integers (Run, SubRun, Event).";
+            throw cet::exception("VisualiseEventFilter") << "-- Invalid TargetEvents format. Each entry must contain exactly three integers (Run, SubRun, Event).";
         }
     }
 }
 
-void VisualiseEventAnalyser::beginJob() 
-{}
-
-void VisualiseEventAnalyser::analyze(art::Event const &e)
+bool VisualiseEventFilter::filter(art::Event &e)
 {
     auto current_event = std::make_tuple(e.run(), e.subRun(), e.event());
-    if (std::find(_target_events.begin(), _target_events.end(), current_event) == _target_events.end()) 
-        return; 
+    if (_mode == "target" && std::find(_target_events.begin(), _target_events.end(), current_event) == _target_events.end()) 
+        return false; 
 
-    mf::LogInfo("VisualiseEventAnalyser") << "-- Visualising event: Run " << e.run() 
+    if (_mode == "filter" && !_integrity_filter.filter(e))
+        return false;
+
+    mf::LogInfo("VisualiseEventFilter") << "-- Visualising event: Run " << e.run() 
                                            << ", SubRun " << e.subRun() 
                                            << ", Event " << e.event();
 
@@ -104,16 +113,18 @@ void VisualiseEventAnalyser::analyze(art::Event const &e)
                            std::to_string(e.event()) + ".png";
 
     this->visualiseEvent(e, filename);
+
+    return true;
 }
 
-void VisualiseEventAnalyser::visualiseEvent(const art::Event &e, const std::string &filename)
+void VisualiseEventFilter::visualiseEvent(const art::Event &e, const std::string &filename)
 {
     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
     std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
     lar_pandora::MCParticleMap mc_particle_map;
 
     if (!e.getByLabel(_MCTproducer, mc_particle_handle))
-        throw cet::exception("VisualiseEventAnalyser") << "failed to find any mc particles in event" << std::endl;
+        throw cet::exception("VisualiseEventFilter") << "failed to find any mc particles in event" << std::endl;
     art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
     lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
 
@@ -121,7 +132,7 @@ void VisualiseEventAnalyser::visualiseEvent(const art::Event &e, const std::stri
     std::vector<art::Ptr<recob::Hit>> hit_vector;
     
     if (!e.getByLabel(_HitProducer, hit_handle))
-        throw cet::exception("VisualiseEventAnalyser") << "failed to find any hits in event" << std::endl;
+        throw cet::exception("VisualiseEventFilter") << "failed to find any hits in event" << std::endl;
     art::fill_ptr_vector(hit_vector, hit_handle);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackTag);
 
@@ -331,7 +342,7 @@ void VisualiseEventAnalyser::visualiseEvent(const art::Event &e, const std::stri
     delete mg_w;
 }
 
-void VisualiseEventAnalyser::get_limits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec,
+void VisualiseEventFilter::get_limits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec,
                    float& global_wire_min, float& global_wire_max, float& global_drift_min, float& global_drift_max) const
 {
     if (!wire_coord_vec.empty() && !drift_coord_vec.empty()) {
@@ -347,7 +358,4 @@ void VisualiseEventAnalyser::get_limits(const std::vector<float>& wire_coord_vec
     }
 }
 
-void VisualiseEventAnalyser::endJob() 
-{}
-
-DEFINE_ART_MODULE(VisualiseEventAnalyser)
+DEFINE_ART_MODULE(VisualiseEventFilter)

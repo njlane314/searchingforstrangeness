@@ -40,6 +40,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <cmath>
+#include <chrono>
 
 class SignatureIntegrityFilter : public art::EDFilter 
 {
@@ -99,10 +100,10 @@ SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &ps
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
-    , _hit_thresh{pset.get<int>("HitThreshold", 1000)}
-    , _displaced_thresh{pset.get<double>("DisplacedThreshold", 0.3)}
+    , _hit_thresh{pset.get<int>("HitThreshold", 2000)}
+    , _displaced_thresh{pset.get<double>("DisplacedThreshold", 0.5)}
     , _channel_proximity{pset.get<int>("ChannelProximity", 5)}
-    , _length_thresh{pset.get<double>("LengthThreshold", 5)}
+    , _length_thresh{pset.get<double>("LengthThreshold", 8)}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
     , _fid_x_start{pset.get<double>("FiducialXStart", 10.0)}
@@ -165,9 +166,9 @@ bool SignatureIntegrityFilter::filter(art::Event &e)
     if (!this->areSignaturesValid(e, sig_coll))
         return false;
 
-    std::vector<art::Ptr<recob::Hit>> mcHits;
-    this->getSimulationHits(e, mcHits);
-    if (mcHits.size() < static_cast<size_t>(_hit_thresh))
+    std::vector<art::Ptr<recob::Hit>> sim_hits;
+    this->getSimulationHits(e, sim_hits);
+    if (sim_hits.size() < static_cast<size_t>(_hit_thresh))
         return false;
 
     if (!this->validateDecayVertices(e, sig_coll))
@@ -175,6 +176,14 @@ bool SignatureIntegrityFilter::filter(art::Event &e)
 
     if (!this->validateFinalStateParticles(e, sig_coll))
         return false;
+
+    std::cout << "-- Found an event with a integral signature..." << std::endl;
+
+    int evt = e.event();
+    int sub = e.subRun();
+    int run = e.run();
+    std::cout << "-- Run, subrun, event: [" << run << ", " << sub << ", " << evt << "]" << std::endl; 
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
     return true; 
 }

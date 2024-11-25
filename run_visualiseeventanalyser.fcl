@@ -1,6 +1,6 @@
 #include "selectionconfig.fcl"  
 
-process_name: VisualiseEventAnalysisProcess
+process_name: VisualiseEventFilterProcess
 
 services:
 {
@@ -32,20 +32,49 @@ source:
 
 physics:
 {
-    analyzers:
+    filters:
     {
-        visana:
+        visfilter:
         {
-            module_type: VisualiseEventAnalyser
+            module_type: VisualiseEventFilter
+            Mode: "filter"
 
             TargetEvents: [
-                [12345, 67, 890],  # Run, SubRun, Event
-                [12345, 68, 891], 
-                [12346, 69, 892]   
+                [11278, 270, 13533],  # Run, SubRun, Event
+                [10490, 172, 8627], 
+                [11872, 262, 13103]   
             ]
+
+            signatureintegrityfilter:
+            {
+                module_type: SignatureIntegrityFilter
+
+                HitProducer: "gaushit"
+                MCPproducer: "largeant"
+                MCTproducer: "generator"
+                BacktrackTag: "gaushitTruthMatch"
+
+                CaloAlg: @local::microboone_calo_mcc9_data
+
+                SignatureTools:
+                {
+                    leptonic: @local::MuonSignature
+                    kshort: @local::KaonShortSignature
+                }
+
+                HitThreshold: 1000
+                SpatialTolerance: 0.3
+
+                BadChannelFile: "badchannels.txt"
+                VetoBadChannels: true
+            }
         }
     }
 
-    e1: [ visana ]
-    end_paths: [ e1 ]
+    paths:
+    {
+        p1: [ visfilter ]
+    }
+
+    end_paths: [ p1 ]
 }
