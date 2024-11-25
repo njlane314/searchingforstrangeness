@@ -6,17 +6,16 @@
 
 namespace signature {
 
-class ChargedKaonSignature : public SignatureToolBase 
+class ChargedSigmaSignature : public SignatureToolBase 
 {
     
 public:
-    explicit ChargedKaonSignature(const fhicl::ParameterSet& pset)
+    explicit ChargedSigmaSignature(const fhicl::ParameterSet& pset)
     : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _decay_mode{pset.get<std::string>("DecayMode", "muonic")} 
     {
         configure(pset); 
     }
-    ~ChargedKaonSignature() {}
+    ~ChargedSigmaSignature() {}
 
     void configure(fhicl::ParameterSet const& pset) override
     {
@@ -28,10 +27,9 @@ protected:
 
 private:
     art::InputTag _MCPproducer;  
-    std::string _decay_mode;
 };
 
-void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
+void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -45,7 +43,7 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
     {
         int pdg_code = std::abs(mc_particle.PdgCode());
 
-        if (pdg_code == 321 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
+        if (pdg_code == 3112 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
         {
             auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
             daughters.erase(std::remove_if(daughters.begin(), daughters.end(), [](const auto& dtr) {
@@ -58,18 +56,7 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
                 std::cout << dtr->Process() << std::endl;
             }
 
-            std::cout << "_decay_mode=" << _decay_mode << std::endl;
-            std::vector<int> expected_dtrs;
-            if (_decay_mode == "muonic")  
-            {
-                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{-13, +14}  // K+ -> Muon+ + Neutrino
-                                                    : std::vector<int>{+13, -14}; // K- -> Muon- + Antineutrino
-            }
-            else if (_decay_mode == "pionic") 
-            {
-                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{211, 111}  // K+ -> Pi+ + Pi0
-                                                    : std::vector<int>{-211, 111}; // K- -> Pi- + Pi0
-            }
+            std::vector<int> expected_dtrs = std::vector<int>{2112, -211}; // SigmaM -> neutron + piM
 
             std::vector<int> found_dtrs;
             for (const auto &dtr : daughters) 
@@ -92,7 +79,7 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
                     for (const auto &dtr : daughters) 
                         this->fillSignature(dtr, signature_coll);
 
-                    // CT: Also add the kaon track
+                    // CT: Also add the SigmaM track itself
                     this->fillSignature(mcp_map[mc_particle.TrackId()],signature_coll);
 
                     break;
@@ -102,7 +89,7 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
     }
 }
 
-DEFINE_ART_CLASS_TOOL(ChargedKaonSignature)
+DEFINE_ART_CLASS_TOOL(ChargedSigmaSignature)
 
 } 
 
