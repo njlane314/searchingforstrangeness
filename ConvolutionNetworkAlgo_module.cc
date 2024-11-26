@@ -345,7 +345,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     for (auto& signature : signature_coll)
         std::cout << "Signature: " << signature.pdg << ", " << signature.trckid << std::endl;
 
-    unsigned int n_flags = 1;
+    unsigned int n_flags = 2; // leptonic + hadronic flags
     int run = evt.run();
     int subrun = evt.subRun();
     int event = evt.event();
