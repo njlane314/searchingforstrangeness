@@ -7,24 +7,22 @@
 void plot_region_ana(const char* filename = "prod_strange_resample_fhc_run2_fhc_reco2_reco2_trainingregionanalyser_100_new_analysis.root") {
     TFile* file = TFile::Open(filename, "READ");
     if (!file || file->IsZombie()) {
-        std::cerr << "-- Error: Could not open file " << filename << std::endl;
         return;
     }
 
     TTree* tree = (TTree*)file->Get("regana/TrainingRegionTree");
     if (!tree) {
-        std::cerr << "-- Error: Could not find TTree 'TrainingRegionTree' in file " << filename << std::endl;
         file->Close();
         return;
     }
 
-    TH1F* h_hits_registered_u = new TH1F("h_hits_registered_u", ";Hits Registered;Entries/gin", 25, 0, -1);
-    TH1F* h_hits_registered_v = new TH1F("h_hits_registered_v", ";Hits Registered;Entries/gin", 25, 0, -1);
-    TH1F* h_hits_registered_w = new TH1F("h_hits_registered_w", ";Hits Registered;Entries/gin", 25, 0, -1);
+    TH1F* h_hits_registered_u = new TH1F("h_hits_registered_u", ";Hits Registered;Entries/bin", 50, 0, -1);
+    TH1F* h_hits_registered_v = new TH1F("h_hits_registered_v", ";Hits Registered;Entries/bin", 50, 0, -1);
+    TH1F* h_hits_registered_w = new TH1F("h_hits_registered_w", ";Hits Registered;Entries/bin", 50, 0, -1);
 
-    TH1F* h_charge_collected_u = new TH1F("h_charge_collected_u", ";Charged Collected;Entries/gin", 22, 0, -1);
-    TH1F* h_charge_collected_v = new TH1F("h_charge_collected_v", ";Charged Collected;Entries/gin", 22, 0, -1);
-    TH1F* h_charge_collected_w = new TH1F("h_charge_collected_w", ";Charged Collected;Entries/gin", 22, 0, -1);
+    TH1F* h_charge_collected_u = new TH1F("h_charge_collected_u", ";Charged Collected;Entries/bin", 50, 0, -1);
+    TH1F* h_charge_collected_v = new TH1F("h_charge_collected_v", ";Charged Collected;Entries/bin", 50, 0, -1);
+    TH1F* h_charge_collected_w = new TH1F("h_charge_collected_w", ";Charged Collected;Entries/bin", 50, 0, -1);
 
     int hit_count_u, hit_count_v, hit_count_w;
     float total_charge_u, total_charge_v, total_charge_w;
@@ -64,6 +62,17 @@ void plot_region_ana(const char* filename = "prod_strange_resample_fhc_run2_fhc_
     h_hits_registered_v->Draw("HIST E SAME");
     h_hits_registered_w->Draw("HIST E SAME");
 
+    double x_min = h_hits_registered_u->GetXaxis()->GetXmin();
+    double x_max = h_hits_registered_u->GetXaxis()->GetXmax();
+
+    TBox* lower_exclusion_hits = new TBox(x_min, 0, 1000, h_hits_registered_u->GetMaximum());
+    lower_exclusion_hits->SetFillColorAlpha(kGray, 0.4);
+    lower_exclusion_hits->Draw("SAME");
+
+    TBox* upper_exclusion_hits = new TBox(2500, 0, x_max, h_hits_registered_u->GetMaximum());
+    upper_exclusion_hits->SetFillColorAlpha(kGray, 0.4);
+    upper_exclusion_hits->Draw("SAME");
+
     TLegend* legend = new TLegend(0.1, 0.91, 0.9, 0.99);
     legend->SetNColumns(3);
     legend->SetBorderSize(0);
@@ -87,6 +96,17 @@ void plot_region_ana(const char* filename = "prod_strange_resample_fhc_run2_fhc_
     h_charge_collected_u->Draw("HIST E");
     h_charge_collected_v->Draw("HIST E SAME");
     h_charge_collected_w->Draw("HIST E SAME");
+
+    x_min = h_charge_collected_u->GetXaxis()->GetXmin();
+    x_max = h_charge_collected_u->GetXaxis()->GetXmax();
+
+    TBox* lower_exclusion_charge = new TBox(x_min, 0, 30e6, h_charge_collected_u->GetMaximum());
+    lower_exclusion_charge->SetFillColorAlpha(kGray, 0.4);
+    lower_exclusion_charge->Draw("SAME");
+
+    TBox* upper_exclusion_charge = new TBox(100e6, 0, x_max, h_charge_collected_u->GetMaximum());
+    upper_exclusion_charge->SetFillColorAlpha(kGray, 0.4);
+    upper_exclusion_charge->Draw("SAME");
 
     TLegend* legend2 = new TLegend(0.1, 0.91, 0.9, 0.99);
     legend2->SetNColumns(3);
