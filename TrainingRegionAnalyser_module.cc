@@ -65,6 +65,8 @@ private:
     TTree* _tree;
     int _hit_count_u, _hit_count_v, _hit_count_w;
     float _total_charge_u, _total_charge_v, _total_charge_w;
+    std::vector<float> _radii;
+    std::vector<float> _radial_densities;
 
     void findRegionBounds(art::Event const& evt);
     void getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex);
@@ -72,6 +74,7 @@ private:
     std::tuple<float, float, float, float> getBoundsForView(common::PandoraView view) const;
 
     void fillTree(const std::vector<art::Ptr<recob::Hit>>& region_hits);
+    void calculateRadialDensities(const art::Event& evt, const TVector3& vertex, const std::vector<art::Ptr<recob::Hit>>& hits);
 };
 
 TrainingRegionAnalyser::TrainingRegionAnalyser(fhicl::ParameterSet const &pset)
@@ -117,6 +120,8 @@ TrainingRegionAnalyser::TrainingRegionAnalyser(fhicl::ParameterSet const &pset)
     _tree->Branch("total_charge_u", &_total_charge_u, "total_charge_u/F");
     _tree->Branch("total_charge_v", &_total_charge_v, "total_charge_v/F");
     _tree->Branch("total_charge_w", &_total_charge_w, "total_charge_w/F");
+    _tree->Branch("radii", &_radii);
+    _tree->Branch("radial_densities", &_radial_densities);
 }
 
 void TrainingRegionAnalyser::beginJob() 
@@ -147,18 +152,34 @@ void TrainingRegionAnalyser::analyze(art::Event const &evt)
 
         for (const auto& hit : all_hits)
         {
-            common::PandoraView view = common::GetPandoraView(hit);
-            auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
+            auto assmcp = _mcp_bkth_assoc->at(hit.key());
+            auto assmdt = _mcp_bkth_assoc->data(hit.key());
+            for (unsigned int ia = 0; ia < assmcp.size(); ++ia)
+            {
+                auto amd = assmdt[ia];
+                if (amd->isMaxIDE != 1)
+                    continue;
 
-            const auto pos = common::GetPandoraHitPosition(evt, hit, view);
-            float x = pos.X();
-            float z = pos.Z();
+                common::PandoraView view = common::GetPandoraView(hit);
+                auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
 
-            if (x >= drift_min && x <= drift_max && z >= wire_min && z <= wire_max)
-                _region_hits.push_back(hit);
+                const auto pos = common::GetPandoraHitPosition(evt, hit, view);
+                float x = pos.X();
+                float z = pos.Z();
+
+                if (x >= drift_min && x <= drift_max && z >= wire_min && z <= wire_max)
+                    _region_hits.push_back(hit);
+            }
         }
 
-        this->fillTree(_region_hits);
+        std::array<float, 3> nu_vertex;
+        bool found_vertex = false;
+        this->getNuVertex(evt, nu_vertex, found_vertex);
+        if (!found_vertex) return;
+
+        TVector3 vtx(nu_vertex[0], nu_vertex[1], nu_vertex[2]);
+        this->calculateRadialDensities(evt, vtx, _region_hits);
+        _tree->Fill();
     }
 }
 
@@ -196,11 +217,6 @@ void TrainingRegionAnalyser::findRegionBounds(art::Event const& evt)
         float z_max = z_centroid + (_width / 2) * _wire_pitch[view];
 
         _region_bounds[view] = {x_min, x_max, z_min, z_max};
-
-        std::cout << "View: " 
-            << (view == common::TPC_VIEW_U ? "U" : (view == common::TPC_VIEW_V ? "V" : "W")) 
-            << ", X bounds: [" << x_min << ", " << x_max << "]"
-            << ", Z bounds: [" << z_min << ", " << z_max << "]" << std::endl;
     }
 }
 
@@ -212,6 +228,21 @@ std::tuple<float, float, float, float> TrainingRegionAnalyser::getBoundsForView(
     float wire_min = bounds[2];   
     float wire_max = bounds[3];   
     return std::make_tuple(drift_min, drift_max, wire_min, wire_max);
+}
+
+void TrainingRegionAnalyser::getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex)
+{
+    found_vertex = false;
+
+    auto const &mct_h = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
+    const simb::MCTruth& mct = mct_h->at(0);
+    if (!mct.NeutrinoSet()) return;
+
+    auto const &neutrino = mct.GetNeutrino();
+    auto const &nu = neutrino.Nu();
+
+    common::True2RecoMappingXYZ(nu.T(), nu.Vx(), nu.Vy(), nu.Vz(), nu_vtx.data());
+    found_vertex = true;
 }
 
 void TrainingRegionAnalyser::calculateChargeCentroid(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map)
@@ -234,6 +265,40 @@ void TrainingRegionAnalyser::calculateChargeCentroid(const art::Event& evt, cons
             charge_center[0] /= tot_q_map[view];
             charge_center[1] /= tot_q_map[view];
         }
+    }
+}
+
+void TrainingRegionAnalyser::calculateRadialDensities(const art::Event& evt, const TVector3& nu_vtx, const std::vector<art::Ptr<recob::Hit>>& input_hits)
+{
+    const float max_radius = 50.0;
+    const float delta_r = 0.1;
+    const int n_steps = static_cast<int>(max_radius / delta_r);
+
+    _radii.clear();
+    _radial_densities.clear();
+    _radii.reserve(n_steps);
+    _radial_densities.reserve(n_steps);
+
+    for (int i = 0; i < n_steps; ++i) 
+    {
+        float r = i * delta_r;
+        _radii.push_back(r);
+        float area = 2.0 * M_PI * r * delta_r;
+
+        float q_sum = 0.0;
+        for (const auto& hit : input_hits) 
+        {
+            common::PandoraView view = common::GetPandoraView(hit);
+            TVector3 pos = common::GetPandoraHitPosition(evt, hit, view);
+            float d = (pos - nu_vtx).Mag();
+            if (d >= r && d < r + delta_r) {
+                float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
+                q_sum += q;
+            }
+        }
+
+        float density = (area > 0.0) ? q_sum / area : 0.0;
+        _radial_densities.push_back(density);
     }
 }
 
