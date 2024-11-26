@@ -82,11 +82,17 @@ private:
 
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
 
+    std::string _bad_channel_file;
+    bool _veto_bad_channels;
+    std::vector<bool> _bad_channel_mask;
+    const geo::GeometryCore* _geo;
+
     void initialiseEvent(art::Event const& evt);
+    void initialiseBadChannelMask();
     void prepareTrainingSample(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map);
-    void findRegionBounds(art::Event const& evt);
+    void findRegionBounds(art::Event const& evt, const std::vector<art::Ptr<recob::Hit>>& hits);
     void getNuVertex(art::Event const& evt, std::array<float, 3>& nu_vtx, bool& found_vertex);
     void calculateChargeCentroid(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map);
     std::tuple<float, float, float, float> getBoundsForView(common::PandoraView view) const;
@@ -114,6 +120,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
+    , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
+    , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
 {
     try {
         if (!_training_mode) 
@@ -143,6 +151,14 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
         auto const tool_pset = tool_psets.get<fhicl::ParameterSet>(tool_pset_label);
         _signatureToolsVec.push_back(art::make_tool<::signature::SignatureToolBase>(tool_pset));
     }
+
+    _geo = art::ServiceHandle<geo::Geometry>()->provider();
+    size_t num_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(num_channels, false);
+
+    if (_veto_bad_channels) {
+        this->initialiseBadChannelMask();
+    }
 }
 
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
@@ -165,60 +181,91 @@ void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
     _region_hits.clear(); 
     _mcp_bkth_assoc.reset();
 
+    std::vector<art::Ptr<recob::Hit>> evt_hits, all_hits, sim_hits;
     art::Handle<std::vector<recob::Hit>> hit_handle;
+    
     if (evt.getByLabel(_HitProducer, hit_handle))
     {
-        std::vector<art::Ptr<recob::Hit>> all_hits;
-        art::fill_ptr_vector(all_hits, hit_handle);
+        art::fill_ptr_vector(evt_hits, hit_handle);
         _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_handle, evt, _BacktrackTag);
 
-        mf::LogInfo("ConvNetworkAlgorithm") << "Input Hit size: " << all_hits.size();
-
-        this->findRegionBounds(evt);
-        if (_region_bounds.empty())
-            return;
-
-        for (const auto& hit : all_hits)
+        for (const auto& hit : evt_hits) 
         {
-            common::PandoraView view = common::GetPandoraView(hit);
-            auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
+            if (_veto_bad_channels && _bad_channel_mask[hit->Channel()]) 
+                continue;
+            
+            all_hits.push_back(hit);
 
-            const auto pos = common::GetPandoraHitPosition(evt, hit, view);
-            float x = pos.X();
-            float z = pos.Z();
+            auto assmcp = _mcp_bkth_assoc->at(hit.key());
+            auto assmdt = _mcp_bkth_assoc->data(hit.key());
+            for (unsigned int ia = 0; ia < assmcp.size(); ++ia)
+            {
+                auto amd = assmdt[ia];
+                if (amd->isMaxIDE != 1)
+                    continue;
+                
+                sim_hits.push_back(hit);
+            }
+        }
+    }
 
-            if (x >= drift_min && x <= drift_max && z >= wire_min && z <= wire_max)
-                _region_hits.push_back(hit);
+    if (sim_hits.empty() || all_hits.empty()) 
+        return;
+
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Input Hit size: " << sim_hits.size();
+
+    this->findRegionBounds(evt, sim_hits);
+    if (_region_bounds.empty())
+        return;
+
+    for (const auto& hit : sim_hits)
+    {
+        common::PandoraView view = common::GetPandoraView(hit);
+        auto [drift_min, drift_max, wire_min, wire_max] = this->getBoundsForView(view);
+
+        const auto pos = common::GetPandoraHitPosition(evt, hit, view);
+        float x = pos.X();
+        float z = pos.Z();
+
+        if (x >= drift_min && x <= drift_max && z >= wire_min && z <= wire_max)
+            _region_hits.push_back(hit);
+    }
+
+    mf::LogInfo("ConvolutionNetworkAlgo") << "Region Hit size: " << _region_hits.size();
+}
+
+void ConvolutionNetworkAlgo::initialiseBadChannelMask()
+{
+    if (!_bad_channel_file.empty()) {
+        cet::search_path sp("FW_SEARCH_PATH");
+        std::string fullname;
+        sp.find_file(_bad_channel_file, fullname);
+        if (fullname.empty()) {
+            throw cet::exception("ConvolutionNetworkAlgo") << "Bad channel file not found: " << _bad_channel_file;
         }
 
-        mf::LogInfo("ConvNetworkAlgorithm") << "Region Hit size: " << _region_hits.size();
+        std::ifstream inFile(fullname, std::ios::in);
+        std::string line;
+        while (std::getline(inFile, line)) {
+            if (line.find("#") != std::string::npos) continue;
+            std::istringstream ss(line);
+            int ch1, ch2;
+            ss >> ch1;
+            if (!(ss >> ch2)) ch2 = ch1;
+            for (int i = ch1; i <= ch2; ++i) {
+                _bad_channel_mask[i] = true;
+            }
+        }
+        std::cout << "Loaded bad channels from: " << fullname << std::endl;
     }
 }
 
-void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt)
+void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt, const std::vector<art::Ptr<recob::Hit>>& hits)
 {
-    std::cout << "Finding bound region..." << std::endl;
-    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(evt, _PFPproducer,
-                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
-                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
-                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
-                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
-                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
-                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
-                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
-                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
-
-    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(evt, _CLSproducer,
-                                                proxy::withAssociated<recob::Hit>(_CLSproducer));
-
-    auto [nu_slice_hits, nu_slice] = common::getNuSliceHits(pfp_proxy, clus_proxy);
-    if (nu_slice_hits.empty())
-        return;
-
     std::map<common::PandoraView, std::array<float, 2>> q_cent_map;
     std::map<common::PandoraView, float> tot_q_map;
     common::initialiseChargeMap(q_cent_map, tot_q_map);
-    this->calculateChargeCentroid(evt, nu_slice_hits, q_cent_map, tot_q_map);
+    this->calculateChargeCentroid(evt, hits, q_cent_map, tot_q_map);
 
     for (const auto& view : {common::TPC_VIEW_U, common::TPC_VIEW_V, common::TPC_VIEW_W}) 
     {
@@ -401,7 +448,6 @@ void ConvolutionNetworkAlgo::getNuVertex(art::Event const& evt, std::array<float
 
 void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result)
 {
-    std::cout << "Attempting to open file: " << filename << std::endl;
     std::ofstream out_file(filename, std::ios_base::app);
     if (!out_file.is_open()) {
         mf::LogError("ConvolutionNetworkAlgo") << "Error: Could not open file " << filename;
@@ -415,7 +461,6 @@ void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, 
 
     out_file << static_cast<int>(result) << '\n';
 
-    std::cout << "Saving the training output!" << std::endl;
     out_file.close();
 }
 
