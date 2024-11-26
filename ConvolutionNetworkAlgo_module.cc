@@ -103,8 +103,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _training_mode{pset.get<bool>("TrainingMode", true)}
     , _pass{pset.get<int>("Pass", 1)}
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output")}
-    , _width{pset.get<int>("ImageWidth", 512)}
-    , _height{pset.get<int>("ImageHeight", 512)}
+    , _width{pset.get<int>("ImageWidth", 256)}
+    , _height{pset.get<int>("ImageHeight", 256)}
     , _drift_step{pset.get<float>("DriftStep", 0.5)}
     , _wire_pitch_u{pset.get<float>("WirePitchU", 0.3)}
     , _wire_pitch_v{pset.get<float>("WirePitchU", 0.3)}
@@ -393,7 +393,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                 float z = pos.Z();
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-                int sig_flag = 0;
+                int leptonic_flag = 0;
+                int hadronic_flag = 0;
                 if (_mcp_bkth_assoc != nullptr) 
                 {
                     const auto& assmcp = _mcp_bkth_assoc->at(hit.key());
@@ -407,18 +408,23 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                             {
                                 if (assmcp[ia]->TrackId() == signature_coll[it].trckid) 
                                 {
-                                    sig_flag = 1;
+                                    if (abs(signature_coll[it].pdg) == 13 || abs(signature_coll[it].pdg) == 11) {
+                                        leptonic_flag = 1;
+                                    } else {
+                                        hadronic_flag = 1;
+                                    }
+                        
                                     break;
                                 }
                             }
                         }
 
-                        if (sig_flag == 1)
+                        if (leptonic_flag == 1 || hadronic_flag == 1)
                             break;
                     }
                 }
 
-                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(sig_flag)});
+                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(leptonic_flag), static_cast<float>(hadronic_flag)});
                 ++n_hits;
             }
 
