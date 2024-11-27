@@ -10,7 +10,7 @@ GREEN="\033[1;32m"
 DEFAULT="\033[0m"
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-    echo "-- Usage: source submit_grid_jobs.sh <xml_config_file> <stage> [skip]"
+    echo "-- Usage: source submit_grid_jobs.sh <xml_config_file> <stage> [skip-tar]"
     return 1
 fi
 
@@ -25,7 +25,7 @@ fi
 
 echo -e "${BLUE}-- Starting grid job submission process...${DEFAULT}"
 
-if [ "$skip_tarball" != "skip" ]; then
+if [ "$skip_tarball" != "skip-tar" ]; then
     echo -e "${BLUE}-- Creating tarball of the current code...${DEFAULT}"
     cd $MRB_TOP || { echo -e "${RED}-- Failed to navigate to MRB_TOP${DEFAULT}"; return 1; }
     make_tar_uboone.sh $TARBALL_NAME
@@ -43,4 +43,22 @@ echo -e "${GREEN}-- Authentication successful.${DEFAULT}"
 
 echo -e "${BLUE}-- Submitting jobs with XML configuration: $xml_config_file and stage: $stage...${DEFAULT}"
 cd ${SEARCH_TOP}
-project.py --xml $xml_config_file --stage $stage --submit
+if ! project.py --xml $xml_config_file --stage $stage --submit; then
+    echo -e "${YELLOW}-- Submission failed. Cleaning stage and retrying...${DEFAULT}"
+    
+    if project.py --xml $xml_config_file --stage $stage --clean; then
+        echo -e "${BLUE}-- Stage cleaned successfully. Retrying submission...${DEFAULT}"
+        
+        if ! project.py --xml $xml_config_file --stage $stage --submit; then
+            echo -e "${RED}-- Submission failed again after cleaning. Please check for issues.${DEFAULT}"
+            return 1
+        else
+            echo -e "${GREEN}-- Submission succeeded after cleaning.${DEFAULT}"
+        fi
+    else
+        echo -e "${RED}-- Failed to clean the stage. Please investigate manually.${DEFAULT}"
+        return 1
+    fi
+else
+    echo -e "${GREEN}-- Submission succeeded on the first attempt.${DEFAULT}"
+fi

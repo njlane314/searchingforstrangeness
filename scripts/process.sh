@@ -12,7 +12,7 @@ set -e
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: source run_fhicl_analysis.sh <fhiclfile> <num_files>"
-    exit 1
+    return 1
 fi
 
 # Assign input arguments to variables
@@ -49,7 +49,7 @@ files=$(samweb list-files defname:$samdef | head -n $num_files)
 
 if [ -z "$files" ]; then
     echo -e "${RED}No files found in the SAM definition! Exiting...${DEFAULT}"
-    exit 1
+    return 1
 fi
 
 echo -e "${YELLOW}Files fetched:${DEFAULT}"
@@ -107,7 +107,7 @@ outputfiles=$(ls $tempdir/*.root)
 
 if [ -z "$outputfiles" ]; then
     echo -e "${RED}No output ROOT files found to combine! Exiting...${DEFAULT}"
-    exit 1
+    return 1
 fi
 
 echo -e "${YELLOW}Combining files into: $combined_output${DEFAULT}"

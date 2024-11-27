@@ -2,7 +2,7 @@
 
 <!-- Production Project -->
 <!DOCTYPE project [
-<!ENTITY release "v08_00_00_83">
+<!ENTITY release "v08_00_00_82">
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
@@ -58,7 +58,7 @@
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>
-  <jobsub>--expected-lifetime=24h</jobsub>
+  <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/cthorpe/HyperonCode/misc/badchannels.txt</jobsub>
   </stage>
 
   <!-- file type -->
