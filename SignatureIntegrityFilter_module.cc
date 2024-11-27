@@ -63,7 +63,7 @@ private:
     double _length_thresh;
 
     std::string _bad_channel_file;
-    bool _veto_bad_channels;
+    bool _veto_bad_channels, _write_output_file;
 
     calo::CalorimetryAlg* _calo_alg;
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
@@ -74,7 +74,7 @@ private:
     double _fid_x_start, _fid_y_start, _fid_z_start;
     double _fid_x_end, _fid_y_end, _fid_z_end;
 
-    double _colinearity_threshold;
+    double _angular_alignment_limit;
 
     std::string _output_file;
 
@@ -94,7 +94,7 @@ private:
 
     bool checkSignatureSensitivity(const art::Event& e, const signature::SignatureCollection& sig_coll); 
     bool checkPositionSensitivity(const TVector3& pos);
-    bool checkColinearity(const art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool checkAngularAlignment(const art::Event& e, const signature::SignatureCollection& sig_coll);
 
     bool checkGeometricLength(const art::Event& e, const signature::SignatureCollection& sig_coll);
 };
@@ -119,7 +119,8 @@ SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &ps
     , _fid_y_end{pset.get<double>("FiducialYEnd", 15.0)}
     , _fid_z_end{pset.get<double>("FiducialZEnd", 50.0)}
     , _output_file{pset.get<std::string>("OutputFile", "run_subrun_event_log.txt")}
-    , _colinearity_threshold{pset.get<double>("ColinearityThreshold", 0.1)}
+    , _write_output_file{pset.get<bool>("WriteOutputFile", false)}
+    , _angular_alignment_limit{pset.get<double>("AngularAlignmentLimit", 0.1)}
 {
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
 
@@ -185,20 +186,23 @@ bool SignatureIntegrityFilter::filter(art::Event &e)
     if (!this->validateFinalStateParticles(e, sig_coll))
         return false;
 
-    int evt = e.event();
-    int sub = e.subRun();
-    int run = e.run();
+    if (_write_output_file) 
+    {
+        int evt = e.event();
+        int sub = e.subRun();
+        int run = e.run();
 
-    std::ofstream file(_output_file, std::ios::app);
-    if (!file.is_open()) 
-        throw cet::exception("SignatureIntegrityFilter") << "Unable to open file: " << _output_file;
+        std::ofstream file(_output_file, std::ios::app);
+        if (!file.is_open()) 
+            throw cet::exception("SignatureIntegrityFilter") << "Unable to open file: " << _output_file;
 
-    file << run << " " << sub << " " << evt << "\n";
+        file << run << " " << sub << " " << evt << "\n";
 
-    if (!file.good()) 
-        throw cet::exception("SignatureIntegrityFilter") << "Error writing to file: " << _output_file;
+        if (!file.good()) 
+            throw cet::exception("SignatureIntegrityFilter") << "Error writing to file: " << _output_file;
 
-    file.close();
+        file.close();
+    }
 
     return true; 
 }
@@ -219,7 +223,7 @@ bool SignatureIntegrityFilter::areSignaturesValid(art::Event &e, const signature
     return this->checkGeometricLength(e, sig_coll) &&
            this->checkSignatureActivelyBound(e, sig_coll) &&
            this->checkSignatureSensitivity(e, sig_coll) &&
-           this->checkColinearity(e, sig_coll);
+           this->checkAngularAlignment(e, sig_coll);
 }
 
 bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signature::SignatureCollection& sig_coll)
@@ -239,48 +243,6 @@ bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signat
                 if (sep < _displaced_thresh)
                     return false;
                 break;
-            }
-        }
-    }
-
-    return true;
-}
-
-bool SignatureIntegrityFilter::checkColinearity(const art::Event& e, const signature::SignatureCollection& sig_coll) 
-{
-    auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-
-    for (size_t i = 0; i < sig_coll.size(); ++i) {
-        const simb::MCParticle* first_mcp = nullptr;
-        for (const auto& part : *mcp_h) {
-            if (part.TrackId() == sig_coll[i].trckid) {
-                first_mcp = &part;
-                break;
-            }
-        }
-        if (!first_mcp) continue;
-
-        TVector3 first_dir = TVector3(first_mcp->EndX(), first_mcp->EndY(), first_mcp->EndZ()) - 
-                        TVector3(first_mcp->Vx(), first_mcp->Vy(), first_mcp->Vz());
-        first_dir = first_dir.Unit();
-
-        for (size_t j = i + 1; j < sig_coll.size(); ++j) {
-            const simb::MCParticle* second_mcp = nullptr;
-            for (const auto& part : *mcp_h) {
-                if (part.TrackId() == sig_coll[j].trckid) {
-                    second_mcp = &part;
-                    break;
-                }
-            }
-            if (!second_mcp) continue;
-
-            TVector3 second_dir = TVector3(second_mcp->EndX(), second_mcp->EndY(), second_mcp->EndZ()) - 
-                            TVector3(second_mcp->Vx(), second_mcp->Vy(), second_mcp->Vz());
-            second_dir = second_dir.Unit();
-
-            double angle = std::acos(first_dir.Dot(second_dir));
-            if (angle < _colinearity_threshold) {
-                return false; 
             }
         }
     }
@@ -493,6 +455,48 @@ bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos)
             }
         } catch (const cet::exception&) {
             return false;
+        }
+    }
+
+    return true;
+}
+
+bool SignatureIntegrityFilter::checkAngularAlignment(const art::Event& e, const signature::SignatureCollection& sig_coll) 
+{
+    auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
+
+    for (size_t i = 0; i < sig_coll.size(); ++i) {
+        const simb::MCParticle* first_mcp = nullptr;
+        for (const auto& part : *mcp_h) {
+            if (part.TrackId() == sig_coll[i].trckid) {
+                first_mcp = &part;
+                break;
+            }
+        }
+        if (!first_mcp) continue;
+
+        TVector3 first_dir = TVector3(first_mcp->EndX(), first_mcp->EndY(), first_mcp->EndZ()) - 
+                        TVector3(first_mcp->Vx(), first_mcp->Vy(), first_mcp->Vz());
+        first_dir = first_dir.Unit();
+
+        for (size_t j = i + 1; j < sig_coll.size(); ++j) {
+            const simb::MCParticle* second_mcp = nullptr;
+            for (const auto& part : *mcp_h) {
+                if (part.TrackId() == sig_coll[j].trckid) {
+                    second_mcp = &part;
+                    break;
+                }
+            }
+            if (!second_mcp) continue;
+
+            TVector3 second_dir = TVector3(second_mcp->EndX(), second_mcp->EndY(), second_mcp->EndZ()) - 
+                            TVector3(second_mcp->Vx(), second_mcp->Vy(), second_mcp->Vz());
+            second_dir = second_dir.Unit();
+
+            double angle = std::acos(first_dir.Dot(second_dir));
+            if (angle < _angular_alignment_limit) {
+                return false; 
+            }
         }
     }
 
