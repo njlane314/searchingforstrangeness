@@ -408,7 +408,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                             {
                                 if (assmcp[ia]->TrackId() == signature_coll[it].trckid) 
                                 {
-                                    if (abs(signature_coll[it].pdg) == 13 || abs(signature_coll[it].pdg) == 11) {
+                                    if (assmcp[ia]->Process() == "primary" && (abs(signature_coll[it].pdg) == 13 || abs(signature_coll[it].pdg) == 11)) {
                                         leptonic_flag = 1;
                                     } else {
                                         hadronic_flag = 1;
