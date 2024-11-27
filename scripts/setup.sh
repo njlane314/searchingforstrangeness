@@ -23,6 +23,13 @@ export TORCH_DIR=/cvmfs/uboone.opensciencegrid.org/products/libtorch/v1_0_1/Linu
 export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$TORCH_DIR"
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib
 
+case "$USER" in
+    nlane)
+        export TARBALL_NAME="StrangenessCode.tar"
+        export TARBALL_DEST="/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/"
+        ;;
+esac
+
 git pull
 
 source scripts/train.sh
