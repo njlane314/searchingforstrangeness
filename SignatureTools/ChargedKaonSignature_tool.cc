@@ -58,17 +58,16 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
                 std::cout << dtr->Process() << std::endl;
             }
 
-            std::cout << "_decay_mode=" << _decay_mode << std::endl;
             std::vector<int> expected_dtrs;
             if (_decay_mode == "muonic")  
             {
                 expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{-13, +14}  // K+ -> Muon+ + Neutrino
-                                                    : std::vector<int>{+13, -14}; // K- -> Muon- + Antineutrino
+                                                    : std::vector<int>{+13, -14};            // K- -> Muon- + Antineutrino
             }
             else if (_decay_mode == "pionic") 
             {
                 expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{211, 111}  // K+ -> Pi+ + Pi0
-                                                    : std::vector<int>{-211, 111}; // K- -> Pi- + Pi0
+                                                    : std::vector<int>{-211, 111};           // K- -> Pi- + Pi0
             }
 
             std::vector<int> found_dtrs;
@@ -80,20 +79,18 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
 
             if (found_dtrs == expected_dtrs) 
             {   
-                std::cout << "Found dtrs = exp" << std::endl;
                 bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
                     return this->aboveThreshold(*dtr);
                 });
 
                 if (all_above_threshold) 
                 {
-                    std::cout << "Found kaon signature" << std::endl;
                     found_signature = true;
+
+                    this->fillSignature(mcp_map[mc_particle.TrackId()],signature_coll);
+
                     for (const auto &dtr : daughters) 
                         this->fillSignature(dtr, signature_coll);
-
-                    // CT: Also add the kaon track
-                    this->fillSignature(mcp_map[mc_particle.TrackId()],signature_coll);
 
                     break;
                 }
