@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_k0signal_overlay_training_nohadrons_reco2_reco2">
+<!ENTITY name "nlane_k0signal_overlay_training_nohadrons_reco2_reco2_test">
 ]>
 
 
@@ -27,7 +27,7 @@
   <larsoft>
     <tag>&release;</tag>
     <qual>e17:prof</qual>
-    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/KaonProductionTraining.tar</local>
+    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/StrangenessCode.tar</local>
   </larsoft>
   
   <check>1</check>
@@ -54,7 +54,7 @@
   <prestart>1</prestart>
   <filelistdef>1</filelistdef>
   <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>5038</numjobs>
+  <numjobs>20</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>

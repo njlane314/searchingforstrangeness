@@ -33,8 +33,6 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "lardataobj/RecoBase/Track.h"
 
-#include "SignatureIntegrityFilter.h"
-
 #include "TFile.h"
 #include "TTree.h"
 #include "TCanvas.h"
@@ -70,8 +68,6 @@ private:
     std::vector<std::tuple<int, int, int>> _target_events;
     std::string _mode;
 
-    SignatureIntegrityFilter _integrity_filter;
-
     void visualiseEvent(const art::Event &e, const std::string &filename);
     void get_limits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec, float& global_wire_min, float& global_wire_max, float& global_drift_min, float& global_drift_max) const;
 };
@@ -82,17 +78,32 @@ VisualiseEventFilter::VisualiseEventFilter(fhicl::ParameterSet const &pset)
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "largeant")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
     , _mode{pset.get<std::string>("Mode", "target")}
-    , _integrity_filter{pset.get<fhicl::ParameterSet>("signatureintegrityfilter")}
 {
-    auto entry_coll = pset.get<std::vector<std::vector<int>>>("TargetEvents");
-    for (const auto &entry : entry_coll) 
-    {
-        if (entry.size() == 3) {
-            _target_events.emplace_back(entry[0], entry[1], entry[2]);
-        } else {
-            throw cet::exception("VisualiseEventFilter") << "-- Invalid TargetEvents format. Each entry must contain exactly three integers (Run, SubRun, Event).";
+    bool has_target_events = pset.has_key("TargetEvents");
+    bool has_target_events_file = pset.has_key("TargetEventsFile");
+
+    if (has_target_events && has_target_events_file) 
+        throw cet::exception("VisualiseEventFilter") << "-- Cannot specify both 'TargetEvents' and 'TargetEventsFile'. Please choose one.";
+
+    if (has_target_events) {
+        auto entry_coll = pset.get<std::vector<std::vector<int>>>("TargetEvents");
+        for (const auto &entry : entry_coll) {
+            if (entry.size() == 3) 
+                _target_events.emplace_back(entry[0], entry[1], entry[2]);
+            else 
+                throw cet::exception("VisualiseEventFilter") << "-- Invalid TargetEvents format. Each entry must contain exactly three integers (Run, SubRun, Event).";
         }
-    }
+    } else if (has_target_events_file) {
+        std::string file_path = pset.get<std::string>("TargetEventsFile");
+        std::ifstream file(file_path);
+        if (!file.is_open()) 
+            throw cet::exception("VisualiseEventFilter") << "-- Unable to open TargetEventsFile: " << file_path;
+
+        int run, subrun, event;
+        while (file >> run >> subrun >> event) 
+            _target_events.emplace_back(run, subrun, event);
+    } else 
+        throw cet::exception("VisualiseEventFilter") << "-- Either 'TargetEvents' or 'TargetEventsFile' must be specified.";
 }
 
 bool VisualiseEventFilter::filter(art::Event &e)
@@ -100,9 +111,6 @@ bool VisualiseEventFilter::filter(art::Event &e)
     auto current_event = std::make_tuple(e.run(), e.subRun(), e.event());
     if (_mode == "target" && std::find(_target_events.begin(), _target_events.end(), current_event) == _target_events.end()) 
         return false; 
-
-    if (_mode == "filter" && !_integrity_filter.filter(e))
-        return false;
 
     mf::LogInfo("VisualiseEventFilter") << "-- Visualising event: Run " << e.run() 
                                            << ", SubRun " << e.subRun() 

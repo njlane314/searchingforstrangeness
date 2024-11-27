@@ -37,13 +37,9 @@ physics:
         visfilter:
         {
             module_type: VisualiseEventFilter
-            Mode: "filter"
+            Mode: "target"
 
-            TargetEvents: [
-                [11278, 270, 13533],  # Run, SubRun, Event
-                [10490, 172, 8627], 
-                [11872, 262, 13103]   
-            ]
+            TargetEventsFile: "run_subrun_event_log.txt"
 
             signatureintegrityfilter:
             {
@@ -71,10 +67,7 @@ physics:
         }
     }
 
-    paths:
-    {
-        p1: [ visfilter ]
-    }
+    p1: [ visfilter ]
 
-    end_paths: [ p1 ]
+    trigger_paths: [ p1 ]
 }
