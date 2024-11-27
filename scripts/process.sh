@@ -6,8 +6,6 @@
 
 # ---------------------------------------------------------------------------------
 
-# input: update these variables as per your case
-
 set -e
 
 if [ "$#" -ne 2 ]; then
@@ -15,19 +13,15 @@ if [ "$#" -ne 2 ]; then
     return 1
 fi
 
-# Assign input arguments to variables
 fhiclfile=$1
 num_files=$2
 
 fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 
-# Name of the SAM definition to query
 samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
-#fhiclfile=/exp/uboone/app/users/nlane/production/KaonShortProduction01/srcs/ubana/ubana/searchingforstrangeness/run_emptyselectionfilter.fcl
 output_directory="/exp/uboone/data/users/nlane/analysis"
 combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
 tempdir="${output_directory}/temp_root_files"
-#num_files=1
 
 mkdir -p $tempdir
 
@@ -65,7 +59,6 @@ counter=0
 for file in $files; do
     echo -e "${BLUE}Processing file: $file${DEFAULT}"
 
-    # Locate the directory using samweb
     filedir=$(samweb locate-file $file | grep -o '/pnfs/.*' | head -n 1)
 
     if [ -z "$filedir" ]; then
@@ -73,7 +66,6 @@ for file in $files; do
         continue
     fi
 
-    # Append the file name to the directory path
     filepath="${filedir}/${file}"
 
     if [ ! -f "$filepath" ]; then
@@ -81,7 +73,6 @@ for file in $files; do
         continue
     fi
 
-    # Output file name for this iteration
     outputfile="$tempdir/output_${counter}.root"
 
     echo -e "${BLUE}Running: lar -c $fhiclfile -s $filepath -T $outputfile${DEFAULT}"

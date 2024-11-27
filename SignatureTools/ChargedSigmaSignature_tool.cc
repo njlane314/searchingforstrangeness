@@ -43,6 +43,11 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollec
     {
         int pdg_code = std::abs(mc_particle.PdgCode());
 
+        if (pdg_code == 3112)
+        {
+            std::cout << "End process: " << mc_particle.EndProcess() << std::endl;
+        }
+
         if (pdg_code == 3112 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
         {
             auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
@@ -56,7 +61,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollec
                 std::cout << dtr->Process() << std::endl;
             }
 
-            std::vector<int> expected_dtrs = std::vector<int>{2112, -211}; // SigmaM -> neutron + piM
+            std::vector<int> expected_dtrs = std::vector<int>{2112, -211}; // Sigma- -> Neutron + Pi-
 
             std::vector<int> found_dtrs;
             for (const auto &dtr : daughters) 
@@ -67,20 +72,18 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollec
 
             if (found_dtrs == expected_dtrs) 
             {   
-                std::cout << "Found dtrs = exp" << std::endl;
                 bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
                     return this->aboveThreshold(*dtr);
                 });
 
                 if (all_above_threshold) 
                 {
-                    std::cout << "Found kaon signature" << std::endl;
                     found_signature = true;
+
+                    this->fillSignature(mcp_map[mc_particle.TrackId()], signature_coll);
+
                     for (const auto &dtr : daughters) 
                         this->fillSignature(dtr, signature_coll);
-
-                    // CT: Also add the SigmaM track itself
-                    this->fillSignature(mcp_map[mc_particle.TrackId()],signature_coll);
 
                     break;
                 }

@@ -16,6 +16,7 @@ services:
     @table::microboone_services_reco
     message: @local::standard_info
 }
+
 services.DetectorClocksService.InheritClockConfig: false
 services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
 
