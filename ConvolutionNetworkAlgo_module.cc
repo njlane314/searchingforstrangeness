@@ -321,7 +321,6 @@ void ConvolutionNetworkAlgo::calculateChargeCentroid(const art::Event& evt, cons
 
 void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
 {
-    std::cout << "Preparing training sample..." << std::endl;
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
@@ -330,22 +329,13 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
         return; 
 
     std::vector<signature::Signature> signature_coll;
-    bool found_all_signatures = true;
-    for (auto& signatureTool : _signatureToolsVec)
-    {
-        bool found_signature = signatureTool->identifySignalParticles(evt, signature_coll);
-
-        if (!found_signature) 
-            found_all_signatures = false;
+    for (auto& signatureTool : _signatureToolsVec) {
+        signature::Signature signature; 
+        bool found_signature = signatureTool->identifySignalParticles(evt, signature);
+        signature_coll.push_back(signature);
     }
 
-    if (!found_all_signatures)
-        signature_coll.clear();
-
-    for (auto& signature : signature_coll)
-        std::cout << "Signature: " << signature.pdg << ", " << signature.trckid << std::endl;
-
-    unsigned int n_flags = 2; // leptonic + hadronic flags
+    unsigned int n_flags = _signatureToolsVec.size(); 
     int run = evt.run();
     int subrun = evt.subRun();
     int event = evt.event();
@@ -393,8 +383,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                 float z = pos.Z();
                 float q = _calo_alg->ElectronsFromADCArea(hit->Integral(), hit->WireID().Plane);
 
-                int leptonic_flag = 0;
-                int hadronic_flag = 0;
+                std::vector<float> signature_flags(n_flags, 0.f);
                 if (_mcp_bkth_assoc != nullptr) 
                 {
                     const auto& assmcp = _mcp_bkth_assoc->at(hit.key());
@@ -402,29 +391,31 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
 
                     for (unsigned int ia = 0; ia < assmcp.size(); ++ia) 
                     {
+                        bool found_flag = false;
                         if (assmdt[ia]->isMaxIDE == 1) 
                         {
-                            for (size_t it = 0; it < signature_coll.size(); ++it) 
+                            for (const auto& signature : signature_coll) 
                             {
-                                if (assmcp[ia]->TrackId() == signature_coll[it].trckid) 
+                                for (size_t it = 0; it < signature.size(); ++it)
                                 {
-                                    if (assmcp[ia]->Process() == "primary" && (abs(signature_coll[it].pdg) == 13 || abs(signature_coll[it].pdg) == 11)) {
-                                        leptonic_flag = 1;
-                                    } else {
-                                        hadronic_flag = 1;
+                                    if (signature[it]->TrackId() == assmcp[ia]->TrackId()) 
+                                    {
+                                        signature_flags.at(it) = 1.f;
+                                        found_flag = true;
+
+                                        break;
                                     }
-                        
-                                    break;
                                 }
                             }
                         }
 
-                        if (leptonic_flag == 1 || hadronic_flag == 1)
+                        if (found_flag)
                             break;
                     }
                 }
 
-                feat_vec.insert(feat_vec.end(), {x, z, q, static_cast<float>(leptonic_flag), static_cast<float>(hadronic_flag)});
+                feat_vec.insert(feat_vec.end(), {x, z, q});
+                feat_vec.insert(feat_vec.end(), signature_flags.begin(), signature_flags.end());
                 ++n_hits;
             }
 
