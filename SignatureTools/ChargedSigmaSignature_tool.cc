@@ -23,13 +23,13 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, Signature& signature, bool& found_signature) override;
 
 private:
     art::InputTag _MCPproducer;  
 };
 
-void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
+void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& signature, bool& found_signature)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -80,10 +80,10 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, SignatureCollec
                 {
                     found_signature = true;
 
-                    this->fillSignature(mcp_map[mc_particle.TrackId()], signature_coll);
+                    this->fillSignature(mcp_map[mc_particle.TrackId()], signature);
 
                     for (const auto &dtr : daughters) 
-                        this->fillSignature(dtr, signature_coll);
+                        this->fillSignature(dtr, signature);
 
                     break;
                 }

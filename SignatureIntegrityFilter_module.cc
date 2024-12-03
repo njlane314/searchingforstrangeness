@@ -33,6 +33,9 @@
 
 #include "TDatabasePDG.h"
 
+#include "TFile.h"
+#include "TTree.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -63,7 +66,6 @@ private:
     double _length_thresh;
 
     std::string _bad_channel_file;
-    bool _veto_bad_channels, _write_output_file;
 
     calo::CalorimetryAlg* _calo_alg;
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
@@ -76,27 +78,34 @@ private:
 
     double _angular_alignment_limit;
 
-    std::string _output_file;
+    TTree* _tree;
 
+    int _run; 
+    int _subrun;
+    int _event;
+
+    int _num_hits;
+    std::vector<double> _lengths;
+    
     void initialiseBadChannelMask();
 
-    bool identifySignatures(art::Event& e, signature::SignatureCollection& sig_coll);
-    bool areSignaturesValid(art::Event& e, const signature::SignatureCollection& sig_coll);
-    bool validateDecayVertices(art::Event& e, const signature::SignatureCollection& sig_coll);
-    bool validateFinalStateParticles(art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool identifySignatures(art::Event& e, std::vector<signature::Signature>& signature_coll);
+    bool areSignaturesValid(art::Event& e, const std::vector<signature::Signature>& signature_coll);
+    bool validateDecayVertices(art::Event& e, const std::vector<signature::Signature>& signature_coll);
+    bool validateFinalStateParticles(art::Event& e, const std::vector<signature::Signature>& signature_coll);
 
     void getFinalStateParticles(art::Event const& e, std::vector<simb::MCParticle>& fsp);
     void getNuVertex(art::Event const& e, TVector3& nu_vtx);
     void getSimulationHits(art::Event const& e, std::vector<art::Ptr<recob::Hit>>& mc_hits);
 
-    bool checkSignatureActivelyBound(const art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool checkSignatureActivelyBound(const art::Event& e, const std::vector<signature::Signature>& signature_coll);
     bool checkPositionActivelyBound(const double x[3]);
 
-    bool checkSignatureSensitivity(const art::Event& e, const signature::SignatureCollection& sig_coll); 
+    bool checkSignatureSensitivity(const art::Event& e, const std::vector<signature::Signature>& signature_coll); 
     bool checkPositionSensitivity(const TVector3& pos);
-    bool checkAngularAlignment(const art::Event& e, const signature::SignatureCollection& sig_coll);
+    //bool checkAngularAlignment(const art::Event& e, const std::vector<signature::Signature>& signature_coll);
 
-    bool checkGeometricLength(const art::Event& e, const signature::SignatureCollection& sig_coll);
+    bool checkGeometricLength(const art::Event& e, const std::vector<signature::Signature>& signature_coll);
 };
 
 SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &pset)
@@ -111,15 +120,12 @@ SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &ps
     , _channel_proximity{pset.get<int>("ChannelProximity", 5)}
     , _length_thresh{pset.get<double>("LengthThreshold", 5)}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
-    , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
     , _fid_x_start{pset.get<double>("FiducialXStart", 10.0)}
     , _fid_y_start{pset.get<double>("FiducialYStart", 15.0)}
     , _fid_z_start{pset.get<double>("FiducialZStart", 10.0)}
     , _fid_x_end{pset.get<double>("FiducialXEnd", 10.0)}
     , _fid_y_end{pset.get<double>("FiducialYEnd", 15.0)}
     , _fid_z_end{pset.get<double>("FiducialZEnd", 50.0)}
-    , _output_file{pset.get<std::string>("OutputFile", "run_subrun_event_log.txt")}
-    , _write_output_file{pset.get<bool>("WriteOutputFile", false)}
     , _angular_alignment_limit{pset.get<double>("AngularAlignmentLimit", 0.1)}
 {
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
@@ -135,9 +141,10 @@ SignatureIntegrityFilter::SignatureIntegrityFilter(fhicl::ParameterSet const &ps
     size_t num_channels = _geo->Nchannels();
     _bad_channel_mask.resize(num_channels, false);
 
-    if (_veto_bad_channels) {
-        this->initialiseBadChannelMask();
-    }
+    this->initialiseBadChannelMask();
+
+    //art::ServiceHandle<art::TFileService> tfs;
+    //_tree = tfs->make<TTree>("SignatureIntegrityTree", "");
 }
 
 void SignatureIntegrityFilter::initialiseBadChannelMask()
@@ -146,9 +153,8 @@ void SignatureIntegrityFilter::initialiseBadChannelMask()
         cet::search_path sp("FW_SEARCH_PATH");
         std::string fullname;
         sp.find_file(_bad_channel_file, fullname);
-        if (fullname.empty()) {
+        if (fullname.empty()) 
             throw cet::exception("SignatureIntegrityFilter") << "Bad channel file not found: " << _bad_channel_file;
-        }
 
         std::ifstream inFile(fullname, std::ios::in);
         std::string line;
@@ -162,71 +168,69 @@ void SignatureIntegrityFilter::initialiseBadChannelMask()
                 _bad_channel_mask[i] = true;
             }
         }
-        std::cout << "Loaded bad channels from: " << fullname << std::endl;
     }
 }
 
 bool SignatureIntegrityFilter::filter(art::Event &e) 
 {
-    std::vector<signature::Signature> sig_coll;
-    if (!this->identifySignatures(e, sig_coll))
+    std::vector<signature::Signature> signature_coll;
+    if (!this->identifySignatures(e, signature_coll))
         return false;
 
-    if (!this->areSignaturesValid(e, sig_coll))
-        return false;
+    _run = e.run();
+    _subrun = e.subRun();
+    _event = e.event();
+
+    _num_hits = 0;
+    _lengths.clear(); 
+
+    bool passed_filter = false; 
+
+    if (!this->areSignaturesValid(e, signature_coll))
+        passed_filter = false;
 
     std::vector<art::Ptr<recob::Hit>> sim_hits;
     this->getSimulationHits(e, sim_hits);
+    _num_hits = sim_hits.size();
     if (sim_hits.size() < static_cast<size_t>(_lower_hit_thresh) || sim_hits.size() > static_cast<size_t>(_upper_hit_thresh))
-        return false;
+        passed_filter = false;
 
-    if (!this->validateDecayVertices(e, sig_coll))
-        return false;
+    if (!this->validateDecayVertices(e, signature_coll))
+        passed_filter = false;
 
-    if (!this->validateFinalStateParticles(e, sig_coll))
-        return false;
+    if (!this->validateFinalStateParticles(e, signature_coll))
+        passed_filter = false;
+    
+    passed_filter = true;
+    //_tree->Fill();
 
-    if (_write_output_file) 
-    {
-        int evt = e.event();
-        int sub = e.subRun();
-        int run = e.run();
-
-        std::ofstream file(_output_file, std::ios::app);
-        if (!file.is_open()) 
-            throw cet::exception("SignatureIntegrityFilter") << "Unable to open file: " << _output_file;
-
-        file << run << " " << sub << " " << evt << "\n";
-
-        if (!file.good()) 
-            throw cet::exception("SignatureIntegrityFilter") << "Error writing to file: " << _output_file;
-
-        file.close();
-    }
-
-    return true; 
+    return passed_filter; 
 }
 
-bool SignatureIntegrityFilter::identifySignatures(art::Event& e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::identifySignatures(art::Event& e, std::vector<signature::Signature>& signature_coll)
 {
     for (auto &signatureTool : _signatureToolsVec) 
     {
-        if (!signatureTool->identifySignalParticles(e, sig_coll))
+        signature::Signature signature;
+        if (!signatureTool->identifySignalParticles(e, signature))
             return false;
+
+        if (!signature.empty()) 
+            signature_coll.push_back(signature);
     }
 
     return true;
 }
 
-bool SignatureIntegrityFilter::areSignaturesValid(art::Event &e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::areSignaturesValid(art::Event &e, const std::vector<signature::Signature>& signature_coll)
 {
-    return this->checkGeometricLength(e, sig_coll) &&
-           this->checkSignatureActivelyBound(e, sig_coll) &&
-           this->checkSignatureSensitivity(e, sig_coll) &&
-           this->checkAngularAlignment(e, sig_coll);
+    return this->checkGeometricLength(e, signature_coll) &&
+           this->checkSignatureActivelyBound(e, signature_coll) &&
+           this->checkSignatureSensitivity(e, signature_coll);// &&
+           //this->checkAngularAlignment(e, signature_coll);
 }
 
-bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const std::vector<signature::Signature>& signature_coll)
 {
     TVector3 nu_vtx;
     this->getNuVertex(e, nu_vtx);
@@ -242,6 +246,7 @@ bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signat
                 double sep = (nu_vtx - *decay_vtx_opt).Mag();
                 if (sep < _displaced_thresh)
                     return false;
+
                 break;
             }
         }
@@ -250,18 +255,25 @@ bool SignatureIntegrityFilter::validateDecayVertices(art::Event &e, const signat
     return true;
 }
 
-bool SignatureIntegrityFilter::validateFinalStateParticles(art::Event &e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::validateFinalStateParticles(art::Event &e, const std::vector<signature::Signature>& signature_coll)
 {
     std::vector<simb::MCParticle> fsp;
     this->getFinalStateParticles(e, fsp);
 
     for (const auto &mcp : fsp) 
     {
-        if (std::any_of(sig_coll.begin(), sig_coll.end(), [&](const auto &signature) {
-                return signature.trckid == mcp.TrackId();
-            })) {
-            continue;
+        bool found_sig_mcp = false;
+        for (const auto &signature : signature_coll)
+        {
+            if (std::any_of(signature.begin(), signature.end(), [&](const auto &signature) {
+                    return signature->TrackId() == mcp.TrackId();
+                })) {
+                found_sig_mcp = true;
+            }
         }
+
+        if (found_sig_mcp)
+            continue;
 
         TParticlePDG *p_info = TDatabasePDG::Instance()->GetParticle(mcp.PdgCode());
         if (!p_info)
@@ -310,9 +322,8 @@ void SignatureIntegrityFilter::getSimulationHits(art::Event const& e, std::vecto
 
         for (const auto& hit : evt_hits)
         {
-            if (_veto_bad_channels && _bad_channel_mask[hit->Channel()]) {
+            if (_bad_channel_mask[hit->Channel()]) 
                 continue; 
-            }
 
             auto assmcp = mcp_bkth_assoc->at(hit.key());
             auto assmdt = mcp_bkth_assoc->data(hit.key());
@@ -328,60 +339,68 @@ void SignatureIntegrityFilter::getSimulationHits(art::Event const& e, std::vecto
     }
 }
 
-bool SignatureIntegrityFilter::checkGeometricLength(const art::Event& e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::checkGeometricLength(const art::Event& e, const std::vector<signature::Signature>& signature_coll)
 {
     auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-    for (const auto& sig : sig_coll) 
+    for (const auto& sig : signature_coll) 
     {
-        const simb::MCParticle* mcp = nullptr;
-        for (const auto& part : *mcp_h) 
+        for (const auto& sig_mcp : sig)
         {
-            if (part.TrackId() == sig.trckid) {
-                mcp = &part;
-                break;
+            const simb::MCParticle* mcp = nullptr;
+            for (const auto& part : *mcp_h) 
+            {
+                if (part.TrackId() == sig_mcp->TrackId()) {
+                    mcp = &part;
+                    break;
+                }
             }
+            if (!mcp) 
+                continue;
+
+            TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
+            TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
+
+            double length = (end - start).Mag();
+            _lengths.push_back(length);
+
+            if (length < _length_thresh)
+                return false;
         }
-        if (!mcp) 
-            continue;
-
-        TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
-        TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
-
-        double length = (end - start).Mag();
-        if (length < _length_thresh)
-            return false;
     }
 
     return true; 
 }
 
-bool SignatureIntegrityFilter::checkSignatureActivelyBound(const art::Event& e, const signature::SignatureCollection& sig_coll)
+bool SignatureIntegrityFilter::checkSignatureActivelyBound(const art::Event& e, const std::vector<signature::Signature>& signature_coll)
 {
     auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-    for (const auto& sig : sig_coll) 
+    for (const auto& sig : signature_coll) 
     {
-        const simb::MCParticle* mcp = nullptr;
-        for (const auto& part : *mcp_h) 
+        for (const auto& sig_mcp : sig)
         {
-            if (part.TrackId() == sig.trckid) {
-                mcp = &part;
-                break;
+            const simb::MCParticle* mcp = nullptr;
+            for (const auto& part : *mcp_h) 
+            {
+                if (part.TrackId() == sig_mcp->TrackId()) {
+                    mcp = &part;
+                    break;
+                }
             }
-        }
-        if (!mcp) 
-            continue;
+            if (!mcp) 
+                continue;
 
-        TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
-        double pos_start[3] = {start.X(), start.Y(), start.Z()};
-        if (!checkPositionActivelyBound(pos_start)) {
-            return false;
-        }
-
-        if (std::abs(mcp->PdgCode()) != 13) { 
-            TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
-            double pos_end[3] = {end.X(), end.Y(), end.Z()};
-            if (!checkPositionActivelyBound(pos_end)) {
+            TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
+            double pos_start[3] = {start.X(), start.Y(), start.Z()};
+            if (!checkPositionActivelyBound(pos_start)) {
                 return false;
+            }
+
+            if (std::abs(mcp->PdgCode()) != 13) { 
+                TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
+                double pos_end[3] = {end.X(), end.Y(), end.Z()};
+                if (!checkPositionActivelyBound(pos_end)) {
+                    return false;
+                }
             }
         }
     }
@@ -404,31 +423,32 @@ bool SignatureIntegrityFilter::checkPositionActivelyBound(const double x[3])
     return is_x && is_y && is_z;
 }
 
-bool SignatureIntegrityFilter::checkSignatureSensitivity(const art::Event& e, const signature::SignatureCollection& sig_coll) 
+bool SignatureIntegrityFilter::checkSignatureSensitivity(const art::Event& e, const std::vector<signature::Signature>& signature_coll) 
 {
     auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-    for (const auto& sig : sig_coll) 
+    for (const auto& sig : signature_coll) 
     {
-        const simb::MCParticle* mcp = nullptr;
-        for (const auto& part : *mcp_h) 
+        for (const auto& sig_mcp : sig) 
         {
-            if (part.TrackId() == sig.trckid) {
-                mcp = &part;
-                break;
+            const simb::MCParticle* mcp = nullptr;
+            for (const auto& part : *mcp_h) 
+            {
+                if (part.TrackId() == sig_mcp->TrackId()) {
+                    mcp = &part;
+                    break;
+                }
             }
-        }
-        if (!mcp) 
-            continue;
+            if (!mcp) 
+                continue;
 
-        TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
-        if (!checkPositionSensitivity(start)) {
-            return false;
-        }
-
-        if (std::abs(mcp->PdgCode()) != 13) { 
-            TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
-            if (!checkPositionSensitivity(end)) {
+            TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
+            if (!checkPositionSensitivity(start)) 
                 return false;
+
+            if (std::abs(mcp->PdgCode()) != 13) { 
+                TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
+                if (!checkPositionSensitivity(end)) 
+                    return false;
             }
         }
     }
@@ -450,7 +470,7 @@ bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos)
                 if (neighboring_channel < 0 || static_cast<size_t>(neighboring_channel) >= _geo->Nchannels())
                     continue; 
 
-                if (_veto_bad_channels && _bad_channel_mask[neighboring_channel]) 
+                if (_bad_channel_mask[neighboring_channel]) 
                     return false; 
             }
         } catch (const cet::exception&) {
@@ -461,14 +481,14 @@ bool SignatureIntegrityFilter::checkPositionSensitivity(const TVector3& pos)
     return true;
 }
 
-bool SignatureIntegrityFilter::checkAngularAlignment(const art::Event& e, const signature::SignatureCollection& sig_coll) 
+/*bool SignatureIntegrityFilter::checkAngularAlignment(const art::Event& e, const std::vector<signature::Signature>& signature_coll) 
 {
     auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
-    for (size_t i = 0; i < sig_coll.size(); ++i) {
+    for (size_t i = 0; i < signature.size(); ++i) {
         const simb::MCParticle* first_mcp = nullptr;
         for (const auto& part : *mcp_h) {
-            if (part.TrackId() == sig_coll[i].trckid) {
+            if (part.TrackId() == signature[i]->TrackId()) {
                 first_mcp = &part;
                 break;
             }
@@ -479,10 +499,10 @@ bool SignatureIntegrityFilter::checkAngularAlignment(const art::Event& e, const 
                         TVector3(first_mcp->Vx(), first_mcp->Vy(), first_mcp->Vz());
         first_dir = first_dir.Unit();
 
-        for (size_t j = i + 1; j < sig_coll.size(); ++j) {
+        for (size_t j = i + 1; j < signature.size(); ++j) {
             const simb::MCParticle* second_mcp = nullptr;
             for (const auto& part : *mcp_h) {
-                if (part.TrackId() == sig_coll[j].trckid) {
+                if (part.TrackId() == signature[j]->TrackId()) {
                     second_mcp = &part;
                     break;
                 }
@@ -494,13 +514,12 @@ bool SignatureIntegrityFilter::checkAngularAlignment(const art::Event& e, const 
             second_dir = second_dir.Unit();
 
             double angle = std::acos(first_dir.Dot(second_dir));
-            if (angle < _angular_alignment_limit) {
+            if (angle < _angular_alignment_limit) 
                 return false; 
-            }
         }
     }
 
     return true;
-}
+}*/
 
 DEFINE_ART_MODULE(SignatureIntegrityFilter)

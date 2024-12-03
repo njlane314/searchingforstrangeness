@@ -24,13 +24,7 @@
 
 namespace signature {
 
-struct Signature
-{
-    int pdg;
-    int trckid; 
-};
-
-using SignatureCollection = std::vector<Signature>&;
+using Signature = std::vector<art::Ptr<simb::MCParticle>>;
 
 class SignatureToolBase 
 {
@@ -57,13 +51,12 @@ public:
         _fv_z_end = pset.get<float>("fidvolZend", 50.0);
     }
 
-    bool identifySignalParticles(art::Event const& evt, SignatureCollection& sig_coll)
+    bool identifySignalParticles(art::Event const& evt, Signature& signature)
     {
         auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
         if (truth_handle->size() != 1) 
         {
-            mf::LogWarning("Skipping this event, as it has more than one neutrino interaction.");
-            sig_coll.clear();
+            signature.clear();
             return false;
         }
 
@@ -71,20 +64,17 @@ public:
         const TLorentzVector& nu_vertex = truth.GetNeutrino().Nu().Position();
         double vertex[3] = {nu_vertex.X(), nu_vertex.Y(), nu_vertex.Z()};
 
-        std::cout << "Vertex: " << vertex[0] << "  " << vertex[1] << "  " << vertex[2] << std::endl;
-
         if (!common::point_inside_fv(vertex, _fv_x_start, _fv_y_start, _fv_z_start, _fv_x_end, _fv_y_end, _fv_z_end)) 
         {
-            mf::LogWarning("The neutrino interaction lies outside the fiducial volume, skipping interaction.");
-            sig_coll.clear();
+            signature.clear();
             return false;
         }
 
         bool found_signature = false;
-        this->findSignature(evt, sig_coll, found_signature);
+        this->findSignature(evt, signature, found_signature);
 
         if (!found_signature)  
-            sig_coll.clear();
+            signature.clear();
 
         return found_signature;
     }
@@ -106,21 +96,15 @@ protected:
         if (it != _thresh_map.end()) 
             return mom_mag > it->second;
 
-        mf::LogWarning("The threshold for this particle isn't avaliable, setting to failed threshold requirement.");
         return false;
     }
 
-    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, SignatureCollection& sig_coll) 
+    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
     {
-        Signature signature;
-
-        signature.pdg = mcp->PdgCode();
-        signature.trckid = mcp->TrackId();
-
-        sig_coll.push_back(signature);
+        signature.push_back(mcp);
     }
 
-    virtual void findSignature(art::Event const& evt, SignatureCollection& sig_coll, bool& found_signature) = 0;
+    virtual void findSignature(art::Event const& evt, Signature& signature, bool& found_signature) = 0;
 };
 
 } 

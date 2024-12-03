@@ -25,14 +25,14 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, Signature& signature, bool& found_signature) override;
 
 private:
     art::InputTag _MCPproducer;
     art::InputTag _MCTproducer;
 };
 
-void LambdaSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
+void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& found_signature)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -71,7 +71,7 @@ void LambdaSignature::findSignature(art::Event const& evt, SignatureCollection& 
                     {
                         found_signature = true;
                         for (const auto &dtr : daughters) 
-                            this->fillSignature(dtr, signature_coll);
+                            this->fillSignature(dtr, signature);
 
                         break;
                     }
