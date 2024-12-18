@@ -278,9 +278,9 @@ bool PatternClarityFilter::filterHitExclusivity(art::Event &e, signature::Patter
                 for (unsigned int ia = 0; ia < assmcp.size(); ++ia){
                     auto amd = assmdt[ia];
                     if (assmcp[ia]->TrackId() == mcp_s->TrackId()) {
-                        sig_q_inclusive += hit->Integral() * amd->ideNFraction;
+                        sig_q_inclusive += amd->numElectrons * amd->ideNFraction;
                         if (amd->ideNFraction > _hit_exclusivity_thresh) 
-                            sig_q_exclusive += hit->Integral() * amd->ideNFraction;
+                            sig_q_exclusive += amd->numElectrons * amd->ideNFraction;
                     }
                 }
             }
