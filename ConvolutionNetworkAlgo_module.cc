@@ -297,7 +297,6 @@ std::tuple<float, float, float, float> ConvolutionNetworkAlgo::getBoundsForView(
 
 void ConvolutionNetworkAlgo::calculateChargeCentroid(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hits, std::map<common::PandoraView, std::array<float, 2>>& q_cent_map, std::map<common::PandoraView, float>& tot_q_map)
 {
-    std::cout << "Calculating charge centroid of neutrino slice..." << std::endl;
     for (const auto& hit : hits)
     {
         common::PandoraView view = common::GetPandoraView(hit);
@@ -331,7 +330,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     std::vector<signature::Signature> signature_coll;
     for (auto& signatureTool : _signatureToolsVec) {
         signature::Signature signature; 
-        bool found_signature = signatureTool->identifySignalParticles(evt, signature);
+        bool found_signature = signatureTool->constructSignature(evt, signature);
         signature_coll.push_back(signature);
     }
 
@@ -463,7 +462,6 @@ void ConvolutionNetworkAlgo::produceTrainingSample(const std::string& filename, 
 
 void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vector<art::Ptr<recob::Hit>>>& classified_hits) 
 {
-    std::cout << "Starting inference..." << std::endl;
     std::map<common::PandoraView, std::vector<art::Ptr<recob::Hit>>> region_hits;
     for (const auto& hit : _region_hits)
         region_hits[common::GetPandoraView(hit)].push_back(hit);
@@ -499,13 +497,10 @@ void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vec
 
     for (const auto& [class_id, hits] : classified_hits)
         std::cout << "Class " << class_id << " has " << hits.size() << " hits.";
-
-    std::cout << "Ending inference!" << std::endl;
 }
 
 void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map)
 {
-    std::cout << "Making network input" << std::endl;
     const auto [x_min, x_max, z_min, z_max] = this->getBoundsForView(view);
     std::vector<double> x_bin_edges(_width + 1);
     std::vector<double> z_bin_edges(_height + 1);

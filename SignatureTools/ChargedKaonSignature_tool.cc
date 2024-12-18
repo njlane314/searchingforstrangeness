@@ -1,5 +1,5 @@
-#ifndef CHARGEDKAONSIGNATURE_CXX
-#define CHARGEDKAONSIGNATURE_CXX
+#ifndef SIGNATURE_CHARGEDKAON_CXX
+#define SIGNATURE_CHARGEDKAON_CXX
 
 #include <iostream>
 #include "SignatureToolBase.h"
@@ -24,14 +24,14 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, Signature& signature, bool& found_signature) override;
+    void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
 
 private:
     art::InputTag _MCPproducer;  
     std::string _decay_mode;
 };
 
-void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signature, bool& found_signature)
+void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -45,18 +45,12 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signa
     {
         int pdg_code = std::abs(mc_particle.PdgCode());
 
-        if (pdg_code == 321 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
+        if (pdg_code == 321 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !signature_found) 
         {
             auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
             daughters.erase(std::remove_if(daughters.begin(), daughters.end(), [](const auto& dtr) {
                 return dtr->Process() != "Decay";
             }), daughters.end());
-
-            for (const auto& dtr : daughters)
-            {
-                std::cout << dtr->PdgCode() << std::endl;
-                std::cout << dtr->Process() << std::endl;
-            }
 
             std::vector<int> expected_dtrs;
             if (_decay_mode == "muonic")  
@@ -79,18 +73,21 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signa
 
             if (found_dtrs == expected_dtrs) 
             {   
-                bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
-                    return this->aboveThreshold(*dtr);
+                bool all_pass = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
+                    return this->assessParticle(*dtr);
                 });
 
-                if (all_above_threshold) 
+                if (all_pass) 
                 {
-                    found_signature = true;
+                    signature_found = true;
 
                     this->fillSignature(mcp_map[mc_particle.TrackId()],signature);
-
                     for (const auto &dtr : daughters) 
-                        this->fillSignature(dtr, signature);
+                    {
+                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(dtr->PdgCode());
+                        if (info->Charge() != 0.0) 
+                            this->fillSignature(dtr, signature);
+                    }
 
                     break;
                 }
