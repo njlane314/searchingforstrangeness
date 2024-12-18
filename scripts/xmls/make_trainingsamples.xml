@@ -6,9 +6,8 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_training_test">
+<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_training_retry">
 ]>
-
 
 <job>
 

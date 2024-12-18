@@ -1,5 +1,6 @@
 #!/bin/sh
 # submit_jobs.sh
+#project.py --checkana --xml scripts/xmls/make_trainingsamples.xml --stage analyse
 
 set -e
 

@@ -1,0 +1,498 @@
+#include "art/Framework/Core/EDFilter.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+
+#include "canvas/Persistency/Common/FindManyP.h"
+
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "canvas/Utilities/InputTag.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardata/RecoBaseProxy/ProxyBase.h"
+
+#include "CommonFunctions/Pandora.h"
+#include "CommonFunctions/Scatters.h"
+#include "CommonFunctions/Corrections.h"
+#include "CommonFunctions/Region.h"
+#include "CommonFunctions/Types.h"
+
+#include "art/Utilities/ToolMacros.h"
+#include "art/Utilities/make_tool.h"
+
+#include "SignatureTools/SignatureToolBase.h"
+#include "SignatureTools/DecayVertexProvider.h"
+
+#include "larcorealg/Geometry/PlaneGeo.h"
+#include "larcorealg/Geometry/WireGeo.h"
+
+#include "TDatabasePDG.h"
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TCanvas.h"
+#include "TH2F.h"
+#include "TH2D.h"
+#include "TGraph.h"
+#include "TMultiGraph.h"
+#include "TLegend.h"
+#include "TStyle.h"
+#include "TROOT.h"
+
+#include <string>
+#include <vector>
+#include <map>
+#include <fstream>
+#include <iostream>
+#include <unordered_map>
+#include <cmath>
+#include <chrono>
+
+class SignatureClarityFilter : public art::EDFilter 
+{
+public:
+    explicit SignatureClarityFilter(fhicl::ParameterSet const &pset);
+
+    SignatureClarityFilter(SignatureClarityFilter const &) = delete;
+    SignatureClarityFilter(SignatureClarityFilter &&) = delete;
+    SignatureClarityFilter &operator=(SignatureClarityFilter const &) = delete;
+    SignatureClarityFilter &operator=(SignatureClarityFilter &&) = delete;
+
+    bool filter(art::Event &e) override;
+
+private:
+    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
+
+    std::string _bad_channel_file;
+
+    calo::CalorimetryAlg* _calo_alg;
+    std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
+
+    std::vector<bool> _bad_channel_mask;
+    const geo::GeometryCore* _geo;
+
+    bool _visualise;
+
+    double _displaced_thresh;
+    int _channel_proximity;
+    
+    void initialiseBadChannels();
+
+    bool identifySignatures(art::Event& e, std::vector<signature::Signature>& signature_coll);
+
+    bool isDecayVertexIsolated(art::Event& e, const std::vector<signature::Signature>& signature_coll);
+    bool isSignatureWithinActiveRegion(const art::Event& e, const std::vector<signature::Signature>& signature_coll); 
+    bool isPositionWithinActiveRegion(const TVector3& pos);
+
+    void visualiseEvent(const art::Event &e, const std::string &filename);
+    void getLimits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec, float& global_wire_min, float& global_wire_max, float& global_drift_min, float& global_drift_max) const;
+};
+
+SignatureClarityFilter::SignatureClarityFilter(fhicl::ParameterSet const &pset)
+    : EDFilter{pset}
+    , _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
+    , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
+    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
+    , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
+    , _displaced_thresh{pset.get<double>("DisplacedThreshold", 1.0)}
+    , _channel_proximity{pset.get<int>("ChannelProximity", 5)}
+    , _visualise{pset.get<bool>("Visualise", true)}
+{
+    _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
+
+    const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
+    for (auto const &tool_pset_label : tool_psets.get_pset_names())
+    {
+        auto const tool_pset = tool_psets.get<fhicl::ParameterSet>(tool_pset_label);
+        _signatureToolsVec.push_back(art::make_tool<::signature::SignatureToolBase>(tool_pset));
+    };
+
+    _geo = art::ServiceHandle<geo::Geometry>()->provider();
+    size_t num_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(num_channels, false);
+
+    this->initialiseBadChannels();
+}
+
+void SignatureClarityFilter::initialiseBadChannels()
+{
+    if (!_bad_channel_file.empty()) {
+        cet::search_path sp("FW_SEARCH_PATH");
+        std::string fullname;
+        sp.find_file(_bad_channel_file, fullname);
+        if (fullname.empty()) 
+            throw cet::exception("SignatureClarityFilter") << "Bad channel file not found: " << _bad_channel_file;
+
+        std::ifstream inFile(fullname, std::ios::in);
+        std::string line;
+        while (std::getline(inFile, line)) {
+            if (line.find("#") != std::string::npos) continue;
+            std::istringstream ss(line);
+            int ch1, ch2;
+            ss >> ch1;
+            if (!(ss >> ch2)) ch2 = ch1;
+            for (int i = ch1; i <= ch2; ++i) {
+                _bad_channel_mask[i] = true;
+            }
+        }
+    }
+}
+
+bool SignatureClarityFilter::filter(art::Event &e) 
+{
+    std::vector<signature::Signature> signature_coll;
+    if (!this->identifySignatures(e, signature_coll))
+        return false;
+
+    std::cout << "Found signature..." << std::endl;
+
+    if (!this->isDecayVertexIsolated(e, signature_coll))
+        return false;
+
+    if (!this->isSignatureWithinActiveRegion(e, signature_coll))
+        return false;
+
+    std::string filename = "event_" + std::to_string(e.run()) + "_" + std::to_string(e.subRun()) + "_" + std::to_string(e.event()) + ".png";
+
+    if (_visualise)
+        this->visualiseEvent(e, filename);
+
+    return true; 
+}
+
+bool SignatureClarityFilter::identifySignatures(art::Event& e, std::vector<signature::Signature>& signature_coll)
+{
+    for (auto &signatureTool : _signatureToolsVec) 
+    {
+        signature::Signature signature;
+        if (!signatureTool->identifySignalParticles(e, signature))
+            return false;
+
+        if (!signature.empty()) 
+            signature_coll.push_back(signature);
+    }
+
+    return true;
+}
+
+bool SignatureClarityFilter::isDecayVertexIsolated(art::Event &e, const std::vector<signature::Signature>& signature_coll)
+{
+    TVector3 nu_vtx;
+    auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
+    const simb::MCTruth& mct = mct_h->at(0);
+    if (!mct.NeutrinoSet()) 
+        return false;
+
+    auto const &neutrino = mct.GetNeutrino();
+    auto const &nu = neutrino.Nu();
+
+    nu_vtx.SetXYZ(nu.Vx(), nu.Vy(), nu.Vz());
+
+    for (const auto &signatureTool : _signatureToolsVec) 
+    {
+        auto *decayTool = dynamic_cast<DecayVertexProvider*>(signatureTool.get());
+        if (decayTool) 
+        {
+            std::optional<TVector3> decay_vtx_opt = decayTool->getDecayVertex(e);
+            if (decay_vtx_opt) 
+            {
+                double sep = (nu_vtx - *decay_vtx_opt).Mag();
+                if (sep < _displaced_thresh)
+                    return false;
+
+                break;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool SignatureClarityFilter::isSignatureWithinActiveRegion(const art::Event& e, const std::vector<signature::Signature>& signature_coll) 
+{
+    auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
+    for (const auto& sig : signature_coll) 
+    {
+        for (const auto& sig_mcp : sig) 
+        {
+            const simb::MCParticle* mcp = nullptr;
+            for (const auto& part : *mcp_h) 
+            {
+                if (part.TrackId() == sig_mcp->TrackId()) {
+                    mcp = &part;
+                    break;
+                }
+            }
+            if (!mcp) 
+                continue;
+
+            TVector3 start(mcp->Vx(), mcp->Vy(), mcp->Vz());
+            if (!isPositionWithinActiveRegion(start)) 
+                return false;
+
+            if (std::abs(mcp->PdgCode()) != 13) { 
+                TVector3 end(mcp->EndX(), mcp->EndY(), mcp->EndZ());
+                if (!isPositionWithinActiveRegion(end)) 
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool SignatureClarityFilter::isPositionWithinActiveRegion(const TVector3& pos) 
+{
+    for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) 
+    {
+        try {
+            geo::WireID wire = _geo->NearestWireID(pos, plane);
+            raw::ChannelID_t central_channel = _geo->PlaneWireToChannel(wire);
+
+            for (int offset = -_channel_proximity; offset <= _channel_proximity; ++offset) 
+            {
+                raw::ChannelID_t neighbouring_channel = central_channel + offset;
+                if (neighbouring_channel < 0 || static_cast<size_t>(neighbouring_channel) >= _geo->Nchannels())
+                    continue; 
+
+                if (_bad_channel_mask[neighbouring_channel]) 
+                    return false; 
+            }
+        } catch (const cet::exception&) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void SignatureClarityFilter::visualiseEvent(const art::Event &e, const std::string &filename)
+{
+    art::Handle<std::vector<simb::MCParticle>> mc_particle_handle; 
+    std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
+    lar_pandora::MCParticleMap mc_particle_map;
+
+    if (!e.getByLabel(_MCPproducer, mc_particle_handle))
+        throw cet::exception("Visualise") << "failed to find any mc particles in event" << std::endl;
+    art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
+    lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
+
+    art::Handle<std::vector<recob::Hit>> hit_handle;
+    std::vector<art::Ptr<recob::Hit>> hit_vector;
+    
+    if (!e.getByLabel(_HitProducer, hit_handle))
+        throw cet::exception("Visualise") << "failed to find any hits in event" << std::endl;
+    art::fill_ptr_vector(hit_vector, hit_handle);
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part = art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hit_handle, e, _BacktrackTag);
+
+    std::map<int, int> hits_to_track_map;
+    std::map<int, std::vector<art::Ptr<recob::Hit>>> track_to_hits_map;
+
+    for (unsigned int i_h = 0; i_h < hit_vector.size(); i_h++)
+    {
+        const art::Ptr<recob::Hit> &hit = hit_vector[i_h];
+        const std::vector<art::Ptr<simb::MCParticle>> &matched_mc_part_vector = assoc_mc_part.at(hit.key());
+        auto matched_data_vector = assoc_mc_part.data(hit.key());
+
+        for (unsigned int i_p = 0; i_p < matched_mc_part_vector.size(); i_p++)
+        {
+            const art::Ptr<simb::MCParticle> &matched_mc_part = matched_mc_part_vector.at(i_p);
+            auto matched_data = matched_data_vector.at(i_p);
+
+            if (matched_data->isMaxIDE != 1)
+                continue;
+
+            const int track_idx = common::isParticleElectromagnetic(matched_mc_part) ? common::getLeadElectromagneticTrack(matched_mc_part, mc_particle_map) : matched_mc_part->TrackId();
+
+            hits_to_track_map[hit.key()] = track_idx;
+            track_to_hits_map[track_idx].push_back(hit);
+        }
+    }
+
+    std::vector<float> true_hits_u_wire;
+    std::vector<float> true_hits_u_drift;
+    std::vector<float> true_hits_u_owner;
+    std::vector<float> true_hits_v_wire;
+    std::vector<float> true_hits_v_drift;
+    std::vector<float> true_hits_v_owner;
+    std::vector<float> true_hits_w_wire;
+    std::vector<float> true_hits_w_drift;
+    std::vector<float> true_hits_w_owner;
+
+    for (const art::Ptr<recob::Hit> &hit : hit_vector)
+    {
+        common::PandoraView pandora_view = common::GetPandoraView(hit);
+        TVector3 pandora_pos = common::GetPandoraHitPosition(e, hit, pandora_view);
+
+        auto hit_to_track_it = hits_to_track_map.find(hit.key());
+        if (hit_to_track_it == hits_to_track_map.end()) {
+            continue; 
+        }
+
+        int owner_pdg_code = mc_particle_map.at(hit_to_track_it->second)->PdgCode();
+
+        if (pandora_view == common::TPC_VIEW_U) {
+            true_hits_u_wire.push_back(pandora_pos.Z());
+            true_hits_u_drift.push_back(pandora_pos.X());
+            true_hits_u_owner.push_back(owner_pdg_code);
+        }
+        else if (pandora_view == common::TPC_VIEW_V) {
+            true_hits_v_wire.push_back(pandora_pos.Z());
+            true_hits_v_drift.push_back(pandora_pos.X());
+            true_hits_v_owner.push_back(owner_pdg_code);
+        }
+        else if (pandora_view == common::TPC_VIEW_W) {
+            true_hits_w_wire.push_back(pandora_pos.Z());
+            true_hits_w_drift.push_back(pandora_pos.X());
+            true_hits_w_owner.push_back(owner_pdg_code);
+        }
+    }
+
+    float global_true_drift_min = 1e5, global_true_drift_max = -1e5;
+    float wire_min_u_truth = 1e5, wire_max_u_truth = -1e5;
+    float wire_min_v_truth = 1e5, wire_max_v_truth = -1e5;
+    float wire_min_w_truth = 1e5, wire_max_w_truth = -1e5;
+    float buffer = 10.0;
+
+    this->getLimits(true_hits_u_wire, true_hits_u_drift, wire_min_u_truth, wire_max_u_truth, global_true_drift_min, global_true_drift_max);
+    this->getLimits(true_hits_v_wire, true_hits_v_drift, wire_min_v_truth, wire_max_v_truth, global_true_drift_min, global_true_drift_max);
+    this->getLimits(true_hits_w_wire, true_hits_w_drift, wire_min_w_truth, wire_max_w_truth, global_true_drift_min, global_true_drift_max);
+
+    TCanvas* canvas = new TCanvas("canvas", "", 1500, 1500);
+    canvas->Divide(1, 3, 0, 0);
+
+    TMultiGraph* mg_u = new TMultiGraph();
+    TMultiGraph* mg_v = new TMultiGraph();
+    TMultiGraph* mg_w = new TMultiGraph();
+
+    mg_u->SetTitle(";Local Drift Coordinate;Local U Wire");
+    mg_v->SetTitle(";Local Drift Coordinate;Local V Wire");
+    mg_w->SetTitle(";Local Drift Coordinate;Local W Wire");
+
+    std::map<int, TGraph*> pdg_graphs;
+    for (size_t i = 0; i < true_hits_u_wire.size(); ++i) {
+        int pdg = std::abs(true_hits_u_owner.at(i));
+
+        if (pdg_graphs.find(pdg) == pdg_graphs.end()) {
+            pdg_graphs[pdg] = new TGraph();
+            pdg_graphs[pdg]->SetMarkerStyle(20);
+            pdg_graphs[pdg]->SetMarkerSize(0.5);
+            pdg_graphs[pdg]->SetMarkerColor(kGray); // Default color
+
+            if (pdg == 13) pdg_graphs[pdg]->SetMarkerColor(kBlue); // Muon
+            else if (pdg == 11) pdg_graphs[pdg]->SetMarkerColor(kRed); // Electron
+            else if (pdg == 2212) pdg_graphs[pdg]->SetMarkerColor(kGreen); // Proton
+            else if (pdg == 211) pdg_graphs[pdg]->SetMarkerColor(kPink + 9); // Pion
+            else if (pdg == 22) pdg_graphs[pdg]->SetMarkerColor(kOrange); // Photon
+        }
+
+        pdg_graphs[pdg]->SetPoint(pdg_graphs[pdg]->GetN(), true_hits_u_drift.at(i), true_hits_u_wire.at(i));
+    }
+
+    for (auto& entry : pdg_graphs) {
+        mg_u->Add(entry.second);
+    }
+    //mg_u->Add(true_vertex_u);
+
+    canvas->cd(1);
+    mg_u->Draw("AP");
+    mg_u->GetXaxis()->SetLimits(global_true_drift_min - buffer, global_true_drift_max + buffer);
+    mg_u->GetXaxis()->SetTitleSize(0.05);  
+    mg_u->GetYaxis()->SetTitleSize(0.05);
+
+    pdg_graphs.clear(); 
+
+    // Repeat for V view
+    for (size_t i = 0; i < true_hits_v_wire.size(); ++i) {
+        int pdg = std::abs(true_hits_v_owner.at(i));
+
+        if (pdg_graphs.find(pdg) == pdg_graphs.end()) {
+            pdg_graphs[pdg] = new TGraph();
+            pdg_graphs[pdg]->SetMarkerStyle(20);
+            pdg_graphs[pdg]->SetMarkerSize(0.5);
+            pdg_graphs[pdg]->SetMarkerColor(kGray); // Default color
+
+            if (pdg == 13) pdg_graphs[pdg]->SetMarkerColor(kBlue); // Muon
+            else if (pdg == 11) pdg_graphs[pdg]->SetMarkerColor(kRed); // Electron
+            else if (pdg == 2212) pdg_graphs[pdg]->SetMarkerColor(kGreen); // Proton
+            else if (pdg == 211) pdg_graphs[pdg]->SetMarkerColor(kPink + 9); // Pion
+            else if (pdg == 22) pdg_graphs[pdg]->SetMarkerColor(kOrange); // Photon
+        }
+
+        pdg_graphs[pdg]->SetPoint(pdg_graphs[pdg]->GetN(), true_hits_v_drift.at(i), true_hits_v_wire.at(i));
+    }
+
+    for (auto& entry : pdg_graphs) {
+        mg_v->Add(entry.second);
+    }
+    //mg_v->Add(true_vertex_v);
+
+    canvas->cd(2);
+    mg_v->Draw("AP");
+    mg_v->GetXaxis()->SetLimits(global_true_drift_min - buffer, global_true_drift_max + buffer);
+    mg_v->GetXaxis()->SetTitleSize(0.05);  
+    mg_v->GetYaxis()->SetTitleSize(0.05);
+
+    pdg_graphs.clear(); 
+
+    // Repeat for W view
+    for (size_t i = 0; i < true_hits_w_wire.size(); ++i) {
+        int pdg = std::abs(true_hits_w_owner.at(i));
+
+        if (pdg_graphs.find(pdg) == pdg_graphs.end()) {
+            pdg_graphs[pdg] = new TGraph();
+            pdg_graphs[pdg]->SetMarkerStyle(20);
+            pdg_graphs[pdg]->SetMarkerSize(0.5);
+            pdg_graphs[pdg]->SetMarkerColor(kGray); // Default color
+
+            if (pdg == 13) pdg_graphs[pdg]->SetMarkerColor(kBlue); // Muon
+            else if (pdg == 11) pdg_graphs[pdg]->SetMarkerColor(kRed); // Electron
+            else if (pdg == 2212) pdg_graphs[pdg]->SetMarkerColor(kGreen); // Proton
+            else if (pdg == 211) pdg_graphs[pdg]->SetMarkerColor(kPink + 9); // Pion
+            else if (pdg == 22) pdg_graphs[pdg]->SetMarkerColor(kOrange); // Photon
+        }
+
+        pdg_graphs[pdg]->SetPoint(pdg_graphs[pdg]->GetN(), true_hits_w_drift.at(i), true_hits_w_wire.at(i));
+    }
+
+    for (auto& entry : pdg_graphs) {
+        mg_w->Add(entry.second);
+    }
+    //mg_w->Add(true_vertex_w);
+
+    canvas->cd(3);
+    mg_w->Draw("AP");
+    mg_w->GetXaxis()->SetLimits(global_true_drift_min - buffer, global_true_drift_max + buffer);
+    mg_w->GetXaxis()->SetTitleSize(0.05);  
+    mg_w->GetYaxis()->SetTitleSize(0.05);
+    canvas->SaveAs((filename + "_truth_hits.png").c_str());
+
+    delete canvas;
+    delete mg_u;
+    delete mg_v;
+    delete mg_w;
+}
+
+void SignatureClarityFilter::getLimits(const std::vector<float>& wire_coord_vec, const std::vector<float>& drift_coord_vec,
+                float& global_wire_min, float& global_wire_max, float& global_drift_min, float& global_drift_max) const
+{
+    if (!wire_coord_vec.empty() && !drift_coord_vec.empty()) {
+        float local_wire_min = *std::min_element(wire_coord_vec.begin(), wire_coord_vec.end());
+        float local_wire_max = *std::max_element(wire_coord_vec.begin(), wire_coord_vec.end());
+        float local_drift_min = *std::min_element(drift_coord_vec.begin(), drift_coord_vec.end());
+        float local_drift_max = *std::max_element(drift_coord_vec.begin(), drift_coord_vec.end());
+
+        global_wire_min = std::min(global_wire_min, local_wire_min);
+        global_wire_max = std::max(global_wire_max, local_wire_max);
+        global_drift_min = std::min(global_drift_min, local_drift_min);
+        global_drift_max = std::max(global_drift_max, local_drift_max);
+    }
+}
+
+DEFINE_ART_MODULE(SignatureClarityFilter)

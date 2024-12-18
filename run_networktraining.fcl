@@ -28,7 +28,6 @@ source:
 {
     module_type: RootInput  
     maxEvents: -1  
-    fileNames: [ "input_file.root" ] 
 }
 
 physics:
@@ -62,15 +61,8 @@ physics:
             }
         }
     }
-
-    filters:
-    {
-        signaltruthfilter: @local::SignalTruthFilter
-    }
-
-    p1: [ signaltruthfilter ]   
+ 
     e1: [ convnetalgo ]     
-
-    trigger_paths: [ p1 ]       
+   
     end_paths: [ e1 ]           
 }

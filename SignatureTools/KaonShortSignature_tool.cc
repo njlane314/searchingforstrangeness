@@ -1,15 +1,15 @@
-#ifndef SIGNATURE_NEUTRALKAON_CXX
-#define SIGNATURE_NEUTRALKAON_CXX
+#ifndef SIGNATURE_KAONSHORT_CXX
+#define SIGNATURE_KAONSHORT_CXX
 
 #include <iostream>
 #include <optional>
 #include "SignatureToolBase.h"
-#include "DecayVertexProvider.h"
+#include "VertexToolBase.h"
 
 namespace signature
 {
 
-class KaonShortSignature : public SignatureToolBase, public DecayVertexProvider
+class KaonShortSignature : public SignatureToolBase, public VertexToolBase
 {
 public:
     explicit KaonShortSignature(const fhicl::ParameterSet& pset)
@@ -28,10 +28,10 @@ public:
         SignatureToolBase::configure(pset);
     }
 
-    TVector3 getDecayVertex(art::Event const& evt) const override;
+    TVector3 findVertex(art::Event const& evt) const override;
 
 protected:
-    void findSignature(art::Event const& evt, Signature& signature, bool& found_signature) override;
+    void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
 
 private:
     art::InputTag _HitProducer;
@@ -40,50 +40,50 @@ private:
     art::InputTag _BacktrackTag;
 };
 
-void KaonShortSignature::findSignature(art::Event const& evt, Signature& signature, bool& found_signature)
+void KaonShortSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
-    for (size_t d = 0; d < mcp_h->size(); d++) {
-        const art::Ptr<simb::MCParticle> mcp(mcp_h, d);
+    for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) {
+        const art::Ptr<simb::MCParticle> mcp(mcp_h, mcp_i);
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &t_part : *mcp_h) {
-        if (abs(t_part.PdgCode()) == 311 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1 && !found_signature) {
-            auto g_dtrs = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
-            if (g_dtrs.size() != 1) continue; 
+    for (const auto &mcp : *mcp_h) {
+        if (abs(mcp.PdgCode()) == 311 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 1 && !signature_found) {
+            auto dtrs = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
+            if (dtrs.size() != 1) continue; 
 
-            auto g_part = g_dtrs.at(0);
-            if (g_part->PdgCode() == 310 && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2 && !found_signature)
+            auto dtr = dtrs.at(0);
+            if (dtr->PdgCode() == 310 && dtr->Process() == "Decay" && dtr->EndProcess() == "Decay" && dtr->NumberDaughters() == 2 && !signature_found)
             {
-                auto daughters = common::GetDaughters(mcp_map.at(g_part->TrackId()), mcp_map);
-                if (daughters.size() != 2) continue;
+                auto decay = common::GetDaughters(mcp_map.at(dtr->TrackId()), mcp_map);
+                if (decay.size() != 2) continue;
                 
-                std::vector<int> exp_dtrs = {-211, 211};
-                std::vector<int> fnd_dtrs;
+                std::vector<int> exp_decay = {-211, 211};
+                std::vector<int> fnd_decay;
                 
-                for (const auto &dtr : daughters) 
-                {
-                    fnd_dtrs.push_back(dtr->PdgCode());
-                    std::cout << dtr->PdgCode() << std::endl;
-                }
+                for (const auto &elem : decay) 
+                    fnd_decay.push_back(elem->PdgCode());
 
-                std::sort(exp_dtrs.begin(), exp_dtrs.end());
-                std::sort(fnd_dtrs.begin(), fnd_dtrs.end());
+                std::sort(exp_decay.begin(), exp_decay.end());
+                std::sort(fnd_decay.begin(), fnd_decay.end());
 
-                if (fnd_dtrs == exp_dtrs) 
+                if (fnd_decay == exp_decay) 
                 {
-                    bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
-                        return this->aboveThreshold(*dtr);
+                    bool all_pass = std::all_of(decay.begin(), decay.end(), [&](const auto& elem) {
+                        return this->assessParticle(*elem);
                     });
 
-                    if (all_above_threshold) 
+                    if (all_pass) 
                     {
-                        found_signature = true;
-                        for (const auto &dtr : daughters) 
-                            this->fillSignature(dtr, signature);
+                        signature_found = true;
+                        for (const auto &elem : decay) 
+                        {
+                            const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
+                            if (info->Charge() != 0.0) 
+                                this->fillSignature(elem, signature);
+                        }
 
                         break;
                     }
@@ -93,25 +93,27 @@ void KaonShortSignature::findSignature(art::Event const& evt, Signature& signatu
     }
 }
 
-TVector3 KaonShortSignature::getDecayVertex(art::Event const& evt) const
+TVector3 KaonShortSignature::findVertex(art::Event const& evt) const
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
-    for (size_t d = 0; d < mcp_h->size(); d++) {
-        const art::Ptr<simb::MCParticle> mcp(mcp_h, d);
+    for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) 
+    {
+        const art::Ptr<simb::MCParticle> mcp(mcp_h, mcp_i);
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &t_part : *mcp_h) {
-        if (abs(t_part.PdgCode()) == 311 && t_part.Process() == "primary" && t_part.EndProcess() == "Decay" && t_part.NumberDaughters() == 1) {
-            auto g_dtrs = common::GetDaughters(mcp_map.at(t_part.TrackId()), mcp_map);
-            if (g_dtrs.size() != 1) continue; 
+    for (const auto &mcp : *mcp_h) 
+    {
+        if (abs(mcp.PdgCode()) == 311 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 1) {
+            auto dtrs = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
+            if (dtrs.size() != 1) continue; 
 
-            auto g_part = g_dtrs.at(0);
-            if (g_part->PdgCode() == 310 && g_part->Process() == "Decay" && g_part->EndProcess() == "Decay" && g_part->NumberDaughters() == 2)
+            auto dtr = dtrs.at(0);
+            if (dtr->PdgCode() == 310 && dtr->Process() == "Decay" && dtr->EndProcess() == "Decay" && dtr->NumberDaughters() == 2)
             {
-                const TLorentzVector& end_position = g_part->EndPosition();
+                const TLorentzVector& end_position = dtr->EndPosition();
+                
                 return TVector3(end_position.X(), end_position.Y(), end_position.Z());
             }
         }
