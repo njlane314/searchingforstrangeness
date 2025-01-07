@@ -135,8 +135,11 @@ void TrainingRegionAnalyser::analyze(art::Event const &evt)
 
     std::vector<signature::Signature> sig_coll;
     for (auto& signatureTool : _signatureToolsVec) {
-        if (!signatureTool->identifySignalParticles(evt, sig_coll))
+        signature::Signature signature;
+        if (!signatureTool->identifySignalParticles(evt, signature))
             return;
+
+        sig_coll.push_back(signature);
     }
 
     art::Handle<std::vector<recob::Hit>> hit_handle;

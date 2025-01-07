@@ -91,10 +91,13 @@ bool PatternRecognitionFilter::filter(art::Event &evt)
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(evt, _CLSproducer,
                                                 proxy::withAssociated<recob::Hit>(_CLSproducer));
 
-    std::vector<signature::Signature> sig_coll;
+    std::vector<signature::Signature> signature_coll;
     for (auto& signatureTool : _signatureToolsVec) {
-        if (!signatureTool->identifySignalParticles(evt, sig_coll))
+        signature::Signature signature;
+        if (!signatureTool->identifySignalParticles(evt, signature))
             return false;
+
+        signature_coll.push_back(signature);
     }
 
     auto const &all_hits = evt.getValidHandle<std::vector<recob::Hit>>(_HitProducer);
@@ -112,10 +115,13 @@ bool PatternRecognitionFilter::filter(art::Event &evt)
             if (amd->isMaxIDE != 1)
                 continue;
 
-            for (const auto &sig : sig_coll) 
+            for (const auto &signature : signature_coll) 
             {
-                if (mcp->TrackId() == sig.trckid)
-                    sig_mcp_hits[sig.trckid]++;
+                for (const auto &sig_mcp : signature)
+                {
+                    if (mcp->TrackId() == sig_mcp->TrackId())
+                        sig_mcp_hits[sig_mcp->TrackId()]++;
+                }
             }
         }
     }
@@ -152,42 +158,48 @@ bool PatternRecognitionFilter::filter(art::Event &evt)
                 if (assmdt[i]->isMaxIDE != 1) 
                     continue;
 
-                for (const auto &sig : sig_coll)
+                for (const auto &signature : signature_coll) 
                 {
-                    if (assmcp[i]->TrackId() == sig.trckid)
-                        pfp_mcp_shared_hits[pfp_pxy->Self()][sig.trckid]++;
+                    for (const auto &sig_mcp : signature)
+                    {
+                        if (assmcp[i]->TrackId() == sig_mcp->TrackId())
+                            pfp_mcp_shared_hits[pfp_pxy->Self()][sig_mcp->TrackId()]++;
+                    }
                 }
             }
         }
 
         std::unordered_map<int, int> sig_match;
-        for (const auto &sig : sig_coll) 
+        for (const auto &signature : signature_coll) 
         {
-            int match_pfp = -1;
-            float match_score = -1.0;
-
-            for (const auto &[pfp_id, mcp_hits_map] : pfp_mcp_shared_hits) 
+            for (const auto &sig_mcp : signature)
             {
-                if (mcp_hits_map.find(sig.trckid) == mcp_hits_map.end())
-                    continue;
+                int match_pfp = -1;
+                float match_score = -1.0;
 
-                int shared_hits = mcp_hits_map.at(sig.trckid);
-                float purity = (float)shared_hits / pfp_total_hits[pfp_id];
-                float completeness = (float)shared_hits / sig_mcp_hits[sig.trckid];
-                if (purity <= 0.5 || completeness <= 0.1)
-                    continue;
-
-                float score = std::sqrt(purity * purity + completeness * completeness);
-
-                if (score > match_score) 
+                for (const auto &[pfp_id, mcp_hits_map] : pfp_mcp_shared_hits) 
                 {
-                    match_score = score;
-                    match_pfp = pfp_id;
-                }
-            }
+                    if (mcp_hits_map.find(sig_mcp->TrackId()) == mcp_hits_map.end())
+                        continue;
 
-            if (match_pfp != -1) 
-                sig_match[sig.trckid] = match_pfp;
+                    int shared_hits = mcp_hits_map.at(sig_mcp->TrackId());
+                    float purity = (float)shared_hits / pfp_total_hits[pfp_id];
+                    float completeness = (float)shared_hits / sig_mcp_hits[sig_mcp->TrackId()];
+                    if (purity <= 0.5 || completeness <= 0.1)
+                        continue;
+
+                    float score = std::sqrt(purity * purity + completeness * completeness);
+
+                    if (score > match_score) 
+                    {
+                        match_score = score;
+                        match_pfp = pfp_id;
+                    }
+                }
+
+                if (match_pfp != -1) 
+                    sig_match[sig_mcp->TrackId()] = match_pfp;
+            }
         }
 
         std::unordered_set<int> unique_pfps;
@@ -199,7 +211,7 @@ bool PatternRecognitionFilter::filter(art::Event &evt)
             unique_pfps.insert(pfp_id);
         }
 
-        if (sig_match.size() != sig_coll.size())
+        if (sig_match.size() != signature_coll.size())
             return false;
     }
 

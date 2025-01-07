@@ -27,7 +27,18 @@ source:
 {
     module_type: RootInput
     maxEvents: -1
-    fileNames: [ "input_file.root" ]
+}
+
+outputs:
+{
+    out1:
+    {
+        module_type: RootOutput
+        fileName: "%ifb_%tc_nlane-integrityfilter.root"
+        dataTier: "generated"
+        compressionLevel: 1
+        SelectEvents: [ filter ]
+    }
 }
 
 physics:
@@ -39,35 +50,20 @@ physics:
             module_type: VisualiseEventFilter
             Mode: "target"
 
-            TargetEventsFile: "run_subrun_event_log.txt"
+            TargetEvents: [
+                [11278, 270, 13533]
+            ]        
 
-            signatureintegrityfilter:
+            SignatureTools:
             {
-                module_type: SignatureIntegrityFilter
-
-                HitProducer: "gaushit"
-                MCPproducer: "largeant"
-                MCTproducer: "generator"
-                BacktrackTag: "gaushitTruthMatch"
-
-                CaloAlg: @local::microboone_calo_mcc9_data
-
-                SignatureTools:
-                {
-                    leptonic: @local::MuonSignature
-                    kshort: @local::KaonShortSignature
-                }
-
-                HitThreshold: 1000
-                SpatialTolerance: 0.3
-
-                BadChannelFile: "badchannels.txt"
-                VetoBadChannels: true
+                leptonic: @local::MuonSignature
+                hadronic: @local::KaonShortSignature
             }
         }
     }
 
-    p1: [ visfilter ]
-
-    trigger_paths: [ p1 ]
+    filter: [ visfilter ]
+    stream: [ out1 ]
+    trigger_paths: [ filter ]
+    end_paths: [ stream ]
 }

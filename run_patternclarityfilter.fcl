@@ -1,10 +1,10 @@
 #include "selectionconfig.fcl"  
 
-process_name: SignatureIntegrityFilterProcess
+process_name: PatternClarityFilterProcess
 
 services:
 {
-    TFileService: { fileName: "signatureintegrity_output.root" } 
+    TFileService: { fileName: "clarity_hist.root" }
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -30,33 +30,40 @@ source:
     maxEvents: -1
 }
 
+outputs:
+{
+    out1:
+    {
+        module_type: RootOutput
+        fileName: "%ifb_%tc_nlane-integrityfilter.root"
+        dataTier: "generated"
+        compressionLevel: 1
+        SelectEvents: [ filter ]
+    }
+}
+
 physics:
 {
     filters:
     {
-        signatureintegrityfilter:
+        patternclarityfilterprocess:
         {
-            module_type: SignatureIntegrityFilter
-
-            HitProducer: "gaushit"
-            MCPproducer: "largeant"
-            MCTproducer: "generator"
-            BacktrackTag: "gaushitTruthMatch"
+            module_type: PatternClarityFilter
 
             CaloAlg: @local::microboone_calo_mcc9_data
 
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
-                kshort: @local::KaonShortSignature
+                hadronic: @local::ChargedSigmaSignature
             }
 
             BadChannelFile: "badchannels.txt"
-            VetoBadChannels: true
         }
     }
 
-    p1: [ signatureintegrityfilter ]
-
-    trigger_paths: [ p1 ]
+    filter: [ patternclarityfilterprocess ]
+    stream: [ out1 ]
+    trigger_paths: [ filter ]
+    end_paths: [ stream ]
 }

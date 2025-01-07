@@ -86,6 +86,12 @@ ChargedKaonSignature:
     @table::Thresholds
 }
 
+ChargedSigmaSignature:
+{
+    tool_type: "ChargedSigmaSignature"
+    @table::Thresholds
+}
+
 LambdaSignature:
 {
     tool_type: "LambdaSignature"
