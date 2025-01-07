@@ -11,7 +11,6 @@ class MuonSignature : public SignatureToolBase
 public:
     explicit MuonSignature(const fhicl::ParameterSet& pset) 
         : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-        , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     {
         configure(pset); 
     }
@@ -28,7 +27,6 @@ protected:
 
 private:
     art::InputTag _MCPproducer;
-    art::InputTag _MCTproducer;
 };
 
 void MuonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
