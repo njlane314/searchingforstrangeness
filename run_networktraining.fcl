@@ -54,11 +54,7 @@ physics:
 
             CaloAlg: @local::microboone_calo_mcc9_data
             
-            SignatureTools: 
-            {
-                leptonic: @local::MuonSignature
-                hadronic: @local::KaonShortSignature
-            }
+            SignatureTools: @local::SignatureTools
         }
     }
  

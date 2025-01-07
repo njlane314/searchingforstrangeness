@@ -1,7 +1,0 @@
-#include "run_networktraining.fcl"  
-
-physics.analyzers.convnetalgo.SignatureTools: 
-{
-    leptonic: @local::MuonSignature
-    hadronic: @local::LambdaSignature
-}
