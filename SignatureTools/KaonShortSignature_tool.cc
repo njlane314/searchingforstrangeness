@@ -49,8 +49,20 @@ void KaonShortSignature::findSignature(art::Event const& evt, Signature& signatu
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &mcp : *mcp_h) {
-        if (abs(mcp.PdgCode()) == 311 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 1 && !signature_found) {
+    auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> void {
+        auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
+        for (const auto& daugh : daughters) {
+            if (daugh->PdgCode() == particle->PdgCode()) {
+                this->fillSignature(daugh, signature); 
+                self(daugh, self); 
+            }
+        }
+    };
+
+    for (const auto &mcp : *mcp_h) 
+    {
+        if (abs(mcp.PdgCode()) == 311 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 1 && !signature_found) 
+        {
             auto dtrs = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
             if (dtrs.size() != 1) continue; 
 
@@ -82,7 +94,10 @@ void KaonShortSignature::findSignature(art::Event const& evt, Signature& signatu
                         {
                             const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
                             if (info->Charge() != 0.0) 
+                            {
                                 this->fillSignature(elem, signature);
+                                addDaughterInteractions(elem, addDaughterInteractions);
+                            }
                         }
 
                         break;

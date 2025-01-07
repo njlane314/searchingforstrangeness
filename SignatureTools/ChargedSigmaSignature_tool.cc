@@ -38,82 +38,97 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &mcp : *mcp_h) 
+    auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> void {
+        auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
+        for (const auto& daugh : daughters) {
+            if (daugh->PdgCode() == particle->PdgCode()) {
+                this->fillSignature(daugh, signature); 
+                self(daugh, self); 
+            }
+        }
+    };
+
+    for (const auto &mcp : *mcp_h)
     {
-        /*if (mcp.PdgCode() == 3112 && mcp.Process() == "primary" && !signature_found)
+        if ((abs(mcp.PdgCode()) == 3112 || abs(mcp.PdgCode()) == 3222) && mcp.Process() == "primary" && !signature_found)
         {
-            const art::Ptr<simb::MCParticle> sigma = mcp_map.at(mcp.TrackId());
+            auto particle_iter = mcp_map.find(mcp.TrackId());
+            if (particle_iter == mcp_map.end()) 
+                continue;
+
+            auto sigma = particle_iter->second; 
             while (sigma->EndProcess() != "Decay")
             {
-                if (!this->assessParticle(sigma))
+                if (!this->assessParticle(*sigma))
                     break;
 
                 this->fillSignature(sigma, signature);
-                auto scat_dtrs = common::GetDaughters(mcp_map.at(sigma->TrackId()), mcp_map);
-                if (scat_dtrs.empty()) 
+                auto daughters = common::GetDaughters(mcp_map.at(sigma->TrackId()), mcp_map);
+                if (daughters.empty())
                     break;
 
-                scat_dtrs.erase(std::remove_if(scat_dtrs.begin(), scat_dtrs.end(), [](const auto& dtr) {
-                    return dtr->PdgCode() != 3112;
-                }), dtrs.end());
-
-                sigma = dtrs.at(0);
+                for (const auto& daugh : daughters) {
+                    if (daugh->PdgCode() == sigma->PdgCode()) {
+                        this->fillSignature(daugh, signature); 
+                        sigma = daugh;
+                    }
+                }
             }
 
             if (sigma->EndProcess() == "Decay")
             {
-                auto decay_dtrs = common::GetDaughters(mcp_map.at(sigma->TrackId()), mcp_map);
-                std::vector<int> expected_dtrs = std::vector<int>{2112, -211}; // sigma+ -> n + pi-
+                auto decay = common::GetDaughters(mcp_map.at(sigma->TrackId()), mcp_map);
+                std::vector<std::vector<int>> decay_modes;
+                if (abs(sigma->PdgCode()) == 3222) { // Sigma+
+                    decay_modes = {
+                        {2212, -211}, // p + pi-
+                        {2112, 211}  // n + pi+
+                    };
+                } else if (abs(sigma->PdgCode()) == 3112) { // Sigma-
+                    decay_modes = {
+                        {2112, -211} // n + pi-
+                    };
+                }
+
                 std::vector<int> found_dtrs;
-                for (const auto &elem : decay_dtrs) 
+                for (const auto &elem : decay) 
                     found_dtrs.push_back(elem->PdgCode());
 
-                std::sort(expected_dtrs.begin(), expected_dtrs.end());
                 std::sort(found_dtrs.begin(), found_dtrs.end());
 
-                if (found_dtrs == expected_dtrs) 
-                {   
-                    
-            }
-        }
-    }*/
-
-
-        if (std::abs(mcp.PdgCode()) == 3112 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay"  && !signature_found) 
-        {
-            auto dtrs = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
-            dtrs.erase(std::remove_if(dtrs.begin(), dtrs.end(), [](const auto& dtr) {
-                return dtr->Process() != "Decay";
-            }), dtrs.end());
-
-            std::vector<int> expected_dtrs = std::vector<int>{2112, -211}; // Sigma- -> N + Pi-
-
-            std::vector<int> found_dtrs;
-            for (const auto &dtr : dtrs) 
-                found_dtrs.push_back(dtr->PdgCode());
-
-            std::sort(expected_dtrs.begin(), expected_dtrs.end());
-            std::sort(found_dtrs.begin(), found_dtrs.end());
-
-            if (found_dtrs == expected_dtrs) 
-            {   
-                bool all_pass = std::all_of(dtrs.begin(), dtrs.end(), [&](const auto& dtr) {
-                    return this->assessParticle(*dtr);
-                });
-
-                if (all_pass) 
-                {
-                    signature_found = true;
-
-                    this->fillSignature(mcp_map[mcp.TrackId()], signature);
-                    for (const auto &dtr : dtrs) 
-                    {
-                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(dtr->PdgCode());
-                        if (info->Charge() != 0.0) 
-                            this->fillSignature(dtr, signature);
+                bool valid_decay = false;
+                for (const auto& mode : decay_modes) {
+                    std::vector<int> sorted_mode = mode;
+                    std::sort(sorted_mode.begin(), sorted_mode.end());
+                    if (found_dtrs == sorted_mode) {
+                        valid_decay = true;
+                        break;
                     }
+                }
 
-                    break;
+                if (valid_decay) 
+                {   
+                    bool all_pass = std::all_of(decay.begin(), decay.end(), [&](const auto& daugh) {
+                        return this->assessParticle(*daugh);
+                    });
+
+                    if (all_pass) 
+                    {
+                        signature_found = true;
+
+                        this->fillSignature(mcp_map[mcp.TrackId()], signature);
+                        for (const auto &elem : decay) 
+                        {
+                            const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
+                            if (info->Charge() != 0.0) 
+                            {
+                                this->fillSignature(elem, signature);
+                                addDaughterInteractions(elem, addDaughterInteractions);
+                            }
+                        }
+
+                        break;
+                    }
                 }
             }
         }
