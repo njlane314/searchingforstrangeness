@@ -166,14 +166,14 @@ bool PatternClarityFilter::filter(art::Event &e)
     // 1) the interaction topology is dominated by its specific pattern, 
     // 2) that each signature of the pattern retains its integrity within the detector, 
     // 3) and that most of the hits of the signature are exclusive. 
-    /*if (!this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc))
+    if (!this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
 
     if (!this->filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
 
     if (!this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
-        return false;*/
+        return false;
 
     std::string filename = "event_" + std::to_string(e.run()) + "_" + std::to_string(e.subRun()) + "_" + std::to_string(e.event());
     common::visualiseTrueEvent(e, _MCPproducer, _HitProducer, _BacktrackTag, filename);

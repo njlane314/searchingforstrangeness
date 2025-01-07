@@ -40,7 +40,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
 
     for (const auto &mcp : *mcp_h) 
     {
-        if (mcp.PdgCode() == 3112 && mcp.Process() == "primary" && !signature_found)
+        /*if (mcp.PdgCode() == 3112 && mcp.Process() == "primary" && !signature_found)
         {
             const art::Ptr<simb::MCParticle> sigma = mcp_map.at(mcp.TrackId());
             while (sigma->EndProcess() != "Decay")
@@ -76,6 +76,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                     
             }
         }
+    }*/
 
 
         if (std::abs(mcp.PdgCode()) == 3112 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay"  && !signature_found) 
@@ -107,7 +108,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                     this->fillSignature(mcp_map[mcp.TrackId()], signature);
                     for (const auto &dtr : dtrs) 
                     {
-                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(dtr.PdgCode());
+                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(dtr->PdgCode());
                         if (info->Charge() != 0.0) 
                             this->fillSignature(dtr, signature);
                     }
