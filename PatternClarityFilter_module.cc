@@ -63,15 +63,17 @@ private:
     std::string _bad_channel_file;
     std::vector<bool> _bad_channel_mask;
 
-    double _patt_completeness_thresh;
-    int _patt_charge_thresh;
-    double _sig_completeness_thresh; 
-    int _channel_active_region;
-    double _hit_exclusivity_thresh;
-    double _sig_exclusivity_thresh;
+    double _patt_hit_comp_thresh;
+    int _patt_hit_thresh;
+    double _sig_hit_comp_thresh; 
+    int _chan_act_reg;
+    double _hit_exclus_thresh;
+    double _sig_exclus_thresh;
 
     calo::CalorimetryAlg* _calo_alg;
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
+    int _targetDetectorPlane;
+    bool _quickVisualise;
 
     bool filterPatternCompleteness(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
     bool filterSignatureIntegrity(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
@@ -85,12 +87,14 @@ PatternClarityFilter::PatternClarityFilter(fhicl::ParameterSet const &pset)
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
-    , _patt_completeness_thresh{pset.get<double>("PatternCompletenessThreshold", 0.5)}
-    , _patt_charge_thresh{pset.get<int>("PatternChargeThreshold", 3000000)}
-    , _sig_completeness_thresh{pset.get<double>("SignatureCompletenessThreshold", 0.1)}
-    , _channel_active_region{pset.get<int>("ChannelActiveRegion", 3)}
-    , _hit_exclusivity_thresh{pset.get<double>("HitExclusivityThreshold", 0.5)}
-    , _sig_exclusivity_thresh{pset.get<double>("SignatureExclusivityThreshold", 0.8)}
+    , _patt_hit_comp_thresh{pset.get<double>("PatternHitCompletenessThreshold", 0.5)}
+    , _patt_hit_thresh{pset.get<int>("PatternHitThreshold", 100)}
+    , _sig_hit_comp_thresh{pset.get<double>("SignatureHitCompletenessThreshold", 0.1)}
+    , _chan_act_reg{pset.get<int>("ChannelActiveRegion", 3)}
+    , _hit_exclus_thresh{pset.get<double>("HitExclusivityThreshold", 0.5)}
+    , _sig_exclus_thresh{pset.get<double>("SignatureExclusivityThreshold", 0.8)}
+    , _targetDetectorPlane{pset.get<int>("TargetDetectorPlane", 2)}
+    , _quickVisualise{pset.get<bool>("QuickVisualise", true)}
 {
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
 
@@ -151,6 +155,10 @@ bool PatternClarityFilter::filter(art::Event &e)
         if (_bad_channel_mask[hit->Channel()]) 
             continue; 
 
+        const geo::WireID& wire_id = hit->WireID(); 
+        if (wire_id.Plane != _targetDetectorPlane) 
+            continue;
+
         auto assmcp = mcp_bkth_assoc->at(hit.key());
         auto assmdt = mcp_bkth_assoc->data(hit.key());
         for (unsigned int ia = 0; ia < assmcp.size(); ++ia){
@@ -175,22 +183,25 @@ bool PatternClarityFilter::filter(art::Event &e)
     if (!this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
 
-    std::string filename = "event_" + std::to_string(e.run()) + "_" + std::to_string(e.subRun()) + "_" + std::to_string(e.event());
-    common::visualiseTrueEvent(e, _MCPproducer, _HitProducer, _BacktrackTag, filename);
-    common::visualiseSignature(e, _MCPproducer, _HitProducer, _BacktrackTag, patt, filename);
-
+    if (_quickVisualise)
+    {
+        std::string filename = "event_" + std::to_string(e.run()) + "_" + std::to_string(e.subRun()) + "_" + std::to_string(e.event());
+        common::visualiseTrueEvent(e, _MCPproducer, _HitProducer, _BacktrackTag, filename);
+        common::visualiseSignature(e, _MCPproducer, _HitProducer, _BacktrackTag, patt, filename);
+    }
+    
     return true; 
 }
 
 bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
-    std::unordered_map<int, double> sig_q_map;
-    double tot_patt_q = 0.0; 
+    std::unordered_map<int, int> sig_hit_map;
+    double tot_patt_hit = 0; 
 
     std::vector<art::Ptr<recob::Hit>> patt_hits;
     for (const auto& sig : patt) {
         for (const auto& mcp_s : sig) {
-            double sig_q = 0.0;
+            double sig_hit = 0;
 
             for (const auto& hit : mc_hits) {
                 auto assmcp = mcp_bkth_assoc->at(hit.key());
@@ -200,25 +211,25 @@ bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::P
                     auto amd = assmdt[ia];
                     if (assmcp[ia]->TrackId() == mcp_s->TrackId() && amd->isMaxIDEN == 1) {
                         patt_hits.push_back(hit);
-                        sig_q += amd->numElectrons * amd->ideNFraction;
+                        sig_hit += 1; 
                     }
                 }
             }
 
-            sig_q_map[mcp_s->TrackId()] += sig_q;
-            tot_patt_q += sig_q;
+            sig_hit_map[mcp_s->TrackId()] += sig_hit;
+            tot_patt_hit += sig_hit;
         }
     }
 
     if (mc_hits.empty() || patt_hits.empty()) 
         return false;
 
-    double patt_dom = static_cast<double>(patt_hits.size()) / mc_hits.size();
-    if (patt_dom < _patt_completeness_thresh || tot_patt_q < _patt_charge_thresh)
+    double patt_comp = static_cast<double>(patt_hits.size()) / mc_hits.size();
+    if (patt_comp < _patt_hit_comp_thresh || tot_patt_hit < _patt_hit_thresh)
         return false;
 
-    for (const auto& [_, q] : sig_q_map) 
-        if (q / tot_patt_q < _sig_completeness_thresh) 
+    for (const auto& [_, num_hits] : sig_hit_map) 
+        if (num_hits / tot_patt_hit < _sig_hit_comp_thresh) 
             return false;       
 
     return true;
@@ -232,7 +243,7 @@ bool PatternClarityFilter::filterSignatureIntegrity(art::Event &e, signature::Pa
                 geo::WireID wire = _geo->NearestWireID(point, plane);
                 raw::ChannelID_t central_channel = _geo->PlaneWireToChannel(wire);
 
-                for (int offset = -_channel_active_region; offset <= _channel_active_region; ++offset) {
+                for (int offset = -_chan_act_reg; offset <= _chan_act_reg; ++offset) {
                     raw::ChannelID_t neighboring_channel = central_channel + offset;
 
                     if (neighboring_channel < 0 || static_cast<size_t>(neighboring_channel) >= _geo->Nchannels())
@@ -279,14 +290,14 @@ bool PatternClarityFilter::filterHitExclusivity(art::Event &e, signature::Patter
                     auto amd = assmdt[ia];
                     if (assmcp[ia]->TrackId() == mcp_s->TrackId()) {
                         sig_q_inclusive += amd->numElectrons * amd->ideNFraction;
-                        if (amd->ideNFraction > _hit_exclusivity_thresh) 
+                        if (amd->ideNFraction > _hit_exclus_thresh) 
                             sig_q_exclusive += amd->numElectrons * amd->ideNFraction;
                     }
                 }
             }
         }
 
-        if (sig_q_exclusive / sig_q_inclusive < _sig_exclusivity_thresh)
+        if (sig_q_exclusive / sig_q_inclusive < _sig_exclus_thresh)
             return false;
     }
 

@@ -97,3 +97,9 @@ LambdaSignature:
     tool_type: "LambdaSignature"
     @table::Thresholds
 }
+
+SignatureTools:
+{
+    leptonic: @local::MuonSignature
+    hadronic: @local::LambdaSignature
+}

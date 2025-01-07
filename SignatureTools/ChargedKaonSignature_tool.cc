@@ -39,14 +39,17 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signa
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> void {
+    auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> art::Ptr<simb::MCParticle> {
         auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
+        art::Ptr<simb::MCParticle> end_particle = particle;
         for (const auto& daugh : daughters) {
-            if (daugh->PdgCode() == particle->PdgCode()) {
+            if (daugh->PdgCode() == particle->PdgCode() && this->assessParticle(*daugh)) {
                 this->fillSignature(daugh, signature); 
-                self(daugh, self); 
+                end_particle = self(daugh, self); 
             }
         }
+        
+        return end_particle;
     };
 
     for (const auto &mcp : *mcp_h) 
@@ -58,31 +61,27 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signa
                 continue;
             
             auto kaon = particle_iter->second;
-            while (kaon->EndProcess() != "Decay" && kaon->EndProcess() != "FastScintillation")
+            if (!this->assessParticle(*kaon))
+                break;
+
+            this->fillSignature(kaon, signature);
+            auto end_kaon = addDaughterInteractions(kaon, addDaughterInteractions);
+           
+            if (end_kaon->EndProcess() == "Decay" || end_kaon->EndProcess() == "FastScintillation") 
             {
-                if (!this->assessParticle(*kaon))
-                    break;
-
-                this->fillSignature(kaon, signature);
-                auto daughters = common::GetDaughters(mcp_map.at(kaon->TrackId()), mcp_map);
-                if (daughters.empty())
-                    break;
-
-                for (const auto& daugh : daughters) {
-                    if (daugh->PdgCode() == kaon->PdgCode()) {
-                        this->fillSignature(daugh, signature);
-                        kaon = daugh;
-                    }
-                }
-            }
-
-            if (kaon->EndProcess() == "Decay" || kaon->EndProcess() == "FastScintillation") 
-            {
+                std::cout << end_kaon->EndProcess() << std::endl;
                 auto decay = common::GetDaughters(mcp_map.at(kaon->TrackId()), mcp_map);
                 std::vector<int> found_dtrs;
+                std::vector<art::Ptr<simb::MCParticle>> clean_decay;
 
                 for (const auto& elem : decay) 
+                {
+                    if (std::abs(elem->PdgCode()) == 11) 
+                        continue;
+
                     found_dtrs.push_back(elem->PdgCode());
+                    clean_decay.push_back(elem);
+                }
 
                 std::vector<std::vector<int>> decay_modes;
                 if (kaon->PdgCode() == 321) {  // K+
@@ -109,24 +108,29 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signa
                     }
                 }
 
+                std::cout << valid_decay << std::endl;
+
                 if (valid_decay) 
                 {
-                    bool all_pass = std::all_of(decay.begin(), decay.end(), [&](const auto& elem) {
+                    bool all_pass = std::all_of(clean_decay.begin(), clean_decay.end(), [&](const auto& elem) {
                         return this->assessParticle(*elem);
                     });
+
+                    std::cout << all_pass << std::endl;
 
                     if (all_pass) 
                     {
                         signature_found = true;
 
                         this->fillSignature(mcp_map[mcp.TrackId()], signature);
-                        for (const auto& elem : decay) 
+                        for (const auto& elem : clean_decay) 
                         {
                             const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
                             if (info->Charge() != 0.0) 
                             {
+                                std::cout << "Filling signature" << std::endl;
                                 this->fillSignature(elem, signature);
-                                addDaughterInteractions(elem, addDaughterInteractions);
+                                auto end_particle = addDaughterInteractions(elem, addDaughterInteractions);
                             }
                         }
 
