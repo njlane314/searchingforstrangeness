@@ -1,5 +1,5 @@
-#ifndef CHARGEDKAONSIGNATURE_CXX
-#define CHARGEDKAONSIGNATURE_CXX
+#ifndef SIGNATURE_CHARGEDKAON_CXX
+#define SIGNATURE_CHARGEDKAON_CXX
 
 #include <iostream>
 #include "SignatureToolBase.h"
@@ -12,7 +12,6 @@ class ChargedKaonSignature : public SignatureToolBase
 public:
     explicit ChargedKaonSignature(const fhicl::ParameterSet& pset)
     : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _decay_mode{pset.get<std::string>("DecayMode", "muonic")} 
     {
         configure(pset); 
     }
@@ -24,14 +23,13 @@ public:
     }
 
 protected:
-    void findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature) override;
+    void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
 
 private:
     art::InputTag _MCPproducer;  
-    std::string _decay_mode;
 };
 
-void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollection& signature_coll, bool& found_signature)
+void ChargedKaonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
 
@@ -41,58 +39,99 @@ void ChargedKaonSignature::findSignature(art::Event const& evt, SignatureCollect
         mcp_map[mcp->TrackId()] = mcp;
     }
 
-    for (const auto &mc_particle : *mcp_h) 
+    auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> void {
+        auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
+        for (const auto& daugh : daughters) {
+            if (daugh->PdgCode() == particle->PdgCode()) {
+                this->fillSignature(daugh, signature); 
+                self(daugh, self); 
+            }
+        }
+    };
+
+    for (const auto &mcp : *mcp_h) 
     {
-        int pdg_code = std::abs(mc_particle.PdgCode());
-
-        if (pdg_code == 321 && mc_particle.Process() == "primary" && (mc_particle.EndProcess() == "Decay" || mc_particle.EndProcess() == "FastScintillation")  && !found_signature) 
+        if (std::abs(mcp.PdgCode()) == 321 && mcp.Process() == "primary"  && !signature_found) 
         {
-            auto daughters = common::GetDaughters(mcp_map.at(mc_particle.TrackId()), mcp_map);
-            daughters.erase(std::remove_if(daughters.begin(), daughters.end(), [](const auto& dtr) {
-                return dtr->Process() != "Decay";
-            }), daughters.end());
-
-            for (const auto& dtr : daughters)
+            auto particle_iter = mcp_map.find(mcp.TrackId());
+            if (particle_iter == mcp_map.end()) 
+                continue;
+            
+            auto kaon = particle_iter->second;
+            while (kaon->EndProcess() != "Decay" && kaon->EndProcess() != "FastScintillation")
             {
-                std::cout << dtr->PdgCode() << std::endl;
-                std::cout << dtr->Process() << std::endl;
-            }
-
-            std::vector<int> expected_dtrs;
-            if (_decay_mode == "muonic")  
-            {
-                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{-13, +14}  // K+ -> Muon+ + Neutrino
-                                                    : std::vector<int>{+13, -14};            // K- -> Muon- + Antineutrino
-            }
-            else if (_decay_mode == "pionic") 
-            {
-                expected_dtrs = (mc_particle.PdgCode() == 321) ? std::vector<int>{211, 111}  // K+ -> Pi+ + Pi0
-                                                    : std::vector<int>{-211, 111};           // K- -> Pi- + Pi0
-            }
-
-            std::vector<int> found_dtrs;
-            for (const auto &dtr : daughters) 
-                found_dtrs.push_back(dtr->PdgCode());
-
-            std::sort(expected_dtrs.begin(), expected_dtrs.end());
-            std::sort(found_dtrs.begin(), found_dtrs.end());
-
-            if (found_dtrs == expected_dtrs) 
-            {   
-                bool all_above_threshold = std::all_of(daughters.begin(), daughters.end(), [&](const auto& dtr) {
-                    return this->aboveThreshold(*dtr);
-                });
-
-                if (all_above_threshold) 
-                {
-                    found_signature = true;
-
-                    this->fillSignature(mcp_map[mc_particle.TrackId()],signature_coll);
-
-                    for (const auto &dtr : daughters) 
-                        this->fillSignature(dtr, signature_coll);
-
+                if (!this->assessParticle(*kaon))
                     break;
+
+                this->fillSignature(kaon, signature);
+                auto daughters = common::GetDaughters(mcp_map.at(kaon->TrackId()), mcp_map);
+                if (daughters.empty())
+                    break;
+
+                for (const auto& daugh : daughters) {
+                    if (daugh->PdgCode() == kaon->PdgCode()) {
+                        this->fillSignature(daugh, signature);
+                        kaon = daugh;
+                    }
+                }
+            }
+
+            if (kaon->EndProcess() == "Decay" || kaon->EndProcess() == "FastScintillation") 
+            {
+                auto decay = common::GetDaughters(mcp_map.at(kaon->TrackId()), mcp_map);
+                std::vector<int> found_dtrs;
+
+                for (const auto& elem : decay) 
+                    found_dtrs.push_back(elem->PdgCode());
+
+                std::vector<std::vector<int>> decay_modes;
+                if (kaon->PdgCode() == 321) {  // K+
+                    decay_modes = {
+                        {-13, +14},   // mu+ + neutrino
+                        {211, 111}    // pi+ + pi0
+                    };
+                } else if (kaon->PdgCode() == -321) {  // K-
+                    decay_modes = {
+                        {+13, -14},   // mu- + antineutrino
+                        {-211, 111}   // pi- + pi0
+                    };
+                }
+
+                std::sort(found_dtrs.begin(), found_dtrs.end());
+
+                bool valid_decay = false;
+                for (const auto& mode : decay_modes) {
+                    std::vector<int> sorted_mode = mode;
+                    std::sort(sorted_mode.begin(), sorted_mode.end());
+                    if (found_dtrs == sorted_mode) {
+                        valid_decay = true;
+                        break;
+                    }
+                }
+
+                if (valid_decay) 
+                {
+                    bool all_pass = std::all_of(decay.begin(), decay.end(), [&](const auto& elem) {
+                        return this->assessParticle(*elem);
+                    });
+
+                    if (all_pass) 
+                    {
+                        signature_found = true;
+
+                        this->fillSignature(mcp_map[mcp.TrackId()], signature);
+                        for (const auto& elem : decay) 
+                        {
+                            const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
+                            if (info->Charge() != 0.0) 
+                            {
+                                this->fillSignature(elem, signature);
+                                addDaughterInteractions(elem, addDaughterInteractions);
+                            }
+                        }
+
+                        break;
+                    }
                 }
             }
         }

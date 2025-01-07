@@ -6,8 +6,9 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_training_retry">
+<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_empty_test_2">
 ]>
+
 
 <job>
 
@@ -37,8 +38,9 @@
   <stage name="analyse">
   <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
   <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-  <fcl>run_signatureintegrityfilter.fcl</fcl>
-  <fcl>run_networktraining.fcl</fcl>
+  <fcl>run_visualiseeventanalyser.fcl</fcl>
+  <!--<fcl>run_signatureintegrityfilter.fcl</fcl>-->
+  <!--<fcl>run_networktraining.fcl</fcl>-->
   <!--<fcl>run_networktraining_k0.fcl</fcl>-->
   <!--<fcl>run_networktraining_Lambda.fcl</fcl>-->
   <!--<fcl>run_networktraining_kplus.fcl</fcl>-->
@@ -53,7 +55,7 @@
   <prestart>1</prestart>
   <filelistdef>1</filelistdef>
   <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>20</numjobs>
+  <numjobs>5</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>

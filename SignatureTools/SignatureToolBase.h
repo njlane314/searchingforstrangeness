@@ -1,5 +1,5 @@
-#ifndef SIGNATURETOOLBASE_H
-#define SIGNATURETOOLBASE_H
+#ifndef SIGNATURE_TOOLBASE_H
+#define SIGNATURE_TOOLBASE_H
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
@@ -24,13 +24,8 @@
 
 namespace signature {
 
-struct Signature
-{
-    int pdg;
-    int trckid; 
-};
-
-using SignatureCollection = std::vector<Signature>&;
+using Signature = std::vector<art::Ptr<simb::MCParticle>>;
+using Pattern = std::vector<Signature>;
 
 class SignatureToolBase 
 {
@@ -40,87 +35,61 @@ public:
     
     virtual void configure(fhicl::ParameterSet const& pset)
     {
-        const std::vector<int> pdg_vec = {211, 13, 2212, 321, 11, 3222, 3112, 14, 2112};
-        const std::vector<std::string> part_vec = {"Pion", "Muon", "Proton", "Kaon", "Electron", "SigmaPlus", "SigmaMinus", "NuMu", "Neutron"};
-        for (size_t i = 0; i < pdg_vec.size(); ++i) {
-            _thresh_map[pdg_vec[i]] = pset.get<float>(part_vec[i] + "Threshold", 0.1);
-        }
-
         _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
         _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
-
-        _fv_x_start = pset.get<float>("fidvolXstart", 10.0);
-        _fv_y_start = pset.get<float>("fidvolYstart", 15.0);
-        _fv_z_start = pset.get<float>("fidvolZstart", 10.0);
-        _fv_x_end = pset.get<float>("fidvolXend", 10.0);
-        _fv_y_end = pset.get<float>("fidvolYend", 15.0);
-        _fv_z_end = pset.get<float>("fidvolZend", 50.0);
     }
 
-    bool identifySignalParticles(art::Event const& evt, SignatureCollection& sig_coll)
+    bool constructSignature(art::Event const& evt, Signature& signature)
     {
+        signature.clear();
         auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
         if (truth_handle->size() != 1) 
-        {
-            mf::LogWarning("Skipping this event, as it has more than one neutrino interaction.");
-            sig_coll.clear();
             return false;
-        }
 
-        const simb::MCTruth& truth = truth_handle->at(0);
-        const TLorentzVector& nu_vertex = truth.GetNeutrino().Nu().Position();
-        double vertex[3] = {nu_vertex.X(), nu_vertex.Y(), nu_vertex.Z()};
+        bool signature_found = false;
+        this->findSignature(evt, signature, signature_found);
 
-        std::cout << "Vertex: " << vertex[0] << "  " << vertex[1] << "  " << vertex[2] << std::endl;
+        if (!signature_found)  
+            signature.clear();
 
-        if (!common::point_inside_fv(vertex, _fv_x_start, _fv_y_start, _fv_z_start, _fv_x_end, _fv_y_end, _fv_z_end)) 
-        {
-            mf::LogWarning("The neutrino interaction lies outside the fiducial volume, skipping interaction.");
-            sig_coll.clear();
-            return false;
-        }
-
-        bool found_signature = false;
-        this->findSignature(evt, sig_coll, found_signature);
-
-        if (!found_signature)  
-            sig_coll.clear();
-
-        return found_signature;
+        return signature_found;
     }
 
 protected:
-    std::unordered_map<int, float> _thresh_map;
-
     art::InputTag _MCPproducer, _MCTproducer;
 
-    float _fv_x_start, _fv_y_start, _fv_z_start;
-    float _fv_x_end, _fv_y_end, _fv_z_end;
-
-    bool aboveThreshold(const simb::MCParticle& mcp) const 
+    bool assessParticle(const simb::MCParticle& mcp) const 
     {
         float mom_mag = mcp.Momentum().Vect().Mag();
         int abs_pdg = std::abs(mcp.PdgCode());
 
-        auto it = _thresh_map.find(abs_pdg);
-        if (it != _thresh_map.end()) 
+        const TParticlePDG* particle = TDatabasePDG::Instance()->GetParticle(mcp.PdgCode());
+        if (particle->Charge() == 0.0) 
+            return true;
+
+        std::unordered_map<int, float> thresh_map = {
+            {211, 0.1},    // pi
+            {13, 0.1},     // mu
+            {2212, 0.1},   // p
+            {321, 0.1},    // K
+            {11, 0.1},     // e
+            {3222, 0.1},   // sigma+
+            {3112, 0.1},   // sigma-
+        };
+
+        auto it = thresh_map.find(abs_pdg);
+        if (it != thresh_map.end())
             return mom_mag > it->second;
 
-        mf::LogWarning("The threshold for this particle isn't avaliable, setting to failed threshold requirement.");
         return false;
     }
 
-    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, SignatureCollection& sig_coll) 
+    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
     {
-        Signature signature;
-
-        signature.pdg = mcp->PdgCode();
-        signature.trckid = mcp->TrackId();
-
-        sig_coll.push_back(signature);
+        signature.push_back(mcp);
     }
 
-    virtual void findSignature(art::Event const& evt, SignatureCollection& sig_coll, bool& found_signature) = 0;
+    virtual void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) = 0;
 };
 
 } 
