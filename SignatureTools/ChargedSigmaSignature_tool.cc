@@ -76,7 +76,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                 for (const auto& elem : decay)
                 {
                     std::cout << elem->PdgCode() << std::endl;
-                    if (std::abs(elem->PdgCode()) == 11) 
+                    if (std::abs(elem->PdgCode()) == 11 || std::abs(elem->PdgCode()) == 22 || std::abs(elem->PdgCode()) >= 1000000000) 
                         continue;
 
                     found_dtrs.push_back(elem->PdgCode());
