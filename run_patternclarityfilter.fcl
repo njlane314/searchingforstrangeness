@@ -59,7 +59,7 @@ physics:
             }
 
             BadChannelFile: "badchannels.txt"
-            QuickVisualisation: true
+            QuickVisualise: false
             TargetDetectorPlane: 1
         }
     }

@@ -413,8 +413,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                                         break;
                                     }
                                 }
+                                sig_ctr++;
                             }
-                            sig_ctr++;
                         }
 
                         if (found_flag)
