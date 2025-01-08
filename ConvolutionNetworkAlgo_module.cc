@@ -400,15 +400,14 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                                 {
                                     if (signature[it]->TrackId() == assmcp[ia]->TrackId()) 
                                     {
-                                        //signature_flags.at(it) = 1.f;
                                         signature_flags.at(sig_ctr) = 1.f;
                                         found_flag = true;
 
                                         break;
                                     }
                                 }
+                                sig_ctr++;
                             }
-                            sig_ctr++;
                         }
 
                         if (found_flag)

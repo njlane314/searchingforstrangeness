@@ -55,7 +55,7 @@ physics:
             SignatureTools: @local::SignatureTools
 
             BadChannelFile: "badchannels.txt"
-            QuickVisualisation: false
+            QuickVisualise: false
         }
     }
 
