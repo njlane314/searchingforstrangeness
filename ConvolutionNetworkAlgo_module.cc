@@ -393,19 +393,22 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                         bool found_flag = false;
                         if (assmdt[ia]->isMaxIDE == 1) 
                         {
+                            size_t sig_ctr = 0;
                             for (const auto& signature : signature_coll) 
                             {
                                 for (size_t it = 0; it < signature.size(); ++it)
                                 {
                                     if (signature[it]->TrackId() == assmcp[ia]->TrackId()) 
                                     {
-                                        signature_flags.at(it) = 1.f;
+                                        //signature_flags.at(it) = 1.f;
+                                        signature_flags.at(sig_ctr) = 1.f;
                                         found_flag = true;
 
                                         break;
                                     }
                                 }
                             }
+                            sig_ctr++;
                         }
 
                         if (found_flag)
