@@ -101,5 +101,5 @@ LambdaSignature:
 SignatureTools:
 {
     leptonic: @local::MuonSignature
-    hadronic: @local::LambdaSignature
+    hadronic: @local::ChargedKaonSignature
 }

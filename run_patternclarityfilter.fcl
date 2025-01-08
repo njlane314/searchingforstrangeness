@@ -52,10 +52,15 @@ physics:
 
             CaloAlg: @local::microboone_calo_mcc9_data
 
-            SignatureTools: @local::SignatureTools
+            SignatureTools:
+            {
+                leptonic: @local::MuonSignature
+                hadronic: @local::KaonShortSignature
+            }
 
             BadChannelFile: "badchannels.txt"
             QuickVisualise: false
+            TargetDetectorPlane: 1
         }
     }
 

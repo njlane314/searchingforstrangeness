@@ -156,7 +156,7 @@ bool PatternClarityFilter::filter(art::Event &e)
             continue; 
 
         const geo::WireID& wire_id = hit->WireID(); 
-        if (wire_id.Plane != _targetDetectorPlane) 
+        if (wire_id.Plane != static_cast<unsigned int>(_targetDetectorPlane))
             continue;
 
         auto assmcp = mcp_bkth_assoc->at(hit.key());
@@ -225,12 +225,17 @@ bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::P
         return false;
 
     double patt_comp = static_cast<double>(patt_hits.size()) / mc_hits.size();
+    std::cout << "Pattern completeness " << patt_comp << std::endl;
+    std::cout << "Total pattern hits " << tot_patt_hit << std::endl;
     if (patt_comp < _patt_hit_comp_thresh || tot_patt_hit < _patt_hit_thresh)
         return false;
 
     for (const auto& [_, num_hits] : sig_hit_map) 
+    {
+        std::cout << "Signature hit " << num_hits << std::endl;
         if (num_hits / tot_patt_hit < _sig_hit_comp_thresh) 
             return false;       
+    }
 
     return true;
 }
