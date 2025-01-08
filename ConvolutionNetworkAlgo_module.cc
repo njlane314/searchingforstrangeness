@@ -156,9 +156,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     size_t num_channels = _geo->Nchannels();
     _bad_channel_mask.resize(num_channels, false);
 
-    if (_veto_bad_channels) {
+    if (_veto_bad_channels)
         this->initialiseBadChannelMask();
-    }
 }
 
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
@@ -327,12 +326,20 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     if (!found_vertex) 
         return; 
 
-    std::vector<signature::Signature> signature_coll;
+    signature::Pattern patt;
+    bool patt_found = true;
     for (auto& signatureTool : _signatureToolsVec) {
         signature::Signature signature; 
-        bool found_signature = signatureTool->constructSignature(evt, signature);
-        signature_coll.push_back(signature);
+        if (!signatureTool->constructSignature(evt, signature)) {
+            patt_found = false;
+            break;
+        }
+
+        patt.push_back(signature);
     }
+
+    if (!patt_found && !patt.empty())
+        patt.clear();
 
     unsigned int n_flags = _signatureToolsVec.size(); 
     int run = evt.run();
@@ -394,13 +401,12 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                         if (assmdt[ia]->isMaxIDE == 1) 
                         {
                             size_t sig_ctr = 0;
-                            for (const auto& signature : signature_coll) 
+                            for (const auto& sig : patt) 
                             {
-                                for (size_t it = 0; it < signature.size(); ++it)
+                                for (size_t it = 0; it < sig.size(); ++it)
                                 {
-                                    if (signature[it]->TrackId() == assmcp[ia]->TrackId()) 
+                                    if (sig[it]->TrackId() == assmcp[ia]->TrackId()) 
                                     {
-                                        //signature_flags.at(it) = 1.f;
                                         signature_flags.at(sig_ctr) = 1.f;
                                         found_flag = true;
 
