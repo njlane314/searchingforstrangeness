@@ -23,7 +23,7 @@ public:
         ClarityToolBase::configure(pset);
     }
 
-    bool filter(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
+    bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
 
 private:
 
@@ -33,8 +33,10 @@ private:
 
 };
 
-bool PatternCompleteness::filter(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
+bool PatternCompleteness::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
+
+    std::cout << "Testing PatternCompleteness" << std::endl;
 
     std::unordered_map<int, int> sig_hit_map;
     double tot_patt_hit = 0; 
@@ -66,14 +68,14 @@ bool PatternCompleteness::filter(art::Event &e, signature::Pattern& patt, const 
         return false;
 
     double patt_comp = static_cast<double>(patt_hits.size()) / mc_hits.size();
-    std::cout << "Pattern completeness " << patt_comp << std::endl;
-    std::cout << "Total pattern hits " << tot_patt_hit << std::endl;
+    //std::cout << "Pattern completeness " << patt_comp << std::endl;
+    //std::cout << "Total pattern hits " << tot_patt_hit << std::endl;
     if (patt_comp < _patt_hit_comp_thresh || tot_patt_hit < _patt_hit_thresh)
         return false;
 
     for (const auto& [_, num_hits] : sig_hit_map) 
     {
-        std::cout << "Signature hit " << num_hits << std::endl;
+        //std::cout << "Signature hit " << num_hits << std::endl;
         if (num_hits / tot_patt_hit < _sig_hit_comp_thresh) 
             return false;       
     }

@@ -180,23 +180,37 @@ bool PatternClarityFilter::filter(art::Event &e)
         }
     }
 
-     std::cout << "New Event" << std::endl;
+    for (auto &clarityTool : _clarityToolsVec)
+      if(!clarityTool->filter(e, patt, mc_hits, mcp_bkth_assoc)) return false;
 
-     for (auto &clarityTool : _clarityToolsVec)
-        clarityTool->filter(e, patt, mc_hits, mcp_bkth_assoc);
-
+    /*
     // A clear pattern is defined as requiring that:
     // 1) the interaction topology is dominated by its specific pattern, 
     // 2) that each signature of the pattern retains its integrity within the detector, 
     // 3) and that most of the hits of the signature are exclusive. 
-    if (!this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc))
+
+    std::cout << "Testing HitExclusivity" << std::endl;
+    if(this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc)) std::cout << "Pass" << std::endl;
+    else std::cout << "Fail" << std::endl;
+
+    std::cout << "Testing PatternCompleteness" << std::endl;
+    if(this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc)) std::cout << "Pass" << std::endl;
+    else std::cout << "Fail" << std::endl;
+
+    std::cout << "Testing SignatureIntegrity" << std::endl;
+    if(this->filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc)) std::cout << "Pass" << std::endl;
+    else std::cout << "Fail" << std::endl;
+     
+    if (!this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc)){
         return false;
+    }
 
     if (!this->filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
 
     if (!this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
+    */
 
     if (_quickVisualise)
     {
@@ -240,14 +254,14 @@ bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::P
         return false;
 
     double patt_comp = static_cast<double>(patt_hits.size()) / mc_hits.size();
-    std::cout << "Pattern completeness " << patt_comp << std::endl;
-    std::cout << "Total pattern hits " << tot_patt_hit << std::endl;
+    //std::cout << "Pattern completeness " << patt_comp << std::endl;
+    //std::cout << "Total pattern hits " << tot_patt_hit << std::endl;
     if (patt_comp < _patt_hit_comp_thresh || tot_patt_hit < _patt_hit_thresh)
         return false;
 
     for (const auto& [_, num_hits] : sig_hit_map) 
     {
-        std::cout << "Signature hit " << num_hits << std::endl;
+        //std::cout << "Signature hit " << num_hits << std::endl;
         if (num_hits / tot_patt_hit < _sig_hit_comp_thresh) 
             return false;       
     }
