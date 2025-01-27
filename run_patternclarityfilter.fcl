@@ -61,6 +61,7 @@ physics:
             ClarityTools: 
             {
                 patterncompleteness: @local::PatternCompleteness
+                signatureintegrity: @local::SignatureIntegrity
             }
 
             BadChannelFile: "badchannels.txt"

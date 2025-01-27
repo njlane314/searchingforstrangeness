@@ -110,4 +110,9 @@ PatternCompleteness: {
     BadChannelFile: "badchannels.txt"
 }
 
+SignatureIntegrity: {
+    tool_type: "SignatureIntegrity"
+    BadChannelFile: "badchannels.txt"
+}
+
 
