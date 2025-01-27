@@ -57,21 +57,12 @@ public:
         loadBadChannelMap();
     }
 
+    virtual bool filter(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc) = 0;
 
 protected:
 
     std::vector<bool> _bad_channel_mask;
     std::string _bad_channel_file;
-
-    /*
-    const double _patt_hit_comp_thresh =  0.5;
-    const int _patt_hit_thresh = 100;
-    const double _sig_hit_comp_thresh = 0.1;
-    const int _chan_act_reg = 3;
-    const double _hit_exclus_thresh = 0.5;
-    const double _sig_exclus_thresh = 0.8;
-    const int _targetDetectorPlane = 0;
-    */
 
     const geo::GeometryCore* _geo = art::ServiceHandle<geo::Geometry>()->provider();
 

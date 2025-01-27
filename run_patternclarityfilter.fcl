@@ -62,6 +62,7 @@ physics:
             {
                 patterncompleteness: @local::PatternCompleteness
                 signatureintegrity: @local::SignatureIntegrity
+                hitexclusivity: @local::HitExclusivity
             }
 
             BadChannelFile: "badchannels.txt"

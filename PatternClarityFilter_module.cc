@@ -180,19 +180,10 @@ bool PatternClarityFilter::filter(art::Event &e)
         }
     }
 
+     std::cout << "New Event" << std::endl;
 
-     /*
-     claritytools::LoadBadChannels();
-
-     if (claritytools::filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc))
-       return false;
-
-     if (claritytools::filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc))
-       return false;
-
-     if (claritytools::filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
-       return false;
-     */       
+     for (auto &clarityTool : _clarityToolsVec)
+        clarityTool->filter(e, patt, mc_hits, mcp_bkth_assoc);
 
     // A clear pattern is defined as requiring that:
     // 1) the interaction topology is dominated by its specific pattern, 

@@ -21,15 +21,16 @@ public:
         ClarityToolBase::configure(pset);
     }
 
+    bool filter(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
+
 private:
 
-    bool filterSignatureIntegrity(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
 
    const int _chan_act_reg;
 
 };
 
-bool SignatureIntegrity::filterSignatureIntegrity(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
+bool SignatureIntegrity::filter(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
     auto isChannelRegionActive = [&](const TVector3& point) -> bool {
         for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {

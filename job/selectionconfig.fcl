@@ -115,4 +115,8 @@ SignatureIntegrity: {
     BadChannelFile: "badchannels.txt"
 }
 
+HitExclusivity: {
+    tool_type: "HitExclusivity"
+    BadChannelFile: "badchannels.txt"
+}
 
