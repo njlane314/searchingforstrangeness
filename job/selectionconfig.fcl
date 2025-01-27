@@ -103,3 +103,11 @@ SignatureTools:
     leptonic: @local::MuonSignature
     hadronic: @local::ChargedKaonSignature
 }
+
+
+PatternCompleteness: {
+    tool_type: "PatternCompleteness"
+    BadChannelFile: "badchannels.txt"
+}
+
+

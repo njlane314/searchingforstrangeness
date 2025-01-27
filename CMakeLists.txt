@@ -22,6 +22,7 @@ add_subdirectory(AnalysisTools)
 add_subdirectory(SignatureTools)
 add_subdirectory(job)
 add_subdirectory(scripts)
+add_subdirectory(ClarityTools)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
 message("Compiler: ${CMAKE_CXX_COMPILER}")

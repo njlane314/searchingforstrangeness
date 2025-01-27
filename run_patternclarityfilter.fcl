@@ -58,6 +58,11 @@ physics:
                 hadronic: @local::KaonShortSignature
             }
 
+            ClarityTools: 
+            {
+                patterncompleteness: @local::PatternCompleteness
+            }
+
             BadChannelFile: "badchannels.txt"
             QuickVisualise: false
             TargetDetectorPlane: 1

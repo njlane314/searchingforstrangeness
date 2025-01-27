@@ -29,6 +29,8 @@
 #include "SignatureTools/SignatureToolBase.h"
 #include "SignatureTools/VertexToolBase.h"
 
+#include "ClarityTools/ClarityToolBase.h"
+
 #include "larcorealg/Geometry/PlaneGeo.h"
 #include "larcorealg/Geometry/WireGeo.h"
 
@@ -72,6 +74,7 @@ private:
 
     calo::CalorimetryAlg* _calo_alg;
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
+    std::vector<std::unique_ptr<::claritytools::ClarityToolBase>> _clarityToolsVec;
     int _targetDetectorPlane;
     bool _quickVisualise;
 
@@ -103,6 +106,13 @@ PatternClarityFilter::PatternClarityFilter(fhicl::ParameterSet const &pset)
     {
         auto const tool_pset = tool_psets.get<fhicl::ParameterSet>(tool_pset_label);
         _signatureToolsVec.push_back(art::make_tool<::signature::SignatureToolBase>(tool_pset));
+    };
+
+    const fhicl::ParameterSet &claritytool_psets = pset.get<fhicl::ParameterSet>("ClarityTools");
+    for (auto const &tool_pset_label : claritytool_psets.get_pset_names())
+    {
+      auto const tool_pset = claritytool_psets.get<fhicl::ParameterSet>(tool_pset_label);
+      _clarityToolsVec.push_back(art::make_tool<::claritytools::ClarityToolBase>(tool_pset));
     };
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
@@ -170,6 +180,20 @@ bool PatternClarityFilter::filter(art::Event &e)
         }
     }
 
+
+     /*
+     claritytools::LoadBadChannels();
+
+     if (claritytools::filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc))
+       return false;
+
+     if (claritytools::filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc))
+       return false;
+
+     if (claritytools::filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
+       return false;
+     */       
+
     // A clear pattern is defined as requiring that:
     // 1) the interaction topology is dominated by its specific pattern, 
     // 2) that each signature of the pattern retains its integrity within the detector, 
@@ -189,7 +213,7 @@ bool PatternClarityFilter::filter(art::Event &e)
         common::visualiseTrueEvent(e, _MCPproducer, _HitProducer, _BacktrackTag, filename);
         common::visualiseSignature(e, _MCPproducer, _HitProducer, _BacktrackTag, patt, filename);
     }
-    
+
     return true; 
 }
 

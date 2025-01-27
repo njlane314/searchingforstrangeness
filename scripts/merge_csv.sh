@@ -6,6 +6,7 @@
 # Training data folder needs to be somewhere on /exp/uboone/data/
 
 destination=${1}
+mkdir -p ${destination}
 
 for plane in U V W; do
 
