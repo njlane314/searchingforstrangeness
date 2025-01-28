@@ -23,7 +23,7 @@ public:
     }
 
     //bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
-    bool filter(const art::Event &e, const signature::Pattern& patt);
+    bool filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
 
 private:
 
@@ -32,12 +32,12 @@ private:
 };
 
 
-bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt)
+bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view)
 //bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
 
     //std::cout << "Testing SignatureIntegrity" << std::endl;
-    this->loadEventHandles(e);
+    this->loadEventHandles(e,view);
 
     auto isChannelRegionActive = [&](const TVector3& point) -> bool {
         for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {

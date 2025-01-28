@@ -25,7 +25,7 @@ public:
     }
 
     //bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
-    bool filter(const art::Event &e, const signature::Pattern& patt);
+    bool filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
 
 private:
 
@@ -36,11 +36,11 @@ private:
 };
 
 //bool PatternCompleteness::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
-bool PatternCompleteness::filter(const art::Event &e, const signature::Pattern& patt)
+bool PatternCompleteness::filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view)
 {
 
     //std::cout << "Testing PatternCompleteness" << std::endl;
-    this->loadEventHandles(e);
+    this->loadEventHandles(e,view);
 
     std::unordered_map<int, int> sig_hit_map;
     double tot_patt_hit = 0; 
