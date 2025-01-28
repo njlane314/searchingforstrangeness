@@ -9,7 +9,8 @@ class SignatureIntegrity : ClarityToolBase {
 
 public:
     explicit SignatureIntegrity(const fhicl::ParameterSet& pset) :
-     _chan_act_reg{pset.get<int>("ChannelActiveRegion", 3)}
+      ClarityToolBase{(pset)} 
+    , _chan_act_reg{pset.get<int>("ChannelActiveRegion", 3)}
     {
         configure(pset);
     }
@@ -21,19 +22,23 @@ public:
         ClarityToolBase::configure(pset);
     }
 
-    bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
+    //bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
+    bool filter(const art::Event &e, const signature::Pattern& patt);
 
 private:
-
 
    const int _chan_act_reg;
 
 };
 
-bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
+
+bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt)
+//bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
 
-    std::cout << "Testing SignatureIntegrity" << std::endl;
+    //std::cout << "Testing SignatureIntegrity" << std::endl;
+    this->loadEventHandles(e);
+
     auto isChannelRegionActive = [&](const TVector3& point) -> bool {
         for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {
             try {

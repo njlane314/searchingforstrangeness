@@ -108,15 +108,18 @@ SignatureTools:
 PatternCompleteness: {
     tool_type: "PatternCompleteness"
     BadChannelFile: "badchannels.txt"
+    TargetDetectorPlane: 1
 }
 
 SignatureIntegrity: {
     tool_type: "SignatureIntegrity"
     BadChannelFile: "badchannels.txt"
+    TargetDetectorPlane: 1
 }
 
 HitExclusivity: {
     tool_type: "HitExclusivity"
     BadChannelFile: "badchannels.txt"
+    TargetDetectorPlane: 1
 }
 

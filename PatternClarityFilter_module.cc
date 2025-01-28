@@ -89,7 +89,7 @@ PatternClarityFilter::PatternClarityFilter(fhicl::ParameterSet const &pset)
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
-    , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
+    //, _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _patt_hit_comp_thresh{pset.get<double>("PatternHitCompletenessThreshold", 0.5)}
     , _patt_hit_thresh{pset.get<int>("PatternHitThreshold", 100)}
     , _sig_hit_comp_thresh{pset.get<double>("SignatureHitCompletenessThreshold", 0.1)}
@@ -115,6 +115,7 @@ PatternClarityFilter::PatternClarityFilter(fhicl::ParameterSet const &pset)
       _clarityToolsVec.push_back(art::make_tool<::claritytools::ClarityToolBase>(tool_pset));
     };
 
+    /*
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
     size_t num_channels = _geo->Nchannels();
     _bad_channel_mask.resize(num_channels, false);
@@ -139,6 +140,7 @@ PatternClarityFilter::PatternClarityFilter(fhicl::ParameterSet const &pset)
             }
         }
     }
+   */
 }
 
 bool PatternClarityFilter::filter(art::Event &e) 
@@ -151,7 +153,7 @@ bool PatternClarityFilter::filter(art::Event &e)
 
         patt.push_back(signature);
     }
-
+/*
     art::Handle<std::vector<recob::Hit>> hit_h;
     if (!e.getByLabel(_HitProducer, hit_h)) 
         return false;
@@ -179,16 +181,16 @@ bool PatternClarityFilter::filter(art::Event &e)
             mc_hits.push_back(hit);
         }
     }
+*/
 
-    for (auto &clarityTool : _clarityToolsVec)
-      if(!clarityTool->filter(e, patt, mc_hits, mcp_bkth_assoc)) return false;
+   for (auto &clarityTool : _clarityToolsVec)
+       if(!clarityTool->filter(e, patt)) return false;
 
-    /*
     // A clear pattern is defined as requiring that:
     // 1) the interaction topology is dominated by its specific pattern, 
     // 2) that each signature of the pattern retains its integrity within the detector, 
     // 3) and that most of the hits of the signature are exclusive. 
-
+/*
     std::cout << "Testing HitExclusivity" << std::endl;
     if(this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc)) std::cout << "Pass" << std::endl;
     else std::cout << "Fail" << std::endl;
@@ -200,7 +202,9 @@ bool PatternClarityFilter::filter(art::Event &e)
     std::cout << "Testing SignatureIntegrity" << std::endl;
     if(this->filterSignatureIntegrity(e, patt, mc_hits, mcp_bkth_assoc)) std::cout << "Pass" << std::endl;
     else std::cout << "Fail" << std::endl;
-     
+*/
+
+/*     
     if (!this->filterPatternCompleteness(e, patt, mc_hits, mcp_bkth_assoc)){
         return false;
     }
@@ -210,7 +214,7 @@ bool PatternClarityFilter::filter(art::Event &e)
 
     if (!this->filterHitExclusivity(e, patt, mc_hits, mcp_bkth_assoc))
         return false;
-    */
+*/
 
     if (_quickVisualise)
     {
@@ -221,7 +225,7 @@ bool PatternClarityFilter::filter(art::Event &e)
 
     return true; 
 }
-
+/*
 bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
     std::unordered_map<int, int> sig_hit_map;
@@ -337,5 +341,5 @@ bool PatternClarityFilter::filterHitExclusivity(art::Event &e, signature::Patter
 
     return true;
 }
-
+*/
 DEFINE_ART_MODULE(PatternClarityFilter)

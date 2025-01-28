@@ -49,6 +49,15 @@ class ClarityToolBase {
 
 public:
 
+    ClarityToolBase(fhicl::ParameterSet const& pset) :
+      _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
+    , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
+    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
+    , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _targetDetectorPlane{pset.get<int>("TargetDetectorPlane", 2)}
+    {
+    }   
+ 
     virtual ~ClarityToolBase() noexcept = default;
     
     virtual void configure(fhicl::ParameterSet const& pset)
@@ -57,7 +66,8 @@ public:
         loadBadChannelMap();
     }
 
-    virtual bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc) = 0;
+    //virtual bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc) = 0;
+    virtual bool filter(const art::Event &e, const signature::Pattern& patt) = 0;
 
 protected:
 
@@ -65,9 +75,16 @@ protected:
     std::string _bad_channel_file;
 
     const geo::GeometryCore* _geo = art::ServiceHandle<geo::Geometry>()->provider();
+     
+    bool loadEventHandles(const art::Event &e);
+    std::vector<art::Ptr<recob::Hit>> _evt_hits;
+    std::vector<art::Ptr<recob::Hit>> _mc_hits;
+    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
 
 private:
 
+    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
+    int _targetDetectorPlane;
     void loadBadChannelMap();
 
 };
@@ -99,6 +116,41 @@ void ClarityToolBase::loadBadChannelMap(){
             }
         }
     }
+
+}
+
+bool ClarityToolBase::loadEventHandles(const art::Event &e){
+
+    _evt_hits.clear();
+    _mc_hits.clear();
+
+    art::Handle<std::vector<recob::Hit>> hit_h;
+    if (!e.getByLabel(_HitProducer, hit_h)) 
+        return false;
+
+    art::fill_ptr_vector(_evt_hits, hit_h);
+    _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_h, e, _BacktrackTag);
+
+    for (const auto& hit : _evt_hits) {
+        if (_bad_channel_mask[hit->Channel()]) 
+            continue; 
+
+        const geo::WireID& wire_id = hit->WireID(); 
+        if (wire_id.Plane != static_cast<unsigned int>(_targetDetectorPlane))
+            continue;
+
+        auto assmcp = _mcp_bkth_assoc->at(hit.key());
+        auto assmdt = _mcp_bkth_assoc->data(hit.key());
+        for (unsigned int ia = 0; ia < assmcp.size(); ++ia){
+            auto amd = assmdt[ia];
+            if (amd->isMaxIDEN != 1)
+                continue;
+            
+            _mc_hits.push_back(hit);
+        }
+    }
+
+    return true;
 
 }
 
