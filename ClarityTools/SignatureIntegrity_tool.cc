@@ -23,7 +23,7 @@ public:
     }
 
     //bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
-    bool filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
+    bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view);
 
 private:
 
@@ -32,7 +32,7 @@ private:
 };
 
 
-bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view)
+bool SignatureIntegrity::filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
 //bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 {
 
@@ -61,18 +61,16 @@ bool SignatureIntegrity::filter(const art::Event &e, const signature::Pattern& p
         return true;
     };
 
-    for (const auto& sig : patt) {
-        for (const auto& mcp_s : sig) {
-            TVector3 start(mcp_s->Vx(), mcp_s->Vy(), mcp_s->Vz());
-            if (!isChannelRegionActive(start))
-                return false;
+    for (const auto& mcp_s : sig) {
+      TVector3 start(mcp_s->Vx(), mcp_s->Vy(), mcp_s->Vz());
+      if (!isChannelRegionActive(start))
+        return false;
 
-            if (std::abs(mcp_s->PdgCode()) != 13) { 
-                TVector3 end(mcp_s->EndX(), mcp_s->EndY(), mcp_s->EndZ());
-                if (!isChannelRegionActive(end))
-                    return false;
-            }
-        }
+      if (std::abs(mcp_s->PdgCode()) != 13) { 
+        TVector3 end(mcp_s->EndX(), mcp_s->EndY(), mcp_s->EndZ());
+        if (!isChannelRegionActive(end))
+          return false;
+      }
     }
 
     return true;

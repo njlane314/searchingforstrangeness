@@ -65,9 +65,9 @@ public:
         loadBadChannelMap();
     }
 
-    //virtual bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc) = 0;
-    std::map<common::PandoraView,bool> filter3Plane(const art::Event &e, const signature::Pattern& patt);
-    virtual bool filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view) = 0;
+    std::map<common::PandoraView,std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
+    std::vector<bool> filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
+    virtual bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view) = 0;
 
 protected:
 
@@ -153,14 +153,25 @@ bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView 
 
 }
 
-std::map<common::PandoraView,bool> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt){
+std::map<common::PandoraView,std::vector<bool>> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt){
 
 
-  std::map<common::PandoraView,bool> result;
+  std::map<common::PandoraView,std::vector<bool>> result;
 
   for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
 
     result[static_cast<common::PandoraView>(view)] = this->filter(e,patt,static_cast<common::PandoraView>(view));
+  }
+
+  return result;
+
+}
+
+std::vector<bool> ClarityToolBase::filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view){
+
+  std::vector<bool> result;
+  for (const auto& sig : patt) {
+    result.push_back(this->filter(e,sig,view));
   }
 
   return result;

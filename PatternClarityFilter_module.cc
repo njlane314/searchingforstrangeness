@@ -183,8 +183,10 @@ bool PatternClarityFilter::filter(art::Event &e)
     }
 */
 
-    for (auto &clarityTool : _clarityToolsVec)
-      if(!clarityTool->filter(e, patt, static_cast<common::PandoraView>(_targetDetectorPlane))) return false;
+    for (auto &clarityTool : _clarityToolsVec){
+      std::vector<bool> filter_result =  clarityTool->filter(e, patt, static_cast<common::PandoraView>(_targetDetectorPlane));
+      if(std::find(filter_result.begin(),filter_result.end(),false) != filter_result.end()) return false;
+    }
 
     // A clear pattern is defined as requiring that:
     // 1) the interaction topology is dominated by its specific pattern, 
