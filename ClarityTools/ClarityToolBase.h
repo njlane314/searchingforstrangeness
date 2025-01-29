@@ -155,11 +155,9 @@ bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView 
 
 std::map<common::PandoraView,std::vector<bool>> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt){
 
-
   std::map<common::PandoraView,std::vector<bool>> result;
 
   for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
-
     result[static_cast<common::PandoraView>(view)] = this->filter(e,patt,static_cast<common::PandoraView>(view));
   }
 

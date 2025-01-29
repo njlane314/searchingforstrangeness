@@ -26,6 +26,7 @@
 #include "art/Utilities/make_tool.h"
 
 #include "SignatureTools/SignatureToolBase.h"
+#include "ClarityTools/ClarityToolBase.h"
 
 #include "TDatabasePDG.h"
 
@@ -42,9 +43,6 @@
 #include <iostream>
 #include <unordered_map>
 #include <cmath>
-
-//#include "ClarityTools/ClarityTool.h"
-
 
 class ConvolutionNetworkAlgo : public art::EDAnalyzer 
 {
@@ -90,6 +88,9 @@ private:
     std::vector<bool> _bad_channel_mask;
     const geo::GeometryCore* _geo;
 
+    const bool _filter_clarity;
+    std::vector<std::unique_ptr<::claritytools::ClarityToolBase>> _clarityToolsVec;
+
     void initialiseEvent(art::Event const& evt);
     void initialiseBadChannelMask();
     void prepareTrainingSample(art::Event const& evt);
@@ -125,6 +126,7 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
+    , _filter_clarity{pset.get<bool>("FilterClarity",false)}
 {
     try {
         if (!_training_mode) 
@@ -161,6 +163,18 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
 
     if (_veto_bad_channels)
         this->initialiseBadChannelMask();
+
+
+    if(_filter_clarity){
+      std::cout << "Configuring clarity tools" << std::endl;
+      const fhicl::ParameterSet &claritytool_psets = pset.get<fhicl::ParameterSet>("ClarityTools");
+      for (auto const &tool_pset_label : claritytool_psets.get_pset_names())
+      {
+        auto const tool_pset = claritytool_psets.get<fhicl::ParameterSet>(tool_pset_label);
+        _clarityToolsVec.push_back(art::make_tool<::claritytools::ClarityToolBase>(tool_pset));
+      }
+    }
+
 }
 
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
@@ -334,12 +348,21 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
     for (auto& signatureTool : _signatureToolsVec) {
         signature::Signature signature; 
         if (!signatureTool->constructSignature(evt, signature)) {
-            patt_found = false;
-            break;
+            //patt_found = false;
+            //break; // this break statement causes inconsistent lengh of the pattern if one of the signatures is not in the event at truth level - remove
         }
-
         patt.push_back(signature);
     }
+
+    std::map<common::PandoraView,std::vector<bool>> clarity_results_all_tools;
+    for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
+      clarity_results_all_tools[static_cast<common::PandoraView>(view)] = std::vector<bool>(_signatureToolsVec.size(),true);
+      for(size_t i_s=0;i_s<patt.size();i_s++){
+        for (auto &clarityTool : _clarityToolsVec){
+          if(!clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))) clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
+        } 
+      } 
+    }  
 
     if (!patt_found && !patt.empty())
         patt.clear();
@@ -358,6 +381,8 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
 
     for (const auto& [view, evt_view_hits] : region_hits)
     {
+      std::vector<bool>& pass_clarity = clarity_results_all_tools.at(view);
+
         float x_vtx = nu_vtx[0];
         float z_vtx = (common::ProjectToWireView(nu_vtx[0], nu_vtx[1], nu_vtx[2], view)).Z();
 
@@ -406,17 +431,20 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                             size_t sig_ctr = 0;
                             for (const auto& sig : patt) 
                             {
+                              // only allow hits to be flagged as belonging to a signature if corresponding clarity filter returned true
+                              if(pass_clarity.at(sig_ctr))
+                              {
                                 for (size_t it = 0; it < sig.size(); ++it)
                                 {
-                                    if (sig[it]->TrackId() == assmcp[ia]->TrackId()) 
-                                    {
-                                        signature_flags.at(sig_ctr) = 1.f;
-                                        found_flag = true;
-
-                                        break;
-                                    }
+                                  if (sig[it]->TrackId() == assmcp[ia]->TrackId()) 
+                                  {
+                                    signature_flags.at(sig_ctr) = 1.f;
+                                    found_flag = true;
+                                    break;
+                                  }
                                 }
-                                sig_ctr++;
+                              }
+                              sig_ctr++;
                             }
                         }
 
