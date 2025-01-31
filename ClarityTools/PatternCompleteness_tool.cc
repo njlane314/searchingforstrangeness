@@ -10,9 +10,10 @@ class PatternCompleteness : ClarityToolBase {
 public:
     explicit PatternCompleteness(const fhicl::ParameterSet& pset) :
       ClarityToolBase{(pset)} 
-      //, _patt_hit_comp_thresh{pset.get<double>("PatternHitCompletenessThreshold", 0.5)}
       , _sig_hit_thresh{pset.get<int>("SignatureHitThreshold", 10)}
       , _sig_hit_comp_thresh{pset.get<double>("SignatureHitCompletenessThreshold", 0.05)}
+      , _part_hit_thresh{pset.get<int>("ParticleHitThreshold", 5)}
+      , _part_hit_frac_thresh{pset.get<double>("ParticleHitFractionThreshold", 0.10)}
     {
         configure(pset);
     }
@@ -24,22 +25,20 @@ public:
         ClarityToolBase::configure(pset);
     }
 
-    //bool filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc);
     bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view);
 
 private:
 
-   //const double _patt_hit_comp_thresh;
    const int _sig_hit_thresh;
    const double _sig_hit_comp_thresh;
+   const int _part_hit_thresh;
+   const double _part_hit_frac_thresh;
 
 };
 
-//bool PatternCompleteness::filter(const art::Event &e, const signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)
 bool PatternCompleteness::filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
 {
-
-  std::cout << "Checking Pattern Completeness" << std::endl;
+    std::cout << "Checking Pattern Completeness" << std::endl; 
     this->loadEventHandles(e,view);
 
     std::unordered_map<int, int> sig_hit_map;
@@ -69,21 +68,20 @@ bool PatternCompleteness::filter(const art::Event &e, const signature::Signature
     if (_mc_hits.empty() || sig_hits.empty()) 
         return false;
 
-    double sig_comp = static_cast<double>(sig_hits.size()) / _mc_hits.size();
+    //double sig_comp = static_cast<double>(sig_hits.size()) / _mc_hits.size();
 
-    std::cout << "Signature completeness " << sig_comp << std::endl;
+    //std::cout << "Signature completeness " << sig_comp << std::endl;
     std::cout << "Total signature hits " << tot_sig_hit << std::endl;
-    if (sig_comp < _sig_hit_comp_thresh || tot_sig_hit < _sig_hit_thresh)
-        return false;
 
-/*
-    for (const auto& [_, num_hits] : sig_hit_map) 
+    for (const auto& [trackid, num_hits] : sig_hit_map) 
     {
-        //std::cout << "Signature hit " << num_hits << std::endl;
-        if (num_hits / tot_patt_hit < _sig_hit_comp_thresh) 
-            return false;       
+        std::cout << "Particle " << trackid << " hits " << num_hits << std::endl;
+        if(num_hits < _part_hit_thresh) return false;
+        if (num_hits / tot_sig_hit < _part_hit_frac_thresh) return false;       
     }
-*/
+
+    if (/*sig_comp < _sig_hit_comp_thresh ||*/ tot_sig_hit < _sig_hit_thresh)
+        return false;
 
     return true;
 }
