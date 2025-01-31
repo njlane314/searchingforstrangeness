@@ -39,7 +39,7 @@ private:
 bool PatternCompleteness::filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
 {
 
-    //std::cout << "Testing PatternCompleteness" << std::endl;
+  std::cout << "Checking Pattern Completeness" << std::endl;
     this->loadEventHandles(e,view);
 
     std::unordered_map<int, int> sig_hit_map;

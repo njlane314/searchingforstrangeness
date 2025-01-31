@@ -180,8 +180,10 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
 void ConvolutionNetworkAlgo::analyze(art::Event const& evt) 
 {   
     this->initialiseEvent(evt); 
-    if (_region_hits.empty())
+    if (_region_hits.empty()){
+        std::cout << "Region hits empty" << std::endl;
         return;
+    }
 
     try {
         if (_training_mode)
@@ -336,36 +338,52 @@ void ConvolutionNetworkAlgo::calculateChargeCentroid(const art::Event& evt, cons
 
 void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
 {
+
+    std::cout << "Starting prepareTrainingSample" << std::endl;
+
     std::array<float, 3> nu_vtx = {0.0f, 0.0f, 0.0f};
     bool found_vertex = false;
 
     this->getNuVertex(evt, nu_vtx, found_vertex);
-    if (!found_vertex) 
+    if (!found_vertex){ 
+        std::cout << "No neutrino vertex in this event" << std::endl;
         return; 
+    }
 
     signature::Pattern patt;
-    bool patt_found = true;
+    std::vector<bool> sig_found;
     for (auto& signatureTool : _signatureToolsVec) {
-        signature::Signature signature; 
-        if (!signatureTool->constructSignature(evt, signature)) {
-            //patt_found = false;
-            //break; // this break statement causes inconsistent lengh of the pattern if one of the signatures is not in the event at truth level - remove
-        }
-        patt.push_back(signature);
+      signature::Signature signature; 
+      sig_found.push_back(signatureTool->constructSignature(evt, signature)); 
+      patt.push_back(signature);
+      std::cout << "Signature particles:" << std::endl;
+      for(auto part : signature) std::cout << part->PdgCode() << "  " << part->TrackId() << std::endl;
     }
 
     std::map<common::PandoraView,std::vector<bool>> clarity_results_all_tools;
     for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
+      std::cout << "Checking plane " << view << std::endl;
       clarity_results_all_tools[static_cast<common::PandoraView>(view)] = std::vector<bool>(_signatureToolsVec.size(),true);
       for(size_t i_s=0;i_s<patt.size();i_s++){
+        std::cout << "Checking signature " << i_s << std::endl;
         for (auto &clarityTool : _clarityToolsVec){
-          if(!clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))) clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
+          //if(!clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))) clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
+
+          if(clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))){
+            std::cout << "Pass" << std::endl; 
+          }
+          else {
+            clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
+            std::cout << "Fail" << std::endl; 
+          }       
+ 
+          
         } 
       } 
     }  
 
-    if (!patt_found && !patt.empty())
-        patt.clear();
+    //if (!patt_found && !patt.empty())
+    //    patt.clear();
 
     unsigned int n_flags = _signatureToolsVec.size(); 
     int run = evt.run();
@@ -432,7 +450,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                             for (const auto& sig : patt) 
                             {
                               // only allow hits to be flagged as belonging to a signature if corresponding clarity filter returned true
-                              if(pass_clarity.at(sig_ctr))
+                              if(sig_found.at(sig_ctr) && pass_clarity.at(sig_ctr))
                               {
                                 for (size_t it = 0; it < sig.size(); ++it)
                                 {

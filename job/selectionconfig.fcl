@@ -56,11 +56,11 @@ Thresholds: {
     ElectronThreshold: 0.1
 
     PionThreshold: 0.1
-    ProtonThreshold: 0.1
-    KaonThreshold: 0.1
+    ProtonThreshold: 0.3
+    KaonThreshold: 0.2
 
-    SigmaPlusThreshold: 0.1
-    SigmaMinusThreshold: 0.1
+    SigmaPlusThreshold: 0.5
+    SigmaMinusThreshold: 0.5
     XiMinusThreshold: 0.1
     OmegaMinusThreshold: 0.1
     
@@ -101,25 +101,23 @@ LambdaSignature:
 SignatureTools:
 {
     leptonic: @local::MuonSignature
-    hadronic: @local::ChargedKaonSignature
+    #hadronic: @local::ChargedKaonSignature
+    hadronic: @local::LambdaSignature
 }
 
 
 PatternCompleteness: {
     tool_type: "PatternCompleteness"
     BadChannelFile: "badchannels.txt"
-    TargetDetectorPlane: 1
 }
 
 SignatureIntegrity: {
     tool_type: "SignatureIntegrity"
     BadChannelFile: "badchannels.txt"
-    TargetDetectorPlane: 1
 }
 
 HitExclusivity: {
     tool_type: "HitExclusivity"
     BadChannelFile: "badchannels.txt"
-    TargetDetectorPlane: 1
 }
 
