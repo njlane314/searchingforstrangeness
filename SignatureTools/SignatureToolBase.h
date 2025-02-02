@@ -58,32 +58,6 @@ public:
 protected:
     art::InputTag _MCPproducer, _MCTproducer;
 
-    bool assessParticle(const simb::MCParticle& mcp) const 
-    {
-        float mom_mag = mcp.Momentum().Vect().Mag();
-        int abs_pdg = std::abs(mcp.PdgCode());
-
-        const TParticlePDG* particle = TDatabasePDG::Instance()->GetParticle(mcp.PdgCode());
-        if (particle->Charge() == 0.0) 
-            return true;
-
-        std::unordered_map<int, float> thresh_map = {
-            {211, 0.1},    // pi
-            {13, 0.1},     // mu
-            {2212, 0.1},   // p
-            {321, 0.1},    // K
-            {11, 0.1},     // e
-            {3222, 0.1},   // sigma+
-            {3112, 0.1},   // sigma-
-        };
-
-        auto it = thresh_map.find(abs_pdg);
-        if (it != thresh_map.end())
-            return mom_mag > it->second;
-
-        return false;
-    }
-
     void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
     {
         signature.push_back(mcp);

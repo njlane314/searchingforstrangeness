@@ -55,12 +55,12 @@ physics:
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
-                hadronic: @local::KaonShortSignature
+                hadronic: @local::ChargedSigmaSignature
             }
 
             BadChannelFile: "badchannels.txt"
-            QuickVisualise: false
-            TargetDetectorPlane: 1
+            QuickVisualise: true
+            TargetDetectorPlane: 2
         }
     }
 

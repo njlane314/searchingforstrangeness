@@ -83,24 +83,15 @@ void KaonShortSignature::findSignature(art::Event const& evt, Signature& signatu
 
                 if (fnd_decay == exp_decay) 
                 {
-                    bool all_pass = std::all_of(decay.begin(), decay.end(), [&](const auto& elem) {
-                        return this->assessParticle(*elem);
-                    });
-
-                    if (all_pass) 
+                    signature_found = true;
+                    for (const auto &elem : decay) 
                     {
-                        signature_found = true;
-                        for (const auto &elem : decay) 
-                        {
-                            const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
-                            if (info->Charge() != 0.0) 
-                            {
-                                this->fillSignature(elem, signature);
-                                addDaughterInteractions(elem, addDaughterInteractions);
-                            }
-                        }
+                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
+                        if (info->Charge() == 0.0) 
+                            continue;
 
-                        break;
+                        this->fillSignature(elem, signature);
+                        addDaughterInteractions(elem, addDaughterInteractions);
                     }
                 }
             }

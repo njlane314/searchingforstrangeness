@@ -37,12 +37,10 @@ void MuonSignature::findSignature(art::Event const& evt, Signature& signature, b
 
     for (const auto& mcp : mcp_vec) 
     {
-        if (std::abs(mcp->PdgCode()) == 13 && mcp->Process() == "primary" && this->assessParticle(*mcp)) 
+        if (std::abs(mcp->PdgCode()) == 13 && mcp->Process() == "primary") 
         {
             signature_found = true;
             this->fillSignature(mcp, signature);
-        
-            break;
         }
     }
 }

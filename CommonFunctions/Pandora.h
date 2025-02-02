@@ -62,7 +62,7 @@ namespace common
         auto const* det = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
         const geo::WireID hit_wire(hit->WireID());
-        const double hit_time(hit->PeakTime());
+        const double hit_time(hit->PeakTime()+0.5);
 
         const double x_coord = det->ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
         TVector3 xyz = geo->Cryostat(hit_wire.Cryostat).TPC(hit_wire.TPC).Plane(hit_wire.Plane).Wire(hit_wire.Wire).GetCenter();

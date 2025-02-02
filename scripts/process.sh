@@ -18,6 +18,7 @@ num_files=$2
 
 fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 
+#samdef=make_k0signal_overlay_testing_nohadrons_reco2_reco2
 samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
 output_directory="/exp/uboone/data/users/nlane/analysis"
 combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
@@ -34,8 +35,6 @@ DEFAULT="\033[0m"
 echo -e "${BLUE}Starting process for SAM definition: $samdef${DEFAULT}"
 
 # ---------------------------------------------------------------------------------
-# Get the first files from the SAMweb definition
-# ---------------------------------------------------------------------------------
 
 echo -e "${BLUE}Fetching the first $num_files files from SAM definition: $samdef${DEFAULT}"
 
@@ -49,8 +48,6 @@ fi
 echo -e "${YELLOW}Files fetched:${DEFAULT}"
 echo "$files"
 
-# ---------------------------------------------------------------------------------
-# Run the FHiCL file on each of the files
 # ---------------------------------------------------------------------------------
 
 echo -e "${BLUE}Running the FHiCL file on the selected files...${DEFAULT}"
@@ -89,8 +86,6 @@ for file in $files; do
 done
 
 # ---------------------------------------------------------------------------------
-# Combine the resulting ROOT files using hadd
-# ---------------------------------------------------------------------------------
 
 echo -e "${BLUE}Combining all the output ROOT files...${DEFAULT}"
 
@@ -111,8 +106,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------------
-# Clean up temporary files if desired
-# ---------------------------------------------------------------------------------
+
 echo -e "${BLUE}Cleaning up temporary files...${DEFAULT}"
 rm -r $tempdir
 
