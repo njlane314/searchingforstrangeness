@@ -9,6 +9,7 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "larcore/Geometry/Geometry.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
@@ -61,7 +62,6 @@ public:
 
 private:
     bool _training_mode;
-    int _pass;
     
     std::string _training_output_file;
     std::shared_ptr<torch::jit::script::Module> _model_u, _model_v, _model_w;
@@ -101,14 +101,9 @@ private:
 ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
     , _training_mode{pset.get<bool>("TrainingMode", true)}
-    , _pass{pset.get<int>("Pass", 1)}
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output")}
     , _width{pset.get<int>("ImageWidth", 256)}
     , _height{pset.get<int>("ImageHeight", 256)}
-    , _drift_step{pset.get<float>("DriftStep", 0.5)}
-    , _wire_pitch_u{pset.get<float>("WirePitchU", 0.3)}
-    , _wire_pitch_v{pset.get<float>("WirePitchU", 0.3)}
-    , _wire_pitch_w{pset.get<float>("WirePitchU", 0.3)}
     , _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
@@ -139,12 +134,6 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
 
     _calo_alg = new calo::CalorimetryAlg(pset.get<fhicl::ParameterSet>("CaloAlg"));
 
-    _wire_pitch = {
-        {common::TPC_VIEW_U, _wire_pitch_u},
-        {common::TPC_VIEW_V, _wire_pitch_v},
-        {common::TPC_VIEW_W, _wire_pitch_w}
-    };
-
     const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
     for (auto const &tool_pset_label : tool_psets.get_pset_names())
     {
@@ -153,6 +142,18 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     }
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
+    _drift_step = 0.55; 
+
+    _wire_pitch_u = _geo->WirePitch(geo::kU);                 // U plane
+    _wire_pitch_v = _geo->WirePitch(geo::kV);                 // V plane
+    _wire_pitch_w = _geo->WirePitch(geo::kW);                 // W plane
+
+    _wire_pitch = {
+        {common::TPC_VIEW_U, _wire_pitch_u},
+        {common::TPC_VIEW_V, _wire_pitch_v},
+        {common::TPC_VIEW_W, _wire_pitch_w}
+    };    
+
     size_t num_channels = _geo->Nchannels();
     _bad_channel_mask.resize(num_channels, false);
 
@@ -315,6 +316,11 @@ void ConvolutionNetworkAlgo::calculateChargeCentroid(const art::Event& evt, cons
             charge_center[1] /= tot_q_map[view];
         }
     }
+}
+
+void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
+{
+    
 }
 
 void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt) 
@@ -503,9 +509,6 @@ void ConvolutionNetworkAlgo::infer(art::Event const& evt, std::map<int, std::vec
             classified_hits[predicted_class].push_back(hit);
         }
     }
-
-    for (const auto& [class_id, hits] : classified_hits)
-        std::cout << "Class " << class_id << " has " << hits.size() << " hits.";
 }
 
 void ConvolutionNetworkAlgo::makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map)

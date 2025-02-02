@@ -42,7 +42,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
         auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
         art::Ptr<simb::MCParticle> end_particle = particle;
         for (const auto& daugh : daughters) {
-            if (daugh->PdgCode() == particle->PdgCode() && this->assessParticle(*daugh)) {
+            if (daugh->PdgCode() == particle->PdgCode()) {
                 this->fillSignature(daugh, signature); 
                 end_particle = self(daugh, self); 
             }
@@ -60,9 +60,6 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                 continue;
 
             auto sigma = particle_iter->second; 
-            if (!this->assessParticle(*sigma))
-                break;
-
             this->fillSignature(sigma, signature);
             auto end_sigma = addDaughterInteractions(sigma, addDaughterInteractions);
 
@@ -111,29 +108,17 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
 
                 if (valid_decay) 
                 {
-                    bool all_pass = std::all_of(clean_decay.begin(), clean_decay.end(), [&](const auto& elem) {
-                        return this->assessParticle(*elem);
-                    });
+                    signature_found = true;
 
-                    std::cout << all_pass << std::endl;
-
-                    if (all_pass) 
+                    this->fillSignature(mcp_map[mcp.TrackId()], signature);
+                    for (const auto& elem : clean_decay) 
                     {
-                        signature_found = true;
+                        const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
+                        if (info->Charge() == 0.0) 
+                            continue;
 
-                        this->fillSignature(mcp_map[mcp.TrackId()], signature);
-                        for (const auto& elem : clean_decay) 
-                        {
-                            const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
-                            if (info->Charge() != 0.0) 
-                            {
-                                std::cout << "Filling signature" << std::endl;
-                                this->fillSignature(elem, signature);
-                                auto end_particle = addDaughterInteractions(elem, addDaughterInteractions);
-                            }
-                        }
-
-                        break;
+                        this->fillSignature(elem, signature);
+                        auto end_particle = addDaughterInteractions(elem, addDaughterInteractions);
                     }
                 }
             }

@@ -190,7 +190,7 @@ bool PatternClarityFilter::filter(art::Event &e)
         common::visualiseSignature(e, _MCPproducer, _HitProducer, _BacktrackTag, patt, filename);
     }
     
-    return true; 
+    return true;
 }
 
 bool PatternClarityFilter::filterPatternCompleteness(art::Event &e, signature::Pattern& patt, const std::vector<art::Ptr<recob::Hit>> mc_hits, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& mcp_bkth_assoc)

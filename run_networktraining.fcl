@@ -46,15 +46,14 @@ physics:
 
             ImageWidth: 256
             ImageHeight: 256
-            
-            DriftStep: 0.5
-            WirePitchU: 0.3
-            WirePitchV: 0.3
-            WirePitchW: 0.3
 
             CaloAlg: @local::microboone_calo_mcc9_data
             
-            SignatureTools: @local::SignatureTools
+            SignatureTools:
+            {
+                leptonic: @local::MuonSignature
+                hadronic: @local::LambdaSignature
+            }
         }
     }
  
