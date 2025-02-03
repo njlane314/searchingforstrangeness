@@ -25,6 +25,11 @@ public:
         SignatureToolBase::configure(pset);
     }
 
+    SignatureType getSignatureType() const override 
+    {
+        return SignatureLambda;
+    }
+
     TVector3 findVertex(art::Event const& evt) const override;
 
 protected:

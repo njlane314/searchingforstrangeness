@@ -24,8 +24,18 @@
 
 namespace signature {
 
+enum SignatureType {
+    SignatureEmpty = 0,
+    SignatureNoise,
+    SignaturePrimaryMuon,
+    SignatureChargedKaon,
+    SignatureKaonShort,
+    SignatureLambda,
+    SignatureChargedSigma
+};
+
 using Signature = std::vector<art::Ptr<simb::MCParticle>>;
-using Pattern = std::vector<Signature>;
+using Pattern = std::vector<SignatureType, Signature>;
 
 class SignatureToolBase 
 {
@@ -53,6 +63,10 @@ public:
             signature.clear();
 
         return signature_found;
+    }
+
+    virtual SignatureType getSignatureType() const {
+        return SignatureEmpty;
     }
 
 protected:
