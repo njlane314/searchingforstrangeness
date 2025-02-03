@@ -21,19 +21,9 @@
 
 namespace image {
 
-enum SignatureType {
-    SignatureEmpty = 0,
-    SignatureNoise,
-    SignaturePrimaryMuon,
-    SignatureChargedKaon,
-    SignatureKaonShort,
-    SignatureLambda,
-    SignatureChargedSigma
-};
-
-class ImageMeta {
+class ImageProperties {
 public:
-    ImageMeta(double center_x, double center_y, size_t height, size_t width, double pixel_w, double pixel_h, geo::View_t view)
+    ImageProperties(double center_x, double center_y, size_t height, size_t width, double pixel_w, double pixel_h, geo::View_t view)
         : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
         origin_x_ = center_x - (width * pixel_w) / 2.0;
         origin_y_ = center_y - (height * pixel_h) / 2.0;
@@ -76,8 +66,8 @@ private:
 class Image : public TObject {
 public:
     Image() = default;
-    Image(const ImageMeta& meta)
-        : meta_(meta), pixels_(meta.height() * meta.width(), 0.0f) {}
+    Image(const ImageProperties& prop)
+        : meta_(prop), pixels_(prop.height() * prop.width(), 0.0f) {}
 
     void set(size_t row, size_t col, float value, bool accumulate = true) {
         size_t idx = meta_.index(row, col);
@@ -119,13 +109,13 @@ public:
     }
 
 private:
-    ImageMeta meta_;
+    ImageProperties meta_;
     std::vector<float> pixels_;
 };
 
-std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
+std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& properties, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
     std::vector<Image> images;
-    for (const auto& meta : metas) images.emplace_back(meta);
+    for (const auto& prop : properties) images.emplace_back(prop);
 
     for (const auto& wire : wires) {
         auto ch_id = wire.Channel();
@@ -158,22 +148,32 @@ std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std:
     return images;
 }
 
-std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, const std::vector<art::Ptr<Sim::SimChannel>>& wires const geo::GeometryCore& geo) {
-    std::unordered_map<int, SignatureType> track_signatures;
-    std::unordered_map<size_t, float> pixel_energy;
+std::vector<Image> ConvertSimChannelsToImages(
+    const std::vector<ImageProperties>& properties,
+    const std::vector<art::Ptr<sim::SimChannel>>& channels,
+    const geo::GeometryCore& geo,
+    const signature::Pattern& pattern) 
+{
+    std::unordered_map<int, signature::SignatureType> track_signatures;
+    for (const auto& [signature, sig_type] : pattern) {
+        for (const auto& particle : signature) {
+            track_signatures[particle->TrackId()] = sig_type;
+        }
+    }
 
+    std::unordered_map<size_t, float> pixel_energy;
     std::vector<Image> images;
-    for (const auto& meta : metas) images.emplace_back(meta);
+    for (const auto& prop : properties) images.emplace_back(prop);
 
     for (const auto& channel : channels) {
-        auto ch_id = channel.Channel();
+        auto ch_id = channel->Channel();
         auto wire_ids = geo.ChannelToWire(ch_id);
         if (wire_ids.empty()) continue;
 
         auto wire_id = wire_ids.front();
         auto view = geo.View(wire_id);
 
-        for (const auto& tdc_ide_pair : channel.TDCIDEMap()) {
+        for (const auto& tdc_ide_pair : channel->TDCIDEMap()) {
             int tdc = tdc_ide_pair.first;
             for (const auto& ide : tdc_ide_pair.second) {
                 double x = geo.ConvertTicksToX(tdc, wire_id.Plane, wire_id.TPC, wire_id.Cryostat);
@@ -183,12 +183,12 @@ std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, cons
                               (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034)) - 
                               (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
 
-                SignatureType sig = SignatureEmpty;
-                if (ide.trackID > 0) {
-                    if (track_signatures.find(ide.trackID) == track_signatures.end()) {
-                        track_signatures[ide.trackID] = SignatureNoise;
-                    }
-                    sig = track_signatures[ide.trackID];
+                signature::SignatureType sig = signature::SignatureEmpty;  
+                auto it = track_signatures.find(ide.trackID);
+                if (it != track_signatures.end()) {
+                    sig = it->second;  
+                } else if (ide.energy > 0) {
+                    sig = signature::SignatureNoise;  
                 }
 
                 for (auto& img : images) {
@@ -210,36 +210,37 @@ std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, cons
     return images;
 }
 
-class ImageManager {
+class ImageTrainingHandler {
 public:
-    ImageManager(TTree* tree, const geo::GeometryCore& geo)
+    ImageTrainingHandler(TTree* tree, const geo::GeometryCore& geo)
         : tree_(tree), geo_(geo) {
         tree_->Branch("run", &run_);
         tree_->Branch("subrun", &subrun_);
         tree_->Branch("event", &event_);
         tree_->Branch("is_signal", &is_signal_);
         tree_->Branch("wire_images", &wire_images_);
-        tree_->Branch("sim_channel_images", &sim_channel_images);
+        tree_->Branch("simchannel_images", &simchannel_images_);
     }
 
     void reset() {
         run_ = subrun_ = event_ = 0;
         is_signal_ = false;
         wire_images_.clear();
-        sim_channel_images.clear();
+        simchannel_images_.clear();
     }
 
-    void add(int run, int subrun, int event, bool signal,
+    void add(int run, int subrun, int event, bool is_signal,
              const std::vector<recob::Wire>& wires,
              const std::vector<sim::SimChannel>& channels,
-             const std::vector<ImageMeta>& metas) {
+             const std::vector<ImageProperties>& properties,
+             const signature::Pattern& pattern) {
         run_ = run;
         subrun_ = subrun;
         event_ = event;
-        is_signal_ = signal;
+        is_signal_ = is_signal;
 
-        wire_images_ = WiresToImages(metas, wires, geo_);
-        sim_channel_images = SimChannelsToImages(metas, channels, geo_);
+        wire_images_ = ConvertWiresToImages(properties, wires, geo_);
+        simchannel_images_ = ConvertSimChannelsToImages(properties, channels, geo_, pattern);
 
         tree_->Fill();
     }
@@ -250,7 +251,7 @@ private:
     int run_, subrun_, event_;
     bool is_signal_;
     std::vector<Image> wire_images_;
-    std::vector<Image> sim_channel_images;
+    std::vector<Image> simchannel_images_;
 };
 
 } 

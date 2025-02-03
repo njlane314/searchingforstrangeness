@@ -215,7 +215,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt)
             pattern_found = false;
             break;
         }
-        pattern.push_back(signature);
+        pattern.emplace_back(signatureTool->getSignatureType(), signature);
     }
 
     if (!pattern_found && !pattern.empty())
@@ -285,22 +285,22 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt)
     double centroid_wire_w = (sum_charge_w > 0) ? sum_wire_w / sum_charge_w : 0.0;
     double centroid_drift_w = (sum_charge_w > 0) ? sum_drift_w / sum_charge_w : 0.0;
 
-    std::vector<image::ImageMeta> metas;
-    metas.emplace_back(
+    std::vector<image::ImageProperties> properties;
+    properties.emplace_back(
         centroid_wire_u - (_image_width / 2.0) * _wire_pitch_u,
         centroid_drift_u - (_image_height / 2.0) * _drift_step,
         _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU
     );
-    metas.emplace_back(
+    properties.emplace_back(
         centroid_wire_v - (_image_width / 2.0) * _wire_pitch_v,
         centroid_drift_v - (_image_height / 2.0) * _drift_step,
         _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV
     );
-    metas.emplace_back(
+    properties.emplace_back(
         centroid_wire_w - (_image_width / 2.0) * _wire_pitch_w,
         centroid_drift_w - (_image_height / 2.0) * _drift_step,
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_manager->add(run, subrun, event, pattern_found, neutrino_hits, metas);
+    _image_manager->add(run, subrun, event, pattern_found, neutrino_hits, properties, pattern);
 }

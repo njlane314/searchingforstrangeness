@@ -22,6 +22,11 @@ public:
         SignatureToolBase::configure(pset);
     }
 
+    SignatureType getSignatureType() const override 
+    {
+        return SignaturePrimaryMuon;
+    }
+
 protected:
     void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
 

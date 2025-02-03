@@ -28,6 +28,11 @@ public:
         SignatureToolBase::configure(pset);
     }
 
+    SignatureType getSignatureType() const override 
+    {
+        return SignatureKaonShort;
+    }
+
     TVector3 findVertex(art::Event const& evt) const override;
 
 protected:
