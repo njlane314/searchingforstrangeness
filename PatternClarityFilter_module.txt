@@ -62,7 +62,7 @@ private:
 
     std::string _bad_channel_file;
     std::vector<bool> _bad_channel_mask;
-
+    
     double _patt_hit_comp_thresh;
     int _patt_hit_thresh;
     double _sig_hit_comp_thresh; 
