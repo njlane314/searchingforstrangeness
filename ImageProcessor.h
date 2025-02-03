@@ -13,11 +13,18 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "Geometry/GeometryCore.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
 
-#include <torch/torch.h>
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
+#include "TDirectoryFile.h"
+
+#ifdef ClassDef
+#undef ClassDef
+#endif
 
 namespace image {
 
@@ -67,10 +74,10 @@ class Image : public TObject {
 public:
     Image() = default;
     Image(const ImageProperties& prop)
-        : meta_(prop), pixels_(prop.height() * prop.width(), 0.0f) {}
+        : prop_(prop), pixels_(prop.height() * prop.width(), 0.0f) {}
 
     void set(size_t row, size_t col, float value, bool accumulate = true) {
-        size_t idx = meta_.index(row, col);
+        size_t idx = prop_.index(row, col);
         if (idx != static_cast<size_t>(-1)) {
             if (accumulate)
                 pixels_[idx] += value;
@@ -80,9 +87,9 @@ public:
     }
 
     void copy_col(size_t col, const std::vector<float>& data) {
-        if (col >= meta_.width()) return;
-        for (size_t row = 0; row < meta_.height(); ++row) {
-            size_t idx = meta_.index(row, col);
+        if (col >= prop_.width()) return;
+        for (size_t row = 0; row < prop_.height(); ++row) {
+            size_t idx = prop_.index(row, col);
             if (idx != static_cast<size_t>(-1)) {
                 pixels_[idx] = data[row];
             }
@@ -90,7 +97,7 @@ public:
     }
 
     float get(size_t row, size_t col) const {
-        size_t idx = meta_.index(row, col);
+        size_t idx = prop_.index(row, col);
         return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : 0.0f;
     }
 
@@ -102,14 +109,16 @@ public:
         return pixels_;
     }
 
+    const ImageProperties& properties() const { return prop_; }
+
     torch::Tensor tensor() const {
         return torch::from_blob(const_cast<float*>(pixels_.data()),
-                                {1, 1, (long)meta_.height(), (long)meta_.width()},
+                                {1, 1, (long)prop_.height(), (long)prop_.width()},
                                 torch::kFloat32).clone();
     }
 
 private:
-    ImageProperties meta_;
+    ImageProperties prop_;
     std::vector<float> pixels_;
 };
 
@@ -117,18 +126,21 @@ std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& prop
     std::vector<Image> images;
     for (const auto& prop : properties) images.emplace_back(prop);
 
+    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    auto const* detClock = lar::providerFrom<detinfo::DetectorClocksService>();
+
     for (const auto& wire : wires) {
-        auto ch_id = wire.Channel();
+        auto ch_id = wire->Channel();
         auto wire_ids = geo.ChannelToWire(ch_id);
         if (wire_ids.empty()) continue;
 
         auto view = geo.View(wire_ids.front());
-        for (const auto& range : wire.SignalROI().get_ranges()) {
+        for (const auto& range : wire->SignalROI().get_ranges()) {
             const auto& adcs = range.data();
             int start_idx = range.begin_index();
 
             for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                double x = geo.ConvertTicksToX(start_idx + idx, wire_ids.front().Plane, wire_ids.front().TPC, wire_ids.front().Cryostat);
+                double x = detProp->ConvertTicksToX(tdc, wire_ids.front().Plane, wire_ids.front().TPC, wire_ids.front()Cryostat, *detClock);
                 TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat).TPC(wire_ids.front().TPC).Plane(wire_ids.front().Plane).Wire(wire_ids.front().Wire).GetCenter();
 
                 float coord = (view == geo::kW) ? wire_center.Z() :
@@ -136,9 +148,9 @@ std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& prop
                               (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
 
                 for (auto& img : images) {
-                    if (img.meta_.view() == view) {
-                        size_t row = img.meta_.row(x);
-                        size_t col = img.meta_.col(coord);
+                    if (img.properties().view() == view) {
+                        size_t row = img.properties().row(x);
+                        size_t col = img.properties().col(coord);
                         img.set(row, col, adcs[idx]);
                     }
                 }
@@ -155,7 +167,7 @@ std::vector<Image> ConvertSimChannelsToImages(
     const signature::Pattern& pattern) 
 {
     std::unordered_map<int, signature::SignatureType> track_signatures;
-    for (const auto& [signature, sig_type] : pattern) {
+    for (const auto& [sig_type, signature] : pattern) {
         for (const auto& particle : signature) {
             track_signatures[particle->TrackId()] = sig_type;
         }
@@ -192,10 +204,10 @@ std::vector<Image> ConvertSimChannelsToImages(
                 }
 
                 for (auto& img : images) {
-                    if (img.meta_.view() == view) {
-                        size_t col = img.meta_.col(coord);
-                        size_t row = img.meta_.row(x);
-                        size_t idx = img.meta_.index(row, col);
+                    if (img.properties().view() == view) {
+                        size_t col = img.properties().col(coord);
+                        size_t row = img.properties().row(x);
+                        size_t idx = img.properties().index(row, col);
                         if (idx != static_cast<size_t>(-1)) {
                             if (pixel_energy[idx] < ide.energy) {
                                 pixel_energy[idx] = ide.energy;

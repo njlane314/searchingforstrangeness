@@ -44,9 +44,12 @@
 #include <unordered_map>
 #include <cmath>
 
+#include "TFile.h"
+#include "TTree.h"
+
 #include "ImageProcessor.h"
 
-class ImageTrainingAnalyser : public art::EDAnalyser
+class ImageTrainingAnalyser : public art::EDAnalyzer
 {
 public:
     explicit ImageTrainingAnalyser(fhicl::ParameterSet const& pset);
@@ -61,19 +64,14 @@ public:
     void endJob() override;
 
 private:
-    bool _training_mode;
-    bool _veto_bad_channels;
-
     std::string _training_output_file;
     TFile* _root_file;
     TTree* _image_tree;
-    std::unique_ptr<image::ImageManager> _image_manager;
+    std::unique_ptr<image::ImageTrainingHandler> _image_handler;
 
     int _image_width, _image_height;
     float _drift_step;
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
-
-    std::shared_ptr<torch::jit::script::Module> _model_u, _model_v, _model_w;
 
     std::vector<std::unique_ptr<signature::SignatureToolBase>> _signatureToolsVec; 
 
@@ -83,26 +81,27 @@ private:
     const geo::GeometryCore* _geo;
     const detinfo::DetectorProperties* _detp;
 
+    art::InputTag _WREproducer, _SCHproducer, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+
     void initialiseBadChannelMask();
 
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
     void filterBadSimChannels(std::vector<art::Ptr<sim::SimChannel>>& sim_channels);
-}
+    void produceTrainingSample(art::Event const& e);
+};
 
-ConvolutionNetworkAlog::ConvolutionNetworkAlog(fhicl::ParamaterSet const& pset)
+ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
-    , _training_mode{pset.get<bool>("TrainingMode", true)}
-    , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)} 
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
-    , _width{pset.get<int>("ImageWidth", 256)}
-    , _height{pset.get<int>("ImageHeight", 256)}
+    , _image_width{pset.get<int>("ImageWidth", 256)}
+    , _image_height{pset.get<int>("ImageHeight", 256)}
     , _WREproducer{pset.get<art::InputTag>("WireProducer", "butcher")}
     , _SCHproducer{pset.get<art::InputTag>("SimChannelProducer", "largeant")}
     , _HITproducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-    , _BKTproducer{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _BKTproducer{pset.get<art::InputTag>("BKTproducer", "gaushitTruthMatch")}
     , _PFPproducer{pset.get<art::InputTag>("PFPproducer", "pandora")}
     , _CLSproducer{pset.get<art::InputTag>("CLSproducer", "pandora")}
     , _SHRproducer{pset.get<art::InputTag>("SHRproducer", "pandora")}
@@ -111,17 +110,6 @@ ConvolutionNetworkAlog::ConvolutionNetworkAlog(fhicl::ParamaterSet const& pset)
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
 {
-    try {
-        if (!_training_mode) 
-        {
-            _model_u = torch::jit::load(pset.get<std::string>("ModelFileU"));
-            _model_v = torch::jit::load(pset.get<std::string>("ModelFileV"));
-            _model_w = torch::jit::load(pset.get<std::string>("ModelFileW"));
-        }
-    } catch (const c10::Error& e) {
-        throw cet::exception("ImageTrainingAnalyser") << "**error loading torch models: " << e.what() << "\n";
-    }
-
     const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
     for (auto const &tool_pset_label : tool_psets.get_pset_names())
     {
@@ -138,9 +126,7 @@ ConvolutionNetworkAlog::ConvolutionNetworkAlog(fhicl::ParamaterSet const& pset)
 
     size_t n_channels = _geo->Nchannels();
     _bad_channel_mask.resize(n_channels, false);
-
-    if(_veto_bad_channels)
-        this->initialiseBadChannelMask();
+    this->initialiseBadChannelMask();
 }
 
 void ImageTrainingAnalyser::initialiseBadChannelMask()
@@ -150,7 +136,7 @@ void ImageTrainingAnalyser::initialiseBadChannelMask()
         std::string fullname;
         sp.find_file(_bad_channel_file, fullname);
         if (fullname.empty()) {
-            throw cet::exception("ImageTrainingAnalyser") << "**bad channel file not found: " << _bad_channel_file;
+            throw cet::exception("ImageTrainingAnalyser") << "Bad channel file not found: " << _bad_channel_file;
         }
 
         std::ifstream inFile(fullname, std::ios::in);
@@ -172,18 +158,13 @@ void ImageTrainingAnalyser::beginJob()
 {
     _root_file = new TFile(_training_output_file.c_str(), "RECREATE");
     _image_tree = new TTree("ImageTree", "Tree containing training images");
-    _image_manager = std::make_unique<image::ImageManager>(_image_tree, *_geo);
+    _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
 }
 
-void ImageTrainingAnalyser::analyze(const art::Event* evt) 
+void ImageTrainingAnalyser::analyze(const art::Event& e) 
 {   
-    _image_manager->reset();
-
-    if (_training_mode) {
-        this->produceTrainingSample(evt);
-    } else {
-        this->infer(evt);
-    }
+    _image_handler->reset();
+    this->produceTrainingSample(e);
 }
 
 void ImageTrainingAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
@@ -204,14 +185,14 @@ void ImageTrainingAnalyser::filterBadSimChannels(std::vector<art::Ptr<sim::SimCh
         sim_channels.end());
 }
 
-void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt) 
+void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
 {
     signature::Pattern pattern;
     bool pattern_found = true;
 
     for (auto& signatureTool : _signatureToolsVec) {
         signature::Signature signature; 
-        if (!signatureTool->constructSignature(evt, signature)) {
+        if (!signatureTool->constructSignature(e, signature)) {
             pattern_found = false;
             break;
         }
@@ -221,12 +202,12 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt)
     if (!pattern_found && !pattern.empty())
         pattern.clear();
 
-    int run = evt->run();
-    int subrun = evt->subRun();
-    int event = evt->event();
+    int run = e.run();
+    int subrun = e.subRun();
+    int event = e.event();
 
     auto const& pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(
-        *evt, _PFPproducer,
+        *e, _PFPproducer,
         proxy::withAssociated<recob::Cluster>(_CLSproducer),
         proxy::withAssociated<recob::Slice>(_SLCproducer),
         proxy::withAssociated<recob::Hit>(_HITproducer)
@@ -257,7 +238,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt)
     for (const auto& hit : neutrino_hits) {
         double charge = hit->Integral();
         common::PandoraView pandora_view = common::GetPandoraView(hit);
-        TVector3 hit_pos = common::GetPandoraHitPosition(*evt, hit, pandora_view);
+        TVector3 hit_pos = common::GetPandoraHitPosition(*e, hit, pandora_view);
 
         if (pandora_view == common::TPC_VIEW_U) {
             sum_charge_u += charge;
@@ -286,21 +267,19 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event* evt)
     double centroid_drift_w = (sum_charge_w > 0) ? sum_drift_w / sum_charge_w : 0.0;
 
     std::vector<image::ImageProperties> properties;
-    properties.emplace_back(
-        centroid_wire_u - (_image_width / 2.0) * _wire_pitch_u,
-        centroid_drift_u - (_image_height / 2.0) * _drift_step,
+    properties.emplace_back(centroid_wire_u, centroid_drift_u,
         _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU
     );
-    properties.emplace_back(
-        centroid_wire_v - (_image_width / 2.0) * _wire_pitch_v,
-        centroid_drift_v - (_image_height / 2.0) * _drift_step,
+    properties.emplace_back(centroid_wire_v, centroid_drift_v,
         _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV
     );
-    properties.emplace_back(
-        centroid_wire_w - (_image_width / 2.0) * _wire_pitch_w,
-        centroid_drift_w - (_image_height / 2.0) * _drift_step,
+    properties.emplace_back(centroid_wire_w, centroid_drift_w,
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_manager->add(run, subrun, event, pattern_found, neutrino_hits, properties, pattern);
+    _image_handler->add(run, subrun, event, pattern_found, neutrino_hits, properties, pattern);
+}
+
+void ImageTrainingAnalyser::endJob() 
+{
 }

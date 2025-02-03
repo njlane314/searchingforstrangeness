@@ -35,7 +35,7 @@ enum SignatureType {
 };
 
 using Signature = std::vector<art::Ptr<simb::MCParticle>>;
-using Pattern = std::vector<SignatureType, Signature>;
+using Pattern = std::vector<std::pair<SignatureType, Signature>>;
 
 class SignatureToolBase 
 {
