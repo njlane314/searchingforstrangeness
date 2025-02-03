@@ -37,6 +37,8 @@ private:
 
 void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
+    signature.first = SignatureLambda;
+   
     //std::cout << "Building Lambda signature" << std::endl;
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;

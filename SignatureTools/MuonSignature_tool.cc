@@ -31,6 +31,8 @@ private:
 
 void MuonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
+    signature.first = SignaturePrimaryMuon;
+
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
     art::fill_ptr_vector(mcp_vec, mcp_h);

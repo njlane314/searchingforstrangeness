@@ -42,7 +42,7 @@ bool HitExclusivity::filter(const art::Event &e, const signature::Signature& sig
 
   double sig_q_inclusive = 0.0;
   double sig_q_exclusive = 0.0;
-  for (const auto& mcp_s : sig) {
+  for (const auto& mcp_s : sig.second) {
     for (const auto& hit : _mc_hits) {
       auto assmcp = _mcp_bkth_assoc->at(hit.key());
       auto assmdt = _mcp_bkth_assoc->data(hit.key());

@@ -24,7 +24,18 @@
 
 namespace signature {
 
-using Signature = std::vector<art::Ptr<simb::MCParticle>>;
+enum SignatureType {
+    SignatureInvalid = -1,
+    SignatureEmpty = 0,
+    SignatureNoise,
+    SignaturePrimaryMuon,
+    SignatureChargedKaon,
+    SignatureKaonShort,
+    SignatureLambda,
+    SignatureChargedSigma
+};
+
+using Signature = std::pair<int,std::vector<art::Ptr<simb::MCParticle>>>;
 using Pattern = std::vector<Signature>;
 
 class SignatureToolBase 
@@ -41,7 +52,7 @@ public:
 
     bool constructSignature(art::Event const& evt, Signature& signature)
     {
-        signature.clear();
+        signature.second.clear();
         auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
         if (truth_handle->size() != 1) 
             return false;
@@ -49,8 +60,11 @@ public:
         bool signature_found = false;
         this->findSignature(evt, signature, signature_found);
 
-        if (!signature_found)  
-            signature.clear();
+        if (!signature_found){
+          //signature.clear();
+          signature.second.clear();
+          signature.first = SignatureInvalid;
+        }
 
         return signature_found;
     }
@@ -86,7 +100,7 @@ protected:
 
     void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
     {
-        signature.push_back(mcp);
+        signature.second.push_back(mcp);
     }
 
     virtual void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) = 0;

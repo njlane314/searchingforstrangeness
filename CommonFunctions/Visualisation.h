@@ -783,7 +783,7 @@ namespace common
 
             bool is_sig = false;
             for (const auto& signature : patt) {
-                for (const auto& mcp : signature) {
+                for (const auto& mcp : signature.second) {
                     if (mcp->TrackId() == trackid){
                         is_sig = true; 
                     }
@@ -820,7 +820,7 @@ namespace common
 
             bool is_sig = false;
             for (const auto& signature : patt) {
-                for (const auto& mcp : signature) {
+                for (const auto& mcp : signature.second) {
                     if (mcp->TrackId() == trackid){
                         is_sig = true; 
                     }
@@ -858,7 +858,7 @@ namespace common
 
             bool is_sig = false;
             for (const auto& signature : patt) {
-                for (const auto& mcp : signature) {
+                for (const auto& mcp : signature.second) {
                     if (mcp->TrackId() == trackid){
                         is_sig = true; 
                     }

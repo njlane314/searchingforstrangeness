@@ -45,7 +45,7 @@ bool PatternCompleteness::filter(const art::Event &e, const signature::Signature
     double tot_sig_hit = 0; 
 
     std::vector<art::Ptr<recob::Hit>> sig_hits;
-    for (const auto& mcp_s : sig) {
+    for (const auto& mcp_s : sig.second) {
       double sig_hit = 0;
 
       for (const auto& hit : _mc_hits) {

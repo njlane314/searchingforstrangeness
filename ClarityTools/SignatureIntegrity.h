@@ -5,7 +5,7 @@
 
 namespace claritytools {
 
-class SignatureIntegrity : ClarityToolBase {
+class SignatureIntegrity : public ClarityToolBase {
 
 public:
     explicit SignatureIntegrity(const fhicl::ParameterSet& pset) :
@@ -70,7 +70,7 @@ bool SignatureIntegrity::filter(const art::Event &e, const signature::Signature&
   std::cout << "Checking Signature Integrity" << std::endl;
   this->loadEventHandles(e,view);
 
-  for (const auto& mcp_s : sig) {
+  for (const auto& mcp_s : sig.second) {
     if(!checkStart(mcp_s,view) || !checkEnd(mcp_s,view)) return false;
   }
 
@@ -89,9 +89,6 @@ bool SignatureIntegrity::checkEnd(const art::Ptr<simb::MCParticle>& part, common
     TVector3 end(part->EndX(), part->EndY(), part->EndZ());
     return isChannelRegionActive(end,view);
 }
-
-
-DEFINE_ART_CLASS_TOOL(SignatureIntegrity)
 
 }
 

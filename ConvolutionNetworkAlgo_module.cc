@@ -357,7 +357,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
       sig_found.push_back(signatureTool->constructSignature(evt, signature)); 
       patt.push_back(signature);
       std::cout << "Signature particles:" << std::endl;
-      for(auto part : signature) std::cout << part->PdgCode() << "  " << part->TrackId() << "  " << part->P() << std::endl;
+      for(auto part : signature.second) std::cout << part->PdgCode() << "  " << part->TrackId() << "  " << part->P() << std::endl;
     }
 
     std::map<common::PandoraView,std::vector<bool>> clarity_results_all_tools;
@@ -452,9 +452,9 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
                               // only allow hits to be flagged as belonging to a signature if corresponding clarity filter returned true
                               if(sig_found.at(sig_ctr) && pass_clarity.at(sig_ctr))
                               {
-                                for (size_t it = 0; it < sig.size(); ++it)
+                                for (size_t it = 0; it < sig.second.size(); ++it)
                                 {
-                                  if (sig[it]->TrackId() == assmcp[ia]->TrackId()) 
+                                  if (sig.second[it]->TrackId() == assmcp[ia]->TrackId()) 
                                   {
                                     signature_flags.at(sig_ctr) = 1.f;
                                     found_flag = true;
