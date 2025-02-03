@@ -17,6 +17,8 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
 
+#include <torch/torch.h>
+
 namespace image {
 
 enum SignatureType {
@@ -110,12 +112,18 @@ public:
         return pixels_;
     }
 
+    torch::Tensor tensor() const {
+        return torch::from_blob(const_cast<float*>(pixels_.data()),
+                                {1, 1, (long)meta_.height(), (long)meta_.width()},
+                                torch::kFloat32).clone();
+    }
+
 private:
     ImageMeta meta_;
     std::vector<float> pixels_;
 };
 
-std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std::vector<recob::Wire>& wires, const geo::GeometryCore& geo) {
+std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
     std::vector<Image> images;
     for (const auto& meta : metas) images.emplace_back(meta);
 
@@ -150,7 +158,7 @@ std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std:
     return images;
 }
 
-std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, const std::vector<sim::SimChannel>& channels, const geo::GeometryCore& geo) {
+std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, const std::vector<art::Ptr<Sim::SimChannel>>& wires const geo::GeometryCore& geo) {
     std::unordered_map<int, SignatureType> track_signatures;
     std::unordered_map<size_t, float> pixel_energy;
 
