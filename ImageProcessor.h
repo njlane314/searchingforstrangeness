@@ -1,4 +1,3 @@
-// ImageProcessor.h
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
@@ -116,7 +115,42 @@ private:
     std::vector<float> pixels_;
 };
 
-std::vector<Image> SimChannelToImages(const std::vector<ImageMeta>& metas, const std::vector<sim::SimChannel>& channels, const geo::GeometryCore& geo) {
+std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std::vector<recob::Wire>& wires, const geo::GeometryCore& geo) {
+    std::vector<Image> images;
+    for (const auto& meta : metas) images.emplace_back(meta);
+
+    for (const auto& wire : wires) {
+        auto ch_id = wire.Channel();
+        auto wire_ids = geo.ChannelToWire(ch_id);
+        if (wire_ids.empty()) continue;
+
+        auto view = geo.View(wire_ids.front());
+        for (const auto& range : wire.SignalROI().get_ranges()) {
+            const auto& adcs = range.data();
+            int start_idx = range.begin_index();
+
+            for (size_t idx = 0; idx < adcs.size(); ++idx) {
+                double x = geo.ConvertTicksToX(start_idx + idx, wire_ids.front().Plane, wire_ids.front().TPC, wire_ids.front().Cryostat);
+                TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat).TPC(wire_ids.front().TPC).Plane(wire_ids.front().Plane).Wire(wire_ids.front().Wire).GetCenter();
+
+                float coord = (view == geo::kW) ? wire_center.Z() :
+                              (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034)) - 
+                              (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
+
+                for (auto& img : images) {
+                    if (img.meta_.view() == view) {
+                        size_t row = img.meta_.row(x);
+                        size_t col = img.meta_.col(coord);
+                        img.set(row, col, adcs[idx]);
+                    }
+                }
+            }
+        }
+    }
+    return images;
+}
+
+std::vector<Image> SimChannelsToImages(const std::vector<ImageMeta>& metas, const std::vector<sim::SimChannel>& channels, const geo::GeometryCore& geo) {
     std::unordered_map<int, SignatureType> track_signatures;
     std::unordered_map<size_t, float> pixel_energy;
 
@@ -168,41 +202,6 @@ std::vector<Image> SimChannelToImages(const std::vector<ImageMeta>& metas, const
     return images;
 }
 
-std::vector<Image> WiresToImages(const std::vector<ImageMeta>& metas, const std::vector<recob::Wire>& wires, const geo::GeometryCore& geo) {
-    std::vector<Image> images;
-    for (const auto& meta : metas) images.emplace_back(meta);
-
-    for (const auto& wire : wires) {
-        auto ch_id = wire.Channel();
-        auto wire_ids = geo.ChannelToWire(ch_id);
-        if (wire_ids.empty()) continue;
-
-        auto view = geo.View(wire_ids.front());
-        for (const auto& range : wire.SignalROI().get_ranges()) {
-            const auto& adcs = range.data();
-            int start_idx = range.begin_index();
-
-            for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                double x = geo.ConvertTicksToX(start_idx + idx, wire_ids.front().Plane, wire_ids.front().TPC, wire_ids.front().Cryostat);
-                TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat).TPC(wire_ids.front().TPC).Plane(wire_ids.front().Plane).Wire(wire_ids.front().Wire).GetCenter();
-
-                float coord = (view == geo::kW) ? wire_center.Z() :
-                              (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034)) - 
-                              (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
-
-                for (auto& img : images) {
-                    if (img.meta_.view() == view) {
-                        size_t row = img.meta_.row(x);
-                        size_t col = img.meta_.col(coord);
-                        img.set(row, col, adcs[idx]);
-                    }
-                }
-            }
-        }
-    }
-    return images;
-}
-
 class ImageManager {
 public:
     ImageManager(TTree* tree, const geo::GeometryCore& geo)
@@ -210,16 +209,16 @@ public:
         tree_->Branch("run", &run_);
         tree_->Branch("subrun", &subrun_);
         tree_->Branch("event", &event_);
-        tree_->Branch("signal", &signal_);
-        tree_->Branch("wires", &wires_);
-        tree_->Branch("sim_channels", &sim_channels_);
+        tree_->Branch("is_signal", &is_signal_);
+        tree_->Branch("wire_images", &wire_images_);
+        tree_->Branch("sim_channel_images", &sim_channel_images);
     }
 
     void reset() {
         run_ = subrun_ = event_ = 0;
-        signal_ = false;
-        wires_.clear();
-        sim_channels_.clear();
+        is_signal_ = false;
+        wire_images_.clear();
+        sim_channel_images.clear();
     }
 
     void add(int run, int subrun, int event, bool signal,
@@ -229,10 +228,10 @@ public:
         run_ = run;
         subrun_ = subrun;
         event_ = event;
-        signal_ = signal;
+        is_signal_ = signal;
 
-        wires_ = WiresToImages(metas, wires, geo_);
-        sim_channels_ = SimChannelToImages(metas, channels, geo_);
+        wire_images_ = WiresToImages(metas, wires, geo_);
+        sim_channel_images = SimChannelsToImages(metas, channels, geo_);
 
         tree_->Fill();
     }
@@ -241,11 +240,11 @@ private:
     TTree* tree_;
     const geo::GeometryCore& geo_;
     int run_, subrun_, event_;
-    bool signal_;
-    std::vector<Image> wires_;
-    std::vector<Image> sim_channels_;
+    bool is_signal_;
+    std::vector<Image> wire_images_;
+    std::vector<Image> sim_channel_images;
 };
 
-} // namespace image
+} 
 
 #endif // IMAGEPROCESSOR_H
