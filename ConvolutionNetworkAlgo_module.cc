@@ -357,7 +357,7 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
       sig_found.push_back(signatureTool->constructSignature(evt, signature)); 
       patt.push_back(signature);
       std::cout << "Signature particles:" << std::endl;
-      for(auto part : signature) std::cout << part->PdgCode() << "  " << part->TrackId() << std::endl;
+      for(auto part : signature) std::cout << part->PdgCode() << "  " << part->TrackId() << "  " << part->P() << std::endl;
     }
 
     std::map<common::PandoraView,std::vector<bool>> clarity_results_all_tools;
