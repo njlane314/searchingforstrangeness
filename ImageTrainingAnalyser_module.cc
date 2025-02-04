@@ -16,12 +16,15 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/Simulation/SimChannel.h"
 
 #include "CommonFunctions/Pandora.h"
 #include "CommonFunctions/Scatters.h"
 #include "CommonFunctions/Corrections.h"
 #include "CommonFunctions/Region.h"
 #include "CommonFunctions/Types.h"
+#include "CommonFunctions/Geometry.h"
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
@@ -88,6 +91,8 @@ private:
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
     void filterBadSimChannels(std::vector<art::Ptr<sim::SimChannel>>& sim_channels);
     void produceTrainingSample(art::Event const& e);
+    void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
+    void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
 };
 
 ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
@@ -185,6 +190,42 @@ void ImageTrainingAnalyser::filterBadSimChannels(std::vector<art::Ptr<sim::SimCh
         sim_channels.end());
 }
 
+void ImageTrainingAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
+{
+    _pfpmap.clear();
+
+    unsigned int p = 0;
+    for (const auto &pfp_pxy : pfp_pxy_col)
+    {
+        _pfpmap[pfp_pxy->Self()] = p;
+        p++;
+    }
+
+    return;
+} 
+
+void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy,
+                                           const ProxyPfpColl_t &pfp_pxy_col,
+                                           std::vector<ProxyPfpElem_t> &slice_v)
+{
+    auto daughters = pfp_pxy->Daughters();
+    slice_v.push_back(pfp_pxy);
+
+    for (auto const &daughterid : daughters)
+    {
+        if (_pfpmap.find(daughterid) == _pfpmap.end())
+            continue;
+
+        auto pfp_pxy2 = pfp_pxy_col.begin();
+        for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
+            ++pfp_pxy2;
+
+        this->addDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
+
+    } 
+    return;
+} 
+
 void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
 {
     signature::Pattern pattern;
@@ -206,6 +247,40 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     int subrun = e.subRun();
     int event = e.event();
 
+    std::vector<art::Ptr<recob::Wire>> wire_vec;
+    art::fill_ptr_vector(wire_vec, e, _WREproducer);
+
+    this->filterBadChannels(wire_vec);
+
+    std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
+    art::fill_ptr_vector(sim_channel_vec, e, _SCHproducer);
+
+    this->filterBadSimChannels(sim_channel_vec);
+
+    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
+                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
+                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
+                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
+                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
+                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
+                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
+                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
+                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
+
+    this->buildPFPMap(pfp_proxy);
+    std::vector<ProxyPfpElem_t> neutrino_slice;
+    for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy)
+    {
+        const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
+
+        if (pfp_pxy->IsPrimary() == false)
+            continue;
+
+        auto primary_pdg = fabs(pfp_pxy->PdgCode());
+        if ((primary_pdg == 12) || (primary_pdg == 14))
+            this->addDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
+    } 
+
     auto const& pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(
         *e, _PFPproducer,
         proxy::withAssociated<recob::Cluster>(_CLSproducer),
@@ -218,7 +293,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         e, _CLSproducer, proxy::withAssociated<recob::Hit>(_CLSproducer)
     );
 
-    for (const auto& pfp : slice_pfp_v) {
+    for (const auto& pfp : neutrino_slice) {
         if (pfp->IsPrimary()) continue; 
 
         auto clus_pxy_v = pfp.get<recob::Cluster>();
@@ -277,7 +352,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_handler->add(run, subrun, event, pattern_found, neutrino_hits, properties, pattern);
+    _image_handler->add(run, subrun, event, pattern_found, wire_vec, sim_channel_vec, properties, pattern);
 }
 
 void ImageTrainingAnalyser::endJob() 
