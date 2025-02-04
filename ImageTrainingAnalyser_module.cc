@@ -1,3 +1,9 @@
+#ifdef ClassDef
+#undef ClassDef
+#endif
+#include <torch/torch.h>
+#include <torch/script.h>
+
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -32,12 +38,8 @@
 #include "SignatureTools/SignatureToolBase.h"
 
 #include "TDatabasePDG.h"
-
-#ifdef ClassDef
-#undef ClassDef
-#endif
-#include <torch/torch.h>
-#include <torch/script.h>
+#include "TFile.h"
+#include "TTree.h"
 
 #include <string>
 #include <vector>
@@ -46,9 +48,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <cmath>
-
-#include "TFile.h"
-#include "TTree.h"
+#include <algorithm>
 
 #include "ImageProcessor.h"
 
@@ -65,6 +65,9 @@ public:
     void analyze(art::Event const& e) override;
     void beginJob() override;
     void endJob() override;
+
+    using ProxyPfpColl_t = common::ProxyPfpColl_t;
+    using ProxyPfpElem_t = common::ProxyPfpElem_t;
 
 private:
     std::string _training_output_file;
@@ -83,6 +86,8 @@ private:
 
     const geo::GeometryCore* _geo;
     const detinfo::DetectorProperties* _detp;
+
+    std::map<int, unsigned int> _pfpmap;
 
     art::InputTag _WREproducer, _SCHproducer, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
@@ -248,12 +253,21 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     int event = e.event();
 
     std::vector<art::Ptr<recob::Wire>> wire_vec;
-    art::fill_ptr_vector(wire_vec, e, _WREproducer);
+    auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer);
+    if (wireHandle) 
+        art::fill_ptr_vector(wire_vec, wireHandle);
+    else
+        return;
 
     this->filterBadChannels(wire_vec);
 
     std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
-    art::fill_ptr_vector(sim_channel_vec, e, _SCHproducer);
+    auto simChannelHandle = e.getValidHandle<std::vector<sim::SimChannel>>(_SCHproducer);
+    if (simChannelHandle) 
+        art::fill_ptr_vector(sim_channel_vec, simChannelHandle);
+    else
+        return;
+
 
     this->filterBadSimChannels(sim_channel_vec);
 
@@ -281,13 +295,6 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
             this->addDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
     } 
 
-    auto const& pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(
-        *e, _PFPproducer,
-        proxy::withAssociated<recob::Cluster>(_CLSproducer),
-        proxy::withAssociated<recob::Slice>(_SLCproducer),
-        proxy::withAssociated<recob::Hit>(_HITproducer)
-    );
-
     std::vector<art::Ptr<recob::Hit>> neutrino_hits;
     common::ProxyClusColl_t const& clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(
         e, _CLSproducer, proxy::withAssociated<recob::Hit>(_CLSproducer)
@@ -313,7 +320,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     for (const auto& hit : neutrino_hits) {
         double charge = hit->Integral();
         common::PandoraView pandora_view = common::GetPandoraView(hit);
-        TVector3 hit_pos = common::GetPandoraHitPosition(*e, hit, pandora_view);
+        TVector3 hit_pos = common::GetPandoraHitPosition(e, hit, pandora_view);
 
         if (pandora_view == common::TPC_VIEW_U) {
             sum_charge_u += charge;
