@@ -102,7 +102,7 @@ private:
 
 ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
-    , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output")}
+    , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output.root")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
     , _image_width{pset.get<int>("ImageWidth", 256)}
     , _image_height{pset.get<int>("ImageHeight", 256)}
@@ -364,4 +364,14 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
 
 void ImageTrainingAnalyser::endJob() 
 {
+    if (_root_file) {
+        _root_file->cd();         
+        _image_tree->Write();     
+        _root_file->Close();      
+
+        delete _root_file;        
+        _root_file = nullptr;     
+    }
 }
+
+DEFINE_ART_MODULE(ImageTrainingAnalyser)

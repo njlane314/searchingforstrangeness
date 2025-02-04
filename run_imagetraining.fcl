@@ -1,0 +1,52 @@
+#include "selectionconfig.fcl"  
+
+process_name: ImageTrainingProcess
+
+services:
+{
+    TFileService: { fileName: "image_training_sample.root" } 
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    ExptGeoHelperInterface: @local::microboone_geometry_helper
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source:
+{
+    module_type: RootInput  
+    maxEvents: -1  
+}
+
+physics:
+{
+    analyzers:
+    {
+        imagetraining: 
+        {
+            module_type: ImageTrainingAnalyser
+            
+            SignatureTools:
+            {
+                leptonic: @local::MuonSignature
+                hadronic: @local::LambdaSignature
+            }
+        }
+    }
+ 
+    e1: [ imagetraining ]     
+   
+    end_paths: [ e1 ]           
+}
