@@ -10,7 +10,7 @@ class HitExclusivity : ClarityToolBase {
 public:
     explicit HitExclusivity(const fhicl::ParameterSet& pset) :
       ClarityToolBase{(pset)}
-    , _hit_exclus_thresh{pset.get<double>("HitExclusivityThreshold", 0.5)}
+    , _hit_exclus_thresh{pset.get<double>("HitExclusivityThreshold", 0.999)}
     , _sig_exclus_thresh{pset.get<double>("SignatureExclusivityThreshold", 0.8)}
     {
         configure(pset);
@@ -37,12 +37,13 @@ bool HitExclusivity::filter(const art::Event &e, const signature::Signature& sig
 {
 
   std::cout << "Checking Hit Exclusivity" << std::endl;
-
+  std::cout << _hit_exclus_thresh << std::endl;
   if(!this->loadEventHandles(e,view)) return false;
 
   double sig_q_inclusive = 0.0;
   double sig_q_exclusive = 0.0;
   for (const auto& mcp_s : sig.second) {
+    std::cout << "Checking particle " << mcp_s->PdgCode() << "  " << mcp_s->TrackId() << std::endl;
     for (const auto& hit : _mc_hits) {
       auto assmcp = _mcp_bkth_assoc->at(hit.key());
       auto assmdt = _mcp_bkth_assoc->data(hit.key());
@@ -51,8 +52,10 @@ bool HitExclusivity::filter(const art::Event &e, const signature::Signature& sig
         auto amd = assmdt[ia];
         if (assmcp[ia]->TrackId() == mcp_s->TrackId()) {
           sig_q_inclusive += amd->numElectrons * amd->ideNFraction;
-          if (amd->ideNFraction > _hit_exclus_thresh) 
+          std::cout << amd->ideNFraction << std::endl;
+          if (amd->ideNFraction > _hit_exclus_thresh){
             sig_q_exclusive += amd->numElectrons * amd->ideNFraction;
+          }
         }
       }
     }

@@ -84,12 +84,13 @@ protected:
 private:
 
     const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
+
     void loadBadChannelMap();
 
 };
 
 void ClarityToolBase::loadBadChannelMap(){
-
+/*
     std::cout << "Loading Bad Channel Map" << std::endl;
 
     size_t num_channels = _geo->Nchannels();
@@ -115,6 +116,22 @@ void ClarityToolBase::loadBadChannelMap(){
             }
         }
     }
+*/
+
+  size_t num_channels = _geo->Nchannels();
+  _bad_channel_mask.resize(num_channels+1,false);
+
+  std::vector<int> bad_ch;
+  std::ifstream inFile(_bad_channel_file, std::ios::in);
+  std::string line;
+  int ch;
+  while (inFile >> ch) {
+     bad_ch.push_back(ch);
+  } 
+
+  for(size_t i=0;i<num_channels+1;i++)
+    if(std::find(bad_ch.begin(),bad_ch.end(),i) != bad_ch.end())
+      _bad_channel_mask.at(i) = true; 
 
 }
 

@@ -12,7 +12,7 @@ public:
       ClarityToolBase{(pset)} 
       , _sig_hit_thresh{pset.get<int>("SignatureHitThreshold", 10)}
       , _sig_hit_comp_thresh{pset.get<double>("SignatureHitCompletenessThreshold", 0.05)}
-      , _part_hit_thresh{pset.get<int>("ParticleHitThreshold", 5)}
+      , _part_hit_thresh{pset.get<int>("ParticleHitThreshold", 4)}
       , _part_hit_frac_thresh{pset.get<double>("ParticleHitFractionThreshold", 0.05)}
     {
         configure(pset);

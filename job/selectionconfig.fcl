@@ -108,16 +108,21 @@ SignatureTools:
 
 PatternCompleteness: {
     tool_type: "PatternCompleteness"
-    BadChannelFile: "badchannels.txt"
+    BadChannelFile: "badchannels_alt.txt"
 }
 
-SignatureIntegrity: {
-    tool_type: "SignatureIntegrity"
-    BadChannelFile: "badchannels.txt"
+LambdaSignatureIntegrity: {
+    tool_type: "LambdaSignatureIntegrity"
+    BadChannelFile: "badchannels_alt.txt"
+}
+
+MuonSignatureIntegrity: {
+    tool_type: "MuonSignatureIntegrity"
+    BadChannelFile: "badchannels_alt.txt"
 }
 
 HitExclusivity: {
     tool_type: "HitExclusivity"
-    BadChannelFile: "badchannels.txt"
+    BadChannelFile: "badchannels_alt.txt"
 }
 
