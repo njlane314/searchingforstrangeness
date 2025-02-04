@@ -140,7 +140,9 @@ std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& prop
             int start_idx = range.begin_index();
 
             for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                double x = detProp->ConvertTicksToX(tdc, wire_ids.front().Plane, wire_ids.front().TPC, wire_ids.front()Cryostat, *detClock);
+                geo::PlaneID plane_id(wire_ids.front());
+                int tdc = start_idx + idx;
+                double x = detProp->ConvertTicksToX(tdc, plane_id);
                 TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat).TPC(wire_ids.front().TPC).Plane(wire_ids.front().Plane).Wire(wire_ids.front().Wire).GetCenter();
 
                 float coord = (view == geo::kW) ? wire_center.Z() :
@@ -166,6 +168,9 @@ std::vector<Image> ConvertSimChannelsToImages(
     const geo::GeometryCore& geo,
     const signature::Pattern& pattern) 
 {
+    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    auto const* detClock = lar::providerFrom<detinfo::DetectorClocksService>();
+
     std::unordered_map<int, signature::SignatureType> track_signatures;
     for (const auto& [sig_type, signature] : pattern) {
         for (const auto& particle : signature) {
@@ -188,7 +193,9 @@ std::vector<Image> ConvertSimChannelsToImages(
         for (const auto& tdc_ide_pair : channel->TDCIDEMap()) {
             int tdc = tdc_ide_pair.first;
             for (const auto& ide : tdc_ide_pair.second) {
-                double x = geo.ConvertTicksToX(tdc, wire_id.Plane, wire_id.TPC, wire_id.Cryostat);
+                geo::PlaneID plane_id(wire_ids.front());
+                double x = detProp->ConvertTicksToX(tdc, plane_id);
+
                 TVector3 wire_center = geo.Cryostat(wire_id.Cryostat).TPC(wire_id.TPC).Plane(wire_id.Plane).Wire(wire_id.Wire).GetCenter();
 
                 float coord = (view == geo::kW) ? wire_center.Z() :
@@ -241,9 +248,9 @@ public:
         simchannel_images_.clear();
     }
 
-    void add(int run, int subrun, int event, bool is_signal,
-             const std::vector<recob::Wire>& wires,
-             const std::vector<sim::SimChannel>& channels,
+    void add(int& run, int& subrun, int& event, bool& is_signal,
+             const std::vector<art::Ptr<recob::Wire>>& wires,
+             const std::vector<art::Ptr<sim::SimChannel>>& channels,
              const std::vector<ImageProperties>& properties,
              const signature::Pattern& pattern) {
         run_ = run;
