@@ -24,6 +24,7 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "TDirectoryFile.h"
+#include "EventClassifier.h"
 
 namespace image {
 
@@ -157,29 +158,29 @@ public:
         tree_->Branch("run", &run_);
         tree_->Branch("subrun", &subrun_);
         tree_->Branch("event", &event_);
-        tree_->Branch("is_signal", &is_signal_);
+        tree_->Branch("event_type", &event_type_);
         tree_->Branch("planes", &planes_);
         tree_->Branch("image_data", &image_data_);
     }
 
     void reset() {
         run_ = subrun_ = event_ = 0;
-        is_signal_ = false;
+        event_type_ = signature::EventType::kOther;
         planes_.clear();
         image_data_.clear();
     }
 
     void add(const art::Event& e, 
-             const bool is_signal, 
+             const signature::EventType event_type,
              const std::vector<art::Ptr<recob::Wire>>& wires,
              const std::vector<ImageProperties>& properties) {
-        reset();
+        this->reset();
 
         run_ = e.run();
         subrun_ = e.subRun();
         event_ = e.event();
 
-        is_signal_ = is_signal;
+        event_type_ = event_type;
 
         auto images = ConvertWiresToImages(properties, wires, geo_);
         for (const auto& img : images) {
@@ -196,7 +197,7 @@ private:
 
     TTree* tree_;
     int run_, subrun_, event_;
-    bool is_signal_;
+    signature::EventType event_type_;
     std::vector<int> planes_;
     std::vector<float> image_data_;
 };
