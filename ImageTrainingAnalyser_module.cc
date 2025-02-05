@@ -104,8 +104,8 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output.root")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
-    , _image_width{pset.get<int>("ImageWidth", 256)}
-    , _image_height{pset.get<int>("ImageHeight", 256)}
+    , _image_width{pset.get<int>("ImageWidth", 512)}
+    , _image_height{pset.get<int>("ImageHeight", 512)}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
     //, _SCHproducer{pset.get<art::InputTag>("SCHproducer", "simpleSC")}
     , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
@@ -266,6 +266,8 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     else
         return;
 
+    std::cout << "Wire size: " << wire_vec.size() << std::endl;
+
     this->filterBadChannels(wire_vec);
 
     /*std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
@@ -355,6 +357,10 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
 
     double centroid_wire_w = (sum_charge_w > 0) ? sum_wire_w / sum_charge_w : 0.0;
     double centroid_drift_w = (sum_charge_w > 0) ? sum_drift_w / sum_charge_w : 0.0;
+
+    std::cout << "Centroids - U: (" << sum_wire_u / sum_charge_u << ", " << sum_drift_u / sum_charge_u << ")"
+              << ", V: (" << sum_wire_v / sum_charge_v << ", " << sum_drift_v / sum_charge_v << ")"
+              << ", W: (" << sum_wire_w / sum_charge_w << ", " << sum_drift_w / sum_charge_w << ")\n";
 
     std::vector<image::ImageProperties> properties;
     properties.emplace_back(centroid_wire_u, centroid_drift_u,

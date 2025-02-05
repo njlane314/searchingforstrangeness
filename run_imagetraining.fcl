@@ -37,7 +37,7 @@ physics:
         imagetraining: 
         {
             module_type: ImageTrainingAnalyser
-            
+ 
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
