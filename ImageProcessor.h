@@ -112,7 +112,7 @@ private:
     std::vector<float> pixels_;
 };
 
-std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& properties, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
+std::vector<Image> WiresToImages(const std::vector<ImageProperties>& properties, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
     std::vector<Image> images;
     for (const auto& prop : properties) images.emplace_back(prop);
 
@@ -165,7 +165,7 @@ public:
 
     void reset() {
         run_ = subrun_ = event_ = 0;
-        event_type_ = signature::EventType::kOther;
+        event_type_ = static_cast<int>(signature::EventType::kOther);
         planes_.clear();
         image_data_.clear();
     }
@@ -180,9 +180,9 @@ public:
         subrun_ = e.subRun();
         event_ = e.event();
 
-        event_type_ = event_type;
+        event_type_ = static_cast<int>(event_type);
 
-        auto images = ConvertWiresToImages(properties, wires, geo_);
+        auto images = WiresToImages(properties, wires, geo_);
         for (const auto& img : images) {
             planes_.push_back(static_cast<int>(img.properties().view()));
             auto pixels = img.data();
@@ -197,7 +197,7 @@ private:
 
     TTree* tree_;
     int run_, subrun_, event_;
-    signature::EventType event_type_;
+    int event_type_;
     std::vector<int> planes_;
     std::vector<float> image_data_;
 };
