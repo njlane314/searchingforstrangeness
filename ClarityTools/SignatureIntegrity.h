@@ -11,7 +11,7 @@ class SignatureIntegrity : public ClarityToolBase {
 public:
     explicit SignatureIntegrity(const fhicl::ParameterSet& pset) :
       ClarityToolBase{(pset)} 
-    , _chan_act_reg{pset.get<int>("ChannelActiveRegion", 2)}
+    , _chan_act_reg{pset.get<int>("ChannelActiveRegion", 3)}
     {
         configure(pset);
     }
