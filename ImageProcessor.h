@@ -1,6 +1,9 @@
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
+#include <torch/torch.h>
+#include <torch/script.h>
+
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -8,7 +11,7 @@
 #include <unordered_map>
 #include <TFile.h>
 #include <TTree.h>
-#include <TObject.h>
+
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -21,10 +24,6 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "TDirectoryFile.h"
-
-#ifdef ClassDef
-#undef ClassDef
-#endif
 
 namespace image {
 
@@ -70,7 +69,7 @@ private:
     geo::View_t view_;
 };
 
-class Image : public TObject {
+class Image {
 public:
     Image() = default;
     Image(const ImageProperties& prop)
@@ -86,16 +85,6 @@ public:
         }
     }
 
-    void copy_col(size_t col, const std::vector<float>& data) {
-        if (col >= prop_.width()) return;
-        for (size_t row = 0; row < prop_.height(); ++row) {
-            size_t idx = prop_.index(row, col);
-            if (idx != static_cast<size_t>(-1)) {
-                pixels_[idx] = data[row];
-            }
-        }
-    }
-
     float get(size_t row, size_t col) const {
         size_t idx = prop_.index(row, col);
         return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : 0.0f;
@@ -105,7 +94,7 @@ public:
         std::fill(pixels_.begin(), pixels_.end(), value);
     }
 
-    const std::vector<float>& data() const {
+    std::vector<float> data() const {
         return pixels_;
     }
 
@@ -127,7 +116,6 @@ std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& prop
     for (const auto& prop : properties) images.emplace_back(prop);
 
     auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
-    auto const* detClock = lar::providerFrom<detinfo::DetectorClocksService>();
 
     for (const auto& wire : wires) {
         auto ch_id = wire->Channel();
@@ -162,73 +150,6 @@ std::vector<Image> ConvertWiresToImages(const std::vector<ImageProperties>& prop
     return images;
 }
 
-std::vector<Image> ConvertSimChannelsToImages(
-    const std::vector<ImageProperties>& properties,
-    const std::vector<art::Ptr<sim::SimChannel>>& channels,
-    const geo::GeometryCore& geo,
-    const signature::Pattern& pattern) 
-{
-    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
-    auto const* detClock = lar::providerFrom<detinfo::DetectorClocksService>();
-
-    std::unordered_map<int, signature::SignatureType> track_signatures;
-    for (const auto& [sig_type, signature] : pattern) {
-        for (const auto& particle : signature) {
-            track_signatures[particle->TrackId()] = sig_type;
-        }
-    }
-
-    std::unordered_map<size_t, float> pixel_energy;
-    std::vector<Image> images;
-    for (const auto& prop : properties) images.emplace_back(prop);
-
-    for (const auto& channel : channels) {
-        auto ch_id = channel->Channel();
-        auto wire_ids = geo.ChannelToWire(ch_id);
-        if (wire_ids.empty()) continue;
-
-        auto wire_id = wire_ids.front();
-        auto view = geo.View(wire_id);
-
-        for (const auto& tdc_ide_pair : channel->TDCIDEMap()) {
-            int tdc = tdc_ide_pair.first;
-            for (const auto& ide : tdc_ide_pair.second) {
-                geo::PlaneID plane_id(wire_ids.front());
-                double x = detProp->ConvertTicksToX(tdc, plane_id);
-
-                TVector3 wire_center = geo.Cryostat(wire_id.Cryostat).TPC(wire_id.TPC).Plane(wire_id.Plane).Wire(wire_id.Wire).GetCenter();
-
-                float coord = (view == geo::kW) ? wire_center.Z() :
-                              (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034)) - 
-                              (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
-
-                signature::SignatureType sig = signature::SignatureEmpty;  
-                auto it = track_signatures.find(ide.trackID);
-                if (it != track_signatures.end()) {
-                    sig = it->second;  
-                } else if (ide.energy > 0) {
-                    sig = signature::SignatureNoise;  
-                }
-
-                for (auto& img : images) {
-                    if (img.properties().view() == view) {
-                        size_t col = img.properties().col(coord);
-                        size_t row = img.properties().row(x);
-                        size_t idx = img.properties().index(row, col);
-                        if (idx != static_cast<size_t>(-1)) {
-                            if (pixel_energy[idx] < ide.energy) {
-                                pixel_energy[idx] = ide.energy;
-                                img.set(row, col, static_cast<float>(sig), false);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return images;
-}
-
 class ImageTrainingHandler {
 public:
     ImageTrainingHandler(TTree* tree, const geo::GeometryCore& geo)
@@ -237,29 +158,32 @@ public:
         tree_->Branch("subrun", &subrun_);
         tree_->Branch("event", &event_);
         tree_->Branch("is_signal", &is_signal_);
-        tree_->Branch("wire_images", &wire_images_);
-        tree_->Branch("simchannel_images", &simchannel_images_);
+        tree_->Branch("planes", &planes_);
+        tree_->Branch("image_data", &image_data_);
     }
 
     void reset() {
         run_ = subrun_ = event_ = 0;
         is_signal_ = false;
-        wire_images_.clear();
-        simchannel_images_.clear();
+        planes_.clear();
+        image_data_.clear();
     }
 
-    void add(int& run, int& subrun, int& event, bool& is_signal,
+    void add(int run, int subrun, int event, bool is_signal,
              const std::vector<art::Ptr<recob::Wire>>& wires,
-             const std::vector<art::Ptr<sim::SimChannel>>& channels,
-             const std::vector<ImageProperties>& properties,
-             const signature::Pattern& pattern) {
+             const std::vector<ImageProperties>& properties) {
+        reset();
         run_ = run;
         subrun_ = subrun;
         event_ = event;
         is_signal_ = is_signal;
 
-        wire_images_ = ConvertWiresToImages(properties, wires, geo_);
-        simchannel_images_ = ConvertSimChannelsToImages(properties, channels, geo_, pattern);
+        auto images = ConvertWiresToImages(properties, wires, geo_);
+        for (const auto& img : images) {
+            planes_.push_back(static_cast<int>(img.properties().view()));
+            auto pixels = img.data();
+            image_data_.insert(image_data_.end(), pixels.begin(), pixels.end());
+        }
 
         tree_->Fill();
     }
@@ -269,8 +193,8 @@ private:
     const geo::GeometryCore& geo_;
     int run_, subrun_, event_;
     bool is_signal_;
-    std::vector<Image> wire_images_;
-    std::vector<Image> simchannel_images_;
+    std::vector<int> planes_;
+    std::vector<float> image_data_;
 };
 
 } 
