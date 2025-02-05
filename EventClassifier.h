@@ -135,9 +135,8 @@ bool EventClassifier::isSignal(const art::Event& e) {
 EventType EventClassifier::classifyEvent(const art::Event& e) {
     simb::Origin_t origin = this->getTruthOrigin(e);
 
-    if (origin == simb::kBeamNeutrino && this->isSignal(e)) {
+    if (origin == simb::kBeamNeutrino && this->isSignal(e)) 
         return kSignal;
-    }
 
     switch (origin) {
         case simb::kBeamNeutrino:       return kBeamNeutrino;
