@@ -37,6 +37,7 @@
 #include "art/Utilities/make_tool.h"
 
 #include "SignatureTools/SignatureToolBase.h"
+#include "EventClassifier.h"
 
 #include "TDatabasePDG.h"
 #include "TFile.h"
@@ -73,6 +74,8 @@ public:
     using ProxyPfpElem_t = common::ProxyPfpElem_t;
 
 private:
+    fhicl::ParameterSet _pset;
+
     std::string _training_output_file;
     TFile* _root_file;
     TTree* _job_tree;
@@ -83,8 +86,6 @@ private:
     float _drift_step;
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
 
-    std::vector<std::unique_ptr<signature::SignatureToolBase>> _signatureToolsVec; 
-
     std::string _bad_channel_file; 
     std::vector<bool> _bad_channel_mask;
 
@@ -93,7 +94,7 @@ private:
 
     std::map<int, unsigned int> _pfpmap;
 
-    double _total_pot;
+    double _job_pot;
 
     art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
@@ -113,6 +114,7 @@ private:
 
 ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
+    , _pset(pset)
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output.root")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
     , _image_width{pset.get<int>("ImageWidth", 512)}
@@ -131,13 +133,6 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
     , _POTlabel{pset.get<art::InputTag>("POTlabel", "generator")}
 {
-    const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
-    for (auto const &tool_pset_label : tool_psets.get_pset_names())
-    {
-        auto const tool_pset = tool_psets.get<fhicl::ParameterSet>(tool_pset_label);
-        _signatureToolsVec.push_back(art::make_tool<::signature::SignatureToolBase>(tool_pset));
-    }
-
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
 
     _drift_step = 0.5;
@@ -162,8 +157,8 @@ void ImageTrainingAnalyser::beginJob()
     _job_tree = new TTree("JobTree", "Tree containing job-level information");
     _image_tree = new TTree("ImageTree", "Tree containing training images");
 
-    _total_pot = 0.0;
-    _job_tree->Branch("total_pot", &_total_pot, "total_pot/D");
+    _job_pot = 0.0;
+    _job_tree->Branch("job_pot", &_job_pot);
 
     _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
 }
@@ -171,7 +166,7 @@ void ImageTrainingAnalyser::beginJob()
 void ImageTrainingAnalyser::beginSubRun(art::SubRun const& sbr) 
 {  
     if (const auto potHandle = sbr.getValidHandle<sumdata::POTSummary>(_POTlabel))
-        _total_pot += potHandle->totpot;  
+        _job_pot += potHandle->totpot;  
 }
 
 void ImageTrainingAnalyser::endJob() 
@@ -189,14 +184,6 @@ void ImageTrainingAnalyser::endJob()
 
 void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
 {
-    signature::Pattern pattern;
-    bool pattern_found = this->constructSignatures(e, pattern);
-
-    if (!pattern_found && !pattern.empty()) {
-        pattern.clear();
-        return;
-    }
-
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) {
         art::fill_ptr_vector(wire_vec, wireHandle);
@@ -237,7 +224,10 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_handler->add(e, pattern_found, wire_vec, properties);
+    signature::EventClassifier event_classifier(_pset);
+    signature::EventType event_type = event_classifier.classifyEvent(e);
+
+    _image_handler->add(e, event_type, wire_vec, properties);
 }
 
 void ImageTrainingAnalyser::initialiseBadChannelMask()
@@ -305,21 +295,9 @@ void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy,
             ++pfp_pxy2;
 
         this->addDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
-
     } 
     return;
 } 
-
-bool ImageTrainingAnalyser::constructSignatures(const art::Event& e, signature::Pattern& pattern) {
-    for (auto& signatureTool : _signatureToolsVec) {
-        signature::Signature signature; 
-        if (!signatureTool->constructSignature(e, signature)) {
-            return false; 
-        }
-        pattern.emplace_back(signatureTool->getSignatureType(), signature);
-    }
-    return true;
-}
 
 std::vector<common::ProxyPfpElem_t> ImageTrainingAnalyser::collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy) {
     std::vector<ProxyPfpElem_t> neutrino_slice;
