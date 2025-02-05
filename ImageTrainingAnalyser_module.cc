@@ -24,6 +24,7 @@
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/Simulation/SimChannel.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
 
 #include "CommonFunctions/Pandora.h"
 #include "CommonFunctions/Scatters.h"
@@ -89,12 +90,12 @@ private:
 
     std::map<int, unsigned int> _pfpmap;
 
-    art::InputTag _WREproducer, /*_SCHproducer,*/ _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+    art::InputTag _WREproducer, _POTlabel, /*_SCHproducer,*/ _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
     void initialiseBadChannelMask();
 
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
-    void filterBadSimChannels(std::vector<art::Ptr<sim::SimChannel>>& sim_channels);
+
     void produceTrainingSample(art::Event const& e);
     void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -119,6 +120,7 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
+    , _POTlabel{pset.get<std::string>("POTlabel", "generator")}
 {
     std::cout << "initialising...." << std::endl;
     const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
@@ -140,7 +142,6 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     size_t n_channels = _geo->Nchannels();
     _bad_channel_mask.resize(n_channels, false);
     this->initialiseBadChannelMask();
-    std::cout << "finished initialising.." << std::endl;
 }
 
 void ImageTrainingAnalyser::initialiseBadChannelMask()
@@ -188,15 +189,6 @@ void ImageTrainingAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>
             return _bad_channel_mask[wire->Channel()]; 
         }), 
         wires.end());
-}
-
-void ImageTrainingAnalyser::filterBadSimChannels(std::vector<art::Ptr<sim::SimChannel>>& sim_channels)
-{
-    sim_channels.erase(std::remove_if(sim_channels.begin(), sim_channels.end(), 
-        [this](const art::Ptr<sim::SimChannel>& sim_channel) { 
-            return _bad_channel_mask[sim_channel->Channel()]; 
-        }), 
-        sim_channels.end());
 }
 
 void ImageTrainingAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
@@ -255,9 +247,12 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         return;
     }
 
-    int run = e.run();
-    int subrun = e.subRun();
-    int event = e.event();
+    double pot = 0.0;
+    auto potHandle = e.getValidHandle<sumdata::POTSummary>(_POTlabel);
+    if (potHandle)
+        pot = potHandle->totpot;
+    else 
+        return;
 
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer);
@@ -266,18 +261,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     else
         return;
 
-    std::cout << "Wire size: " << wire_vec.size() << std::endl;
-
     this->filterBadChannels(wire_vec);
-
-    /*std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
-    auto simChannelHandle = e.getValidHandle<std::vector<sim::SimChannel>>(_SCHproducer);
-    if (simChannelHandle) 
-        art::fill_ptr_vector(sim_channel_vec, simChannelHandle);
-    else
-        return;
-
-    this->filterBadSimChannels(sim_channel_vec);*/
 
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
@@ -320,8 +304,6 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
             neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
         }
     }
-
-    std::cout << "Neutrino hits size: " << neutrino_hits.size() << std::endl;
 
     double sum_charge_u = 0.0, sum_wire_u = 0.0, sum_drift_u = 0.0;
     double sum_charge_v = 0.0, sum_wire_v = 0.0, sum_drift_v = 0.0;
@@ -373,7 +355,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_handler->add(run, subrun, event, pattern_found, wire_vec, /*sim_channel_vec,*/ properties);
+    _image_handler->add(e, pot, pattern_found, wire_vec, /*sim_channel_vec,*/ properties);
 }
 
 void ImageTrainingAnalyser::endJob() 
