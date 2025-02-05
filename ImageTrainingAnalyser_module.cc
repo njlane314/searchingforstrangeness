@@ -64,6 +64,8 @@ public:
     ImageTrainingAnalyser& operator=(ImageTrainingAnalyser&&) = delete;
 
     void analyze(art::Event const& e) override;
+    void beginSubRun(art::SubRun const& sbr) override;
+
     void beginJob() override;
     void endJob() override;
 
@@ -73,6 +75,7 @@ public:
 private:
     std::string _training_output_file;
     TFile* _root_file;
+    TTree* _job_tree;
     TTree* _image_tree;
     std::unique_ptr<image::ImageTrainingHandler> _image_handler;
 
@@ -90,7 +93,9 @@ private:
 
     std::map<int, unsigned int> _pfpmap;
 
-    art::InputTag _WREproducer, _POTlabel, /*_SCHproducer,*/ _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+    double _total_pot;
+
+    art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
     void initialiseBadChannelMask();
 
@@ -99,6 +104,11 @@ private:
     void produceTrainingSample(art::Event const& e);
     void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
+
+    bool constructSignatures(const art::Event& e, signature::Pattern& pattern);
+    std::vector<common::ProxyPfpElem_t> collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy);
+    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const std::vector<ProxyPfpElem_t>& neutrino_slice, const art::Event& e);
+    std::pair<double, double> calculateCentroid(const std::vector<art::Ptr<recob::Hit>>& hits, common::PandoraView view, const art::Event& e);
 };
 
 ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
@@ -108,7 +118,6 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _image_width{pset.get<int>("ImageWidth", 512)}
     , _image_height{pset.get<int>("ImageHeight", 512)}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
-    //, _SCHproducer{pset.get<art::InputTag>("SCHproducer", "simpleSC")}
     , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
@@ -120,9 +129,8 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
-    , _POTlabel{pset.get<std::string>("POTlabel", "generator")}
+    , _POTlabel{pset.get<art::InputTag>("POTlabel", "generator")}
 {
-    std::cout << "initialising...." << std::endl;
     const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
     for (auto const &tool_pset_label : tool_psets.get_pset_names())
     {
@@ -132,9 +140,7 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
 
-    //_drift_step = (_detp->SamplingRate()/1000.) * _detp->DriftVelocity(_detp->Efield(), _detp->Temperature());
     _drift_step = 0.5;
-    std::cout << "Drift step: " << _drift_step << std::endl;
     _wire_pitch_u = _geo->WirePitch(geo::kU);                 // U plane
     _wire_pitch_v = _geo->WirePitch(geo::kV);                 // V plane
     _wire_pitch_w = _geo->WirePitch(geo::kW);                 // W plane
@@ -142,6 +148,96 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     size_t n_channels = _geo->Nchannels();
     _bad_channel_mask.resize(n_channels, false);
     this->initialiseBadChannelMask();
+}
+
+void ImageTrainingAnalyser::analyze(const art::Event& e) 
+{   
+    _image_handler->reset();
+    this->produceTrainingSample(e);
+}
+
+void ImageTrainingAnalyser::beginJob() 
+{
+    _root_file = new TFile(_training_output_file.c_str(), "RECREATE");
+    _job_tree = new TTree("JobTree", "Tree containing job-level information");
+    _image_tree = new TTree("ImageTree", "Tree containing training images");
+
+    _total_pot = 0.0;
+    _job_tree->Branch("total_pot", &_total_pot, "total_pot/D");
+
+    _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
+}
+
+void ImageTrainingAnalyser::beginSubRun(art::SubRun const& sbr) 
+{  
+    if (const auto potHandle = sbr.getValidHandle<sumdata::POTSummary>(_POTlabel))
+        _total_pot += potHandle->totpot;  
+}
+
+void ImageTrainingAnalyser::endJob() 
+{
+    if (_root_file) {
+        _root_file->cd();    
+        _job_tree->Write();     
+        _image_tree->Write();     
+        _root_file->Close();      
+
+        delete _root_file;        
+        _root_file = nullptr;     
+    }
+}
+
+void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
+{
+    signature::Pattern pattern;
+    bool pattern_found = this->constructSignatures(e, pattern);
+
+    if (!pattern_found && !pattern.empty()) {
+        pattern.clear();
+        return;
+    }
+
+    std::vector<art::Ptr<recob::Wire>> wire_vec;
+    if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) {
+        art::fill_ptr_vector(wire_vec, wireHandle);
+    } else {
+        return;
+    }
+
+    this->filterBadChannels(wire_vec);
+
+    auto pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
+                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
+                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
+                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
+                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
+                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
+                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
+                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
+                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
+
+    this->buildPFPMap(pfp_proxy);
+
+    auto neutrino_slice = this->collectNeutrinoSlice(pfp_proxy);
+    auto neutrino_hits = this->collectNeutrinoHits(neutrino_slice, e);
+
+    std::vector<image::ImageProperties> properties;
+
+    auto [centroid_wire_u, centroid_drift_u] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_U, e);
+    auto [centroid_wire_v, centroid_drift_v] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_V, e);
+    auto [centroid_wire_w, centroid_drift_w] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_W, e);
+
+    properties.emplace_back(centroid_wire_u, centroid_drift_u,
+        _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU
+    );
+    properties.emplace_back(centroid_wire_v, centroid_drift_v,
+        _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV
+    );
+    properties.emplace_back(centroid_wire_w, centroid_drift_w,
+        _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
+    );
+
+    _image_handler->add(e, pattern_found, wire_vec, properties);
 }
 
 void ImageTrainingAnalyser::initialiseBadChannelMask()
@@ -167,19 +263,6 @@ void ImageTrainingAnalyser::initialiseBadChannelMask()
             }
         }
     }
-}
-
-void ImageTrainingAnalyser::beginJob() 
-{
-    _root_file = new TFile(_training_output_file.c_str(), "RECREATE");
-    _image_tree = new TTree("ImageTree", "Tree containing training images");
-    _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
-}
-
-void ImageTrainingAnalyser::analyze(const art::Event& e) 
-{   
-    _image_handler->reset();
-    this->produceTrainingSample(e);
 }
 
 void ImageTrainingAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
@@ -227,147 +310,68 @@ void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy,
     return;
 } 
 
-void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
-{
-    signature::Pattern pattern;
-    bool pattern_found = true;
-
+bool ImageTrainingAnalyser::constructSignatures(const art::Event& e, signature::Pattern& pattern) {
     for (auto& signatureTool : _signatureToolsVec) {
         signature::Signature signature; 
         if (!signatureTool->constructSignature(e, signature)) {
-            pattern_found = false;
-            break;
+            return false; 
         }
         pattern.emplace_back(signatureTool->getSignatureType(), signature);
     }
+    return true;
+}
 
-    if (!pattern_found && !pattern.empty())
-    {
-        pattern.clear();
-        return;
+std::vector<common::ProxyPfpElem_t> ImageTrainingAnalyser::collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy) {
+    std::vector<ProxyPfpElem_t> neutrino_slice;
+    
+    for (const ProxyPfpElem_t& pfp_pxy : pfp_proxy) {
+        if (pfp_pxy->IsPrimary() && (fabs(pfp_pxy->PdgCode()) == 12 || fabs(pfp_pxy->PdgCode()) == 14)) {
+            this->addDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
+        }
     }
 
-    double pot = 0.0;
-    auto potHandle = e.getValidHandle<sumdata::POTSummary>(_POTlabel);
-    if (potHandle)
-        pot = potHandle->totpot;
-    else 
-        return;
+    return neutrino_slice;
+}
 
-    std::vector<art::Ptr<recob::Wire>> wire_vec;
-    auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer);
-    if (wireHandle) 
-        art::fill_ptr_vector(wire_vec, wireHandle);
-    else
-        return;
-
-    this->filterBadChannels(wire_vec);
-
-    common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
-                                                        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
-                                                        proxy::withAssociated<recob::Cluster>(_CLSproducer),
-                                                        proxy::withAssociated<recob::Slice>(_SLCproducer),
-                                                        proxy::withAssociated<recob::Track>(_TRKproducer),
-                                                        proxy::withAssociated<recob::Vertex>(_VTXproducer),
-                                                        proxy::withAssociated<recob::PCAxis>(_PCAproducer),
-                                                        proxy::withAssociated<recob::Shower>(_SHRproducer),
-                                                        proxy::withAssociated<recob::SpacePoint>(_PFPproducer));
-
-    this->buildPFPMap(pfp_proxy);
-    std::vector<ProxyPfpElem_t> neutrino_slice;
-    for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy)
-    {
-        const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
-
-        if (pfp_pxy->IsPrimary() == false)
-            continue;
-
-        auto primary_pdg = fabs(pfp_pxy->PdgCode());
-        if ((primary_pdg == 12) || (primary_pdg == 14))
-            this->addDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
-    } 
-
+std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(
+    const std::vector<ProxyPfpElem_t>& neutrino_slice, const art::Event& e) 
+{
     std::vector<art::Ptr<recob::Hit>> neutrino_hits;
-    common::ProxyClusColl_t const& clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(
+    
+    auto clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(
         e, _CLSproducer, proxy::withAssociated<recob::Hit>(_CLSproducer)
     );
 
     for (const auto& pfp : neutrino_slice) {
-        if (pfp->IsPrimary()) continue; 
+        if (pfp->IsPrimary()) continue;
 
-        auto clus_pxy_v = pfp.get<recob::Cluster>();
-
-        for (auto ass_clus : clus_pxy_v) {
-            const auto& clus = clus_proxy[ass_clus.key()];
-            auto clus_hit_v = clus.get<recob::Hit>();
-
+        for (auto ass_clus : pfp.get<recob::Cluster>()) {
+            auto clus_hit_v = clus_proxy[ass_clus.key()].get<recob::Hit>();
             neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
         }
     }
 
-    double sum_charge_u = 0.0, sum_wire_u = 0.0, sum_drift_u = 0.0;
-    double sum_charge_v = 0.0, sum_wire_v = 0.0, sum_drift_v = 0.0;
-    double sum_charge_w = 0.0, sum_wire_w = 0.0, sum_drift_w = 0.0;
-
-    for (const auto& hit : neutrino_hits) {
-        double charge = hit->Integral();
-        common::PandoraView pandora_view = common::GetPandoraView(hit);
-        TVector3 hit_pos = common::GetPandoraHitPosition(e, hit, pandora_view);
-
-        if (pandora_view == common::TPC_VIEW_U) {
-            sum_charge_u += charge;
-            sum_wire_u += hit_pos.Z() * charge;
-            sum_drift_u += hit_pos.X() * charge;
-        } 
-        else if (pandora_view == common::TPC_VIEW_V) {
-            sum_charge_v += charge;
-            sum_wire_v += hit_pos.Z() * charge;
-            sum_drift_v += hit_pos.X() * charge;
-        } 
-        else if (pandora_view == common::TPC_VIEW_W) {
-            sum_charge_w += charge;
-            sum_wire_w += hit_pos.Z() * charge;
-            sum_drift_w += hit_pos.X() * charge;
-        }
-    }
-
-    double centroid_wire_u = (sum_charge_u > 0) ? sum_wire_u / sum_charge_u : 0.0;
-    double centroid_drift_u = (sum_charge_u > 0) ? sum_drift_u / sum_charge_u : 0.0;
-
-    double centroid_wire_v = (sum_charge_v > 0) ? sum_wire_v / sum_charge_v : 0.0;
-    double centroid_drift_v = (sum_charge_v > 0) ? sum_drift_v / sum_charge_v : 0.0;
-
-    double centroid_wire_w = (sum_charge_w > 0) ? sum_wire_w / sum_charge_w : 0.0;
-    double centroid_drift_w = (sum_charge_w > 0) ? sum_drift_w / sum_charge_w : 0.0;
-
-    std::cout << "Centroids - U: (" << sum_wire_u / sum_charge_u << ", " << sum_drift_u / sum_charge_u << ")"
-              << ", V: (" << sum_wire_v / sum_charge_v << ", " << sum_drift_v / sum_charge_v << ")"
-              << ", W: (" << sum_wire_w / sum_charge_w << ", " << sum_drift_w / sum_charge_w << ")\n";
-
-    std::vector<image::ImageProperties> properties;
-    properties.emplace_back(centroid_wire_u, centroid_drift_u,
-        _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU
-    );
-    properties.emplace_back(centroid_wire_v, centroid_drift_v,
-        _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV
-    );
-    properties.emplace_back(centroid_wire_w, centroid_drift_w,
-        _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
-    );
-
-    _image_handler->add(e, pot, pattern_found, wire_vec, /*sim_channel_vec,*/ properties);
+    return neutrino_hits;
 }
 
-void ImageTrainingAnalyser::endJob() 
+std::pair<double, double> ImageTrainingAnalyser::calculateCentroid(
+    const std::vector<art::Ptr<recob::Hit>>& hits, common::PandoraView view, const art::Event& e) 
 {
-    if (_root_file) {
-        _root_file->cd();         
-        _image_tree->Write();     
-        _root_file->Close();      
+    double sum_charge = 0.0, sum_wire = 0.0, sum_drift = 0.0;
 
-        delete _root_file;        
-        _root_file = nullptr;     
+    for (const auto& hit : hits) {
+        if (common::GetPandoraView(hit) != view) continue;
+
+        double charge = hit->Integral();
+        TVector3 hit_pos = common::GetPandoraHitPosition(e, hit, view);
+
+        sum_charge += charge;
+        sum_wire += hit_pos.Z() * charge;
+        sum_drift += hit_pos.X() * charge;
     }
+
+    if (sum_charge == 0.0) return {0.0, 0.0};
+    return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
 DEFINE_ART_MODULE(ImageTrainingAnalyser)
