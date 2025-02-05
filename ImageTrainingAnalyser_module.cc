@@ -89,7 +89,7 @@ private:
 
     std::map<int, unsigned int> _pfpmap;
 
-    art::InputTag _WREproducer, _SCHproducer, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+    art::InputTag _WREproducer, /*_SCHproducer,*/ _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
     void initialiseBadChannelMask();
 
@@ -106,9 +106,9 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
     , _image_width{pset.get<int>("ImageWidth", 256)}
     , _image_height{pset.get<int>("ImageHeight", 256)}
-    , _WREproducer{pset.get<art::InputTag>("WireProducer", "butcher")}
-    , _SCHproducer{pset.get<art::InputTag>("SimChannelProducer", "largeant")}
-    , _HITproducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
+    , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
+    //, _SCHproducer{pset.get<art::InputTag>("SCHproducer", "simpleSC")}
+    , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BKTproducer{pset.get<art::InputTag>("BKTproducer", "gaushitTruthMatch")}
@@ -120,6 +120,7 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
 {
+    std::cout << "initialising...." << std::endl;
     const fhicl::ParameterSet &tool_psets = pset.get<fhicl::ParameterSet>("SignatureTools");
     for (auto const &tool_pset_label : tool_psets.get_pset_names())
     {
@@ -129,7 +130,9 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
 
-    _drift_step = (_detp->SamplingRate()/1000.) * _detp->DriftVelocity(_detp->Efield(), _detp->Temperature());
+    //_drift_step = (_detp->SamplingRate()/1000.) * _detp->DriftVelocity(_detp->Efield(), _detp->Temperature());
+    _drift_step = 0.5;
+    std::cout << "Drift step: " << _drift_step << std::endl;
     _wire_pitch_u = _geo->WirePitch(geo::kU);                 // U plane
     _wire_pitch_v = _geo->WirePitch(geo::kV);                 // V plane
     _wire_pitch_w = _geo->WirePitch(geo::kW);                 // W plane
@@ -137,6 +140,7 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     size_t n_channels = _geo->Nchannels();
     _bad_channel_mask.resize(n_channels, false);
     this->initialiseBadChannelMask();
+    std::cout << "finished initialising.." << std::endl;
 }
 
 void ImageTrainingAnalyser::initialiseBadChannelMask()
@@ -246,7 +250,10 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     }
 
     if (!pattern_found && !pattern.empty())
+    {
         pattern.clear();
+        return;
+    }
 
     int run = e.run();
     int subrun = e.subRun();
@@ -261,15 +268,14 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
 
     this->filterBadChannels(wire_vec);
 
-    std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
+    /*std::vector<art::Ptr<sim::SimChannel>> sim_channel_vec;
     auto simChannelHandle = e.getValidHandle<std::vector<sim::SimChannel>>(_SCHproducer);
     if (simChannelHandle) 
         art::fill_ptr_vector(sim_channel_vec, simChannelHandle);
     else
         return;
 
-
-    this->filterBadSimChannels(sim_channel_vec);
+    this->filterBadSimChannels(sim_channel_vec);*/
 
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
@@ -312,6 +318,8 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
             neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
         }
     }
+
+    std::cout << "Neutrino hits size: " << neutrino_hits.size() << std::endl;
 
     double sum_charge_u = 0.0, sum_wire_u = 0.0, sum_drift_u = 0.0;
     double sum_charge_v = 0.0, sum_wire_v = 0.0, sum_drift_v = 0.0;
@@ -359,7 +367,7 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    _image_handler->add(run, subrun, event, pattern_found, wire_vec, sim_channel_vec, properties, pattern);
+    _image_handler->add(run, subrun, event, pattern_found, wire_vec, /*sim_channel_vec,*/ properties);
 }
 
 void ImageTrainingAnalyser::endJob() 
