@@ -108,8 +108,8 @@ private:
 
     bool constructSignatures(const art::Event& e, signature::Pattern& pattern);
     std::vector<common::ProxyPfpElem_t> collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy);
-    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const std::vector<ProxyPfpElem_t>& neutrino_slice, const art::Event& e);
-    std::pair<double, double> calculateCentroid(const std::vector<art::Ptr<recob::Hit>>& hits, common::PandoraView view, const art::Event& e);
+    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice);
+    std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
 };
 
 ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
@@ -185,11 +185,10 @@ void ImageTrainingAnalyser::endJob()
 void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
 {
     std::vector<art::Ptr<recob::Wire>> wire_vec;
-    if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) {
+    if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
         art::fill_ptr_vector(wire_vec, wireHandle);
-    } else {
+    else 
         return;
-    }
 
     this->filterBadChannels(wire_vec);
 
@@ -206,13 +205,18 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     this->buildPFPMap(pfp_proxy);
 
     auto neutrino_slice = this->collectNeutrinoSlice(pfp_proxy);
-    auto neutrino_hits = this->collectNeutrinoHits(neutrino_slice, e);
+    if (neutrino_slice.empty())
+        return;
+
+    auto neutrino_hits = this->collectNeutrinoHits(e, neutrino_slice);
+    if (neutrino_hits.size() < 200) 
+        return;
 
     std::vector<image::ImageProperties> properties;
 
-    auto [centroid_wire_u, centroid_drift_u] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_U, e);
-    auto [centroid_wire_v, centroid_drift_v] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_V, e);
-    auto [centroid_wire_w, centroid_drift_w] = this->calculateCentroid(neutrino_hits, common::TPC_VIEW_W, e);
+    auto [centroid_wire_u, centroid_drift_u] = this->calculateCentroid(e, common::TPC_VIEW_U, neutrino_hits);
+    auto [centroid_wire_v, centroid_drift_v] = this->calculateCentroid(e, common::TPC_VIEW_V, neutrino_hits);
+    auto [centroid_wire_w, centroid_drift_w] = this->calculateCentroid(e, common::TPC_VIEW_W, neutrino_hits);
 
     properties.emplace_back(centroid_wire_u, centroid_drift_u,
         _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU
@@ -236,9 +240,8 @@ void ImageTrainingAnalyser::initialiseBadChannelMask()
         cet::search_path sp("FW_SEARCH_PATH");
         std::string fullname;
         sp.find_file(_bad_channel_file, fullname);
-        if (fullname.empty()) {
+        if (fullname.empty()) 
             throw cet::exception("ImageTrainingAnalyser") << "Bad channel file not found: " << _bad_channel_file;
-        }
 
         std::ifstream inFile(fullname, std::ios::in);
         std::string line;
@@ -278,9 +281,7 @@ void ImageTrainingAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
     return;
 } 
 
-void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy,
-                                           const ProxyPfpColl_t &pfp_pxy_col,
-                                           std::vector<ProxyPfpElem_t> &slice_v)
+void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v)
 {
     auto daughters = pfp_pxy->Daughters();
     slice_v.push_back(pfp_pxy);
@@ -311,8 +312,7 @@ std::vector<common::ProxyPfpElem_t> ImageTrainingAnalyser::collectNeutrinoSlice(
     return neutrino_slice;
 }
 
-std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(
-    const std::vector<ProxyPfpElem_t>& neutrino_slice, const art::Event& e) 
+std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice) 
 {
     std::vector<art::Ptr<recob::Hit>> neutrino_hits;
     
@@ -332,8 +332,7 @@ std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(
     return neutrino_hits;
 }
 
-std::pair<double, double> ImageTrainingAnalyser::calculateCentroid(
-    const std::vector<art::Ptr<recob::Hit>>& hits, common::PandoraView view, const art::Event& e) 
+std::pair<double, double> ImageTrainingAnalyser::calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) 
 {
     double sum_charge = 0.0, sum_wire = 0.0, sum_drift = 0.0;
 
