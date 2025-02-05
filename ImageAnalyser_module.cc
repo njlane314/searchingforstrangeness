@@ -54,15 +54,15 @@
 
 #include "ImageProcessor.h"
 
-class ImageTrainingAnalyser : public art::EDAnalyzer
+class ImageAnalyser : public art::EDAnalyzer
 {
 public:
-    explicit ImageTrainingAnalyser(fhicl::ParameterSet const& pset);
+    explicit ImageAnalyser(fhicl::ParameterSet const& pset);
     
-    ImageTrainingAnalyser(ImageTrainingAnalyser const&) = delete;
-    ImageTrainingAnalyser(ImageTrainingAnalyser&&) = delete;
-    ImageTrainingAnalyser& operator=(ImageTrainingAnalyser const&) = delete;
-    ImageTrainingAnalyser& operator=(ImageTrainingAnalyser&&) = delete;
+    ImageAnalyser(ImageAnalyser const&) = delete;
+    ImageAnalyser(ImageAnalyser&&) = delete;
+    ImageAnalyser& operator=(ImageAnalyser const&) = delete;
+    ImageAnalyser& operator=(ImageAnalyser&&) = delete;
 
     void analyze(art::Event const& e) override;
     void beginSubRun(art::SubRun const& sbr) override;
@@ -112,7 +112,7 @@ private:
     std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
 };
 
-ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
+ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
     , _pset(pset)
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output.root")}
@@ -145,13 +145,13 @@ ImageTrainingAnalyser::ImageTrainingAnalyser(fhicl::ParameterSet const& pset)
     this->initialiseBadChannelMask();
 }
 
-void ImageTrainingAnalyser::analyze(const art::Event& e) 
+void ImageAnalyser::analyze(const art::Event& e) 
 {   
     _image_handler->reset();
     this->produceTrainingSample(e);
 }
 
-void ImageTrainingAnalyser::beginJob() 
+void ImageAnalyser::beginJob() 
 {
     _root_file = new TFile(_training_output_file.c_str(), "RECREATE");
     _job_tree = new TTree("JobTree", "Tree containing job-level information");
@@ -163,13 +163,13 @@ void ImageTrainingAnalyser::beginJob()
     _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
 }
 
-void ImageTrainingAnalyser::beginSubRun(art::SubRun const& sbr) 
+void ImageAnalyser::beginSubRun(art::SubRun const& sbr) 
 {  
     if (const auto potHandle = sbr.getValidHandle<sumdata::POTSummary>(_POTlabel))
         _job_pot += potHandle->totpot;  
 }
 
-void ImageTrainingAnalyser::endJob() 
+void ImageAnalyser::endJob() 
 {
     if (_root_file) {
         _root_file->cd();    
@@ -182,7 +182,7 @@ void ImageTrainingAnalyser::endJob()
     }
 }
 
-void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e) 
+void ImageAnalyser::produceTrainingSample(const art::Event& e) 
 {
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
@@ -234,14 +234,14 @@ void ImageTrainingAnalyser::produceTrainingSample(const art::Event& e)
     _image_handler->add(e, event_type, wire_vec, properties);
 }
 
-void ImageTrainingAnalyser::initialiseBadChannelMask()
+void ImageAnalyser::initialiseBadChannelMask()
 {
     if (!_bad_channel_file.empty()) {
         cet::search_path sp("FW_SEARCH_PATH");
         std::string fullname;
         sp.find_file(_bad_channel_file, fullname);
         if (fullname.empty()) 
-            throw cet::exception("ImageTrainingAnalyser") << "Bad channel file not found: " << _bad_channel_file;
+            throw cet::exception("ImageAnalyser") << "Bad channel file not found: " << _bad_channel_file;
 
         std::ifstream inFile(fullname, std::ios::in);
         std::string line;
@@ -258,7 +258,7 @@ void ImageTrainingAnalyser::initialiseBadChannelMask()
     }
 }
 
-void ImageTrainingAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
+void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
 {
     wires.erase(std::remove_if(wires.begin(), wires.end(), 
         [this](const art::Ptr<recob::Wire>& wire) { 
@@ -267,7 +267,7 @@ void ImageTrainingAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>
         wires.end());
 }
 
-void ImageTrainingAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
+void ImageAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
 {
     _pfpmap.clear();
 
@@ -281,7 +281,7 @@ void ImageTrainingAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col)
     return;
 } 
 
-void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v)
+void ImageAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v)
 {
     auto daughters = pfp_pxy->Daughters();
     slice_v.push_back(pfp_pxy);
@@ -300,7 +300,7 @@ void ImageTrainingAnalyser::addDaughters(const ProxyPfpElem_t &pfp_pxy, const Pr
     return;
 } 
 
-std::vector<common::ProxyPfpElem_t> ImageTrainingAnalyser::collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy) {
+std::vector<common::ProxyPfpElem_t> ImageAnalyser::collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy) {
     std::vector<ProxyPfpElem_t> neutrino_slice;
     
     for (const ProxyPfpElem_t& pfp_pxy : pfp_proxy) {
@@ -312,7 +312,7 @@ std::vector<common::ProxyPfpElem_t> ImageTrainingAnalyser::collectNeutrinoSlice(
     return neutrino_slice;
 }
 
-std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice) 
+std::vector<art::Ptr<recob::Hit>> ImageAnalyser::collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice) 
 {
     std::vector<art::Ptr<recob::Hit>> neutrino_hits;
     
@@ -332,7 +332,7 @@ std::vector<art::Ptr<recob::Hit>> ImageTrainingAnalyser::collectNeutrinoHits(con
     return neutrino_hits;
 }
 
-std::pair<double, double> ImageTrainingAnalyser::calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) 
+std::pair<double, double> ImageAnalyser::calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) 
 {
     double sum_charge = 0.0, sum_wire = 0.0, sum_drift = 0.0;
 
@@ -351,4 +351,4 @@ std::pair<double, double> ImageTrainingAnalyser::calculateCentroid(const art::Ev
     return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
-DEFINE_ART_MODULE(ImageTrainingAnalyser)
+DEFINE_ART_MODULE(ImageAnalyser)

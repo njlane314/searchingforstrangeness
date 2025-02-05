@@ -36,7 +36,7 @@ physics:
     {
         imagetraining: 
         {
-            module_type: ImageTrainingAnalyser
+            module_type: ImageAnalyser
  
             SignatureTools:
             {
