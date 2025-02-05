@@ -29,7 +29,7 @@ namespace image {
 
 class ImageProperties {
 public:
-    ImageProperties(double center_x, double center_y, size_t height, size_t width, double pixel_w, double pixel_h, geo::View_t view)
+    ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
         : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
         origin_x_ = center_x - (width * pixel_w) / 2.0;
         origin_y_ = center_y - (height * pixel_h) / 2.0;
