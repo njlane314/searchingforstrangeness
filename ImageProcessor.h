@@ -157,6 +157,7 @@ public:
         tree_->Branch("run", &run_);
         tree_->Branch("subrun", &subrun_);
         tree_->Branch("event", &event_);
+        tree_->Branch("pot", &pot_); 
         tree_->Branch("is_signal", &is_signal_);
         tree_->Branch("planes", &planes_);
         tree_->Branch("image_data", &image_data_);
@@ -164,18 +165,23 @@ public:
 
     void reset() {
         run_ = subrun_ = event_ = 0;
+        pot_ = 0.0;
         is_signal_ = false;
         planes_.clear();
         image_data_.clear();
     }
 
-    void add(int run, int subrun, int event, bool is_signal,
+    void add(const art::Event& e, const double pot, 
+             const bool is_signal, 
              const std::vector<art::Ptr<recob::Wire>>& wires,
              const std::vector<ImageProperties>& properties) {
         reset();
-        run_ = run;
-        subrun_ = subrun;
-        event_ = event;
+
+        run_ = e.run();
+        subrun_ = e.subRun();
+        event_ = e.event();
+        pot_ = pot;
+
         is_signal_ = is_signal;
 
         auto images = ConvertWiresToImages(properties, wires, geo_);
@@ -189,9 +195,11 @@ public:
     }
 
 private:
-    TTree* tree_;
     const geo::GeometryCore& geo_;
+
+    TTree* tree_;
     int run_, subrun_, event_;
+    double pot_; 
     bool is_signal_;
     std::vector<int> planes_;
     std::vector<float> image_data_;
