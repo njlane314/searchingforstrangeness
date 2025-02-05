@@ -2,6 +2,7 @@
 #define SIGNATURE_INTEGRITY_H
 
 #include "ClarityToolBase.h" 
+#include "CommonFunctions/Corrections.h"
 
 namespace claritytools {
 
@@ -77,19 +78,38 @@ bool SignatureIntegrity::filter(const art::Event &e, const signature::Signature&
   return true;
 }
 */
+
 bool SignatureIntegrity::checkStart(const art::Ptr<simb::MCParticle>& part, common::PandoraView view) const
 {
+    /*
     TVector3 start(part->Vx(), part->Vy(), part->Vz());
     std::cout << "Start: " << start.X() << "  " << start.Y() << "  " << start.Z() << std::endl;
+    common::ApplySCEMappingXYZ(start[0],start[1],start[2]);
+    std::cout << "Corrected Start: " << start.X() << "  " << start.Y() << "  " << start.Z() << std::endl;
     return isChannelRegionActive(start,view);
+    */
+    float x = part->Vx();
+    float y = part->Vy();
+    float z = part->Vz();
+    //std::cout << "Start: " << x << "  " << y << "  " << z << std::endl;
+    common::ApplySCEMappingXYZ(x,y,z);
+    //std::cout << "Corrected Start: " << x << "  " << y << "  " << z << std::endl;
+    return isChannelRegionActive(TVector3(x,y,z),view);
 }
 
 
 bool SignatureIntegrity::checkEnd(const art::Ptr<simb::MCParticle>& part, common::PandoraView view) const
 {
+    /*
     TVector3 end(part->EndX(), part->EndY(), part->EndZ());
     std::cout << "End: " << end.X() << "  " << end.Y() << "  " << end.Z() << std::endl;
     return isChannelRegionActive(end,view);
+    */
+    float x = part->EndX();
+    float y = part->EndY();
+    float z = part->EndZ();
+    common::ApplySCEMappingXYZ(x,y,z);    
+    return isChannelRegionActive(TVector3(x,y,z),view);
 }
 
 }

@@ -28,7 +28,8 @@ public:
       this->loadEventHandles(e,view);
 
       for (const auto& mcp_s : sig.second) {
-        if(!checkStart(mcp_s,view) || !checkEnd(mcp_s,view)) return false;
+        //if(!checkStart(mcp_s,view) || !checkEnd(mcp_s,view)) return false;
+        if(!checkStart(mcp_s,view)) return false;
       }
       return true;
     }
