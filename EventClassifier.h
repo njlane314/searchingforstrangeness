@@ -30,7 +30,7 @@ public:
 private:
     simb::Origin_t getTruthOrigin(const art::Event& e);
     void createPattern(const art::Event& e);
-    bool isPointContained(const double point[3]) const;
+    bool isContained(const double point[3]) const;
     bool isSignal(const art::Event& e);
 
     float _min_muon_momentum;
@@ -81,7 +81,7 @@ void EventClassifier::createPattern(const art::Event& e) {
     }
 }
 
-bool EventClassifier::isPointContained(const double point[3]) const {
+bool EventClassifier::isContained(const double point[3]) const {
     art::ServiceHandle<geo::Geometry> geo;
     geo::TPCGeo const &tpc = geo->TPC();
     geo::BoxBoundedGeo bound_box = tpc.ActiveBoundingBox();
@@ -112,7 +112,7 @@ bool EventClassifier::isSignal(const art::Event& e) {
     const auto& neutrino = truth.GetNeutrino();
 
     const double point[3] = {neutrino.Nu().Vx(), neutrino.Nu().Vy(), neutrino.Nu().Vz()};
-    if (!this->isPointContained(point)) {
+    if (!this->isContained(point)) {
         return false;
     }
 

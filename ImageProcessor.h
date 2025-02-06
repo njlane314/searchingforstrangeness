@@ -160,6 +160,8 @@ public:
         tree_->Branch("event", &event_);
         tree_->Branch("event_type", &event_type_);
         tree_->Branch("planes", &planes_);
+        tree_->Branch("width", &width_);
+        tree_->Branch("height", &height_);
         tree_->Branch("image_data", &image_data_);
     }
 
@@ -167,6 +169,8 @@ public:
         run_ = subrun_ = event_ = 0;
         event_type_ = static_cast<int>(signature::EventType::kOther);
         planes_.clear();
+        width_.clear();
+        height_.clear();
         image_data_.clear();
     }
 
@@ -185,6 +189,9 @@ public:
         auto images = WiresToImages(properties, wires, geo_);
         for (const auto& img : images) {
             planes_.push_back(static_cast<int>(img.properties().view()));
+            width_.push_back(img.properties().width());
+            height_.push_back(img.properties().height());
+
             auto pixels = img.data();
             image_data_.insert(image_data_.end(), pixels.begin(), pixels.end());
         }
@@ -199,6 +206,8 @@ private:
     int run_, subrun_, event_;
     int event_type_;
     std::vector<int> planes_;
+    std::vector<int> width_; 
+    std::vector<int> height_;
     std::vector<float> image_data_;
 };
 
