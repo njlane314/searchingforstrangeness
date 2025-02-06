@@ -86,6 +86,8 @@ private:
     float _drift_step;
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
 
+    int _kernel_size;
+
     std::string _bad_channel_file; 
     std::vector<bool> _bad_channel_mask;
 
@@ -119,6 +121,7 @@ ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
     , _image_width{pset.get<int>("ImageWidth", 512)}
     , _image_height{pset.get<int>("ImageHeight", 512)}
+    , _kernel_size{pset.get<int>("KernelSize", 5)}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
     , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
@@ -166,7 +169,7 @@ void ImageAnalyser::beginJob()
 void ImageAnalyser::beginSubRun(art::SubRun const& sbr) 
 {  
     if (const auto potHandle = sbr.getValidHandle<sumdata::POTSummary>(_POTlabel))
-        _job_pot += potHandle->totpot;  
+        _job_pot += potHandle->totgoodpot;  
 }
 
 void ImageAnalyser::endJob() 
@@ -187,6 +190,12 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
         art::fill_ptr_vector(wire_vec, wireHandle);
+    else 
+        return;
+
+    std::vector<art::Ptr<recob::Hit>> hit_vec;
+    if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
+        art::fill_ptr_vector(hit_vec, hitHandle);
     else 
         return;
 
@@ -230,8 +239,11 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
 
     signature::EventClassifier event_classifier(_pset);
     signature::EventType event_type = event_classifier.classifyEvent(e);
+    signature::Pattern pattern = event_classifier.getPattern(e);
 
-    _image_handler->add(e, event_type, wire_vec, properties);
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
+
+    _image_handler->add(e, event_type, wire_vec, hit_vec, mcp_bkth_assoc, pattern, _kernel_size, properties);
 }
 
 void ImageAnalyser::initialiseBadChannelMask()

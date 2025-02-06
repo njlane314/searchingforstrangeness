@@ -26,6 +26,7 @@ public:
     EventClassifier(fhicl::ParameterSet const& pset);
 
     EventType classifyEvent(const art::Event& e);
+    const Pattern& getPattern(const art::Event& e);
 
 private:
     simb::Origin_t getTruthOrigin(const art::Event& e);
@@ -79,6 +80,13 @@ void EventClassifier::createPattern(const art::Event& e) {
             _pattern_found = false;
         }
     }
+}
+
+const Pattern& EventClassifier::getPattern(const art::Event& e) {
+    if (!_pattern_found) 
+        this->createPattern(e);
+
+    return _pattern;
 }
 
 bool EventClassifier::isContained(const double point[3]) const {
