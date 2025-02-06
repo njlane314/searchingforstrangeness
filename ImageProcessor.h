@@ -19,6 +19,7 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
+#include "canvas/Utilities/InputTag.h"
 
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -112,9 +113,9 @@ private:
     std::vector<float> pixels_;
 };
 
-std::vector<Image> WiresToImages(const std::vector<ImageProperties>& properties, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
-    std::vector<Image> images;
-    for (const auto& prop : properties) images.emplace_back(prop);
+std::vector<Image> constructInputImages(const std::vector<ImageProperties>& properties, const std::vector<art::Ptr<recob::Wire>>& wires, const geo::GeometryCore& geo) {
+    std::vector<Image> input;
+    for (const auto& prop : properties) input.emplace_back(prop);
 
     auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
@@ -138,7 +139,7 @@ std::vector<Image> WiresToImages(const std::vector<ImageProperties>& properties,
                               (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034)) - 
                               (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
 
-                for (auto& img : images) {
+                for (auto& img : input) {
                     if (img.properties().view() == view) {
                         size_t row = img.properties().row(x);
                         size_t col = img.properties().col(coord);
@@ -148,7 +149,90 @@ std::vector<Image> WiresToImages(const std::vector<ImageProperties>& properties,
             }
         }
     }
-    return images;
+    return input;
+}
+
+std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& properties, 
+                                          const std::vector<art::Ptr<recob::Hit>>& hits, 
+                                          const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
+                                          const size_t kernel_size, 
+                                          const signature::Pattern& pattern, 
+                                          const geo::GeometryCore& geo) {
+    std::vector<Image> truth;
+    truth.reserve(properties.size());
+    for (const auto& prop : properties) {
+        Image img(prop);
+        img.clear(0.0f);
+        truth.push_back(std::move(img));
+    }
+
+    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+
+    std::unordered_map<int, simb::MCParticle> truth_particles;
+    for (const auto& [type, signature] : pattern) {
+        for (const auto& particle : signature) {
+            truth_particles[particle->TrackId()] = *particle;
+        }
+    }
+
+    constexpr float angle = 1.04719758034f; // ~pi/3
+    auto computeCoordinate = [angle](geo::View_t view, const TVector3& wire_center) -> float {
+        if (view == geo::kW) {
+            return wire_center.Z();
+        }
+        const float sign = (view == geo::kU) ? 1.0f : -1.0f;
+        return (wire_center.Z() * std::cos(sign * angle)) - (wire_center.Y() * std::sin(sign * angle));
+    };
+
+    auto applyKernel = [kernel_size](Image& img, size_t row, size_t col, float value) {
+        const int half = static_cast<int>(kernel_size) / 2;
+        for (int dr = -half; dr <= half; ++dr) {
+            for (int dc = -half; dc <= half; ++dc) {
+                img.set(row + dr, col + dc, value, /*accumulate=*/false);
+            }
+        }
+    };
+
+    for (const auto& hit : hits) {
+        const auto& assocParticles = mcp_bkth_assoc.at(hit.key());
+        const auto& assocData = mcp_bkth_assoc.data(hit.key());
+        if (assocParticles.empty() || assocData.empty())
+            continue;
+
+        int track_id = -1;
+        bool valid_hit = false;
+        for (size_t i = 0; i < assocData.size(); ++i) {
+            if (assocData[i]->isMaxIDE == 1) {
+                track_id = assocParticles[i]->TrackId();
+                valid_hit = true;
+                break;
+            }
+        }
+        if (!valid_hit || truth_particles.find(track_id) == truth_particles.end())
+            continue;
+
+        double x = detProp->ConvertTicksToX(hit->PeakTime(), hit->WireID());
+        TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
+                                    .TPC(hit->WireID().TPC)
+                                    .Plane(hit->WireID().Plane)
+                                    .Wire(hit->WireID().Wire)
+                                    .GetCenter();
+        geo::View_t view = hit->View();
+        float transformed_coord = computeCoordinate(view, wire_center);
+
+        for (auto& img : truth) {
+            if (img.properties().view() != view)
+                continue;
+
+            size_t row = img.properties().row(x);
+            size_t col = img.properties().col(transformed_coord);
+            if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1))
+                continue;
+            applyKernel(img, row, col, 1.0f);
+        }
+    }
+
+    return truth;
 }
 
 class ImageTrainingHandler {
@@ -162,7 +246,8 @@ public:
         tree_->Branch("planes", &planes_);
         tree_->Branch("width", &width_);
         tree_->Branch("height", &height_);
-        tree_->Branch("image_data", &image_data_);
+        tree_->Branch("input_data", &input_data_);
+        tree_->Branch("truth_data", &truth_data_);
     }
 
     void reset() {
@@ -171,12 +256,17 @@ public:
         planes_.clear();
         width_.clear();
         height_.clear();
-        image_data_.clear();
+        input_data_.clear();
+        truth_data_.clear();
     }
 
     void add(const art::Event& e, 
              const signature::EventType event_type,
              const std::vector<art::Ptr<recob::Wire>>& wires,
+             const std::vector<art::Ptr<recob::Hit>>& hits,
+             const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
+             const signature::Pattern& pattern,
+             const size_t& kernel_size,
              const std::vector<ImageProperties>& properties) {
         this->reset();
 
@@ -186,14 +276,29 @@ public:
 
         event_type_ = static_cast<int>(event_type);
 
-        auto images = WiresToImages(properties, wires, geo_);
-        for (const auto& img : images) {
-            planes_.push_back(static_cast<int>(img.properties().view()));
+        std::vector<Image> input = constructInputImages(properties, wires, geo_);
+        std::vector<Image> truth = constructTruthImages(properties, hits, mcp_bkth_assoc, kernel_size, pattern, geo_);
+
+        std::unordered_map<geo::View_t, Image> truth_map;
+        for (const auto& img : truth) {
+            truth_map.insert({img.properties().view(), img});
+        }
+
+        for (const auto& img : input) {
+            geo::View_t view = img.properties().view();
+
+            if (truth_map.find(view) == truth_map.end()) 
+                return;
+
+            planes_.push_back(static_cast<int>(view));
             width_.push_back(img.properties().width());
             height_.push_back(img.properties().height());
 
-            auto pixels = img.data();
-            image_data_.insert(image_data_.end(), pixels.begin(), pixels.end());
+            auto input = img.data();
+            input_data_.insert(input_data_.end(), input.begin(), input.end());
+
+            auto truth_pixels = truth_map.at(view).data();
+            truth_data_.insert(truth_data_.end(), truth_pixels.begin(), truth_pixels.end());
         }
 
         tree_->Fill();
@@ -208,7 +313,8 @@ private:
     std::vector<int> planes_;
     std::vector<int> width_; 
     std::vector<int> height_;
-    std::vector<float> image_data_;
+    std::vector<float> input_data_;
+    std::vector<float> truth_data_; 
 };
 
 } 
