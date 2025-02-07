@@ -54,6 +54,7 @@ public:
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
+    , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
     {
     }   
  
@@ -61,8 +62,8 @@ public:
     
     virtual void configure(fhicl::ParameterSet const& pset)
     {
-        _bad_channel_file = pset.get<std::string>("BadChannelFile");
-        loadBadChannelMap();
+        //_bad_channel_file = pset.get<std::string>("BadChannelFile");
+        //loadBadChannelMap();
     }
 
     std::map<common::PandoraView,std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
@@ -72,7 +73,7 @@ public:
 protected:
 
     std::vector<bool> _bad_channel_mask;
-    std::string _bad_channel_file;
+    //std::string _bad_channel_file;
 
     const geo::GeometryCore* _geo = art::ServiceHandle<geo::Geometry>()->provider();
      
@@ -83,14 +84,13 @@ protected:
 
 private:
 
-    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag;
+    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _DeadChannelTag;
 
-    void loadBadChannelMap();
+    //void loadBadChannelMap();
 
 };
-
-void ClarityToolBase::loadBadChannelMap(){
 /*
+void ClarityToolBase::loadBadChannelMap(){
     std::cout << "Loading Bad Channel Map" << std::endl;
 
     size_t num_channels = _geo->Nchannels();
@@ -116,7 +116,6 @@ void ClarityToolBase::loadBadChannelMap(){
             }
         }
     }
-*/
 
   size_t num_channels = _geo->Nchannels();
   _bad_channel_mask.resize(num_channels+1,false);
@@ -134,8 +133,25 @@ void ClarityToolBase::loadBadChannelMap(){
       _bad_channel_mask.at(i) = true; 
 
 }
-
+*/
 bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView targetDetectorPlane){
+
+    size_t num_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(num_channels+1,false);
+
+    art::Handle<std::vector<int>> bad_ch_h;
+    std::vector<art::Ptr<int>> bad_ch_v;
+
+    if(!e.getByLabel(_DeadChannelTag,bad_ch_h))
+        return false;
+
+    art::fill_ptr_vector(bad_ch_v,bad_ch_h);
+   
+    for(auto ch : bad_ch_v){
+      //std::cout << *ch << std::endl;
+      _bad_channel_mask.at(*ch) = true; 
+    }
+
 
     _evt_hits.clear();
     _mc_hits.clear();

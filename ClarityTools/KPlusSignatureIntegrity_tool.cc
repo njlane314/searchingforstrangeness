@@ -30,6 +30,7 @@ bool KPlusSignatureIntegrity::filter(const art::Event &e, const signature::Signa
  
   // Check the start and end of the kaon, and only the start of the muon/pion it decays to 
   for (const auto& mcp_s : sig.second){
+    if(!checkDeadChannelFrac(mcp_s,view)) return false;
     if(abs(mcp_s->PdgCode()) == 321 && (!checkStart(mcp_s,view) || !checkEnd(mcp_s,view))) return false;
     else if((abs(mcp_s->PdgCode()) == 13 || abs(mcp_s->PdgCode()) == 211) && !checkStart(mcp_s,view)) return false;
   }
