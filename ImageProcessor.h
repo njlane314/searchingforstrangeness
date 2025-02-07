@@ -279,28 +279,31 @@ public:
         std::vector<Image> input = constructInputImages(properties, wires, geo_);
         std::vector<Image> truth = constructTruthImages(properties, hits, mcp_bkth_assoc, kernel_size, pattern, geo_);
 
-        std::unordered_map<geo::View_t, Image> truth_map;
-        for (const auto& img : truth) {
-            truth_map.insert({img.properties().view(), img});
+        std::vector<geo::View_t> ordered_views = { geo::kU, geo::kV, geo::kW };
+
+        for (auto view : ordered_views) {
+            auto input_iter = std::find_if(input.begin(), input.end(),
+                                        [view](const Image& img) {
+                                            return img.properties().view() == view;
+                                        });
+
+            auto truth_iter = std::find_if(truth.begin(), truth.end(),
+                                        [view](const Image& img) {
+                                            return img.properties().view() == view;
+                                        });
+
+            if (input_iter != input.end() && truth_iter != truth.end()) {
+                if (input_iter->properties().width() != truth_iter->properties().width() || input_iter->properties().height() != truth_iter->properties().height())
+                    continue;
+
+                planes_.push_back(static_cast<int>(view));
+                width_.push_back(input_iter->properties().width());
+                height_.push_back(input_iter->properties().height());
+                input_data_.push_back(input_iter->data());
+                truth_data_.push_back(truth_iter->data());
+            }
         }
-
-        for (const auto& img : input) {
-            geo::View_t view = img.properties().view();
-
-            if (truth_map.find(view) == truth_map.end()) 
-                return;
-
-            planes_.push_back(static_cast<int>(view));
-            width_.push_back(img.properties().width());
-            height_.push_back(img.properties().height());
-
-            auto input = img.data();
-            input_data_.insert(input_data_.end(), input.begin(), input.end());
-
-            auto truth_pixels = truth_map.at(view).data();
-            truth_data_.insert(truth_data_.end(), truth_pixels.begin(), truth_pixels.end());
-        }
-
+        
         tree_->Fill();
     }
 
@@ -313,8 +316,8 @@ private:
     std::vector<int> planes_;
     std::vector<int> width_; 
     std::vector<int> height_;
-    std::vector<float> input_data_;
-    std::vector<float> truth_data_; 
+    std::vector<std::vector<float>> input_data_;
+    std::vector<std::vector<float>> truth_data_; 
 };
 
 } 

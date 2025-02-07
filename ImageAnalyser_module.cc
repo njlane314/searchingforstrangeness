@@ -87,6 +87,7 @@ private:
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
 
     int _kernel_size;
+    int _hit_threshold;
 
     std::string _bad_channel_file; 
     std::vector<bool> _bad_channel_mask;
@@ -96,7 +97,8 @@ private:
 
     std::map<int, unsigned int> _pfpmap;
 
-    double _job_pot;
+    int _n_events;
+    double _accumulated_pot;
 
     art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
 
@@ -122,6 +124,7 @@ ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     , _image_width{pset.get<int>("ImageWidth", 512)}
     , _image_height{pset.get<int>("ImageHeight", 512)}
     , _kernel_size{pset.get<int>("KernelSize", 5)}
+    , _hit_threshold{pset.get<int>("HitThreshold", 200)}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
     , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
@@ -160,8 +163,11 @@ void ImageAnalyser::beginJob()
     _job_tree = new TTree("JobTree", "Tree containing job-level information");
     _image_tree = new TTree("ImageTree", "Tree containing training images");
 
-    _job_pot = 0.0;
-    _job_tree->Branch("job_pot", &_job_pot);
+    _n_events = 0;
+    _accumulated_pot = 0.0;
+
+    _job_tree->Branch("n_events", &_n_events);
+    _job_tree->Branch("accumulated_pot", &_accumulated_pot);
 
     _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
 }
@@ -169,13 +175,16 @@ void ImageAnalyser::beginJob()
 void ImageAnalyser::beginSubRun(art::SubRun const& sbr) 
 {  
     if (const auto potHandle = sbr.getValidHandle<sumdata::POTSummary>(_POTlabel))
-        _job_pot += potHandle->totgoodpot;  
+        _accumulated_pot += potHandle->totgoodpot;  
 }
 
 void ImageAnalyser::endJob() 
 {
     if (_root_file) {
-        _root_file->cd();    
+        _root_file->cd();   
+
+        _job_tree->Fill();
+         
         _job_tree->Write();     
         _image_tree->Write();     
         _root_file->Close();      
@@ -218,7 +227,7 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
         return;
 
     auto neutrino_hits = this->collectNeutrinoHits(e, neutrino_slice);
-    if (neutrino_hits.size() < 200) 
+    if (neutrino_hits.size() < _hit_threshold) 
         return;
 
     std::vector<image::ImageProperties> properties;
@@ -242,6 +251,8 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
     signature::Pattern pattern = event_classifier.getPattern(e);
 
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
+
+    _n_events++;
 
     _image_handler->add(e, event_type, wire_vec, hit_vec, mcp_bkth_assoc, pattern, _kernel_size, properties);
 }
