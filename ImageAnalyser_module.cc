@@ -9,6 +9,10 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+
 #include "canvas/Persistency/Common/FindManyP.h"
 
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
@@ -159,9 +163,10 @@ void ImageAnalyser::analyze(const art::Event& e)
 
 void ImageAnalyser::beginJob() 
 {
-    _root_file = new TFile(_training_output_file.c_str(), "RECREATE");
-    _job_tree = new TTree("JobTree", "Tree containing job-level information");
-    _image_tree = new TTree("ImageTree", "Tree containing training images");
+    art::ServiceHandle<art::TFileService> tfs;
+    _root_file = tfs->make<TFile>();
+    _job_tree = tfs->make<TTree>("JobTree", "Tree containing job-level information");
+    _image_tree = tfs->make<TTree>("ImageTree", "Tree containing training images");
 
     _n_events = 0;
     _accumulated_pot = 0.0;
@@ -179,20 +184,7 @@ void ImageAnalyser::beginSubRun(art::SubRun const& sbr)
 }
 
 void ImageAnalyser::endJob() 
-{
-    if (_root_file) {
-        _root_file->cd();   
-
-        _job_tree->Fill();
-         
-        _job_tree->Write();     
-        _image_tree->Write();     
-        _root_file->Close();      
-
-        delete _root_file;        
-        _root_file = nullptr;     
-    }
-}
+{}
 
 void ImageAnalyser::produceTrainingSample(const art::Event& e) 
 {

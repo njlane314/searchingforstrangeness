@@ -4,7 +4,7 @@ process_name: ImageTrainingProcess
 
 services:
 {
-    TFileService: { fileName: "image_training_sample.root" } 
+    TFileService: { fileName: "output.root" } 
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
