@@ -1,10 +1,10 @@
 #include "selectionconfig.fcl"  
 
-process_name: ImageTrainingProcess
+process_name: ImageAnalyserProcess
 
 services:
 {
-    TFileService: { fileName: "output.root" } 
+    TFileService: { fileName: "training_image_output.root" } 
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -34,10 +34,12 @@ physics:
 {
     analyzers:
     {
-        imagetraining: 
+        imageanalyser: 
         {
             module_type: ImageAnalyser
- 
+
+            ProcessSignal: true
+
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
@@ -46,7 +48,7 @@ physics:
         }
     }
  
-    e1: [ imagetraining ]     
+    e1: [ imageanalyser ]     
    
     end_paths: [ e1 ]           
 }

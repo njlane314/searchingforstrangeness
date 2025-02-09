@@ -82,7 +82,7 @@ private:
 
     std::string _training_output_file;
     TFile* _root_file;
-    TTree* _job_tree;
+    TTree* _sample_tree;
     TTree* _image_tree;
     std::unique_ptr<image::ImageTrainingHandler> _image_handler;
 
@@ -93,7 +93,6 @@ private:
     int _kernel_size;
     int _hit_threshold;
 
-    std::string _bad_channel_file; 
     std::vector<bool> _bad_channel_mask;
 
     const geo::GeometryCore* _geo;
@@ -104,12 +103,12 @@ private:
     int _n_events;
     double _accumulated_pot;
 
-    art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+    bool _process_signal;
 
-    void initialiseBadChannelMask();
+    art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, 
+                  _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag;
 
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
-
     void produceTrainingSample(art::Event const& e);
     void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -124,11 +123,13 @@ ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     : EDAnalyzer{pset}
     , _pset(pset)
     , _training_output_file{pset.get<std::string>("TrainingOutputFile", "training_output.root")}
-    , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")} 
     , _image_width{pset.get<int>("ImageWidth", 512)}
     , _image_height{pset.get<int>("ImageHeight", 512)}
-    , _kernel_size{pset.get<int>("KernelSize", 5)}
+    , _kernel_size{pset.get<int>("KernelSize", 3)}
     , _hit_threshold{pset.get<int>("HitThreshold", 200)}
+    , _process_signal{pset.get<bool>("ProcessSignal", true)}
+    , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim")}
+    , _POTlabel{pset.get<art::InputTag>("POTlabel", "generator")}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
     , _HITproducer{pset.get<art::InputTag>("HITpoducer", "gaushit")}
     , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
@@ -141,18 +142,18 @@ ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
-    , _POTlabel{pset.get<art::InputTag>("POTlabel", "generator")}
 {
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
 
-    _drift_step = 0.5;
+    auto const* det_clocks = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
+    auto const* det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
+    double tick_period = det_clocks->TPCClock().TickPeriod();
+    double drift_velocity = det_props->DriftVelocity();
+    _drift_step = tick_period * drift_velocity * 1e1;
+
     _wire_pitch_u = _geo->WirePitch(geo::kU);                 // U plane
     _wire_pitch_v = _geo->WirePitch(geo::kV);                 // V plane
     _wire_pitch_w = _geo->WirePitch(geo::kW);                 // W plane
-
-    size_t n_channels = _geo->Nchannels();
-    _bad_channel_mask.resize(n_channels, false);
-    this->initialiseBadChannelMask();
 }
 
 void ImageAnalyser::analyze(const art::Event& e) 
@@ -165,14 +166,14 @@ void ImageAnalyser::beginJob()
 {
     art::ServiceHandle<art::TFileService> tfs;
     _root_file = tfs->make<TFile>();
-    _job_tree = tfs->make<TTree>("JobTree", "Tree containing job-level information");
-    _image_tree = tfs->make<TTree>("ImageTree", "Tree containing training images");
+    _sample_tree = tfs->make<TTree>("SampleTree", "");
+    _image_tree = tfs->make<TTree>("ImageTree", "");
 
     _n_events = 0;
     _accumulated_pot = 0.0;
 
-    _job_tree->Branch("n_events", &_n_events);
-    _job_tree->Branch("accumulated_pot", &_accumulated_pot);
+    _sample_tree->Branch("n_events", &_n_events);
+    _sample_tree->Branch("accumulated_pot", &_accumulated_pot);
 
     _image_handler = std::make_unique<image::ImageTrainingHandler>(_image_tree, *_geo);
 }
@@ -188,6 +189,30 @@ void ImageAnalyser::endJob()
 
 void ImageAnalyser::produceTrainingSample(const art::Event& e) 
 {
+    std::cout << _drift_step << std::endl;
+
+    signature::EventClassifier event_classifier(_pset);
+    signature::EventType event_type = event_classifier.classifyEvent(e);
+
+    if (_process_signal != (event_type == signature::EventType::kSignal)) 
+        return;
+
+    signature::Pattern pattern = event_classifier.getPattern(e);
+
+    size_t n_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(n_channels + 1, false);
+
+    art::Handle<std::vector<int>> bad_ch_h;
+    std::vector<art::Ptr<int>> bad_ch_v;
+
+    if(!e.getByLabel(_DeadChannelTag,bad_ch_h))
+        return;
+
+    art::fill_ptr_vector(bad_ch_v,bad_ch_h);
+   
+    for(auto ch : bad_ch_v)
+      _bad_channel_mask.at(*ch) = true; 
+
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
         art::fill_ptr_vector(wire_vec, wireHandle);
@@ -238,39 +263,10 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
         _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW
     );
 
-    signature::EventClassifier event_classifier(_pset);
-    signature::EventType event_type = event_classifier.classifyEvent(e);
-    signature::Pattern pattern = event_classifier.getPattern(e);
-
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
 
     _n_events++;
-
     _image_handler->add(e, event_type, wire_vec, hit_vec, mcp_bkth_assoc, pattern, _kernel_size, properties);
-}
-
-void ImageAnalyser::initialiseBadChannelMask()
-{
-    if (!_bad_channel_file.empty()) {
-        cet::search_path sp("FW_SEARCH_PATH");
-        std::string fullname;
-        sp.find_file(_bad_channel_file, fullname);
-        if (fullname.empty()) 
-            throw cet::exception("ImageAnalyser") << "Bad channel file not found: " << _bad_channel_file;
-
-        std::ifstream inFile(fullname, std::ios::in);
-        std::string line;
-        while (std::getline(inFile, line)) {
-            if (line.find("#") != std::string::npos) continue;
-            std::istringstream ss(line);
-            int ch1, ch2;
-            ss >> ch1;
-            if (!(ss >> ch2)) ch2 = ch1;
-            for (int i = ch1; i <= ch2; ++i) {
-                _bad_channel_mask[i] = true;
-            }
-        }
-    }
 }
 
 void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
