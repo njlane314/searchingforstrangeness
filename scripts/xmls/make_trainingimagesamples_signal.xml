@@ -50,7 +50,7 @@
   <prestart>1</prestart>
   <filelistdef>1</filelistdef>
   <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>5</numjobs>
+  <numjobs>100</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>
