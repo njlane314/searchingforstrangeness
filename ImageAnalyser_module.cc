@@ -194,7 +194,7 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
     signature::EventClassifier event_classifier(_pset);
     signature::EventType event_type = event_classifier.classifyEvent(e);
 
-    if (_process_signal != (event_type == signature::EventType::kSignal)) 
+    if (_process_signal ^ (event_type == signature::EventType::kSignal))
         return;
 
     signature::Pattern pattern = event_classifier.getPattern(e);
