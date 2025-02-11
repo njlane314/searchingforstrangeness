@@ -39,6 +39,7 @@ physics:
             module_type: ConvolutionNetworkAlgo
             TrainingMode: true                 
             TrainingOutputFile: "training_output"
+            DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
             
             ModelFileU: ""            
             ModelFileV: ""
@@ -56,11 +57,14 @@ physics:
             
             SignatureTools: @local::SignatureTools
 
-            FilterClarity: false
+            FilterClarity: true
             ClarityTools: 
             {
                 patterncompleteness: @local::PatternCompleteness
-                signatureintegrity: @local::SignatureIntegrity
+                lambdasignatureintegrity: @local::LambdaSignatureIntegrity
+                muonsignatureintegrity: @local::MuonSignatureIntegrity
+                kplussignatureintegrity: @local::KPlusSignatureIntegrity
+                kshortsignatureintegrity: @local::KShortSignatureIntegrity
                 hitexclusivity: @local::HitExclusivity
             }
                           

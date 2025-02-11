@@ -45,7 +45,7 @@ protected:
 bool SignatureIntegrity::isChannelRegionActive(const TVector3& point, const common::PandoraView& view) const
 {
   for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {
-    //std::cout << "plane = " << plane.Plane << "  " << view << std::endl;
+    std::cout << "plane = " << plane.Plane << "  " << view << std::endl;
     //std::cout << "Casting: " << static_cast<unsigned int>(plane.Plane) << "  " << static_cast<unsigned int>(view) << std::endl;
     if(static_cast<unsigned int>(plane.Plane) != static_cast<unsigned int>(view)) continue;
     try {
@@ -54,12 +54,12 @@ bool SignatureIntegrity::isChannelRegionActive(const TVector3& point, const comm
 
       for (int offset = -_chan_act_reg; offset <= _chan_act_reg; ++offset) {
         raw::ChannelID_t neighboring_channel = central_channel + offset;
-        //std::cout << "Checking channel " << neighboring_channel << std::endl;
+        std::cout << "Checking channel " << neighboring_channel << std::endl;
         if (neighboring_channel < 0 || static_cast<size_t>(neighboring_channel) >= _geo->Nchannels())
           continue; 
 
         if (_bad_channel_mask[neighboring_channel]){
-          //std::cout << "Bad channel " << neighboring_channel << std::endl;
+          std::cout << "Bad channel " << neighboring_channel << std::endl;
           return false; 
         }
 

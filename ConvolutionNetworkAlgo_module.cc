@@ -21,6 +21,7 @@
 #include "CommonFunctions/Corrections.h"
 #include "CommonFunctions/Region.h"
 #include "CommonFunctions/Types.h"
+#include "CommonFunctions/BadChannels.h"
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
@@ -73,7 +74,7 @@ private:
     float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
     std::map<common::PandoraView, float> _wire_pitch;
 
-    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer;
+    art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _PFPproducer, _CLSproducer, _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag;
 
     std::map<common::PandoraView, std::array<float, 4>> _region_bounds;
     std::vector<art::Ptr<recob::Hit>> _region_hits;
@@ -124,6 +125,7 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _VTXproducer{pset.get<art::InputTag>("VTXproducer", "pandora")}
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
+    , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
     , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
     , _filter_clarity{pset.get<bool>("FilterClarity",false)}
@@ -161,8 +163,8 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     size_t num_channels = _geo->Nchannels();
     _bad_channel_mask.resize(num_channels, false);
 
-    if (_veto_bad_channels)
-        this->initialiseBadChannelMask();
+    //if (_veto_bad_channels)
+    //    this->initialiseBadChannelMask();
 
 
     if(_filter_clarity){
@@ -250,6 +252,10 @@ void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
     }
 
     mf::LogInfo("ConvolutionNetworkAlgo") << "Region Hit size: " << _region_hits.size();
+
+    if(_veto_bad_channels)
+      common::SetBadChannelMask(evt,_DeadChannelTag,_bad_channel_mask);
+    
 }
 
 void ConvolutionNetworkAlgo::initialiseBadChannelMask()
@@ -276,6 +282,7 @@ void ConvolutionNetworkAlgo::initialiseBadChannelMask()
         }
         std::cout << "Loaded bad channels from: " << fullname << std::endl;
     }
+
 }
 
 void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt, const std::vector<art::Ptr<recob::Hit>>& hits)

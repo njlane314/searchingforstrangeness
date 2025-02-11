@@ -61,13 +61,16 @@ physics:
             ClarityTools: 
             {
                 patterncompleteness: @local::PatternCompleteness
-                signatureintegrity: @local::SignatureIntegrity
+                lambdasignatureintegrity: @local::LambdaSignatureIntegrity
+                muonsignatureintegrity: @local::MuonSignatureIntegrity
+                kplussignatureintegrity: @local::KPlusSignatureIntegrity
+                kshortsignatureintegrity: @local::KShortSignatureIntegrity
                 hitexclusivity: @local::HitExclusivity
             }
 
             BadChannelFile: "badchannels.txt"
             QuickVisualise: false
-            TargetDetectorPlane: 1
+            TargetDetectorPlane: 0
         }
     }
 
