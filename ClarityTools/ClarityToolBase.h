@@ -56,6 +56,7 @@ public:
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
     , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
+    , _verbose{pset.get<bool>("Verbose",false)}
     {
     }   
  
@@ -69,6 +70,10 @@ public:
     std::vector<bool> filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
     virtual bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view) = 0;
 
+private:
+
+    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _DeadChannelTag;
+
 protected:
 
     std::vector<bool> _bad_channel_mask;
@@ -80,9 +85,7 @@ protected:
     std::vector<art::Ptr<recob::Hit>> _mc_hits;
     std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
 
-private:
-
-    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _DeadChannelTag;
+    const bool _verbose;
 
 };
 

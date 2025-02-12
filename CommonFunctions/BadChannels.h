@@ -62,7 +62,6 @@ void SetBadChannelMask(const art::Event& e, const art::InputTag& bad_channel_tag
   if(!e.getByLabel(bad_channel_tag,bad_ch_h))
     throw cet::exception("SetBadChannelMask:") << "Bad channel product with tag" << bad_channel_tag << " not found" << std::endl;
     
-
   art::fill_ptr_vector(bad_ch_v,bad_ch_h);
 
   for(auto ch : bad_ch_v){

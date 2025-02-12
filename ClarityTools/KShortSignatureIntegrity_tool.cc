@@ -33,7 +33,7 @@ bool KShortSignatureIntegrity::filter(const art::Event &e, const signature::Sign
 
   for (const auto& mcp_s : sig.second){
     if(std::find(trackids.begin(),trackids.end(),mcp_s->Mother()) != trackids.end()) continue;
-    if(!checkStart(mcp_s,view)) return false;
+    if(!checkStart2(mcp_s,view)) return false;
   }
 
   return true;

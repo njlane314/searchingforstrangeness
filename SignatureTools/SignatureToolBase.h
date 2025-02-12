@@ -38,6 +38,25 @@ enum SignatureType {
 using Signature = std::pair<int,std::vector<art::Ptr<simb::MCParticle>>>;
 using Pattern = std::vector<Signature>;
 
+std::string GetSignatureName(const Signature& sig)
+{
+
+  switch (sig.first){
+        case SignatureInvalid: return "Invalid";
+        case SignatureEmpty: return "Empty";
+        case SignatureNoise: return "Noise";
+        case SignaturePrimaryMuon: return "PrimaryMuon";
+        case SignatureChargedKaon: return "ChargedKaon";
+        case SignatureKaonShort: return "KaonShort";
+        case SignatureLambda: return "Lambda";
+        case SignatureChargedSigma: return "ChargedSigma";
+        default: return "Invalid"; 
+  }
+
+  return "Invalid";
+
+}
+
 class SignatureToolBase 
 {
 public:
@@ -74,7 +93,6 @@ protected:
 
     bool assessParticle(const simb::MCParticle& mcp) const 
     {
-        std::cout << "Assessing particle, pdg=" << mcp.PdgCode() << " trackid=" << mcp.TrackId() << std::endl;
         float mom_mag = mcp.Momentum().Vect().Mag();
         int abs_pdg = std::abs(mcp.PdgCode());
 
@@ -94,7 +112,6 @@ protected:
        
         // Check start is inside the TPC
         double pos[3] = {(double)mcp.Vx(),(double)mcp.Vy(),(double)mcp.Vz()};
-        std::cout << "Position: " << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
         if(!common::point_inside_fv(pos)) return false;
 
         auto it = thresh_map.find(abs_pdg);

@@ -109,30 +109,36 @@ SignatureTools:
 PatternCompleteness: {
     tool_type: "PatternCompleteness"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 
 LambdaSignatureIntegrity: {
     tool_type: "LambdaSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 
 KShortSignatureIntegrity: {
     tool_type: "KShortSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 
 MuonSignatureIntegrity: {
     tool_type: "MuonSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 
 KPlusSignatureIntegrity: {
     tool_type: "KPlusSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 
 HitExclusivity: {
     tool_type: "HitExclusivity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
 

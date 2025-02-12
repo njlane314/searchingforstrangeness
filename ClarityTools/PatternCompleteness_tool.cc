@@ -38,6 +38,10 @@ private:
 
 bool PatternCompleteness::filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
 {
+
+  if(_verbose)
+    std::cout << "Checking PatternCompleteness in view " << view << " for signature " << signature::GetSignatureName(sig) << std::endl;
+
     this->loadEventHandles(e,view);
 
     std::unordered_map<int, int> sig_hit_map;
@@ -62,6 +66,8 @@ bool PatternCompleteness::filter(const art::Event &e, const signature::Signature
 
       sig_hit_map[mcp_s->TrackId()] += sig_hit;
       tot_sig_hit += sig_hit;
+      if(_verbose)
+        std::cout << "Particle pdg=" << mcp_s->PdgCode() << " trackid=" << mcp_s->TrackId() << " hits = " << sig_hit << std::endl;
     }
 
     if (_mc_hits.empty() || sig_hits.empty()) 
@@ -69,13 +75,29 @@ bool PatternCompleteness::filter(const art::Event &e, const signature::Signature
 
     for (const auto& [trackid, num_hits] : sig_hit_map) 
     {
-        if(num_hits < _part_hit_thresh) return false;
-        if (num_hits / tot_sig_hit < _part_hit_frac_thresh) return false;       
+      if(_verbose)
+        std::cout << "Signature trackid=" << trackid << " num_hits = " << num_hits << " num_hits/tot_sig_hit = " << num_hits/tot_sig_hit << std::endl;
+      if(num_hits < _part_hit_thresh){
+        if(_verbose)
+          std::cout << "Signature trackid=" << trackid << " failed PatternCompleteness in plane " << view << " with too few hits" << std::endl;
+        return false;
+      }
+      if (num_hits / tot_sig_hit < _part_hit_frac_thresh){
+        if(_verbose)
+          std::cout << "Signature trackid=" << trackid << " failed PatternCompleteness in plane " << view << " with too small frac of hits" << std::endl;
+        return false;       
+      }
     }
 
-    if (tot_sig_hit < _sig_hit_thresh)
-        return false;
+    if (tot_sig_hit < _sig_hit_thresh){
+      if(_verbose)
+        std::cout << "Signature " << signature::GetSignatureName(sig) << " failed PatternCompleteness with too few hits" << std::endl;
+      return false;
+    }
 
+    if(_verbose)
+      std::cout << "Signature " << signature::GetSignatureName(sig) << " passed PatternCompleteness in plane " << view << std::endl;
+    
     return true;
 }
 
