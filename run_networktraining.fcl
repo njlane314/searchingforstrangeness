@@ -39,6 +39,7 @@ physics:
             module_type: ConvolutionNetworkAlgo
             TrainingMode: true                 
             TrainingOutputFile: "training_output"
+            DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
             
             ModelFileU: ""            
             ModelFileV: ""
@@ -55,6 +56,18 @@ physics:
             CaloAlg: @local::microboone_calo_mcc9_data
             
             SignatureTools: @local::SignatureTools
+
+            FilterClarity: true
+            ClarityTools: 
+            {
+                patterncompleteness: @local::PatternCompleteness
+                lambdasignatureintegrity: @local::LambdaSignatureIntegrity
+                muonsignatureintegrity: @local::MuonSignatureIntegrity
+                kplussignatureintegrity: @local::KPlusSignatureIntegrity
+                kshortsignatureintegrity: @local::KShortSignatureIntegrity
+                hitexclusivity: @local::HitExclusivity
+            }
+                          
         }
     }
  

@@ -24,8 +24,38 @@
 
 namespace signature {
 
-using Signature = std::vector<art::Ptr<simb::MCParticle>>;
+enum SignatureType {
+    SignatureInvalid = -1,
+    SignatureEmpty = 0,
+    SignatureNoise,
+    SignaturePrimaryMuon,
+    SignatureChargedKaon,
+    SignatureKaonShort,
+    SignatureLambda,
+    SignatureChargedSigma
+};
+
+using Signature = std::pair<int,std::vector<art::Ptr<simb::MCParticle>>>;
 using Pattern = std::vector<Signature>;
+
+std::string GetSignatureName(const Signature& sig)
+{
+
+  switch (sig.first){
+        case SignatureInvalid: return "Invalid";
+        case SignatureEmpty: return "Empty";
+        case SignatureNoise: return "Noise";
+        case SignaturePrimaryMuon: return "PrimaryMuon";
+        case SignatureChargedKaon: return "ChargedKaon";
+        case SignatureKaonShort: return "KaonShort";
+        case SignatureLambda: return "Lambda";
+        case SignatureChargedSigma: return "ChargedSigma";
+        default: return "Invalid"; 
+  }
+
+  return "Invalid";
+
+}
 
 class SignatureToolBase 
 {
@@ -41,7 +71,7 @@ public:
 
     bool constructSignature(art::Event const& evt, Signature& signature)
     {
-        signature.clear();
+        signature.second.clear();
         auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
         if (truth_handle->size() != 1) 
             return false;
@@ -49,8 +79,11 @@ public:
         bool signature_found = false;
         this->findSignature(evt, signature, signature_found);
 
-        if (!signature_found)  
-            signature.clear();
+        if (!signature_found){
+          //signature.clear();
+          signature.second.clear();
+          signature.first = SignatureInvalid;
+        }
 
         return signature_found;
     }
@@ -70,12 +103,16 @@ protected:
         std::unordered_map<int, float> thresh_map = {
             {211, 0.1},    // pi
             {13, 0.1},     // mu
-            {2212, 0.1},   // p
-            {321, 0.1},    // K
+            {2212, 0.3},   // p
+            {321, 0.2},    // K
             {11, 0.1},     // e
             {3222, 0.1},   // sigma+
             {3112, 0.1},   // sigma-
         };
+       
+        // Check start is inside the TPC
+        double pos[3] = {(double)mcp.Vx(),(double)mcp.Vy(),(double)mcp.Vz()};
+        if(!common::point_inside_fv(pos)) return false;
 
         auto it = thresh_map.find(abs_pdg);
         if (it != thresh_map.end())
@@ -86,7 +123,7 @@ protected:
 
     void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
     {
-        signature.push_back(mcp);
+        signature.second.push_back(mcp);
     }
 
     virtual void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) = 0;

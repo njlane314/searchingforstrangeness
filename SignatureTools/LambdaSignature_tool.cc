@@ -37,6 +37,8 @@ private:
 
 void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
 {
+    signature.first = SignatureLambda;
+   
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
     for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) {
@@ -47,7 +49,7 @@ void LambdaSignature::findSignature(art::Event const& evt, Signature& signature,
     auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> void {
         auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
         for (const auto& daugh : daughters) {
-            if (daugh->PdgCode() == particle->PdgCode()) {
+            if (daugh->PdgCode() == particle->PdgCode() && this->assessParticle(*daugh)) {
                 this->fillSignature(daugh, signature); 
                 self(daugh, self); 
             }
@@ -56,9 +58,22 @@ void LambdaSignature::findSignature(art::Event const& evt, Signature& signature,
 
     for (const auto &mcp : *mcp_h) 
     {
-        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 2 && !signature_found) 
+        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" /*&& mcp.NumberDaughters() == 2*/ && !signature_found) 
         {
             auto decay = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
+
+            std::vector<art::Ptr<simb::MCParticle>> clean_decay;
+
+            for (const auto& elem : decay) 
+            {
+              if (elem->Process() != "Decay") 
+                continue;
+
+              clean_decay.push_back(elem);
+            }
+
+            decay = clean_decay;
+
             if (decay.size() != 2) continue; 
 
             std::vector<int> exp_decay = {-211, 2212};

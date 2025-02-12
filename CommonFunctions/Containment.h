@@ -19,6 +19,24 @@
 namespace common
 {
 
+    const double FVxmin = 0.0;
+    const double FVxmax = 256.35;
+    const double FVymin = -115.53;
+    const double FVymax = 117.47;
+    const double FVzmin = 0.1;
+    const double FVzmax = 1036.9;
+
+    bool point_inside_fv(const double x[3], 
+        const double fid_x_start=FVxmin, const double fid_y_start=FVymin, const double fid_z_start=FVzmin,
+        const double fid_x_end=FVxmax, const double fid_y_end=FVymax, const double fid_z_end=FVzmax)
+    {
+      if(x[0] > FVxmax || x[0] < FVxmin) return false;
+      if(x[1] > FVymax || x[1] < FVymin) return false;
+      if(x[2] > FVzmax || x[2] < FVzmin) return false;
+      return true;
+    }
+
+    /*
     bool point_inside_fv(const double x[3], 
             const double fid_x_start, const double fid_y_start, const double fid_z_start,
             const double fid_x_end, const double fid_y_end, const double fid_z_end)
@@ -33,6 +51,7 @@ namespace common
         
         return is_x && is_y && is_z;
     }
+    */
 
     bool truth_contained(const float& FVxS, const float& FVyS, const float& FVzS,
 		      const float& FVxE, const float& FVyE, const float& FVzE,

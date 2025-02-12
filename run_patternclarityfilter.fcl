@@ -58,9 +58,19 @@ physics:
                 hadronic: @local::KaonShortSignature
             }
 
+            ClarityTools: 
+            {
+                patterncompleteness: @local::PatternCompleteness
+                lambdasignatureintegrity: @local::LambdaSignatureIntegrity
+                muonsignatureintegrity: @local::MuonSignatureIntegrity
+                kplussignatureintegrity: @local::KPlusSignatureIntegrity
+                kshortsignatureintegrity: @local::KShortSignatureIntegrity
+                hitexclusivity: @local::HitExclusivity
+            }
+
             BadChannelFile: "badchannels.txt"
             QuickVisualise: false
-            TargetDetectorPlane: 1
+            TargetDetectorPlane: 0
         }
     }
 

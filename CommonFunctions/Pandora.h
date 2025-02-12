@@ -11,7 +11,7 @@
 
 namespace common
 {
-    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W};
+    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W, N_VIEWS};
 
     PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
     {
