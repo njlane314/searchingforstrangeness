@@ -16,13 +16,6 @@ public:
 
     ~LambdaSignatureIntegrity() override = default;
    
-    /* 
-    void configure(fhicl::ParameterSet const& pset) override
-    {
-        ClarityToolBase::configure(pset);
-    }
-    */
-
     bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view) override;
 
 };
@@ -31,8 +24,6 @@ bool LambdaSignatureIntegrity::filter(const art::Event &e, const signature::Sign
 {
   // Only check mcps that are children of a Lambda
   if(sig.first != signature::SignatureLambda) return true;
-
-  std::cout << "Checking Lambda Signature Integrity" << std::endl;
 
   this->loadEventHandles(e,view);
 

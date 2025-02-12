@@ -84,7 +84,6 @@ private:
 
     std::vector<std::unique_ptr<::signature::SignatureToolBase>> _signatureToolsVec;
 
-    std::string _bad_channel_file;
     bool _veto_bad_channels;
     std::vector<bool> _bad_channel_mask;
     const geo::GeometryCore* _geo;
@@ -93,7 +92,6 @@ private:
     std::vector<std::unique_ptr<::claritytools::ClarityToolBase>> _clarityToolsVec;
 
     void initialiseEvent(art::Event const& evt);
-    void initialiseBadChannelMask();
     void prepareTrainingSample(art::Event const& evt);
     void produceTrainingSample(const std::string& filename, const std::vector<float>& feat_vec, bool result);
     void makeNetworkInput(const art::Event& evt, const std::vector<art::Ptr<recob::Hit>>& hit_list, const common::PandoraView view, torch::Tensor& network_input, std::map<art::Ptr<recob::Hit>,std::pair<int, int>>& calohit_pixel_map);
@@ -126,7 +124,6 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     , _PCAproducer{pset.get<art::InputTag>("PCAproducer", "pandora")}
     , _TRKproducer{pset.get<art::InputTag>("TRKproducer", "pandora")}
     , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
-    , _bad_channel_file{pset.get<std::string>("BadChannelFile", "badchannels.txt")}
     , _veto_bad_channels{pset.get<bool>("VetoBadChannels", true)}
     , _filter_clarity{pset.get<bool>("FilterClarity",false)}
 {
@@ -160,12 +157,6 @@ ConvolutionNetworkAlgo::ConvolutionNetworkAlgo(fhicl::ParameterSet const& pset)
     }
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
-    size_t num_channels = _geo->Nchannels();
-    _bad_channel_mask.resize(num_channels, false);
-
-    //if (_veto_bad_channels)
-    //    this->initialiseBadChannelMask();
-
 
     if(_filter_clarity){
       std::cout << "Configuring clarity tools" << std::endl;
@@ -197,6 +188,10 @@ void ConvolutionNetworkAlgo::analyze(art::Event const& evt)
 
 void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
 {
+
+    if(_veto_bad_channels)
+      common::SetBadChannelMask(evt,_DeadChannelTag,_bad_channel_mask);
+
     _region_bounds.clear();
     _region_hits.clear(); 
     _mcp_bkth_assoc.reset();
@@ -252,37 +247,7 @@ void ConvolutionNetworkAlgo::initialiseEvent(art::Event const& evt)
     }
 
     mf::LogInfo("ConvolutionNetworkAlgo") << "Region Hit size: " << _region_hits.size();
-
-    if(_veto_bad_channels)
-      common::SetBadChannelMask(evt,_DeadChannelTag,_bad_channel_mask);
     
-}
-
-void ConvolutionNetworkAlgo::initialiseBadChannelMask()
-{
-    if (!_bad_channel_file.empty()) {
-        cet::search_path sp("FW_SEARCH_PATH");
-        std::string fullname;
-        sp.find_file(_bad_channel_file, fullname);
-        if (fullname.empty()) {
-            throw cet::exception("ConvolutionNetworkAlgo") << "Bad channel file not found: " << _bad_channel_file;
-        }
-
-        std::ifstream inFile(fullname, std::ios::in);
-        std::string line;
-        while (std::getline(inFile, line)) {
-            if (line.find("#") != std::string::npos) continue;
-            std::istringstream ss(line);
-            int ch1, ch2;
-            ss >> ch1;
-            if (!(ss >> ch2)) ch2 = ch1;
-            for (int i = ch1; i <= ch2; ++i) {
-                _bad_channel_mask[i] = true;
-            }
-        }
-        std::cout << "Loaded bad channels from: " << fullname << std::endl;
-    }
-
 }
 
 void ConvolutionNetworkAlgo::findRegionBounds(art::Event const& evt, const std::vector<art::Ptr<recob::Hit>>& hits)
@@ -353,7 +318,6 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
 
     this->getNuVertex(evt, nu_vtx, found_vertex);
     if (!found_vertex){ 
-        std::cout << "No neutrino vertex in this event" << std::endl;
         return; 
     }
 
@@ -363,34 +327,21 @@ void ConvolutionNetworkAlgo::prepareTrainingSample(art::Event const& evt)
       signature::Signature signature; 
       sig_found.push_back(signatureTool->constructSignature(evt, signature)); 
       patt.push_back(signature);
-      std::cout << "Signature particles:" << std::endl;
-      for(auto part : signature.second) std::cout << part->PdgCode() << "  " << part->TrackId() << "  " << part->P() << std::endl;
     }
 
     std::map<common::PandoraView,std::vector<bool>> clarity_results_all_tools;
     for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
-      std::cout << "Checking plane " << view << std::endl;
       clarity_results_all_tools[static_cast<common::PandoraView>(view)] = std::vector<bool>(_signatureToolsVec.size(),true);
       for(size_t i_s=0;i_s<patt.size();i_s++){
-        std::cout << "Checking signature " << i_s << std::endl;
         for (auto &clarityTool : _clarityToolsVec){
-          //if(!clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))) clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
-
           if(clarityTool->filter(evt,patt.at(i_s),static_cast<common::PandoraView>(view))){
-            std::cout << "Pass" << std::endl; 
           }
           else {
             clarity_results_all_tools[static_cast<common::PandoraView>(view)].at(i_s) = false;
-            std::cout << "Fail" << std::endl; 
           }       
- 
-          
         } 
       } 
     }  
-
-    //if (!patt_found && !patt.empty())
-    //    patt.clear();
 
     unsigned int n_flags = _signatureToolsVec.size(); 
     int run = evt.run();

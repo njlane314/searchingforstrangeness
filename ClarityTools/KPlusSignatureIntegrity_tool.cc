@@ -24,8 +24,6 @@ bool KPlusSignatureIntegrity::filter(const art::Event &e, const signature::Signa
 {
   if(sig.first != signature::SignatureChargedKaon) return true;
 
-  std::cout << "Checking KPlus Signature Integrity" << std::endl;
-
   this->loadEventHandles(e,view);
  
   // Check the start and end of the kaon, and only the start of the muon/pion it decays to 

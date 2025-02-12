@@ -22,6 +22,7 @@
 #include "CommonFunctions/Corrections.h"
 #include "CommonFunctions/Region.h"
 #include "CommonFunctions/Types.h"
+#include "CommonFunctions/BadChannels.h"
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
@@ -62,8 +63,6 @@ public:
     
     virtual void configure(fhicl::ParameterSet const& pset)
     {
-        //_bad_channel_file = pset.get<std::string>("BadChannelFile");
-        //loadBadChannelMap();
     }
 
     std::map<common::PandoraView,std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
@@ -73,7 +72,6 @@ public:
 protected:
 
     std::vector<bool> _bad_channel_mask;
-    //std::string _bad_channel_file;
 
     const geo::GeometryCore* _geo = art::ServiceHandle<geo::Geometry>()->provider();
      
@@ -86,72 +84,11 @@ private:
 
     const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _DeadChannelTag;
 
-    //void loadBadChannelMap();
-
 };
-/*
-void ClarityToolBase::loadBadChannelMap(){
-    std::cout << "Loading Bad Channel Map" << std::endl;
 
-    size_t num_channels = _geo->Nchannels();
-    _bad_channel_mask.resize(num_channels, false);
-
-    if (!_bad_channel_file.empty()) {
-        cet::search_path sp("FW_SEARCH_PATH");
-        std::string fullname;
-        sp.find_file(_bad_channel_file, fullname);
-        if (fullname.empty()) 
-            throw cet::exception("PatternClarityFilter") << "-- Bad channel file not found: " << _bad_channel_file;
-
-        std::ifstream inFile(fullname, std::ios::in);
-        std::string line;
-        while (std::getline(inFile, line)) {
-            if (line.find("#") != std::string::npos) continue;
-            std::istringstream ss(line);
-            int ch1, ch2;
-            ss >> ch1;
-            if (!(ss >> ch2)) ch2 = ch1;
-            for (int i = ch1; i <= ch2; ++i) {
-                _bad_channel_mask[i] = true;
-            }
-        }
-    }
-
-  size_t num_channels = _geo->Nchannels();
-  _bad_channel_mask.resize(num_channels+1,false);
-
-  std::vector<int> bad_ch;
-  std::ifstream inFile(_bad_channel_file, std::ios::in);
-  std::string line;
-  int ch;
-  while (inFile >> ch) {
-     bad_ch.push_back(ch);
-  } 
-
-  for(size_t i=0;i<num_channels+1;i++)
-    if(std::find(bad_ch.begin(),bad_ch.end(),i) != bad_ch.end())
-      _bad_channel_mask.at(i) = true; 
-
-}
-*/
 bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView targetDetectorPlane){
 
-    size_t num_channels = _geo->Nchannels();
-    _bad_channel_mask.resize(num_channels+1,false);
-
-    art::Handle<std::vector<int>> bad_ch_h;
-    std::vector<art::Ptr<int>> bad_ch_v;
-
-    if(!e.getByLabel(_DeadChannelTag,bad_ch_h))
-        return false;
-
-    art::fill_ptr_vector(bad_ch_v,bad_ch_h);
-   
-    for(auto ch : bad_ch_v){
-      //std::cout << *ch << std::endl;
-      _bad_channel_mask.at(*ch) = true; 
-    }
-
+    common::SetBadChannelMask(e,_DeadChannelTag,_bad_channel_mask);
 
     _evt_hits.clear();
     _mc_hits.clear();

@@ -38,7 +38,6 @@ private:
 
 bool PatternCompleteness::filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
 {
-    std::cout << "Checking Pattern Completeness" << std::endl; 
     this->loadEventHandles(e,view);
 
     std::unordered_map<int, int> sig_hit_map;
@@ -68,19 +67,13 @@ bool PatternCompleteness::filter(const art::Event &e, const signature::Signature
     if (_mc_hits.empty() || sig_hits.empty()) 
         return false;
 
-    //double sig_comp = static_cast<double>(sig_hits.size()) / _mc_hits.size();
-
-    //std::cout << "Signature completeness " << sig_comp << std::endl;
-    std::cout << "Total signature hits " << tot_sig_hit << std::endl;
-
     for (const auto& [trackid, num_hits] : sig_hit_map) 
     {
-        std::cout << "Particle " << trackid << " hits " << num_hits << std::endl;
         if(num_hits < _part_hit_thresh) return false;
         if (num_hits / tot_sig_hit < _part_hit_frac_thresh) return false;       
     }
 
-    if (/*sig_comp < _sig_hit_comp_thresh ||*/ tot_sig_hit < _sig_hit_thresh)
+    if (tot_sig_hit < _sig_hit_thresh)
         return false;
 
     return true;
