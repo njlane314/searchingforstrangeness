@@ -41,6 +41,7 @@
 #include "art/Utilities/make_tool.h"
 
 #include "SignatureTools/SignatureToolBase.h"
+#include "ClarityTools/ClarityToolBase.h"
 #include "EventClassifier.h"
 
 #include "TDatabasePDG.h"
@@ -104,6 +105,7 @@ private:
     double _accumulated_pot;
 
     bool _process_signal;
+    bool _clarity_filter;
 
     art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, 
                   _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag;
@@ -128,6 +130,7 @@ ImageAnalyser::ImageAnalyser(fhicl::ParameterSet const& pset)
     , _kernel_size{pset.get<int>("KernelSize", 3)}
     , _hit_threshold{pset.get<int>("HitThreshold", 200)}
     , _process_signal{pset.get<bool>("ProcessSignal", true)}
+    , _clarity_filter{pset.get<bool>("ClarityFilter", false)}
     , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim")}
     , _POTlabel{pset.get<art::InputTag>("POTlabel", "generator")}
     , _WREproducer{pset.get<art::InputTag>("WREproducer", "butcher")}
@@ -189,12 +192,13 @@ void ImageAnalyser::endJob()
 
 void ImageAnalyser::produceTrainingSample(const art::Event& e) 
 {
-    std::cout << _drift_step << std::endl;
-
     signature::EventClassifier event_classifier(_pset);
     signature::EventType event_type = event_classifier.classifyEvent(e);
 
     if (_process_signal ^ (event_type == signature::EventType::kSignal))
+        return;
+
+    if (_clarity_filter ^ (event_classifier.passClarityFilter()))
         return;
 
     signature::Pattern pattern = event_classifier.getPattern(e);
@@ -266,7 +270,7 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e)
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
 
     _n_events++;
-    _image_handler->add(e, event_type, wire_vec, hit_vec, mcp_bkth_assoc, pattern, _kernel_size, properties);
+    _image_handler->add(e, event_type, wire_vec, hit_vec, mcp_bkth_assoc, pattern, event_classifier, _kernel_size, properties);
 }
 
 void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)

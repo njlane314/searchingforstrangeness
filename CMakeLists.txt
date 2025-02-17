@@ -20,6 +20,7 @@ add_subdirectory(CommonFunctions)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(SignatureTools)
+add_subdirectory(ClarityTools)
 add_subdirectory(job)
 add_subdirectory(scripts)
 

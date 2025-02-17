@@ -13,6 +13,8 @@ namespace common
 {
     enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W};
 
+    constexpr size_t N_VIEWS = 3;
+
     PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
     {
         const geo::WireID hit_wire(hit->WireID());

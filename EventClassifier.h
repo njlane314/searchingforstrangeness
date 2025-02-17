@@ -7,6 +7,8 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "larcore/Geometry/Geometry.h"
 
+#include "ClarityTools/ClarityToolBase.h"
+
 #include <vector>
 #include <string>
 #include <limits>
@@ -27,6 +29,10 @@ public:
 
     EventType classifyEvent(const art::Event& e);
     const Pattern& getPattern(const art::Event& e);
+    
+    bool passesPlaneClarity(const Signature& sig, common::PandoraView view) const;
+    bool passesThreePlaneClarity(const Signature& sig) const;
+    bool passClarityFilter() const;
 
 private:
     simb::Origin_t getTruthOrigin(const art::Event& e);
@@ -41,8 +47,23 @@ private:
     art::InputTag _MCTproducer;
 
     std::vector<std::unique_ptr<SignatureToolBase>> _signatureToolsVec;
+    std::vector<std::unique_ptr<ClarityToolBase>> _clarityToolsVec;
     Pattern _pattern;
     bool _pattern_found;
+
+    struct ClarityResult {
+        Type type;
+        Signature signature;
+        std::array<bool, common::N_VIEWS> passes;
+
+        ClarityResult(Type t, const Signature& s)
+        : type(t), signature(s)
+        {
+            passes.fill(true);
+        }
+    };
+
+    std::vector<ClarityResult> _clarity_results;
 };
 
 EventClassifier::EventClassifier(fhicl::ParameterSet const& pset)
@@ -51,10 +72,16 @@ EventClassifier::EventClassifier(fhicl::ParameterSet const& pset)
       _fiducial_offsets{pset.get<std::vector<float>>("FiducialOffsets", {10, 10, 10, 10, 10, 10})},
       _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
 {
-    const auto& tools_pset = pset.get<fhicl::ParameterSet>("SignatureTools");
-    for (const auto& tool_label : tools_pset.get_pset_names()) {
-        auto const& tool_pset = tools_pset.get<fhicl::ParameterSet>(tool_label);
+    const auto& sig_tools_pset = pset.get<fhicl::ParameterSet>("SignatureTools");
+    for (const auto& tool_label : sig_tools_pset.get_pset_names()) {
+        auto const& tool_pset = sig_tools_pset.get<fhicl::ParameterSet>(tool_label);
         _signatureToolsVec.push_back(art::make_tool<SignatureToolBase>(tool_pset));
+    }
+
+    const auto& clarity_tools_pset = pset.get<fhicl::ParameterSet>("ClarityTools");
+    for (const auto& tool_label : clarity_tools_pset.get_pset_names()) {
+        auto const& tool_pset = clarity_tools_pset.get<fhicl::ParameterSet>(tool_label);
+        _clarityToolsVec.push_back(art::make_tool<ClarityToolBase>(tool_pset));
     }
 }
 
@@ -79,6 +106,22 @@ void EventClassifier::createPattern(const art::Event& e) {
         } else {
             _pattern_found = false;
         }
+    }
+
+    for (const auto& entry : _pattern) {
+        const auto& type = entry.first;
+        const auto& sig = entry.second;
+        ClarityResult scr(type, sig);
+
+        for (int view = common::TPC_VIEW_U; view != common::N_VIEWS; ++view) {
+            for (const auto& clarityTool : _clarityToolsVec) {
+                if (!clarityTool->filter(e, sig, type, static_cast<common::PandoraView>(view))) {
+                    scr.passes[static_cast<size_t>(view)] = false;
+                    break; 
+                }
+            }
+        }
+        _clarity_results.push_back(std::move(scr));
     }
 }
 
@@ -113,7 +156,7 @@ bool EventClassifier::isSignal(const art::Event& e) {
         return false;
 
     this->createPattern(e);
-    if (_pattern_found) 
+    if (!_pattern_found) 
         return false; 
 
     const simb::MCTruth& truth = truthHandle->front();
@@ -152,6 +195,37 @@ EventType EventClassifier::classifyEvent(const art::Event& e) {
         case simb::kSingleParticle:     return kExternal;
         default:                        return kOther;
     }
+}
+
+bool EventClassifier::passesPlaneClarity(const Signature& sig, common::PandoraView view) const {
+    auto it = std::find_if(_clarity_results.begin(), _clarity_results.end(),
+                           [&sig](const ClarityResult& scr) {
+                               return scr.signature == sig;
+                           });
+    if (it != _clarity_results.end())
+        return it->passes[static_cast<size_t>(view)];
+    return false;
+}
+
+bool EventClassifier::passesThreePlaneClarity(const Signature& sig) const {
+    auto it = std::find_if(_clarity_results.begin(), _clarity_results.end(),
+                           [&sig](const ClarityResult& scr) {
+                               return scr.signature == sig;
+                           });
+    if (it != _clarity_results.end())
+        return std::all_of(it->passes.begin(), it->passes.end(), [](bool passed) { return passed; });
+    return false;
+}
+
+bool EventClassifier::passClarityFilter() const {
+    if (_clarity_results.empty()) 
+        return false;
+    
+    return std::all_of(_clarity_results.begin(), _clarity_results.end(),
+        [](const ClarityResult& cr) {
+            return std::all_of(cr.passes.begin(), cr.passes.end(),
+                [](bool passed) { return passed; });
+        });
 }
 
 } 

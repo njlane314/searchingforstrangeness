@@ -24,7 +24,7 @@
 
 namespace signature {
 
-enum SignatureType {
+enum Type {
     SignatureEmpty = 0,
     SignatureNoise,
     SignaturePrimaryMuon,
@@ -35,7 +35,7 @@ enum SignatureType {
 };
 
 using Signature = std::vector<art::Ptr<simb::MCParticle>>;
-using Pattern = std::vector<std::pair<SignatureType, Signature>>;
+using Pattern = std::vector<std::pair<Type, Signature>>;
 
 class SignatureToolBase 
 {
@@ -65,7 +65,7 @@ public:
         return signature_found;
     }
 
-    virtual SignatureType getSignatureType() const {
+    virtual Type getSignatureType() const {
         return SignatureEmpty;
     }
 
