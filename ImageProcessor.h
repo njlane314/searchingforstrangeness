@@ -117,7 +117,7 @@ std::vector<Image> constructInputImages(const std::vector<ImageProperties>& prop
     std::vector<Image> input;
     for (const auto& prop : properties) input.emplace_back(prop);
 
-    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
     for (const auto& wire : wires) {
         auto ch_id = wire->Channel();
@@ -132,7 +132,7 @@ std::vector<Image> constructInputImages(const std::vector<ImageProperties>& prop
             for (size_t idx = 0; idx < adcs.size(); ++idx) {
                 geo::PlaneID plane_id(wire_ids.front());
                 int tdc = start_idx + idx;
-                double x = detProp->ConvertTicksToX(tdc, plane_id);
+                double x = det_props->ConvertTicksToX(tdc, plane_id);
                 TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat).TPC(wire_ids.front().TPC).Plane(wire_ids.front().Plane).Wire(wire_ids.front().Wire).GetCenter();
 
                 float coord = (view == geo::kW) ? wire_center.Z() :
@@ -157,6 +157,7 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
                                           const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
                                           const size_t kernel_size, 
                                           const signature::Pattern& pattern, 
+                                          const signature::EventClassifier& classifier,
                                           const geo::GeometryCore& geo) {
     std::vector<Image> truth;
     truth.reserve(properties.size());
@@ -166,17 +167,32 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
         truth.push_back(std::move(img));
     }
 
-    auto const* detProp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
-    std::unordered_map<int, simb::MCParticle> truth_particles;
+    std::unordered_set<int> truth_particles_U;
+    std::unordered_set<int> truth_particles_V;
+    std::unordered_set<int> truth_particles_W;
+    
     for (const auto& [type, signature] : pattern) {
-        for (const auto& particle : signature) {
-            truth_particles[particle->TrackId()] = *particle;
+        if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_U)) {
+            for (const auto& particle : signature) {
+                truth_particles_U.insert(particle->TrackId());
+            }
+        }
+        if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_V)) {
+            for (const auto& particle : signature) {
+                truth_particles_V.insert(particle->TrackId());
+            }
+        }
+        if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_W)) {
+            for (const auto& particle : signature) {
+                truth_particles_W.insert(particle->TrackId());
+            }
         }
     }
 
     constexpr float angle = 1.04719758034f; // ~pi/3
-    auto computeCoordinate = [angle](geo::View_t view, const TVector3& wire_center) -> float {
+    auto computeCoord = [angle](geo::View_t view, const TVector3& wire_center) -> float {
         if (view == geo::kW) {
             return wire_center.Z();
         }
@@ -194,31 +210,43 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
     };
 
     for (const auto& hit : hits) {
-        const auto& assocParticles = mcp_bkth_assoc.at(hit.key());
-        const auto& assocData = mcp_bkth_assoc.data(hit.key());
-        if (assocParticles.empty() || assocData.empty())
+        const auto& assoc_part = mcp_bkth_assoc.at(hit.key());
+        const auto& assoc_data = mcp_bkth_assoc.data(hit.key());
+        if (assoc_part.empty() || assoc_data.empty())
             continue;
 
         int track_id = -1;
         bool valid_hit = false;
-        for (size_t i = 0; i < assocData.size(); ++i) {
-            if (assocData[i]->isMaxIDE == 1) {
-                track_id = assocParticles[i]->TrackId();
+        for (size_t i = 0; i < assoc_data.size(); ++i) {
+            if (assoc_data[i]->isMaxIDE == 1) {
+                track_id = assoc_part[i]->TrackId();
                 valid_hit = true;
                 break;
             }
         }
-        if (!valid_hit || truth_particles.find(track_id) == truth_particles.end())
+        if (!valid_hit)
             continue;
 
-        double x = detProp->ConvertTicksToX(hit->PeakTime(), hit->WireID());
+        geo::View_t hit_view = hit->View();
+        if (hit_view == geo::kU) {
+            if (truth_particles_U.find(track_id) == truth_particles_U.end())
+                continue;
+        } else if (hit_view == geo::kV) {
+            if (truth_particles_V.find(track_id) == truth_particles_V.end())
+                continue;
+        } else if (hit_view == geo::kW) {
+            if (truth_particles_W.find(track_id) == truth_particles_W.end())
+                continue;
+        }
+
+        double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
         TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
                                     .TPC(hit->WireID().TPC)
                                     .Plane(hit->WireID().Plane)
                                     .Wire(hit->WireID().Wire)
                                     .GetCenter();
         geo::View_t view = hit->View();
-        float transformed_coord = computeCoordinate(view, wire_center);
+        float transformed_coord = computeCoord(view, wire_center);
 
         for (auto& img : truth) {
             if (img.properties().view() != view)
@@ -235,6 +263,79 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
     return truth;
 }
 
+std::vector<Image> constructBackgroundImages(const std::vector<ImageProperties>& properties, 
+                                          const std::vector<art::Ptr<recob::Hit>>& hits, 
+                                          const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
+                                          const size_t kernel_size, 
+                                          const geo::GeometryCore& geo) {
+    std::vector<Image> back;
+    back.reserve(properties.size());
+    for (const auto& prop : properties) {
+        Image img(prop);
+        img.clear(0.0f);
+        back.push_back(std::move(img));
+    }
+    auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+
+    constexpr float angle = 1.04719758034f; // ~pi/3
+    auto computeCoord = [angle](geo::View_t view, const TVector3& wire_center) -> float {
+        if (view == geo::kW) {
+            return wire_center.Z();
+        }
+        const float sign = (view == geo::kU) ? 1.0f : -1.0f;
+        return (wire_center.Z() * std::cos(sign * angle)) - (wire_center.Y() * std::sin(sign * angle));
+    };
+
+    auto applyKernel = [kernel_size](Image& img, size_t row, size_t col, float value) {
+        const int half = static_cast<int>(kernel_size) / 2;
+        for (int dr = -half; dr <= half; ++dr) {
+            for (int dc = -half; dc <= half; ++dc) {
+                img.set(row + dr, col + dc, value, /*accumulate=*/false);
+            }
+        }
+    };
+
+    std::vector<art::Ptr<recob::Hit>> back_hits;
+    for (const auto& hit : hits) {
+        const auto& assoc_data = mcp_bkth_assoc.data(hit.key());
+        if (assoc_data.empty())
+            continue;
+        
+        bool is_sim = false;
+        for (size_t i = 0; i < assoc_data.size(); ++i) {
+            if (assoc_data[i]->isMaxIDE == 1) 
+                is_sim = true;
+        }
+
+        if (!is_sim)
+            back_hits.push_back(hit);
+    }
+
+    for (const auto& hit : back_hits){
+        double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
+        TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
+                                    .TPC(hit->WireID().TPC)
+                                    .Plane(hit->WireID().Plane)
+                                    .Wire(hit->WireID().Wire)
+                                    .GetCenter();
+        geo::View_t view = hit->View();
+        float transformed_coord = computeCoord(view, wire_center);
+
+        for (auto& img : back) {
+            if (img.properties().view() != view)
+                continue;
+
+            size_t row = img.properties().row(x);
+            size_t col = img.properties().col(transformed_coord);
+            if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1))
+                continue;
+            applyKernel(img, row, col, 1.0f);
+        }
+    }
+
+    return back;
+}
+
 class ImageTrainingHandler {
 public:
     ImageTrainingHandler(TTree* tree, const geo::GeometryCore& geo)
@@ -248,6 +349,12 @@ public:
         tree_->Branch("height", &height_);
         tree_->Branch("input_data", &input_data_);
         tree_->Branch("truth_data", &truth_data_);
+        tree_->Branch("back_data", &back_data_);
+        tree_->Branch("clarity_signature_types", &clarity_signature_types_);
+        tree_->Branch("clarity_passes_u", &clarity_passes_u_);
+        tree_->Branch("clarity_passes_v", &clarity_passes_v_);
+        tree_->Branch("clarity_passes_w", &clarity_passes_w_);
+        tree_->Branch("clarity_passes_all", &clarity_passes_all_);
     }
 
     void reset() {
@@ -258,6 +365,12 @@ public:
         height_.clear();
         input_data_.clear();
         truth_data_.clear();
+        back_data_.clear();
+        clarity_signature_types_.clear();
+        clarity_passes_u_.clear();
+        clarity_passes_v_.clear();
+        clarity_passes_w_.clear();
+        clarity_passes_all_.clear();
     }
 
     void add(const art::Event& e, 
@@ -266,6 +379,7 @@ public:
              const std::vector<art::Ptr<recob::Hit>>& hits,
              const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
              const signature::Pattern& pattern,
+             const signature::EventClassifier& classifier,
              const size_t& kernel_size,
              const std::vector<ImageProperties>& properties) {
         this->reset();
@@ -277,7 +391,16 @@ public:
         event_type_ = static_cast<int>(event_type);
 
         std::vector<Image> input = constructInputImages(properties, wires, geo_);
-        std::vector<Image> truth = constructTruthImages(properties, hits, mcp_bkth_assoc, kernel_size, pattern, geo_);
+        std::vector<Image> truth = constructTruthImages(properties, hits, mcp_bkth_assoc, kernel_size, pattern, classifier, geo_);
+        std::vector<Image> back = constructBackgroundImages(properties, hits, mcp_bkth_assoc, kernel_size, geo_);
+
+        for (const auto& [type, signature] : pattern) {
+            clarity_signature_types_.push_back(static_cast<int>(type));
+            clarity_passes_u_.push_back(classifier.passesPlaneClarity(signature, common::TPC_VIEW_U) ? 1 : 0);
+            clarity_passes_v_.push_back(classifier.passesPlaneClarity(signature, common::TPC_VIEW_V) ? 1 : 0);
+            clarity_passes_w_.push_back(classifier.passesPlaneClarity(signature, common::TPC_VIEW_W) ? 1 : 0);
+            clarity_passes_all_.push_back(classifier.passesThreePlaneClarity(signature) ? 1 : 0);
+        }
 
         std::vector<geo::View_t> ordered_views = { geo::kU, geo::kV, geo::kW };
 
@@ -292,7 +415,12 @@ public:
                                             return img.properties().view() == view;
                                         });
 
-            if (input_iter != input.end() && truth_iter != truth.end()) {
+            auto back_iter = std::find_if(back.begin(), back.end(),
+                                        [view](const Image& img) {
+                                            return img.properties().view() == view;
+                                        });                          
+
+            if (input_iter != input.end() && truth_iter != truth.end() && back_iter != back.end()) {
                 if (input_iter->properties().width() != truth_iter->properties().width() || input_iter->properties().height() != truth_iter->properties().height())
                     continue;
 
@@ -301,6 +429,7 @@ public:
                 height_.push_back(input_iter->properties().height());
                 input_data_.push_back(input_iter->data());
                 truth_data_.push_back(truth_iter->data());
+                back_data_.push_back(back_iter->data());
             }
         }
         
@@ -318,6 +447,12 @@ private:
     std::vector<int> height_;
     std::vector<std::vector<float>> input_data_;
     std::vector<std::vector<float>> truth_data_; 
+    std::vector<std::vector<float>> back_data_;
+    std::vector<int> clarity_signature_types_;
+    std::vector<int> clarity_passes_u_;
+    std::vector<int> clarity_passes_v_;
+    std::vector<int> clarity_passes_w_;
+    std::vector<int> clarity_passes_all_;
 };
 
 } 

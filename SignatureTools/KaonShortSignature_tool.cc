@@ -28,7 +28,7 @@ public:
         SignatureToolBase::configure(pset);
     }
 
-    SignatureType getSignatureType() const override 
+    Type getSignatureType() const override 
     {
         return SignatureKaonShort;
     }

@@ -56,11 +56,11 @@ Thresholds: {
     ElectronThreshold: 0.1
 
     PionThreshold: 0.1
-    ProtonThreshold: 0.1
-    KaonThreshold: 0.1
+    ProtonThreshold: 0.3
+    KaonThreshold: 0.2
 
-    SigmaPlusThreshold: 0.1
-    SigmaMinusThreshold: 0.1
+    SigmaPlusThreshold: 0.5
+    SigmaMinusThreshold: 0.5
     XiMinusThreshold: 0.1
     OmegaMinusThreshold: 0.1
     
@@ -98,8 +98,38 @@ LambdaSignature:
     @table::Thresholds
 }
 
-SignatureTools:
-{
-    leptonic: @local::MuonSignature
-    hadronic: @local::ChargedKaonSignature
+PatternCompleteness: {
+    tool_type: "PatternCompleteness"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+LambdaSignatureIntegrity: {
+    tool_type: "LambdaSignatureIntegrity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+KShortSignatureIntegrity: {
+    tool_type: "KShortSignatureIntegrity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+MuonSignatureIntegrity: {
+    tool_type: "MuonSignatureIntegrity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+KPlusSignatureIntegrity: {
+    tool_type: "KPlusSignatureIntegrity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+HitExclusivity: {
+    tool_type: "HitExclusivity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
 }
