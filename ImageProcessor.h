@@ -163,30 +163,30 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
     truth.reserve(properties.size());
     for (const auto& prop : properties) {
         Image img(prop);
-        img.clear(0.0f);
+        img.clear(signature::SignatureEmpty);
         truth.push_back(std::move(img));
     }
 
     auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
-    std::unordered_set<int> truth_particles_U;
-    std::unordered_set<int> truth_particles_V;
-    std::unordered_set<int> truth_particles_W;
+    std::unordered_map<int, signature::Type> truth_particles_U;
+    std::unordered_map<int, signature::Type> truth_particles_V;
+    std::unordered_map<int, signature::Type> truth_particles_W;
     
     for (const auto& [type, signature] : pattern) {
         if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_U)) {
             for (const auto& particle : signature) {
-                truth_particles_U.insert(particle->TrackId());
+                truth_particles_U[particle->TrackId()] = type;
             }
         }
         if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_V)) {
             for (const auto& particle : signature) {
-                truth_particles_V.insert(particle->TrackId());
+                truth_particles_V[particle->TrackId()] = type;
             }
         }
         if (classifier.passesPlaneClarity(signature, common::TPC_VIEW_W)) {
             for (const auto& particle : signature) {
-                truth_particles_W.insert(particle->TrackId());
+                truth_particles_W[particle->TrackId()] = type;
             }
         }
     }
@@ -228,16 +228,29 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
             continue;
 
         geo::View_t hit_view = hit->View();
+        signature::Type label = signature::SignatureEmpty;
+        bool found = false;
         if (hit_view == geo::kU) {
-            if (truth_particles_U.find(track_id) == truth_particles_U.end())
+            auto it = truth_particles_U.find(track_id);
+            if (it == truth_particles_U.end())
                 continue;
+            label = it->second;
+            found = true;
         } else if (hit_view == geo::kV) {
-            if (truth_particles_V.find(track_id) == truth_particles_V.end())
+            auto it = truth_particles_V.find(track_id);
+            if (it == truth_particles_V.end())
                 continue;
+            label = it->second;
+            found = true;
         } else if (hit_view == geo::kW) {
-            if (truth_particles_W.find(track_id) == truth_particles_W.end())
+            auto it = truth_particles_W.find(track_id);
+            if (it == truth_particles_W.end())
                 continue;
+            label = it->second;
+            found = true;
         }
+        if (!found)
+            continue;
 
         double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
         TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
@@ -256,7 +269,8 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
             size_t col = img.properties().col(transformed_coord);
             if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1))
                 continue;
-            applyKernel(img, row, col, 1.0f);
+            float value = static_cast<float>(label);
+            applyKernel(img, row, col, value);
         }
     }
 
