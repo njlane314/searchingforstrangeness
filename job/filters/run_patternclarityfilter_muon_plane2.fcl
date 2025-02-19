@@ -1,0 +1,3 @@
+#include "run_patternclarityfilter_muon_plane0.fcl"
+
+physics.filters.patternclarityfilterprocess.TargetDetectorPlane: 2

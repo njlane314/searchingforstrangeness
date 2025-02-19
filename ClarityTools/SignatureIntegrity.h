@@ -73,11 +73,9 @@ bool SignatureIntegrity::isChannelRegionActive(const TVector3& point, const comm
 
 bool SignatureIntegrity::checkStart(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const
 {
-    float x = part->Vx();
-    float y = part->Vy();
-    float z = part->Vz();
-    common::ApplySCEMappingXYZ(x,y,z);
-    bool pass = isChannelRegionActive(TVector3(x,y,z),view,_chan_act_reg);
+    TVector3 start(part->Vx(),part->Vy(),part->Vz());
+    common::ApplySCEMapping(start);
+    bool pass = isChannelRegionActive(start,view,_chan_act_reg);
 
     if(_verbose){
         if(pass) std::cout << "Track start ok" << std::endl;
@@ -96,18 +94,17 @@ bool SignatureIntegrity::checkStart2(const art::Ptr<simb::MCParticle>& part, con
 
     for(int i_p=0;i_p<=part->NumberTrajectoryPoints();i_p++){
 
-      float x = part->Vx(i_p);
-      float y = part->Vy(i_p);
-      float z = part->Vz(i_p);
+      TVector3 pos(part->Vx(i_p),part->Vy(i_p),part->Vz(i_p));
 
-      double dist = (TVector3(x,y,z) - start).Mag(); 
+      double dist = (pos - start).Mag(); 
       if(dist > _dist_to_scan) break;
 
-      common::ApplySCEMappingXYZ(x,y,z);
-      bool pass = isChannelRegionActive(TVector3(x,y,z),view,0);
+      common::ApplySCEMapping(pos);
+      bool pass = isChannelRegionActive(pos,view,0);
 
-      if(_verbose && !pass){
-        std::cout << "Track start bad" << std::endl;
+      if(!pass){
+        if(_verbose)
+          std::cout << "Track start bad" << std::endl;
         return false;
       }
 
@@ -120,11 +117,10 @@ bool SignatureIntegrity::checkStart2(const art::Ptr<simb::MCParticle>& part, con
 
 bool SignatureIntegrity::checkEnd(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const
 {
-    float x = part->EndX();
-    float y = part->EndY();
-    float z = part->EndZ();
-    common::ApplySCEMappingXYZ(x,y,z);    
-    bool pass = isChannelRegionActive(TVector3(x,y,z),view,_chan_act_reg);
+
+    TVector3 end(part->EndX(),part->EndY(),part->EndY());
+    common::ApplySCEMapping(end);    
+    bool pass = isChannelRegionActive(end,view,_chan_act_reg);
 
     if(_verbose){
         if(pass) std::cout << "Track end ok" << std::endl;
@@ -141,18 +137,17 @@ bool SignatureIntegrity::checkEnd2(const art::Ptr<simb::MCParticle>& part, const
 
     for(int i_p=part->NumberTrajectoryPoints();i_p>=0;i_p--){
 
-      float x = part->Vx(i_p);
-      float y = part->Vy(i_p);
-      float z = part->Vz(i_p);
+      TVector3 pos(part->Vx(i_p),part->Vy(i_p),part->Vz(i_p));
 
-      double dist = (TVector3(x,y,z) - end).Mag(); 
+      double dist = (pos - end).Mag(); 
       if(dist > _dist_to_scan) break;
 
-      common::ApplySCEMappingXYZ(x,y,z);
-      bool pass = isChannelRegionActive(TVector3(x,y,z),view,0);
+      common::ApplySCEMapping(pos);
+      bool pass = isChannelRegionActive(pos,view,0);
 
-      if(_verbose && !pass){
-        std::cout << "Track end bad" << std::endl;
+      if(!pass){
+        if(_verbose)
+          std::cout << "Track end bad" << std::endl;
         return false;
       }
 
@@ -168,21 +163,17 @@ bool SignatureIntegrity::checkEnd2(const art::Ptr<simb::MCParticle>& part, const
 bool SignatureIntegrity::checkDeadChannelFrac(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const
 {
 
-  float startx = part->Vx();
-  float starty = part->Vy();
-  float startz = part->Vz();
-  common::ApplySCEMappingXYZ(startx,starty,startz);    
-  float endx = part->EndX();
-  float endy = part->EndY();
-  float endz = part->EndZ();
-  common::ApplySCEMappingXYZ(endx,endy,endz);    
+  TVector3 start(part->Vx(),part->Vy(),part->Vz());
+  common::ApplySCEMapping(start);    
+  TVector3 end(part->EndX(),part->EndY(),part->EndZ());
+  common::ApplySCEMapping(end);    
 
   for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {
     if(static_cast<unsigned int>(plane.Plane) != static_cast<unsigned int>(view)) continue;
     try {
-      geo::WireID start_wire = _geo->NearestWireID(TVector3(startx,starty,startz), plane);
+      geo::WireID start_wire = _geo->NearestWireID(start, plane);
       raw::ChannelID_t start_channel = _geo->PlaneWireToChannel(start_wire);
-      geo::WireID end_wire = _geo->NearestWireID(TVector3(endx,endy,endz), plane);
+      geo::WireID end_wire = _geo->NearestWireID(end, plane);
       raw::ChannelID_t end_channel = _geo->PlaneWireToChannel(end_wire);
       double channels = abs(static_cast<int>(start_channel) - static_cast<int>(end_channel));
       double bad_channels = 0;

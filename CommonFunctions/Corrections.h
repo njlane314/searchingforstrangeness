@@ -25,6 +25,19 @@ namespace common
         }
     }
 
+    void ApplySCEMapping(TVector3& pos)
+    {
+        auto const *SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+
+        if (SCE->EnableSimSpatialSCE() == true)
+        {
+            auto offset = SCE->GetPosOffsets(geo::Point_t(pos.X(), pos.Y(), pos.Z()));
+            pos[0] -= offset.X();
+            pos[1] += offset.Y();
+            pos[2] += offset.Z();
+        }
+    }
+
     void ApplySCECorrectionXYZ(float& x, float& y, float& z)
     {
         auto const *SCE = lar::providerFrom<spacecharge::SpaceChargeService>();

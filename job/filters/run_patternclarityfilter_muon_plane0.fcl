@@ -1,0 +1,7 @@
+#include "run_patternclarityfilter.fcl"
+
+physics.filters.patternclarityfilterprocess.SignatureTools: {
+    muon: @local::MuonSignature
+}
+
+physics.filters.patternclarityfilterprocess.TargetDetectorPlane: 0

@@ -24,6 +24,10 @@ public:
     bool filter(const art::Event &e, const signature::Signature& sig, common::PandoraView view)
     {   
       if(sig.first != signature::SignaturePrimaryMuon) return true;
+        
+      if(_verbose) 
+        std::cout << "Checking Muon Signature Integrity" << std::endl;
+
       this->loadEventHandles(e,view);
 
       for (const auto& mcp_s : sig.second) {
