@@ -96,6 +96,27 @@ namespace common
         x += 0.6;
     }
 
+    void True2RecoMapping(TLorentzVector& pos) 
+    {
+
+      auto const *SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+      if (SCE->EnableSimSpatialSCE() == true)
+      {
+        auto offset = SCE->GetPosOffsets(geo::Point_t(pos.X(), pos.Y(), pos.Z()));
+        pos[0] -= offset.X();
+        pos[1] += offset.Y();
+        pos[2] += offset.Z();
+      }
+
+      auto const &detProperties = lar::providerFrom<detinfo::DetectorPropertiesService>();
+      auto const &detClocks = lar::providerFrom<detinfo::DetectorClocksService>();
+      double g4Ticks = detClocks->TPCG4Time2Tick(pos.T()) + detProperties->GetXTicksOffset(0, 0, 0) - detProperties->TriggerOffset();
+      float _xtimeoffset = detProperties->ConvertTicksToX(g4Ticks, 0, 0, 0);
+
+      pos[0] += _xtimeoffset;
+      pos[0] += 0.6;
+    }
+
     void ApplySCEMappingXYZ(float x, float y, float z, float out[3])
     {
         auto const *SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
