@@ -1,22 +1,22 @@
-#ifndef LAMBDA_SIGNATURE_INTEGRITY_H
-#define LAMBDA_SIGNATURE_INTEGRITY_H
+#ifndef KSHORT_SIGNATURE_INTEGRITY_H
+#define KSHORT_SIGNATURE_INTEGRITY_H
 
 #include "SignatureIntegrity.h" 
 
 namespace signature {
 
-class LambdaSignatureIntegrity : public SignatureIntegrity {
+class KaonShortSignatureIntegrity : public SignatureIntegrity {
 public:
-    explicit LambdaSignatureIntegrity(const fhicl::ParameterSet& pset) :
+    explicit KaonShortSignatureIntegrity(const fhicl::ParameterSet& pset) :
       SignatureIntegrity{(pset)} {
         configure(pset);
     }
-    ~LambdaSignatureIntegrity() override = default;
+    ~KaonShortSignatureIntegrity() override = default;
     bool filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) override;
 };
 
-bool LambdaSignatureIntegrity::filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) {
-    if(type != kLambdaSignature) 
+bool KaonShortSignatureIntegrity::filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) {
+    if(type != kKaonShortSignature) 
         return true;
     this->loadEventHandles(e,view);
     std::vector<int> trackids;
@@ -31,7 +31,7 @@ bool LambdaSignatureIntegrity::filter(const art::Event &e, const Signature& sig,
     return true;
 }
 
-DEFINE_ART_CLASS_TOOL(LambdaSignatureIntegrity)
+DEFINE_ART_CLASS_TOOL(KaonShortSignatureIntegrity)
 
 }
 

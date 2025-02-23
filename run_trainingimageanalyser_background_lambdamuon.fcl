@@ -38,14 +38,12 @@ physics:
         {
             module_type: ImageAnalyser
 
-            ProcessSignal: false
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
-                hadronic: @local::LambdaSignature
+                hadronic: @local::ChargedKaonSignature
             }
 
-            FilterClarity: true
             ClarityTools: 
             {
                 patterncompleteness: @local::PatternCompleteness
