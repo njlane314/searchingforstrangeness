@@ -110,8 +110,8 @@ LambdaSignatureIntegrity: {
     Verbose: true
 }
 
-KShortSignatureIntegrity: {
-    tool_type: "KShortSignatureIntegrity"
+KaonShortSignatureIntegrity: {
+    tool_type: "KaonShortSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
     Verbose: true
 }
@@ -122,8 +122,8 @@ MuonSignatureIntegrity: {
     Verbose: true
 }
 
-KPlusSignatureIntegrity: {
-    tool_type: "KPlusSignatureIntegrity"
+ChargedKaonbSignatureIntegrity: {
+    tool_type: "ChargedKaonbSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
     Verbose: true
 }

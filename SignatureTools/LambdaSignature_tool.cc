@@ -8,26 +8,22 @@
 namespace signature
 {
 
-class LambdaSignature : public SignatureToolBase, public VertexToolBase
-{
+class LambdaSignature : public SignatureToolBase, public VertexToolBase {
 public:
     explicit LambdaSignature(const fhicl::ParameterSet& pset)
         : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-        , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-    {
+        , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")} {
         configure(pset);
     }
 
     ~LambdaSignature() override = default;
     
-    void configure(fhicl::ParameterSet const& pset) override
-    {
+    void configure(fhicl::ParameterSet const& pset) override {
         SignatureToolBase::configure(pset);
     }
 
-    Type getSignatureType() const override 
-    {
-        return SignatureLambda;
+    SignatureType getSignatureType() const override {
+        return kLambdaSignature;
     }
 
     TVector3 findVertex(art::Event const& evt) const override;
@@ -40,8 +36,7 @@ private:
     art::InputTag _MCTproducer;
 };
 
-void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
-{
+void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found) {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
     for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) {
@@ -59,31 +54,22 @@ void LambdaSignature::findSignature(art::Event const& evt, Signature& signature,
         }
     };
 
-    for (const auto &mcp : *mcp_h) 
-    {
-        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 2 && !signature_found) 
-        {
+    for (const auto &mcp : *mcp_h) {
+        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 2 && !signature_found) {
             auto decay = common::GetDaughters(mcp_map.at(mcp.TrackId()), mcp_map);
             if (decay.size() != 2) continue; 
-
             std::vector<int> exp_decay = {-211, 2212};
             std::vector<int> fnd_decay;
-                
             for (const auto &elem : decay) 
                 fnd_decay.push_back(elem->PdgCode());
-
             std::sort(exp_decay.begin(), exp_decay.end());
             std::sort(fnd_decay.begin(), fnd_decay.end());
-
-            if (fnd_decay == exp_decay) 
-            {
+            if (fnd_decay == exp_decay) {
                 signature_found = true;
-                for (const auto &elem : decay) 
-                {
+                for (const auto &elem : decay) {
                     const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
                     if (info->Charge() == 0.0) 
                         continue;
-
                     this->fillSignature(elem, signature);
                     addDaughterInteractions(elem, addDaughterInteractions);
                 }
@@ -92,19 +78,16 @@ void LambdaSignature::findSignature(art::Event const& evt, Signature& signature,
     }
 }
 
-TVector3 LambdaSignature::findVertex(art::Event const& evt) const
-{
+TVector3 LambdaSignature::findVertex(art::Event const& evt) const {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
-    for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) 
-    {
+    for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) {
         const art::Ptr<simb::MCParticle> mcp(mcp_h, mcp_i);
         mcp_map[mcp->TrackId()] = mcp;
     }
 
     for (const auto &mcp : *mcp_h) {
-        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 2) 
-        {
+        if (abs(mcp.PdgCode()) == 3122 && mcp.Process() == "primary" && mcp.EndProcess() == "Decay" && mcp.NumberDaughters() == 2) {
             const TLorentzVector& end_position = mcp.EndPosition();
             return TVector3(end_position.X(), end_position.Y(), end_position.Z());
         }

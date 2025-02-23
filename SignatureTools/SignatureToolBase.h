@@ -24,33 +24,30 @@
 
 namespace signature {
 
-enum Type {
-    SignatureEmpty = 0,
-    SignatureNoise,
-    SignaturePrimaryMuon,
-    SignatureChargedKaon,
-    SignatureKaonShort,
-    SignatureLambda,
-    SignatureChargedSigma
+enum SignatureType {
+    kEmptySignature = 0,
+    kNoiseSignature,
+    kPrimaryMuonSignature,
+    kChargedKaonSignature,
+    kKaonShortSignature,
+    kLambdaSignature,
+    kChargedSigmaSignature
 };
 
 using Signature = std::vector<art::Ptr<simb::MCParticle>>;
-using Pattern = std::vector<std::pair<Type, Signature>>;
+using Pattern = std::vector<std::pair<SignatureType, Signature>>;
 
 class SignatureToolBase 
 {
 public:
-
     virtual ~SignatureToolBase() noexcept = default;
     
-    virtual void configure(fhicl::ParameterSet const& pset)
-    {
+    virtual void configure(fhicl::ParameterSet const& pset) {
         _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
         _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
     }
 
-    bool constructSignature(art::Event const& evt, Signature& signature)
-    {
+    bool constructSignature(art::Event const& evt, Signature& signature) {
         signature.clear();
         auto const& truth_handle = evt.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);
         if (truth_handle->size() != 1) 
@@ -65,15 +62,18 @@ public:
         return signature_found;
     }
 
-    virtual Type getSignatureType() const {
-        return SignatureEmpty;
+    virtual SignatureType getSignatureType() const {
+        return kEmptySignature;
+    }
+
+    virtual bool isDetectable(art::Event const& evt, Signature const& signature) const {
+        return true;
     }
 
 protected:
     art::InputTag _MCPproducer, _MCTproducer;
 
-    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) 
-    {
+    void fillSignature(const art::Ptr<simb::MCParticle>& mcp, Signature& signature) {
         signature.push_back(mcp);
     }
 

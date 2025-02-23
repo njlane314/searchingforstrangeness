@@ -6,25 +6,20 @@
 
 namespace signature {
 
-class ChargedSigmaSignature : public SignatureToolBase 
-{
-    
+class ChargedSigmaSignature : public SignatureToolBase {
 public:
     explicit ChargedSigmaSignature(const fhicl::ParameterSet& pset)
-    : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    {
+    : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")} {
         configure(pset); 
     }
     ~ChargedSigmaSignature() {}
 
-    void configure(fhicl::ParameterSet const& pset) override
-    {
+    void configure(fhicl::ParameterSet const& pset) override {
         SignatureToolBase::configure(pset);
     }
 
-    Type getSignatureType() const override 
-    {
-        return SignatureChargedSigma;
+    SignatureType getSignatureType() const override {
+        return kChargedSigmaSignature;
     }
 
 protected:
@@ -34,15 +29,13 @@ private:
     art::InputTag _MCPproducer;  
 };
 
-void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found)
-{
+void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found) {
     auto const &mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcp_map;
     for (size_t mcp_i = 0; mcp_i < mcp_h->size(); mcp_i++) {
         const art::Ptr<simb::MCParticle> mcp(mcp_h, mcp_i);
         mcp_map[mcp->TrackId()] = mcp;
     }
-
     auto addDaughterInteractions = [this, &signature, &mcp_map](const art::Ptr<simb::MCParticle>& particle, auto& self) -> art::Ptr<simb::MCParticle> {
         auto daughters = common::GetDaughters(mcp_map.at(particle->TrackId()), mcp_map);
         art::Ptr<simb::MCParticle> end_particle = particle;
@@ -52,39 +45,26 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                 end_particle = self(daugh, self); 
             }
         }
-        
         return end_particle;
     };
-
-    for (const auto &mcp : *mcp_h)
-    {
-        if ((abs(mcp.PdgCode()) == 3112 || abs(mcp.PdgCode()) == 3222) && mcp.Process() == "primary" && !signature_found)
-        {
+    for (const auto &mcp : *mcp_h) {
+        if ((abs(mcp.PdgCode()) == 3112 || abs(mcp.PdgCode()) == 3222) && mcp.Process() == "primary" && !signature_found) {
             auto particle_iter = mcp_map.find(mcp.TrackId());
             if (particle_iter == mcp_map.end()) 
                 continue;
-
             auto sigma = particle_iter->second; 
             this->fillSignature(sigma, signature);
             auto end_sigma = addDaughterInteractions(sigma, addDaughterInteractions);
-
-            std::cout << end_sigma->EndProcess() << std::endl;
-            if (end_sigma->EndProcess() == "Decay")
-            {
+            if (end_sigma->EndProcess() == "Decay") {
                 auto decay = common::GetDaughters(mcp_map.at(sigma->TrackId()), mcp_map);
                 std::vector<int> found_dtrs;
                 std::vector<art::Ptr<simb::MCParticle>> clean_decay;
-
-                for (const auto& elem : decay)
-                {
-                    std::cout << elem->PdgCode() << std::endl;
+                for (const auto& elem : decay) {
                     if (std::abs(elem->PdgCode()) == 11 || std::abs(elem->PdgCode()) == 22 || std::abs(elem->PdgCode()) >= 1000000000) 
                         continue;
-
                     found_dtrs.push_back(elem->PdgCode());
                     clean_decay.push_back(elem);
                 }
-                
                 std::vector<std::vector<int>> decay_modes;
                 if (abs(sigma->PdgCode()) == 3222) { // Sigma+
                     decay_modes = {
@@ -96,9 +76,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                         {2112, -211} // n + pi-
                     };
                 }
-
                 std::sort(found_dtrs.begin(), found_dtrs.end());
-
                 bool valid_decay = false;
                 for (const auto& mode : decay_modes) {
                     std::vector<int> sorted_mode = mode;
@@ -108,20 +86,13 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                         break;
                     }
                 }
-
-                std::cout << valid_decay << std::endl;
-
-                if (valid_decay) 
-                {
+                if (valid_decay) {
                     signature_found = true;
-
                     this->fillSignature(mcp_map[mcp.TrackId()], signature);
-                    for (const auto& elem : clean_decay) 
-                    {
+                    for (const auto& elem : clean_decay) {
                         const TParticlePDG* info = TDatabasePDG::Instance()->GetParticle(elem->PdgCode());
                         if (info->Charge() == 0.0) 
                             continue;
-
                         this->fillSignature(elem, signature);
                         auto end_particle = addDaughterInteractions(elem, addDaughterInteractions);
                     }
