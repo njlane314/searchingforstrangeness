@@ -92,7 +92,7 @@ bool SignatureIntegrity::checkStart2(const art::Ptr<simb::MCParticle>& part, con
 
     TVector3 start(part->Vx(),part->Vy(),part->Vz());
 
-    for(int i_p=0;i_p<=part->NumberTrajectoryPoints();i_p++){
+    for(int i_p=0;i_p<part->NumberTrajectoryPoints();i_p++){
 
       TVector3 pos(part->Vx(i_p),part->Vy(i_p),part->Vz(i_p));
 
@@ -135,7 +135,7 @@ bool SignatureIntegrity::checkEnd2(const art::Ptr<simb::MCParticle>& part, const
 
     TVector3 end(part->EndX(),part->EndY(),part->EndZ());
 
-    for(int i_p=part->NumberTrajectoryPoints();i_p>=0;i_p--){
+    for(int i_p=part->NumberTrajectoryPoints()-1;i_p>=0;i_p--){
 
       TVector3 pos(part->Vx(i_p),part->Vy(i_p),part->Vz(i_p));
 
