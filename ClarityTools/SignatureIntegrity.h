@@ -153,7 +153,8 @@ bool SignatureIntegrity::checkEnd2(const art::Ptr<simb::MCParticle>& part, const
 
     }
    
-    std::cout << "Track end ok" << std::endl;
+    if(_verbose)
+      std::cout << "Track end ok" << std::endl;
  
     return true;  
 }

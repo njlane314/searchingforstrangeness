@@ -11,11 +11,9 @@ std::vector<TLorentzVector> PadOutTrajPoints(const art::Ptr<simb::MCParticle>& p
   std::vector<TLorentzVector> points;
   double d=0; 
 
-  std::cout << "NumberTrajectoryPoints=" << part->NumberTrajectoryPoints() << std::endl; 
   for(int i_p=1;i_p<part->NumberTrajectoryPoints();i_p++){
     TLorentzVector last = part->Position(i_p-1);
     TLorentzVector current = part->Position(i_p);
-    std::cout << "i_p = " << i_p << " " << current.X() << " " << current.Y() << " " << current.Z() << std::endl;
     d += (current.Vect() - last.Vect()).Mag();
     TLorentzVector move = 0.2*(current - last);
     for(int i=0;i<5;i++)
