@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_trainingimage_signal_lambdamuon">
+<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_trainingimage_signal_lambdamuon_100">
 ]>
 
 <job>
@@ -50,7 +50,7 @@
   <prestart>1</prestart>
   <filelistdef>1</filelistdef>
   <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>1000</numjobs>
+  <numjobs>100</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>

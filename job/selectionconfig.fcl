@@ -122,8 +122,14 @@ MuonSignatureIntegrity: {
     Verbose: true
 }
 
-ChargedKaonbSignatureIntegrity: {
-    tool_type: "ChargedKaonbSignatureIntegrity"
+ChargedKaonSignatureIntegrity: {
+    tool_type: "ChargedKaonSignatureIntegrity"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
+    Verbose: true
+}
+
+ChargedSigmaSignatureIntegrity: {
+    tool_type: "ChargedSigmaSignatureIntegrity"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
     Verbose: true
 }

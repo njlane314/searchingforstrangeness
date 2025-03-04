@@ -88,6 +88,7 @@ private:
     art::InputTag _WREproducer, _POTlabel, _HITproducer, _MCPproducer, _MCTproducer, _BKTproducer, _PFPproducer, _CLSproducer, _SHRproducer, 
                   _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag;
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
+    void filterBadChannels(std::vector<art::Ptr<recob::Hit>>& hits);
     void produceTrainingSample(art::Event const& e);
     void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -177,7 +178,8 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e) {
     else 
         return;
 
-    this->filterBadChannels(wire_vec);
+    //this->filterBadChannels(wire_vec);
+    //this->filterBadChannels(hit_vec);
     auto pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, _PFPproducer,
                                                         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(_PFPproducer),
                                                         proxy::withAssociated<recob::Cluster>(_CLSproducer),
@@ -209,6 +211,7 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e) {
     );
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
     _n_events++;
+    std::cout << "**Accumulated neutrino event candidates: " << _n_events << std::endl;
     _image_handler->add(e, wire_vec, hit_vec, mcp_bkth_assoc, *_event_classifier, properties);
 }
 
@@ -218,6 +221,14 @@ void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires)
             return _bad_channel_mask[wire->Channel()]; 
         }), 
         wires.end());
+}
+
+void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Hit>>& hits) {
+    hits.erase(std::remove_if(hits.begin(), hits.end(), 
+        [this](const art::Ptr<recob::Hit>& hit) {
+            return _bad_channel_mask[hit->Channel()];
+        }),
+        hits.end());
 }
 
 void ImageAnalyser::buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col){

@@ -7,12 +7,14 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "larcore/Geometry/Geometry.h"
 #include "ClarityTools/ClarityToolBase.h"
+#include "SignatureTools/SignatureToolBase.h"
 #include <vector>
 #include <string>
 #include <limits>
 #include <array>
 #include <algorithm>
 #include <memory>
+#include <iostream>
 
 namespace signature {
 
@@ -23,31 +25,49 @@ enum EventType {
     kOther
 };
 
+inline bool compareSignatures(const Signature& one_sig, const Signature& two_sig) {
+    if (one_sig.size() != two_sig.size())
+        return false;
+    for (size_t i = 0; i < one_sig.size(); ++i) {
+        if (one_sig[i]->TrackId() != two_sig[i]->TrackId())
+            return false;
+    }
+    return true;
+}
+
 class ClarityEvaluator {
 public:
     class Result {
     public:
         Result(SignatureType t, const Signature& s)
-            : type(t), signature(s) { pass_flags.fill(true); }
-        bool passes(common::PandoraView view) const { return pass_flags[static_cast<size_t>(view)]; }
-        void markFail(common::PandoraView view) { pass_flags[static_cast<size_t>(view)] = false; }
-        bool allPass() const { return std::all_of(pass_flags.begin(), pass_flags.end(), [](bool p){ return p; }); }
+            : type(t), signature(s) { 
+                pass_flags.fill(true); 
+            }
+        bool passes(common::PandoraView view) const { 
+            return pass_flags[static_cast<size_t>(view)]; 
+        }
+        bool allPass() const { 
+            return std::all_of(pass_flags.begin(), pass_flags.end(), [](bool p){ return p; }); 
+        }
         Signature signature;
         SignatureType type;
         std::array<bool, common::N_VIEWS> pass_flags;
     };
 
-    ClarityEvaluator(const std::vector<std::unique_ptr<ClarityToolBase>>& clarityTools)
+    explicit ClarityEvaluator(const std::vector<std::unique_ptr<ClarityToolBase>>& clarityTools)
       : _clarityToolsVec(clarityTools) {}
+
     Result evaluate(const art::Event& e, SignatureType type, const Signature& sig) const {
         Result result(type, sig);
         for (int view = common::TPC_VIEW_U; view < common::N_VIEWS; ++view) {
-            result.pass_flags[static_cast<size_t>(view)] = std::all_of(
-                _clarityToolsVec.begin(), _clarityToolsVec.end(),
-                [&](const auto& clarityTool) {
-                    return clarityTool->filter(e, sig, type, static_cast<common::PandoraView>(view));
+            bool view_pass = true;
+            for (const auto& tool : _clarityToolsVec) {
+                if (!tool->filter(e, sig, type, static_cast<common::PandoraView>(view))) {
+                    view_pass = false;
+                    break; 
                 }
-            );
+            }
+            result.pass_flags[static_cast<size_t>(view)] = view_pass;
         }
         return result;
     }
@@ -57,7 +77,7 @@ private:
 
 class EventClassifier {
 public:
-    EventClassifier(fhicl::ParameterSet const& pset);
+    explicit EventClassifier(fhicl::ParameterSet const& pset);
     EventType classifyEvent(const art::Event& e) const;
     const Pattern& getPattern(const art::Event& e) const;
     bool passClarity(const Signature& sig, common::PandoraView view) const;
@@ -67,6 +87,7 @@ private:
     void createPattern(const art::Event& e) const;
     bool isContained(const art::Event& e) const;
     bool isSignal(const art::Event& e) const;
+    
     art::InputTag _MCTproducer;
     std::vector<float> _fiducial_offsets;
     std::vector<std::unique_ptr<SignatureToolBase>> _signatureToolsVec;
@@ -79,8 +100,7 @@ private:
 
 EventClassifier::EventClassifier(fhicl::ParameterSet const& pset)
     : _fiducial_offsets{pset.get<std::vector<float>>("FiducialOffsets", {10,10,10,10,10,10})},
-      _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-{
+      _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")} {
     const auto& sig_tools_pset = pset.get<fhicl::ParameterSet>("SignatureTools");
     for (const auto& tool_label : sig_tools_pset.get_pset_names()) {
         auto const& tool_pset = sig_tools_pset.get<fhicl::ParameterSet>(tool_label);
@@ -95,15 +115,14 @@ EventClassifier::EventClassifier(fhicl::ParameterSet const& pset)
 }
 
 EventType EventClassifier::classifyEvent(const art::Event& e) const {
-    if (_pattern.empty())
-        createPattern(e);
-    if (isSignal(e))
+    createPattern(e);
+    if (isSignal(e)) 
         return kSignal;
     simb::Origin_t origin = getTruthOrigin(e);
     switch (origin) {
         case simb::kBeamNeutrino: return kBeamNeutrino;
-        case simb::kCosmicRay: return kCosmicRay;
-        default: return kOther;
+        case simb::kCosmicRay:    return kCosmicRay;
+        default:                  return kOther;
     }
 }
 
@@ -111,39 +130,40 @@ void EventClassifier::createPattern(const art::Event& e) const {
     _pattern.clear();
     _signature_detectable.clear();
     _clarity_results.clear();
-    for (auto& tool : _signatureToolsVec) {
+    for (const auto& tool : _signatureToolsVec) {
         Signature signature;
         bool found = tool->constructSignature(e, signature);
         _pattern.emplace_back(tool->getSignatureType(), signature);
-        bool is_detectable = found ? tool->isDetectable(e, signature) : false;
-        _signature_detectable.push_back(is_detectable);
+        _signature_detectable.push_back(found ? tool->isDetectable(e, signature) : false);
     }
     for (const auto& entry : _pattern) {
         const auto& type = entry.first;
-        const auto& sig = entry.second;
+        const auto& sig  = entry.second;
         _clarity_results.push_back(_clarityEvaluator->evaluate(e, type, sig));
     }
 }
 
 const Pattern& EventClassifier::getPattern(const art::Event& e) const {
-    if (_pattern.empty())
-        createPattern(e);
+    createPattern(e);
     return _pattern;
 }
 
 simb::Origin_t EventClassifier::getTruthOrigin(const art::Event& e) const {
     art::Handle<std::vector<simb::MCTruth>> truthHandle;
     e.getByLabel(_MCTproducer, truthHandle);
-    if (!truthHandle.isValid())
+    if (!truthHandle.isValid() || truthHandle->empty())
         return simb::kUnknown;
     return truthHandle->front().Origin();
 }
 
 bool EventClassifier::isSignal(const art::Event& e) const {
-    if (_pattern.empty())
-        createPattern(e);
-    return isContained(e) && std::any_of(_signature_detectable.begin(), _signature_detectable.end(),
-        [](bool d){ return d; });
+    createPattern(e);
+    bool completePattern = std::all_of(_pattern.begin(), _pattern.end(),
+        [](const std::pair<SignatureType, Signature>& entry) {
+            return !entry.second.empty();
+        });
+    return isContained(e) && completePattern &&
+           std::all_of(_signature_detectable.begin(), _signature_detectable.end(), [](bool d){ return d; });
 }
 
 bool EventClassifier::isContained(const art::Event& e) const {
@@ -168,16 +188,14 @@ bool EventClassifier::isContained(const art::Event& e) const {
 
 bool EventClassifier::passClarity(const Signature& sig, common::PandoraView view) const {
     auto it = std::find_if(_clarity_results.begin(), _clarity_results.end(),
-                           [&sig](const ClarityEvaluator::Result& result) {
-                               return result.signature == sig;
-                           });
-    if (it != _clarity_results.end())
-        return it->passes(view);
-    return false;
+        [&sig](const ClarityEvaluator::Result& result) {
+            return compareSignatures(result.signature, sig);
+        });
+    return (it != _clarity_results.end()) ? it->passes(view) : false;
 }
 
 bool EventClassifier::passClarity() const {
-    if (_clarity_results.empty())
+    if (_clarity_results.empty()) 
         return false;
     return std::all_of(_clarity_results.begin(), _clarity_results.end(),
         [](const ClarityEvaluator::Result& result) {

@@ -46,11 +46,11 @@ public:
     , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
     , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
     , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
-    , _verbose{pset.get<bool>("Verbose",false)} {}   
+    , _verbose{pset.get<bool>("Verbose", false)} {}   
  
     virtual ~ClarityToolBase() noexcept = default;
     virtual void configure(fhicl::ParameterSet const& pset) {}
-    std::map<common::PandoraView,std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
+    std::map<common::PandoraView, std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
     std::vector<bool> filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
     virtual bool filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) = 0;
 
@@ -68,7 +68,7 @@ protected:
 };
 
 bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView targetDetectorPlane) {
-    common::SetBadChannelMask(e,_DeadChannelTag,_bad_channel_mask);
+    common::SetBadChannelMask(e, _DeadChannelTag, _bad_channel_mask);
     _evt_hits.clear();
     _mc_hits.clear();
     art::Handle<std::vector<recob::Hit>> hit_h;
@@ -76,16 +76,15 @@ bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView 
         return false;
     art::fill_ptr_vector(_evt_hits, hit_h);
     _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_h, e, _BacktrackTag);
-
     for (const auto& hit : _evt_hits) {
         if (_bad_channel_mask[hit->Channel()]) 
-            continue; 
-        const geo::WireID& wire_id = hit->WireID(); 
-        if (wire_id.Plane != static_cast<unsigned int>(targetDetectorPlane))
+            continue;
+        const geo::WireID& wire_id = hit->WireID();
+        if (wire_id.Plane != static_cast<unsigned int>(targetDetectorPlane)) 
             continue;
         auto assmcp = _mcp_bkth_assoc->at(hit.key());
         auto assmdt = _mcp_bkth_assoc->data(hit.key());
-        for (unsigned int ia = 0; ia < assmcp.size(); ++ia){
+        for (unsigned int ia = 0; ia < assmcp.size(); ++ia) {
             auto amd = assmdt[ia];
             if (amd->isMaxIDEN != 1)
                 continue;
@@ -95,11 +94,10 @@ bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView 
     return true;
 }
 
-std::map<common::PandoraView,std::vector<bool>> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt) {
-    std::map<common::PandoraView,std::vector<bool>> result;
-    for(int view = common::TPC_VIEW_U;view != common::N_VIEWS; view++){ 
-        result[static_cast<common::PandoraView>(view)] = this->filter(e,patt,static_cast<common::PandoraView>(view));
-    }
+std::map<common::PandoraView, std::vector<bool>> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt) {
+    std::map<common::PandoraView, std::vector<bool>> result;
+    for (int view = common::TPC_VIEW_U; view != common::N_VIEWS; view++) 
+        result[static_cast<common::PandoraView>(view)] = this->filter(e, patt, static_cast<common::PandoraView>(view));
     return result;
 }
 
@@ -108,11 +106,12 @@ std::vector<bool> ClarityToolBase::filter(const art::Event &e, const signature::
     for (const auto& entry : patt) {
         const auto& type = entry.first;
         const auto& sig = entry.second;
-        result.push_back(this->filter(e, sig, type, view));
+        bool filterResult = this->filter(e, sig, type, view);
+        result.push_back(filterResult);
     }
     return result;
 }
 
-}
+} 
 
 #endif
