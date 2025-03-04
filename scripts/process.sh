@@ -108,6 +108,6 @@ fi
 # ---------------------------------------------------------------------------------
 
 echo -e "${BLUE}Cleaning up temporary files...${DEFAULT}"
-#rm -r $tempdir
+rm -r $tempdir
 
 echo -e "${GREEN}Process complete!${DEFAULT}"

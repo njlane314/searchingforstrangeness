@@ -41,7 +41,7 @@ physics:
             SignatureTools:
             {
                 leptonic: @local::MuonSignature
-                hadronic: @local::ChargedKaonSignature
+                hadronic: @local::LambdaSignature
             }
 
             ClarityTools: 
@@ -49,8 +49,8 @@ physics:
                 patterncompleteness: @local::PatternCompleteness
                 lambdasignatureintegrity: @local::LambdaSignatureIntegrity
                 muonsignatureintegrity: @local::MuonSignatureIntegrity
-                kplussignatureintegrity: @local::KPlusSignatureIntegrity
-                kshortsignatureintegrity: @local::KShortSignatureIntegrity
+                chargedkaonsignatureintegrity: @local::ChargedKaonSignatureIntegrity
+                kaonshortsignatureintegrity: @local::KaonShortSignatureIntegrity
                 hitexclusivity: @local::HitExclusivity
             }
         }
