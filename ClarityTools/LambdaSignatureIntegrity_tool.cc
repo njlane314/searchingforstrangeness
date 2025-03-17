@@ -23,7 +23,7 @@ bool LambdaSignatureIntegrity::filter(const art::Event &e, const Signature& sig,
     for (const auto& mcp_s : sig) 
         trackids.push_back(mcp_s->TrackId());
     for (const auto& mcp_s : sig){
-        if(std::find(trackids.begin(),trackids.end(),mcp_s->Mother()) != trackids.end()) 
+        if(std::find(trackids.begin(), trackids.end(), mcp_s->Mother()) != trackids.end()) 
             continue;
         if(!checkStart2(mcp_s,view)) 
             return false;

@@ -46,13 +46,7 @@ physics:
 
             ClarityTools: 
             {
-                patterncompleteness: @local::PatternCompleteness
-                lambdasignatureintegrity: @local::LambdaSignatureIntegrity
-                muonsignatureintegrity: @local::MuonSignatureIntegrity
-                chargedkaonsignatureintegrity: @local::ChargedKaonSignatureIntegrity
-                kaonshortsignatureintegrity: @local::KaonShortSignatureIntegrity
-                chargedsigmasignatureintegrity: @local::ChargedSigmaSignatureIntegrity
-                hitexclusivity: @local::HitExclusivity
+                
             }
         }
     }

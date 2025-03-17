@@ -92,7 +92,6 @@ private:
     void produceTrainingSample(art::Event const& e);
     void addDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void buildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
-    bool constructSignatures(const art::Event& e, signature::Pattern& pattern);
     std::vector<common::ProxyPfpElem_t> collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice);
     std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);

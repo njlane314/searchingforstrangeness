@@ -31,8 +31,8 @@ public:
     ~TrackAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
-    void analyzeEvent(art::Event const &e, bool is_data) override;
-    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+    void analyseEvent(art::Event const &e, bool is_data) override;
+    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
     void SaveTruth(art::Event const &e);
     void fillDefault();
     void setBranches(TTree *_tree) override;
@@ -185,11 +185,11 @@ void TrackAnalysis::configure(fhicl::ParameterSet const &p)
 {
 }
 
-void TrackAnalysis::analyzeEvent(art::Event const &e, bool is_data)
+void TrackAnalysis::analyseEvent(art::Event const &e, bool is_data)
 {
 }
 
-void TrackAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
+void TrackAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
     std::cout << "Analysing slice in TrackCalorimetry..." << std::endl;
     common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, _TRKproducer,

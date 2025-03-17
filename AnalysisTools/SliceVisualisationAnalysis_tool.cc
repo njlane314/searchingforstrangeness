@@ -44,8 +44,8 @@ public:
     ~SliceVisualisationAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
-    void analyzeEvent(art::Event const &e, bool is_data) override;
-    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+    void analyseEvent(art::Event const &e, bool is_data) override;
+    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
     void SaveTruth(art::Event const &e);
     void setBranches(TTree *_tree) override;
     void resetTTree(TTree *_tree) override;
@@ -90,7 +90,7 @@ void SliceVisualisationAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
+void SliceVisualisationAnalysis::analyseEvent(art::Event const &e, bool is_data)
 {
     std::cout << "Analysing event in SliceVisualisation..." << std::endl;
 
@@ -198,7 +198,7 @@ void SliceVisualisationAnalysis::analyzeEvent(art::Event const &e, bool is_data)
     std::cout << "Finished analysing event in SliceVisualisation!" << std::endl;
 }
 
-void SliceVisualisationAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
+void SliceVisualisationAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected)
 {
     std::cout << "Analysisng slice in SliceVisualisation..." << std::endl;
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, _CLSproducer,
