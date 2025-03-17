@@ -21,7 +21,8 @@ public:
             return true;
         this->loadEventHandles(e,view);
         for (const auto& mcp_s : sig) {
-                if(!checkStart2(mcp_s,view)) return false;
+            if(!checkStart2(mcp_s,view)) 
+                return false;
         }
         return true;
     }

@@ -44,8 +44,8 @@ public:
     ~PreSelectionAnalysis(){};
 
     void configure(fhicl::ParameterSet const &pset);
-    void analyzeEvent(art::Event const &e, bool fData) override;
-    void analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+    void analyseEvent(art::Event const &e, bool fData) override;
+    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
     void SaveTruth(art::Event const &e);
     void setBranches(TTree *_tree) override;
     void resetTTree(TTree *_tree) override;
@@ -128,7 +128,7 @@ void PreSelectionAnalysis::configure(fhicl::ParameterSet const &pset)
 {
 }
 
-void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
+void PreSelectionAnalysis::analyseEvent(art::Event const &e, bool fData)
 {
     std::cout << "Analysing event in PreSelection..." << std::endl;
     art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
@@ -503,7 +503,7 @@ void PreSelectionAnalysis::analyzeEvent(art::Event const &e, bool fData)
     std::cout << "Finished analysing event in PreSelection!" << std::endl;
 }
 
-void PreSelectionAnalysis::analyzeSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
+void PreSelectionAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
 }
 

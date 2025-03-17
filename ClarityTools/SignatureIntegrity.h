@@ -60,28 +60,28 @@ bool SignatureIntegrity::isChannelRegionActive(const TVector3& point, const comm
 }
 
 bool SignatureIntegrity::checkStart(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const {
-    TVector3 start(part->Vx(),part->Vy(),part->Vz());
+    TVector3 start(part->Vx(), part->Vy(), part->Vz());
     common::ApplySCEMapping(start);
-    return isChannelRegionActive(start,view,_chan_act_reg);
+    return isChannelRegionActive(start, view, _chan_act_reg);
 }
 
 bool SignatureIntegrity::checkStart2(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const {
-    TVector3 start(part->Vx(),part->Vy(),part->Vz());
+    TVector3 start(part->Vx(), part->Vy(), part->Vz());
     for(int i_p=0; i_p < part->NumberTrajectoryPoints(); i_p++){
-        TVector3 pos(part->Vx(i_p),part->Vy(i_p),part->Vz(i_p));
+        TVector3 pos(part->Vx(i_p), part->Vy(i_p), part->Vz(i_p));
         double dist = (pos - start).Mag(); 
         if(dist > _dist_to_scan) 
             break;
         common::ApplySCEMapping(pos);
         bool pass = isChannelRegionActive(pos, view,0);
-        if(_verbose && !pass)
+        if(!pass)
             return false;
     }
     return true;  
 }
 
 bool SignatureIntegrity::checkEnd(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const {
-    TVector3 end(part->EndX(),part->EndY(),part->EndY());
+    TVector3 end(part->EndX(), part->EndY(), part->EndY());
     common::ApplySCEMapping(end);    
     return isChannelRegionActive(end, view, _chan_act_reg);
 }
@@ -95,16 +95,16 @@ bool SignatureIntegrity::checkEnd2(const art::Ptr<simb::MCParticle>& part, const
             break;
         common::ApplySCEMapping(pos);
         bool pass = isChannelRegionActive(pos, view, 0);
-        if(_verbose && !pass)
+        if(!pass)
             return false;
     }
     return true;  
 }
 
 bool SignatureIntegrity::checkDeadChannelFrac(const art::Ptr<simb::MCParticle>& part, const common::PandoraView view) const {
-    TVector3 start(part->Vx(),part->Vy(),part->Vz());
+    TVector3 start(part->Vx(), part->Vy(), part->Vz());
     common::ApplySCEMapping(start);    
-    TVector3 end(part->EndX(),part->EndY(),part->EndZ());
+    TVector3 end(part->EndX(), part->EndY(), part->EndZ());
     common::ApplySCEMapping(end); 
     for (geo::PlaneID const& plane : _geo->IteratePlaneIDs()) {
         if(static_cast<unsigned int>(plane.Plane) != static_cast<unsigned int>(view))  

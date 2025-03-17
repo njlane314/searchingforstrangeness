@@ -16,7 +16,7 @@ public:
 };
 
 bool ChargedKaonSignatureIntegrity::filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) {
-    if(type != signature::kChargedKaonSignature) 
+    if(type != kChargedKaonSignature) 
         return true;
     this->loadEventHandles(e, view);
     for (const auto& mcp_s : sig){

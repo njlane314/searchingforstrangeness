@@ -98,6 +98,43 @@ private:
     std::vector<float> pixels_;
 };
 
+class TrajectoryPoint {
+public:
+    TrajectoryPoint(float x, float y, float z, int signature, float edep, int pdg = 0)
+        : x_(x), y_(y), z_(z), signature_(signature), edep_(edep), pdg_(pdg) {}
+    bool isCharged() const {
+        static TDatabasePDG* pdg_db = TDatabasePDG::Instance();
+        auto* pdg_particle = pdg_db->GetParticle(pdg_);
+        return pdg_particle && pdg_particle->Charge() != 0;
+    }
+    bool isImageBound(const std::vector<ImageProperties>& properties) const {
+        static const std::vector<geo::View_t> views = {geo::kU, geo::kV, geo::kW};
+        return std::any_of(views.begin(), views.end(), [&](geo::View_t view) {
+            TVector3 proj = common::ProjectToWireView(x_, y_, z_,
+                view == geo::kU ? common::TPC_VIEW_U :
+                view == geo::kV ? common::TPC_VIEW_V : common::TPC_VIEW_W);
+            auto prop_it = std::find_if(properties.begin(), properties.end(),
+                                        [view](const auto& p) { return p.view() == view; });
+            if (prop_it == properties.end()) return false;
+            float wire_coord = proj.Z();
+            float drift_coord = proj.X();
+            return wire_coord >= prop_it->origin_x() && wire_coord < prop_it->max_x() &&
+                   drift_coord >= prop_it->origin_y() && drift_coord < prop_it->max_y();
+        });
+    }
+    float x() const { return x_; }
+    float y() const { return y_; }
+    float z() const { return z_; }
+    int signature() const { return signature_; }
+    float edep() const { return edep_; }
+
+private:
+    float x_, y_, z_;
+    int signature_;
+    float edep_;
+    int pdg_; 
+};
+
 std::vector<Image> constructInputImages(const std::vector<ImageProperties>& properties,
                                           const std::vector<art::Ptr<recob::Wire>>& wires,
                                           const geo::GeometryCore& geo) {
@@ -155,13 +192,13 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
     std::unordered_map<int, signature::SignatureType> truth_particles_V;
     std::unordered_map<int, signature::SignatureType> truth_particles_W;
     for (const auto& [type, sig] : pattern) {
-        /*for (const auto& particle : sig) 
+        for (const auto& particle : sig) 
             truth_particles_U[particle->TrackId()] = type;
         for (const auto& particle : sig) 
             truth_particles_V[particle->TrackId()] = type;
         for (const auto& particle : sig) 
-            truth_particles_W[particle->TrackId()] = type;*/
-        if (classifier.passClarity(sig, common::TPC_VIEW_U))
+            truth_particles_W[particle->TrackId()] = type;
+        /*if (classifier.passClarity(sig, common::TPC_VIEW_U))
             for (const auto& particle : sig)
                 truth_particles_U[particle->TrackId()] = type;
         if (classifier.passClarity(sig, common::TPC_VIEW_V))
@@ -169,7 +206,7 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
                 truth_particles_V[particle->TrackId()] = type;
         if (classifier.passClarity(sig, common::TPC_VIEW_W))
             for (const auto& particle : sig)
-                truth_particles_W[particle->TrackId()] = type;
+                truth_particles_W[particle->TrackId()] = type;*/
     }
     constexpr float angle = 1.04719758034f; // ~pi/3
     auto computeCoord = [angle](geo::View_t view, const TVector3& wire_center) -> float {
@@ -276,6 +313,35 @@ std::vector<Image> constructTruthImages(const std::vector<ImageProperties>& prop
     return truth;
 }
 
+std::vector<TrajectoryPoint> constructTrajectoryPoints(const art::Event& e,
+                                                       const std::vector<ImageProperties>& properties,
+                                                       const signature::Pattern& pattern) {
+    std::vector<TrajectoryPoint> points;
+    art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
+    if (!e.getByLabel("largeant", mc_particle_handle) || !mc_particle_handle.isValid()) 
+        return points; 
+    std::unordered_map<int, signature::SignatureType> track_to_sig;
+    for (const auto& [type, sig] : pattern) {
+        for (const auto& particle : sig) {
+            track_to_sig[particle->TrackId()] = type;
+        }
+    }
+    for (const auto& particle : *mc_particle_handle) {
+        int pdg = particle.PdgCode();
+        auto sig_it = track_to_sig.find(particle.TrackId());
+        signature::SignatureType sig_type = (sig_it != track_to_sig.end()) ? sig_it->second : signature::kNoiseSignature;
+        const auto& traj = particle.Trajectory();
+        for (size_t i = 0; i < traj.size(); ++i) {
+            const auto& pos = traj.Position(i);
+            double edep = (i > 0) ? std::max(0.0, traj.E(i - 1) - traj.E(i)) : particle.E();
+            TrajectoryPoint tp(pos.X(), pos.Y(), pos.Z(), static_cast<int>(sig_type), static_cast<float>(edep), pdg);
+            if (tp.isCharged() && tp.isImageBound(properties)) 
+                points.push_back(tp);
+        }
+    }
+    return points;
+}
+
 class ImageTrainingHandler {
 public:
     ImageTrainingHandler(TTree* tree, const geo::GeometryCore& geo)
@@ -288,6 +354,11 @@ public:
         tree_->Branch("clarity", &clarity_);
         tree_->Branch("input", &input_);
         tree_->Branch("truth", &truth_);
+        tree_->Branch("traj_x", &traj_x_);
+        tree_->Branch("traj_y", &traj_y_);
+        tree_->Branch("traj_z", &traj_z_);
+        tree_->Branch("traj_sig", &traj_sig_);
+        tree_->Branch("traj_edep", &traj_edep_);
     }
     void reset() {
         run_ = subrun_ = event_ = 0;
@@ -296,6 +367,11 @@ public:
         clarity_.clear();
         input_.clear();
         truth_.clear();
+        traj_x_.clear();
+        traj_y_.clear();
+        traj_z_.clear();
+        traj_sig_.clear();
+        traj_edep_.clear();
     }
     void add(const art::Event& e, 
              const std::vector<art::Ptr<recob::Wire>>& wires,
@@ -304,14 +380,24 @@ public:
              const signature::EventClassifier& classifier,
              const std::vector<ImageProperties>& properties) {
         this->reset();
+        signature::EventType event_type = classifier.classifyEvent(e);
+        signature::Pattern pattern = classifier.getPattern(e);
         run_ = e.run();
         subrun_ = e.subRun();
         event_ = e.event();
-        signature::EventType event_type = classifier.classifyEvent(e);
         type_ = static_cast<int>(event_type);
-        std::vector<Image> input_images = constructInputImages(properties, wires, geo_);
-        signature::Pattern pattern = classifier.getPattern(e);
-        std::vector<Image> truth_images = constructTruthImages(properties, hits, mcp_bkth_assoc, pattern, classifier, geo_);
+
+        input_ = extractImages(constructInputImages(properties, wires, geo_));
+        truth_ = extractImages(constructTruthImages(properties, hits, mcp_bkth_assoc, pattern, classifier, geo_));
+        auto traj_points = constructTrajectoryPoints(e, properties, pattern);
+        for (const auto& tp : traj_points) {
+            traj_x_.push_back(tp.x());
+            traj_y_.push_back(tp.y());
+            traj_z_.push_back(tp.z());
+            traj_sig_.push_back(tp.signature());
+            traj_edep_.push_back(tp.edep());
+        }
+        
         for (const auto& [type, sig] : pattern) {
             signatures_.push_back(static_cast<int>(type));
             clarity_.push_back({
@@ -320,24 +406,7 @@ public:
                 classifier.passClarity(sig, common::TPC_VIEW_W) ? 1 : 0
             });
         }
-        std::vector<geo::View_t> ordered_views = { geo::kU, geo::kV, geo::kW };
-        for (auto view : ordered_views) {
-            auto input_iter = std::find_if(input_images.begin(), input_images.end(),
-                                        [view](const Image& img) {
-                                            return img.properties().view() == view;
-                                        });
-            auto truth_iter = std::find_if(truth_images.begin(), truth_images.end(),
-                                        [view](const Image& img) {
-                                            return img.properties().view() == view;
-                                        });                       
-            if (input_iter != input_images.end() && truth_iter != truth_images.end()) {
-                if (input_iter->properties().width() != truth_iter->properties().width() ||
-                    input_iter->properties().height() != truth_iter->properties().height())
-                    continue;
-                input_.push_back(input_iter->data());
-                truth_.push_back(truth_iter->data());
-            }
-        }
+
         tree_->Fill();
     }
 private:
@@ -352,6 +421,20 @@ private:
     std::vector<int> height_;
     std::vector<std::vector<float>> input_;
     std::vector<std::vector<float>> truth_; 
+    std::vector<float> traj_x_;
+    std::vector<float> traj_y_;
+    std::vector<float> traj_z_;
+    std::vector<int> traj_sig_;
+    std::vector<float> traj_edep_;
+
+    std::vector<std::vector<float>> extractImages(const std::vector<Image>& images) {
+        std::vector<std::vector<float>> data;
+        data.reserve(images.size());
+        for (const auto& img : images) {
+            data.push_back(img.data());
+        }
+        return data;
+    }
 };
 
 } 
