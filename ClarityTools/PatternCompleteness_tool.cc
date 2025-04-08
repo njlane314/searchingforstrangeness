@@ -1,104 +1,95 @@
-#ifndef PATTERN_COMPLETENESS_H
-#define PATTERN_COMPLETENESS_H
+#ifndef PATTERNCOMPLETENESS_H
+#define PATTERNCOMPLETENESS_H
 
-#include "ClarityToolBase.h" 
-#include "CommonFunctions/Geometry.h"
-#include "CommonFunctions/Containment.h"
+#include "ClarityToolBase.h"
+#include <unordered_map>
 
 namespace signature {
 
-std::vector<TLorentzVector> PadOutTrajPoints(const art::Ptr<simb::MCParticle>& part, double cutoff=1000){
-    std::vector<TLorentzVector> points;
-    double d = 0; 
-    for(int i_p = 1; i_p < part->NumberTrajectoryPoints(); i_p++){
-        TLorentzVector last = part->Position(i_p - 1);
-        TLorentzVector current = part->Position(i_p);
-        d += (current.Vect() - last.Vect()).Mag();
-        TLorentzVector move = 0.2*(current - last);
-        for(int i = 0; i < 5; i++)
-            points.push_back(last+i*move);
-        if(d > cutoff) 
-            break;
-    }
-    return points;
-}
-
-class PatternCompleteness : ClarityToolBase {
+class PatternCompleteness : public ClarityToolBase {
 public:
-    explicit PatternCompleteness(const fhicl::ParameterSet& pset) :
-        ClarityToolBase{(pset)} 
-        , _dist_to_scan{pset.get<double>("DistToScan", 15)}
-        , _part_comp_thresh{pset.get<double>("ParticleCompletenessThreshold", 0.7)}
-        , _max_dist{pset.get<double>("MaxDistance", 0.6)}  {
-        configure(pset);
-    }
-    ~PatternCompleteness() override = default;
-    void configure(fhicl::ParameterSet const& pset) override {
-        ClarityToolBase::configure(pset);
+    explicit PatternCompleteness(const fhicl::ParameterSet& pset)
+        : ClarityToolBase(pset),
+          _pattHitCompThresh{pset.get<double>("PattHitCompThresh")},
+          _pattHitThresh{pset.get<double>("PattHitThresh")},
+          _sigHitCompThresh{pset.get<double>("SigHitCompThresh")} {}
+
+    bool filter(const art::Event& e, const Signature& sig,
+                SignatureType /*type*/, common::PandoraView view) const override {
+        if (!loadEventHandles(e, view)) {
+            _metrics.hit_completeness = 0.0;
+            _metrics.total_hits = 0.0;
+            return false;
+        }
+
+        std::vector<art::Ptr<recob::Hit>> sigHits;
+        _mcpHitMap.clear();
+        _metrics.total_hits = 0;
+        for (const auto& mcp_s : sig) {
+            int sigHitCount = 0;
+            for (const auto& hit : _mc_hits) {
+                const auto& assParticles = _mcp_bkth_assoc->at(hit.key());
+                const auto& assData = _mcp_bkth_assoc->data(hit.key());
+                for (size_t i = 0; i < assParticles.size(); ++i) {
+                    if (assParticles[i]->TrackId() == mcp_s->TrackId() && assData[i]->isMaxIDEN == 1) {
+                        sigHits.push_back(hit);
+                        sigHitCount += 1;
+                    }
+                }
+            }
+            _mcpHitMap[mcp_s->TrackId()] = sigHitCount;
+            _metrics.total_hits += sigHitCount;
+        }
+        _metrics.hit_completeness = _mc_hits.empty() ? 0.0 : static_cast<double>(sigHits.size()) / _mc_hits.size();
+        if (_mc_hits.empty() || _metrics.hit_completeness < _pattHitCompThresh || _metrics.total_hits < _pattHitThresh) {
+            return false;
+        }
+        for (const auto& [trackId, numHits] : _mcpHitMap) {
+            if (static_cast<double>(numHits) / _metrics.total_hits < _sigHitCompThresh) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    bool filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view);
+    std::string getToolName() const override {
+        return "PatternCompleteness";
+    }
+
+    std::unique_ptr<ClarityMetrics> getMetrics() const override {
+        return std::make_unique<CompletenessMetrics>(_metrics);
+    }
 
 private:
-   const double _dist_to_scan;
-   const double _part_comp_thresh;
-   const double _max_dist;
-   const double _at = 1.0/18.2148;
-   const double _aw = 1.0/3.33328;
-};
+    double _pattHitCompThresh;
+    double _pattHitThresh;
+    double _sigHitCompThresh;
+    mutable std::vector<art::Ptr<recob::Hit>> _mc_hits; 
+    mutable std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc; 
+    mutable std::unordered_map<int, int> _mcpHitMap;
+    mutable CompletenessMetrics _metrics; 
 
-bool PatternCompleteness::filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) {
-    this->loadEventHandles(e,view);
-    for(const art::Ptr<simb::MCParticle>& part : sig){
-        std::vector<TLorentzVector> points = PadOutTrajPoints(part,_dist_to_scan);
-        TVector3 start(part->Vx(),part->Vy(),part->Vz());
-        int points_scanned = 0;
-        int good_points = 0;
-        for(TLorentzVector pos : points){
-            double a_pos[3] = {pos.X(),pos.Y(),pos.Z()};
-            if(!common::point_inside_fv(a_pos))
-                return false;
-        common::True2RecoMapping(pos);
-        points_scanned++;
-        double nearest_hit_dist2 = 10000; 
-        art::Ptr<recob::Hit> nearest_hit;
-        for (art::Ptr<recob::Hit> hit : _mc_hits) {
-            if(hit->View() != view) 
-                continue;
-            float d2 = common::HitPtDistance(pos.Vect(),hit,_aw,_at);
-            if(d2 < nearest_hit_dist2){
-                nearest_hit_dist2 = d2;
-                nearest_hit = hit; 
+    bool loadEventHandles(const art::Event& e, common::PandoraView view) const {
+        art::Handle<std::vector<recob::Hit>> hitHandle;
+        if (!e.getByLabel(_hitProducer, hitHandle) || !hitHandle.isValid()) {
+            return false;
+        }
+
+        _mc_hits.clear();
+        for (size_t i = 0; i < hitHandle->size(); ++i) {
+            if ((*hitHandle)[i].View() == static_cast<int>(view)) {
+                _mc_hits.emplace_back(hitHandle, i);
             }
         }
-        if(nearest_hit_dist2 == 10000) 
-            continue;
-        if(sqrt(nearest_hit_dist2) > _max_dist) 
-            continue;
-        auto assmcp = _mcp_bkth_assoc->at(nearest_hit.key());
-        auto assmdt = _mcp_bkth_assoc->data(nearest_hit.key());
-        assert(assmcp.size() == assmdt.size());
-        bool found_hit = false;
-        for (unsigned int ia = 0; ia < assmcp.size(); ++ia){
-            auto amd = assmdt[ia];
-            if (assmcp[ia]->TrackId() == part->TrackId() && amd->isMaxIDEN == 1) {
-                found_hit = true;
-                break;
-            }
-        }
-        if(found_hit)
-            good_points++; 
+
+        _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
+            hitHandle, e, _backtrackTag);
+        return _mcp_bkth_assoc->isValid();
     }
-    if(points_scanned == 0) 
-        return false;
-    if((double)good_points/points_scanned < _part_comp_thresh)
-        return false; 
-  }
-    return true;
-}
+};
 
 DEFINE_ART_CLASS_TOOL(PatternCompleteness)
 
-}
+} 
 
 #endif

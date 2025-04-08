@@ -7,8 +7,7 @@
 namespace signature
 {
 
-class VertexToolBase 
-{
+class VertexToolBase {
 public:
     virtual ~VertexToolBase() = default;
     virtual TVector3 findVertex(const art::Event& evt) const = 0;

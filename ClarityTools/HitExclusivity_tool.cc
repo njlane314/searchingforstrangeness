@@ -2,56 +2,87 @@
 #define HIT_EXCLUSIVITY_H
 
 #include "ClarityToolBase.h" 
+#include <unordered_set>
 
 namespace signature {
-
-class HitExclusivity : ClarityToolBase {
+    
+class HitExclusivity : public ClarityToolBase {
 public:
     explicit HitExclusivity(const fhicl::ParameterSet& pset) :
-      ClarityToolBase{(pset)}
-    , _hit_exclus_thresh{pset.get<double>("HitExclusivityThreshold", 0.80)}
-    , _sig_exclus_thresh{pset.get<double>("SignatureExclusivityThreshold", 0.70)} {
-        configure(pset);
-    }
-    ~HitExclusivity() override = default;
-    void configure(fhicl::ParameterSet const& pset) override {
-        ClarityToolBase::configure(pset);
-    }
-    bool filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view);
+        ClarityToolBase{pset}, 
+        _hitExclusivityThreshold{pset.get<double>("HitExclusivityThreshold", 0.50)}, 
+        _sigExclusivityThreshold{pset.get<double>("SignatureExclusivityThreshold", 0.70)} {} 
 
-private:
-    const double _hit_exclus_thresh;
-    const double _sig_exclus_thresh;
-};
+    bool filter(const art::Event& e, const Signature& sig,
+                SignatureType /*type*/, common::PandoraView view) const override { 
+        art::Handle<std::vector<recob::Hit>> hitHandle;
+        e.getByLabel(_hitProducer, hitHandle);
+        if (!hitHandle.isValid()) return false;
 
-bool HitExclusivity::filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) {
-    if(!this->loadEventHandles(e,view)) 
-        return false;
-    for (const auto& mcp_s : sig) {
-        double sig_q_inclusive = 0.0;
-        double sig_q_exclusive = 0.0;
-        for (const auto& hit : _mc_hits) {
-            auto assmcp = _mcp_bkth_assoc->at(hit.key());
-            auto assmdt = _mcp_bkth_assoc->data(hit.key());
-            for (unsigned int ia = 0; ia < assmcp.size(); ++ia) {
-                auto amd = assmdt[ia];
-                if (assmcp[ia]->TrackId() == mcp_s->TrackId()) {
-                    sig_q_inclusive += amd->numElectrons * amd->ideNFraction;
-                    double e_frac = 0.0;
-                    for (unsigned int ia2 = 0; ia2 < assmcp.size(); ++ia2){
-                        if(abs(assmcp[ia2]->PdgCode()) == 11 && assmcp[ia2]->Process() != "primary") e_frac += assmdt[ia2]->ideNFraction;
-                    }          
-                    if (amd->ideNFraction/(1.0 - e_frac) > _hit_exclus_thresh){
-                        sig_q_exclusive += amd->numElectrons * amd->ideNFraction;
+        art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcpAssoc(
+            hitHandle, e, _backtrackTag);
+        if (!mcpAssoc.isValid()) return false;
+
+        std::unordered_set<int> sigTrackIds;
+        for (const auto& particle : sig) {
+            sigTrackIds.insert(particle->TrackId());
+        }
+
+        double exclusiveCharge = 0.0;
+        double inclusiveCharge = 0.0;
+        std::unordered_set<size_t> associatedHits;
+        std::unordered_set<size_t> exclusiveHits;
+
+        for (size_t i = 0; i < hitHandle->size(); ++i) {
+            const recob::Hit& hit = (*hitHandle)[i];
+            if (hit.View() != static_cast<int>(view)) continue;
+
+            size_t hitKey = i;
+            const auto& assParticles = mcpAssoc.at(hitKey);
+            const auto& assData = mcpAssoc.data(hitKey); 
+            bool isAssociated = false;
+            bool isExclusive = false;
+
+            for (size_t j = 0; j < assParticles.size(); ++j) {
+                if (sigTrackIds.count(assParticles[j]->TrackId())) {
+                    isAssociated = true;
+                    double charge = assData[j]->numElectrons * assData[j]->ideNFraction;
+                    inclusiveCharge += charge;
+                    if (assData[j]->ideNFraction > _hitExclusivityThreshold) {
+                        exclusiveCharge += charge;
+                        isExclusive = true;
+                        break;
                     }
                 }
             }
+            if (isAssociated) {
+                associatedHits.insert(hitKey);
+                if (isExclusive) {
+                    exclusiveHits.insert(hitKey);
+                }
+            }
         }
-        if (sig_q_exclusive / sig_q_inclusive < _sig_exclus_thresh)
-            return false;
+
+        _metrics.exclusivity_ratio = inclusiveCharge > 0 ? exclusiveCharge / inclusiveCharge : 0.0;
+        _metrics.hit_exclusivity_fraction = associatedHits.empty() ? 0.0 :
+            static_cast<double>(exclusiveHits.size()) / associatedHits.size();
+
+        return _metrics.exclusivity_ratio > _sigExclusivityThreshold;
     }
-    return true;
-}
+
+    std::string getToolName() const override {
+        return "HitExclusivity";
+    }
+
+    std::unique_ptr<ClarityMetrics> getMetrics() const override {
+        return std::make_unique<ExclusivityMetrics>(_metrics);
+    }
+
+private:
+    const double _hitExclusivityThreshold;
+    const double _sigExclusivityThreshold;
+    mutable ExclusivityMetrics _metrics;
+};
 
 DEFINE_ART_CLASS_TOOL(HitExclusivity)
 

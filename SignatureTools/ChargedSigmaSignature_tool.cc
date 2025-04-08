@@ -68,7 +68,7 @@ void ChargedSigmaSignature::findSignature(art::Event const& evt, Signature& sign
                 std::vector<std::vector<int>> decay_modes;
                 if (abs(sigma->PdgCode()) == 3222) { // Sigma+
                     decay_modes = {
-                        {2212, -211}, // p + pi-
+                        {2212, 111}, // p + pi0
                         {2112, 211}  // n + pi+
                     };
                 } else if (abs(sigma->PdgCode()) == 3112) { // Sigma-
