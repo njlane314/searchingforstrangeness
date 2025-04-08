@@ -26,7 +26,8 @@ namespace signature {
 
 enum SignatureType {
     kEmptySignature = 0,
-    kNoiseSignature,
+    kCosmicSignature, 
+    kNeutrinoSignature,
     kPrimaryMuonSignature,
     kChargedKaonSignature,
     kKaonShortSignature,
@@ -37,8 +38,7 @@ enum SignatureType {
 using Signature = std::vector<art::Ptr<simb::MCParticle>>;
 using Pattern = std::vector<std::pair<SignatureType, Signature>>;
 
-class SignatureToolBase 
-{
+class SignatureToolBase {
 public:
     virtual ~SignatureToolBase() noexcept = default;
     

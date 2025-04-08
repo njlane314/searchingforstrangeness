@@ -14,17 +14,19 @@
 #include "TTree.h"
 #include <limits>
 
-namespace analysis {
-class AnalysisToolBase 
+namespace analysis 
 {
+    
+class AnalysisToolBase {
 public:
     virtual ~AnalysisToolBase() noexcept = default;
-    void configure(const fhicl::ParameterSet&){};
+    virtual void configure(const fhicl::ParameterSet&) = 0;
     virtual void analyseEvent(art::Event const& e, bool _is_data) = 0;
     virtual void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) = 0;
     virtual void setBranches(TTree* _tree) = 0;
     virtual void resetTTree(TTree* _tree) = 0;
 };
+
 } 
 
 #endif

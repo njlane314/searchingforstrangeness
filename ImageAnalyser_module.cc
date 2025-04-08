@@ -161,11 +161,11 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e) {
     _bad_channel_mask.resize(n_channels + 1, false);
     art::Handle<std::vector<int>> bad_ch_h;
     std::vector<art::Ptr<int>> bad_ch_v;
-    if(!e.getByLabel(_DeadChannelTag,bad_ch_h))
+    if(!e.getByLabel(_DeadChannelTag, bad_ch_h))
         return;
-    art::fill_ptr_vector(bad_ch_v,bad_ch_h);
+    art::fill_ptr_vector(bad_ch_v, bad_ch_h);
     for(auto ch : bad_ch_v)
-      _bad_channel_mask.at(*ch) = true; 
+        _bad_channel_mask.at(*ch) = true; 
     std::vector<art::Ptr<recob::Wire>> wire_vec;
     if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
         art::fill_ptr_vector(wire_vec, wireHandle);
@@ -175,6 +175,11 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e) {
     if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
         art::fill_ptr_vector(hit_vec, hitHandle);
     else 
+        return;
+    std::vector<art::Ptr<simb::MCParticle>> mcp_vec; 
+    if (auto particleHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer))
+        art::fill_ptr_vector(mcp_vec, particleHandle);
+    else
         return;
 
     //this->filterBadChannels(wire_vec);
@@ -210,8 +215,7 @@ void ImageAnalyser::produceTrainingSample(const art::Event& e) {
     );
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
     _n_events++;
-    std::cout << "**Accumulated neutrino event candidates: " << _n_events << std::endl;
-    _image_handler->add(e, wire_vec, hit_vec, mcp_bkth_assoc, *_event_classifier, properties);
+    _image_handler->add(e, wire_vec, hit_vec, mcp_bkth_assoc, *_event_classifier, properties, mcp_vec);
 }
 
 void ImageAnalyser::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires) {

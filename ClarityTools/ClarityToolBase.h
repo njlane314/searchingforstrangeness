@@ -1,116 +1,159 @@
 #ifndef CLARITY_TOOLBASE_H
 #define CLARITY_TOOLBASE_H
 
+#include <vector>
+#include <map>
+#include <memory>
+#include <string>
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/Handle.h"
-#include "canvas/Persistency/Common/FindManyP.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "lardata/RecoBaseProxy/ProxyBase.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "CommonFunctions/Pandora.h"
-#include "CommonFunctions/Scatters.h"
-#include "CommonFunctions/Corrections.h"
-#include "CommonFunctions/Region.h"
-#include "CommonFunctions/Types.h"
-#include "CommonFunctions/BadChannels.h"
-#include "art/Utilities/ToolMacros.h"
-#include "art/Utilities/make_tool.h"
 #include "SignatureTools/SignatureToolBase.h"
-#include "SignatureTools/VertexToolBase.h"
-#include "larcorealg/Geometry/PlaneGeo.h"
-#include "larcorealg/Geometry/WireGeo.h"
-#include "TDatabasePDG.h"
-#include <string>
-#include <vector>
-#include <map>
-#include <fstream>
-#include <iostream>
-#include <unordered_map>
-#include <cmath>
-#include <chrono>
 
 namespace signature {
 
+struct ClarityMetrics {
+    virtual ~ClarityMetrics() = default;
+    virtual std::unique_ptr<ClarityMetrics> clone() const = 0;
+};
+
+struct CompletenessMetrics : ClarityMetrics {
+    double hit_completeness;
+    double total_hits;
+    CompletenessMetrics(double hc = 0.0, double th = 0.0) : hit_completeness(hc), total_hits(th) {}
+    std::unique_ptr<ClarityMetrics> clone() const override { return std::make_unique<CompletenessMetrics>(*this); }
+};
+
+struct ExclusivityMetrics : ClarityMetrics {
+    double exclusivity_ratio;
+    double hit_exclusivity_fraction;
+    ExclusivityMetrics(double er = 0.0, double hef = 0.0) 
+        : exclusivity_ratio(er), hit_exclusivity_fraction(hef) {}
+    std::unique_ptr<ClarityMetrics> clone() const override { 
+        return std::make_unique<ExclusivityMetrics>(*this); 
+    }
+};
+
+struct IntegrityMetrics : ClarityMetrics {
+    std::vector<bool> start_active;
+    std::vector<bool> end_active;
+    IntegrityMetrics() = default;
+    std::unique_ptr<ClarityMetrics> clone() const override { return std::make_unique<IntegrityMetrics>(*this); }
+};
+    
 class ClarityToolBase {
 public:
     ClarityToolBase(fhicl::ParameterSet const& pset) :
-      _HitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}
-    , _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")}
-    , _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}
-    , _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")}
-    , _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}
-    , _verbose{pset.get<bool>("Verbose", false)} {}   
- 
-    virtual ~ClarityToolBase() noexcept = default;
-    virtual void configure(fhicl::ParameterSet const& pset) {}
-    std::map<common::PandoraView, std::vector<bool>> filter3Plane(const art::Event &e, const signature::Pattern& patt);
-    std::vector<bool> filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view);
-    virtual bool filter(const art::Event &e, const Signature& sig, const SignatureType& type, common::PandoraView view) = 0;
+    _hitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}, 
+    _mcpProducer{pset.get<art::InputTag>("MCPproducer", "largeant")},
+    _mctProducer{pset.get<art::InputTag>("MCTproducer", "generator")}, 
+    _backtrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")},
+    _deadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}, 
+    _geoService{art::ServiceHandle<geo::Geometry>()->provider()} {}
 
-private:
-    const art::InputTag _HitProducer, _MCPproducer, _MCTproducer, _BacktrackTag, _DeadChannelTag;
+    virtual ~ClarityToolBase() noexcept = default;
+
+    std::map<common::PandoraView, std::vector<bool>> filterThreePlane(
+        const art::Event& e, const Pattern& pattern) const {
+        std::map<common::PandoraView, std::vector<bool>> results;
+        for (int v = common::TPC_VIEW_U; v <static_cast<int>(common::N_VIEWS); ++v) {
+            auto view = static_cast<common::PandoraView>(v);
+            results[view] = filter(e, pattern, view);
+        }
+        return results;
+    }
+
+    std::vector<bool> filter(const art::Event& e, const Pattern& pattern,
+                            common::PandoraView view) const {
+        std::vector<bool> results;
+        results.reserve(pattern.size());
+        for (const auto& [type, sig] : pattern) {
+            results.push_back(filter(e, sig, type, view));
+        }
+        return results;
+    }
+
+    virtual bool filter(const art::Event& e, const Signature& sig,
+                    SignatureType type, common::PandoraView view) const = 0;
+
+    virtual std::string getToolName() const = 0;
+
+    virtual std::unique_ptr<ClarityMetrics> getMetrics() const = 0;
 
 protected:
-    std::vector<bool> _bad_channel_mask;
-    const geo::GeometryCore* _geo = art::ServiceHandle<geo::Geometry>()->provider();
-    bool loadEventHandles(const art::Event &e, common::PandoraView targetDetectorPlane);
-    std::vector<art::Ptr<recob::Hit>> _evt_hits;
-    std::vector<art::Ptr<recob::Hit>> _mc_hits;
-    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> _mcp_bkth_assoc;
-    const bool _verbose;
+    const art::InputTag _hitProducer;
+    const art::InputTag _mcpProducer;
+    const art::InputTag _mctProducer;
+    const art::InputTag _backtrackTag;
+    const art::InputTag _deadChannelTag;
+    const geo::GeometryCore* _geoService;
 };
 
-bool ClarityToolBase::loadEventHandles(const art::Event &e, common::PandoraView targetDetectorPlane) {
-    common::SetBadChannelMask(e, _DeadChannelTag, _bad_channel_mask);
-    _evt_hits.clear();
-    _mc_hits.clear();
-    art::Handle<std::vector<recob::Hit>> hit_h;
-    if (!e.getByLabel(_HitProducer, hit_h)) 
-        return false;
-    art::fill_ptr_vector(_evt_hits, hit_h);
-    _mcp_bkth_assoc = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_h, e, _BacktrackTag);
-    for (const auto& hit : _evt_hits) {
-        if (_bad_channel_mask[hit->Channel()]) 
-            continue;
-        const geo::WireID& wire_id = hit->WireID();
-        if (wire_id.Plane != static_cast<unsigned int>(targetDetectorPlane)) 
-            continue;
-        auto assmcp = _mcp_bkth_assoc->at(hit.key());
-        auto assmdt = _mcp_bkth_assoc->data(hit.key());
-        for (unsigned int ia = 0; ia < assmcp.size(); ++ia) {
-            auto amd = assmdt[ia];
-            if (amd->isMaxIDEN != 1)
-                continue;
-            _mc_hits.push_back(hit);
+class ClarityEvaluator {
+public:
+    class Result {
+    public:
+        Result(SignatureType t, const Signature& s) : signature(s), type(t) {
+            pass_flags.fill(true);
         }
-    }
-    return true;
-}
 
-std::map<common::PandoraView, std::vector<bool>> ClarityToolBase::filter3Plane(const art::Event &e, const signature::Pattern& patt) {
-    std::map<common::PandoraView, std::vector<bool>> result;
-    for (int view = common::TPC_VIEW_U; view != common::N_VIEWS; view++) 
-        result[static_cast<common::PandoraView>(view)] = this->filter(e, patt, static_cast<common::PandoraView>(view));
-    return result;
-}
+        Result(const Result&) = delete;
+        Result& operator=(const Result&) = delete;
 
-std::vector<bool> ClarityToolBase::filter(const art::Event &e, const signature::Pattern& patt, common::PandoraView view) {
-    std::vector<bool> result;
-    for (const auto& entry : patt) {
-        const auto& type = entry.first;
-        const auto& sig = entry.second;
-        bool filterResult = this->filter(e, sig, type, view);
-        result.push_back(filterResult);
+        Result(Result&&) = default;
+        Result& operator=(Result&&) = default;
+
+        bool passes(common::PandoraView view) const {
+            return pass_flags[static_cast<size_t>(view)];
+        }
+        bool allPass() const {
+            return std::all_of(pass_flags.begin(), pass_flags.end(), [](bool p){ return p; });
+        }
+        void addMetrics(const std::string& tool_name, common::PandoraView view,
+                        std::unique_ptr<ClarityMetrics> metrics) {
+            tool_metrics[tool_name][view] = std::move(metrics);
+        }
+        Signature signature;
+        SignatureType type;
+        std::array<bool, common::N_VIEWS> pass_flags;
+        std::map<std::string, std::map<common::PandoraView, std::unique_ptr<ClarityMetrics>>> tool_metrics;
+    };
+
+    explicit ClarityEvaluator(const std::vector<std::unique_ptr<ClarityToolBase>>& clarityTools)
+        : _clarityToolsVec(clarityTools) {}
+
+    void evaluate(const art::Event& e, SignatureType type, const Signature& sig) const {
+        _results.clear();
+        Result result(type, sig);
+        for (int view = common::TPC_VIEW_U; view < static_cast<int>(common::N_VIEWS); ++view) {
+            bool viewPass = true;
+            auto pandoraView = static_cast<common::PandoraView>(view);
+            for (const auto& tool : _clarityToolsVec) {
+                bool toolPass = tool->filter(e, sig, type, pandoraView);
+                if (!toolPass) {
+                    viewPass = false;
+                }
+                result.addMetrics(tool->getToolName(), pandoraView, tool->getMetrics());
+            }
+            result.pass_flags[static_cast<size_t>(view)] = viewPass;
+        }
+        _results.push_back(std::move(result));
     }
-    return result;
-}
+
+    const std::vector<Result>& getResults() const {
+        return _results;
+    }
+
+private:
+    const std::vector<std::unique_ptr<ClarityToolBase>>& _clarityToolsVec;
+    mutable std::vector<Result> _results;
+};
 
 } 
 
