@@ -4,60 +4,59 @@
 #include <iostream>
 #include "SignatureToolBase.h"
 
-namespace signature {
+namespace signature 
+{
+    class MuonSignature : public SignatureToolBase {
+    public:
+        explicit MuonSignature(const fhicl::ParameterSet& pset) {
+            configure(pset);
+        }
+        
+        ~MuonSignature() override = default;
+        
+        void configure(fhicl::ParameterSet const& pset) override {
+            SignatureToolBase::configure(pset);
+            _muThreshMom = pset.get<float>("MuonThreshMomentum", 0.1);
+        }
+        
+        SignatureType getSignatureType() const override {
+            return kPrimaryMuonSignature;
+        }
+        
+        bool isDetectable(art::Event const& evt, Signature const& signature) const override;
+        
+    protected:
+        void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
+        
+    private:
+        float _muThreshMom;
+    };
 
-class MuonSignature : public SignatureToolBase {
-public:
-    explicit MuonSignature(const fhicl::ParameterSet& pset)
-        : _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")} {
-        configure(pset); 
-    }
-    ~MuonSignature() override = default;
-    
-    void configure(fhicl::ParameterSet const& pset) override {
-        SignatureToolBase::configure(pset);
-        _mu_thresh_mom = pset.get<float>("MuonThreshMomentum", 0.1);
-    }
-
-    SignatureType getSignatureType() const override {
-        return kPrimaryMuonSignature;
-    }
-
-    bool isDetectable(art::Event const& evt, Signature const& signature) const override;
-
-protected:
-    void findSignature(art::Event const& evt, Signature& signature, bool& signature_found) override;
-
-private:
-    art::InputTag _MCPproducer;
-    float _mu_thresh_mom;
-};
-
-void MuonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found) {
-    auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-    std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
-    art::fill_ptr_vector(mcp_vec, mcp_h);
-    for (const auto& mcp : mcp_vec) {
-        if (std::abs(mcp->PdgCode()) == 13 && mcp->Process() == "primary") {
-            signature_found = true;
-            fillSignature(mcp, signature);
+    void MuonSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found) {
+        auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
+        
+        for (size_t i = 0; i < mcp_h->size(); ++i) {
+            const art::Ptr<simb::MCParticle> mcp(mcp_h, i);
+            if (std::abs(mcp->PdgCode()) == 13 && mcp->Process() == "primary") {
+                signature_found = true;
+                fillSignature(mcp, signature);
+            }
         }
     }
-}
 
-bool MuonSignature::isDetectable(art::Event const& evt, Signature const& signature) const {
-    for (const auto& mcp : signature) {
-        int pdg_code = std::abs(mcp->PdgCode());
-        float momentum = mcp->P();
-        std::string process = mcp->Process();
-        if (pdg_code == 13 && process == "primary" && momentum < _mu_thresh_mom)
-            return false;
+    bool MuonSignature::isDetectable(art::Event const& evt, Signature const& signature) const {
+        for (const auto& mcp : signature) {
+            int pdg_code = std::abs(mcp->PdgCode());
+            float momentum = mcp->P();
+            std::string process = mcp->Process();
+            
+            if (pdg_code == 13 && process == "primary" && momentum < _muThreshMom)
+                return false;
+        }
+        return true;
     }
-    return true;
+
+    DEFINE_ART_CLASS_TOOL(MuonSignature)
 }
-
-DEFINE_ART_CLASS_TOOL(MuonSignature)
-
-} 
 
 #endif

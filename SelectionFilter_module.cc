@@ -67,7 +67,7 @@ private:
 
     std::map<unsigned int, unsigned int> _pfpmap;
 
-    //std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
+    std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
     void BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
@@ -105,10 +105,10 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     if ((!_is_data) || (_is_fake_data))
         _subrun_tree->Branch("pot", &_pot, "pot/F");
 
-    /*const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
+    const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
     _selectionTool->setBranches(_tree);
-    _selectionTool->SetData(_is_data);*/
+    _selectionTool->SetData(_is_data);
 
     auto const tool_psets = p.get<fhicl::ParameterSet>("AnalysisTools");
     for (auto const &tool_pset_labels : tool_psets.get_pset_names()) {
@@ -126,7 +126,7 @@ void SelectionFilter::ResetTTree() {
     _sub = std::numeric_limits<int>::lowest();
     _evt = std::numeric_limits<int>::lowest();
 
-    //_selectionTool->resetTTree(_tree);
+    _selectionTool->resetTTree(_tree);
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
         _analysisToolsVec[i]->resetTTree(_tree);
 }
@@ -163,12 +163,11 @@ bool SelectionFilter::filter(art::Event &e) {
             std::vector<ProxyPfpElem_t> slice_pfp_v;
             this->AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
             
-            bool selected = true;
-            /*bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
+            bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
             if (selected) {
                 keep_event = true;
                 _selected = 1;
-            }*/
+            }
 
             for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
                 _analysisToolsVec[i]->analyseSlice(e, slice_pfp_v, _is_data, selected);

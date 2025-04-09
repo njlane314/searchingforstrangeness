@@ -87,7 +87,7 @@ namespace analysis
     };
 
     SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet& pset) {
-        configure(pset);
+        this->configure(pset);
     }
 
     void SliceAnalysis::configure(const fhicl::ParameterSet& pset) {
@@ -161,7 +161,7 @@ namespace analysis
             }
         }
 
-        fillSlice(event, slice_pfp_v);
+        this->fillSlice(event, slice_pfp_v);
     }
 
     std::vector<art::Ptr<recob::Hit>> SliceAnalysis::getNeutrinoHits(

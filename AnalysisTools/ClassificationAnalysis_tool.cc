@@ -5,10 +5,15 @@
 #include "EventClassifier.h"
 #include "art/Framework/Principal/Event.h"
 #include "SignatureTools/SignatureToolBase.h"
+#include "ClarityTools/ClarityToolBase.h"
+#include "SignatureTools/VertexToolBase.h"
 #include "TTree.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include <memory>
 #include <vector>
 #include <array>
+#include <optional>
 
 namespace analysis 
 {
@@ -92,6 +97,47 @@ namespace analysis
         std::vector<double> particle_energy_;
         std::vector<double> particle_px_, particle_py_, particle_pz_;
         std::array<ViewMetrics, 3> view_metrics_;
+        std::vector<double> vertex_distance_;
+        art::InputTag _MCTproducer;
+        art::ServiceHandle<geo::Geometry> _geoService;
+
+        std::optional<TVector3> getPrimaryVertex(const art::Event& e) {
+            art::Handle<std::vector<simb::MCTruth>> MCThandle;
+            e.getByLabel(_MCTproducer, MCThandle);
+            if (MCThandle.isValid() && !MCThandle->empty()) {
+                const auto& mct = MCThandle->at(0);
+                const auto& nu = mct.GetNeutrino();
+                return TVector3(nu.Nu().Vx(), nu.Nu().Vy(), nu.Nu().Vz());
+            }
+            return std::nullopt;
+        }
+
+        void processSignature(const signature::Signature& sig, const signature::ClarityEvaluator::Result& result) {
+            MetricsVisitor visitor(view_metrics_, sig);
+            visitor.visit(result.tool_metrics);
+            for (const auto& particle : sig) {
+                particle_pdg_.push_back(particle->PdgCode());
+                particle_energy_.push_back(particle->E());
+                particle_px_.push_back(particle->Px());
+                particle_py_.push_back(particle->Py());
+                particle_pz_.push_back(particle->Pz());
+            }
+        }
+
+        void computeVertexMetrics(const art::Event& e, const TVector3& primary_vertex, const signature::SignatureToolBase* tool) {
+            if (auto vertex_tool = dynamic_cast<const signature::VertexToolBase*>(tool)) {
+                TVector3 sig_vertex = vertex_tool->findVertex(e);
+                if (sig_vertex.Mag() > 0) {
+                    double distance = (sig_vertex - primary_vertex).Mag();
+                    vertex_distance_.push_back(distance);
+                    // Removed vertex containment check as per request
+                } else {
+                    vertex_distance_.push_back(-1.0);
+                }
+            } else {
+                vertex_distance_.push_back(-1.0);
+            }
+        }
     };
 
     inline ClassificationAnalysis::ClassificationAnalysis(const fhicl::ParameterSet& pset) {
@@ -100,6 +146,7 @@ namespace analysis
 
     inline void ClassificationAnalysis::configure(const fhicl::ParameterSet& pset) {
         _classifier = std::make_unique<signature::EventClassifier>(pset);
+        _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
     }
 
     inline void ClassificationAnalysis::setBranches(TTree* tree) {
@@ -133,6 +180,7 @@ namespace analysis
         tree->Branch("particle_end_active_U", &view_metrics_[0].particle_end_active);
         tree->Branch("particle_end_active_V", &view_metrics_[1].particle_end_active);
         tree->Branch("particle_end_active_W", &view_metrics_[2].particle_end_active);
+        tree->Branch("vertex_distance", &vertex_distance_);
     }
 
     inline void ClassificationAnalysis::resetTTree(TTree* tree) {
@@ -148,6 +196,7 @@ namespace analysis
         particle_px_.clear();
         particle_py_.clear();
         particle_pz_.clear();
+        vertex_distance_.clear();
         for (auto& vm : view_metrics_) {
             vm.completeness_hit.clear();
             vm.completeness_total_hits.clear();
@@ -169,6 +218,10 @@ namespace analysis
 
         if (pattern.size() != clarity_results.size()) return;
 
+        auto primary_vertex_opt = getPrimaryVertex(e);
+        if (!primary_vertex_opt) return;
+        TVector3 primary_vertex = *primary_vertex_opt;
+
         for (size_t i = 0; i < pattern.size(); ++i) {
             const auto& [type, sig] = pattern[i];
             const auto& result = clarity_results[i];
@@ -178,15 +231,13 @@ namespace analysis
             clarity_V_.push_back(result.passes(common::TPC_VIEW_V) ? 1 : 0);
             clarity_W_.push_back(result.passes(common::TPC_VIEW_W) ? 1 : 0);
 
-            MetricsVisitor visitor(view_metrics_, sig);
-            visitor.visit(result.tool_metrics);
+            processSignature(sig, result);
 
-            for (const auto& particle : sig) {
-                particle_pdg_.push_back(particle->PdgCode());
-                particle_energy_.push_back(particle->E());
-                particle_px_.push_back(particle->Px());
-                particle_py_.push_back(particle->Py());
-                particle_pz_.push_back(particle->Pz());
+            auto tool = _classifier->getToolForSignature(type);
+            if (tool) {
+                computeVertexMetrics(e, primary_vertex, tool);
+            } else {
+                vertex_distance_.push_back(-1.0);
             }
         }
 
