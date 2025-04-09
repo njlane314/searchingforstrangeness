@@ -6,37 +6,26 @@
 
 namespace selection
 {
-class EmptySelection : public SelectionToolBase 
-{
+    class EmptySelection : public SelectionToolBase {
+    public:
+        EmptySelection(const fhicl::ParameterSet& pset);
+        ~EmptySelection(){};
+        
+        void configure(fhicl::ParameterSet const & pset);
+        bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
+        void setBranches(TTree* _tree){};
+        void resetTTree(TTree* _tree){};
+    };
 
-public:
-    EmptySelection(const fhicl::ParameterSet& pset);
-    ~EmptySelection(){};
-    
-    void configure(fhicl::ParameterSet const & pset);
-    bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
-    void setBranches(TTree* _tree){};
-    void resetTTree(TTree* _tree){};
-    
-private:
-    
-};
+    EmptySelection::EmptySelection(const fhicl::ParameterSet& pset) {}
 
-EmptySelection::EmptySelection(const fhicl::ParameterSet& pset)
-{
-}
+    void EmptySelection::configure(fhicl::ParameterSet const& pset) {}
 
-void EmptySelection::configure(fhicl::ParameterSet const & pset)
-{
-}
+    bool EmptySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
+        return true;
+    }
 
-bool EmptySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v)
-{
-    return true;
-}
-
-
-DEFINE_ART_CLASS_TOOL(EmptySelection)
+    DEFINE_ART_CLASS_TOOL(EmptySelection)
 } 
 
 #endif

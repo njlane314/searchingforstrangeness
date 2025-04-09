@@ -103,6 +103,15 @@ namespace signature
             return *_clarityResultsPtr;
         }
 
+        signature::SignatureToolBase* getToolForSignature(signature::SignatureType type) const {
+            for (const auto& tool : _signatureToolsVec) {
+                if (tool->getSignatureType() == type) {
+                    return tool.get();
+                }
+            }
+            return nullptr;
+        }
+
     private:
         simb::Origin_t getTruthOrigin(const art::Event& e) const {
             art::Handle<std::vector<simb::MCTruth>> truthHandle;
