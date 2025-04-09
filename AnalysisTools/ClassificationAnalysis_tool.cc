@@ -8,7 +8,7 @@
 #include "TTree.h"
 #include <memory>
 #include <vector>
-#include <stdexcept>
+#include <array>
 
 namespace analysis 
 {
@@ -29,125 +29,55 @@ namespace analysis
         void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slicePfpVector, bool is_data, bool selected) override {}
 
     private:
+        struct ViewMetrics {
+            std::vector<double> completeness_hit;
+            std::vector<double> completeness_total_hits;
+            std::vector<double> exclusivity_ratio;
+            std::vector<double> hit_exclusivity_fraction;
+            std::vector<int> particle_start_active;
+            std::vector<int> particle_end_active;
+        };
+
         struct MetricsVisitor {
-            std::vector<double>& completeness_hit_U, &completeness_hit_V, &completeness_hit_W;
-            std::vector<double>& completeness_total_hits_U, &completeness_total_hits_V, &completeness_total_hits_W;
-            std::vector<double>& exclusivity_ratio_U, &exclusivity_ratio_V, &exclusivity_ratio_W;
-            std::vector<double>& hit_exclusivity_fraction_U, &hit_exclusivity_fraction_V, &hit_exclusivity_fraction_W;
-            std::vector<int>& particle_start_active_U, &particle_start_active_V, &particle_start_active_W;
-            std::vector<int>& particle_end_active_U, &particle_end_active_V, &particle_end_active_W;
+            std::array<ViewMetrics, 3>& metrics;
             const signature::Signature& sig;
 
-            MetricsVisitor(const signature::Signature& s,
-                            std::vector<double>& chu, std::vector<double>& chv, std::vector<double>& chw,
-                            std::vector<double>& ctu, std::vector<double>& ctv, std::vector<double>& ctw,
-                            std::vector<double>& eru, std::vector<double>& erv, std::vector<double>& erw,
-                            std::vector<double>& hefu, std::vector<double>& hefv, std::vector<double>& hefw,
-                            std::vector<int>& sau, std::vector<int>& sav, std::vector<int>& saw,
-                            std::vector<int>& eau, std::vector<int>& eav, std::vector<int>& eaw)
-                : sig(s),
-                    completeness_hit_U(chu), completeness_hit_V(chv), completeness_hit_W(chw),
-                    completeness_total_hits_U(ctu), completeness_total_hits_V(ctv), completeness_total_hits_W(ctw),
-                    exclusivity_ratio_U(eru), exclusivity_ratio_V(erv), exclusivity_ratio_W(erw),
-                    hit_exclusivity_fraction_U(hefu), hit_exclusivity_fraction_V(hefv), hit_exclusivity_fraction_W(hefw),
-                    particle_start_active_U(sau), particle_start_active_V(sav), particle_start_active_W(saw),
-                    particle_end_active_U(eau), particle_end_active_V(eav), particle_end_active_W(eaw) {}
+            MetricsVisitor(std::array<ViewMetrics, 3>& m, const signature::Signature& s) 
+                : metrics(m), sig(s) {}
 
             void visit(const std::map<std::string, std::map<common::PandoraView, std::unique_ptr<signature::ClarityMetrics>>>& tool_metrics) {
                 for (int view = common::TPC_VIEW_U; view <= common::TPC_VIEW_W; ++view) {
+                    int idx = view - common::TPC_VIEW_U;
                     auto pandora_view = static_cast<common::PandoraView>(view);
 
-                    auto tool_it = tool_metrics.find("PatternCompleteness");
-                    if (tool_it != tool_metrics.end()) {
-                        auto view_it = tool_it->second.find(pandora_view);
-                        if (view_it != tool_it->second.end()) {
+                    if (auto tool_it = tool_metrics.find("PatternCompleteness"); tool_it != tool_metrics.end()) {
+                        if (auto view_it = tool_it->second.find(pandora_view); view_it != tool_it->second.end()) {
                             if (auto cm = dynamic_cast<signature::CompletenessMetrics*>(view_it->second.get())) {
-                                getCompletenessHitVector(view).push_back(cm->hit_completeness);
-                                getCompletenessTotalHitsVector(view).push_back(cm->total_hits);
+                                metrics[idx].completeness_hit.push_back(cm->hit_completeness);
+                                metrics[idx].completeness_total_hits.push_back(cm->total_hits);
                             }
                         }
                     }
 
-                    tool_it = tool_metrics.find("HitExclusivity");
-                    if (tool_it != tool_metrics.end()) {
-                        auto view_it = tool_it->second.find(pandora_view);
-                        if (view_it != tool_it->second.end()) {
+                    if (auto tool_it = tool_metrics.find("HitExclusivity"); tool_it != tool_metrics.end()) {
+                        if (auto view_it = tool_it->second.find(pandora_view); view_it != tool_it->second.end()) {
                             if (auto em = dynamic_cast<signature::ExclusivityMetrics*>(view_it->second.get())) {
-                                getExclusivityRatioVector(view).push_back(em->exclusivity_ratio);
-                                getHitExclusivityFractionVector(view).push_back(em->hit_exclusivity_fraction);
+                                metrics[idx].exclusivity_ratio.push_back(em->exclusivity_ratio);
+                                metrics[idx].hit_exclusivity_fraction.push_back(em->hit_exclusivity_fraction);
                             }
                         }
                     }
 
-                    tool_it = tool_metrics.find("SignatureIntegrity");
-                    if (tool_it != tool_metrics.end()) {
-                        auto view_it = tool_it->second.find(pandora_view);
-                        if (view_it != tool_it->second.end()) {
+                    if (auto tool_it = tool_metrics.find("SignatureIntegrity"); tool_it != tool_metrics.end()) {
+                        if (auto view_it = tool_it->second.find(pandora_view); view_it != tool_it->second.end()) {
                             if (auto im = dynamic_cast<signature::IntegrityMetrics*>(view_it->second.get())) {
-                                auto& start_active = getParticleStartActiveVector(view);
-                                auto& end_active = getParticleEndActiveVector(view);
                                 for (size_t p = 0; p < sig.size(); ++p) {
-                                    start_active.push_back(im->start_active[p] ? 1 : 0);
-                                    end_active.push_back(im->end_active[p] ? 1 : 0);
+                                    metrics[idx].particle_start_active.push_back(im->start_active[p] ? 1 : 0);
+                                    metrics[idx].particle_end_active.push_back(im->end_active[p] ? 1 : 0);
                                 }
                             }
                         }
                     }
-                }
-            }
-
-        private:
-            std::vector<double>& getCompletenessHitVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return completeness_hit_U;
-                    case common::TPC_VIEW_V: return completeness_hit_V;
-                    case common::TPC_VIEW_W: return completeness_hit_W;
-                    default: throw std::invalid_argument("Invalid view");
-                }
-            }
-
-            std::vector<double>& getCompletenessTotalHitsVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return completeness_total_hits_U;
-                    case common::TPC_VIEW_V: return completeness_total_hits_V;
-                    case common::TPC_VIEW_W: return completeness_total_hits_W;
-                    default: throw std::invalid_argument("Invalid view");
-                }
-            }
-
-            std::vector<double>& getExclusivityRatioVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return exclusivity_ratio_U;
-                    case common::TPC_VIEW_V: return exclusivity_ratio_V;
-                    case common::TPC_VIEW_W: return exclusivity_ratio_W;
-                    default: throw std::invalid_argument("Invalid view");
-                }
-            }
-
-            std::vector<double>& getHitExclusivityFractionVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return hit_exclusivity_fraction_U;
-                    case common::TPC_VIEW_V: return hit_exclusivity_fraction_V;
-                    case common::TPC_VIEW_W: return hit_exclusivity_fraction_W;
-                    default: throw std::invalid_argument("Invalid view");
-                }
-            }
-
-            std::vector<int>& getParticleStartActiveVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return particle_start_active_U;
-                    case common::TPC_VIEW_V: return particle_start_active_V;
-                    case common::TPC_VIEW_W: return particle_start_active_W;
-                    default: throw std::invalid_argument("Invalid view");
-                }
-            }
-
-            std::vector<int>& getParticleEndActiveVector(int view) {
-                switch (view) {
-                    case common::TPC_VIEW_U: return particle_end_active_U;
-                    case common::TPC_VIEW_V: return particle_end_active_V;
-                    case common::TPC_VIEW_W: return particle_end_active_W;
-                    default: throw std::invalid_argument("Invalid view");
                 }
             }
         };
@@ -161,12 +91,7 @@ namespace analysis
         std::vector<int> particle_pdg_;
         std::vector<double> particle_energy_;
         std::vector<double> particle_px_, particle_py_, particle_pz_;
-        std::vector<double> completeness_hit_U_, completeness_hit_V_, completeness_hit_W_;
-        std::vector<double> completeness_total_hits_U_, completeness_total_hits_V_, completeness_total_hits_W_;
-        std::vector<double> exclusivity_ratio_U_, exclusivity_ratio_V_, exclusivity_ratio_W_;
-        std::vector<double> hit_exclusivity_fraction_U_, hit_exclusivity_fraction_V_, hit_exclusivity_fraction_W_;
-        std::vector<int> particle_start_active_U_, particle_start_active_V_, particle_start_active_W_;
-        std::vector<int> particle_end_active_U_, particle_end_active_V_, particle_end_active_W_;
+        std::array<ViewMetrics, 3> view_metrics_;
     };
 
     inline ClassificationAnalysis::ClassificationAnalysis(const fhicl::ParameterSet& pset) {
@@ -178,36 +103,36 @@ namespace analysis
     }
 
     inline void ClassificationAnalysis::setBranches(TTree* tree) {
-        tree->Branch("event_type", &event_type_, "event_type/I");
-        tree->Branch("is_signal", &is_signal_, "is_signal/I");
+        tree->Branch("event_type", &event_type_);
+        tree->Branch("is_signal", &is_signal_);
         tree->Branch("signature_types", &signature_types_);
         tree->Branch("clarity_U", &clarity_U_);
         tree->Branch("clarity_V", &clarity_V_);
         tree->Branch("clarity_W", &clarity_W_);
-        tree->Branch("pass_clarity", &pass_clarity_, "pass_clarity/I");
-        tree->Branch("completeness_hit_U", &completeness_hit_U_);
-        tree->Branch("completeness_hit_V", &completeness_hit_V_);
-        tree->Branch("completeness_hit_W", &completeness_hit_W_);
-        tree->Branch("completeness_total_hits_U", &completeness_total_hits_U_);
-        tree->Branch("completeness_total_hits_V", &completeness_total_hits_V_);
-        tree->Branch("completeness_total_hits_W", &completeness_total_hits_W_);
-        tree->Branch("exclusivity_ratio_U", &exclusivity_ratio_U_);
-        tree->Branch("exclusivity_ratio_V", &exclusivity_ratio_V_);
-        tree->Branch("exclusivity_ratio_W", &exclusivity_ratio_W_);
-        tree->Branch("hit_exclusivity_fraction_U", &hit_exclusivity_fraction_U_);
-        tree->Branch("hit_exclusivity_fraction_V", &hit_exclusivity_fraction_V_);
-        tree->Branch("hit_exclusivity_fraction_W", &hit_exclusivity_fraction_W_);
+        tree->Branch("pass_clarity", &pass_clarity_);
+        tree->Branch("completeness_hit_U", &view_metrics_[0].completeness_hit);
+        tree->Branch("completeness_hit_V", &view_metrics_[1].completeness_hit);
+        tree->Branch("completeness_hit_W", &view_metrics_[2].completeness_hit);
+        tree->Branch("completeness_total_hits_U", &view_metrics_[0].completeness_total_hits);
+        tree->Branch("completeness_total_hits_V", &view_metrics_[1].completeness_total_hits);
+        tree->Branch("completeness_total_hits_W", &view_metrics_[2].completeness_total_hits);
+        tree->Branch("exclusivity_ratio_U", &view_metrics_[0].exclusivity_ratio);
+        tree->Branch("exclusivity_ratio_V", &view_metrics_[1].exclusivity_ratio);
+        tree->Branch("exclusivity_ratio_W", &view_metrics_[2].exclusivity_ratio);
+        tree->Branch("hit_exclusivity_fraction_U", &view_metrics_[0].hit_exclusivity_fraction);
+        tree->Branch("hit_exclusivity_fraction_V", &view_metrics_[1].hit_exclusivity_fraction);
+        tree->Branch("hit_exclusivity_fraction_W", &view_metrics_[2].hit_exclusivity_fraction);
         tree->Branch("particle_pdg", &particle_pdg_);
         tree->Branch("particle_energy", &particle_energy_);
         tree->Branch("particle_px", &particle_px_);
         tree->Branch("particle_py", &particle_py_);
         tree->Branch("particle_pz", &particle_pz_);
-        tree->Branch("particle_start_active_U", &particle_start_active_U_);
-        tree->Branch("particle_start_active_V", &particle_start_active_V_);
-        tree->Branch("particle_start_active_W", &particle_start_active_W_);
-        tree->Branch("particle_end_active_U", &particle_end_active_U_);
-        tree->Branch("particle_end_active_V", &particle_end_active_V_);
-        tree->Branch("particle_end_active_W", &particle_end_active_W_);
+        tree->Branch("particle_start_active_U", &view_metrics_[0].particle_start_active);
+        tree->Branch("particle_start_active_V", &view_metrics_[1].particle_start_active);
+        tree->Branch("particle_start_active_W", &view_metrics_[2].particle_start_active);
+        tree->Branch("particle_end_active_U", &view_metrics_[0].particle_end_active);
+        tree->Branch("particle_end_active_V", &view_metrics_[1].particle_end_active);
+        tree->Branch("particle_end_active_W", &view_metrics_[2].particle_end_active);
     }
 
     inline void ClassificationAnalysis::resetTTree(TTree* tree) {
@@ -218,29 +143,19 @@ namespace analysis
         clarity_V_.clear();
         clarity_W_.clear();
         pass_clarity_ = 0;
-        completeness_hit_U_.clear();
-        completeness_hit_V_.clear();
-        completeness_hit_W_.clear();
-        completeness_total_hits_U_.clear();
-        completeness_total_hits_V_.clear();
-        completeness_total_hits_W_.clear();
-        exclusivity_ratio_U_.clear();
-        exclusivity_ratio_V_.clear();
-        exclusivity_ratio_W_.clear();
-        hit_exclusivity_fraction_U_.clear();
-        hit_exclusivity_fraction_V_.clear();
-        hit_exclusivity_fraction_W_.clear();
         particle_pdg_.clear();
         particle_energy_.clear();
         particle_px_.clear();
         particle_py_.clear();
         particle_pz_.clear();
-        particle_start_active_U_.clear();
-        particle_start_active_V_.clear();
-        particle_start_active_W_.clear();
-        particle_end_active_U_.clear();
-        particle_end_active_V_.clear();
-        particle_end_active_W_.clear();
+        for (auto& vm : view_metrics_) {
+            vm.completeness_hit.clear();
+            vm.completeness_total_hits.clear();
+            vm.exclusivity_ratio.clear();
+            vm.hit_exclusivity_fraction.clear();
+            vm.particle_start_active.clear();
+            vm.particle_end_active.clear();
+        }
     }
 
     inline void ClassificationAnalysis::analyseEvent(const art::Event& e, bool is_data) {
@@ -252,9 +167,7 @@ namespace analysis
         const auto& pattern = _classifier->getPattern(e);
         const auto& clarity_results = _classifier->getClarityResults();
 
-        if (pattern.size() != clarity_results.size()) {
-            throw std::runtime_error("Mismatch between pattern and clarity results sizes.");
-        }
+        if (pattern.size() != clarity_results.size()) return;
 
         for (size_t i = 0; i < pattern.size(); ++i) {
             const auto& [type, sig] = pattern[i];
@@ -265,12 +178,7 @@ namespace analysis
             clarity_V_.push_back(result.passes(common::TPC_VIEW_V) ? 1 : 0);
             clarity_W_.push_back(result.passes(common::TPC_VIEW_W) ? 1 : 0);
 
-            MetricsVisitor visitor(sig, completeness_hit_U_, completeness_hit_V_, completeness_hit_W_,
-                                    completeness_total_hits_U_, completeness_total_hits_V_, completeness_total_hits_W_,
-                                    exclusivity_ratio_U_, exclusivity_ratio_V_, exclusivity_ratio_W_,
-                                    hit_exclusivity_fraction_U_, hit_exclusivity_fraction_V_, hit_exclusivity_fraction_W_,
-                                    particle_start_active_U_, particle_start_active_V_, particle_start_active_W_,
-                                    particle_end_active_U_, particle_end_active_V_, particle_end_active_W_);
+            MetricsVisitor visitor(view_metrics_, sig);
             visitor.visit(result.tool_metrics);
 
             for (const auto& particle : sig) {
