@@ -4,46 +4,7 @@
 #include "proximityclustering.fcl"
 #include "eventweight_microboone_genie_knobs.fcl"
 
-EventCategoryAnalysisTool: {
-    tool_type: "EventCategoryAnalysis"  
-}
-
-TrackCalorimetryAnalysisTool: {
-    tool_type: "TrackCalorimetryAnalysis"
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-}
-
-PreSelectionAnalysisTool: {
-    tool_type: "PreSelectionAnalysis"
-}
-
-SliceVisualisationAnalysisTool: {
-    tool_type: "SliceVisualisationAnalysis"
-}
-
-SelectionFilter: {
-    module_type: SelectionFilter 
-    SelectionTool: {
-        tool_type: "EmptySelection"
-    }
-    AnalysisTools: {
-        preselection: @local::PreSelectionAnalysisTool
-        visualisation: @local::SliceVisualisationAnalysisTool
-        eventcategory: @local::EventCategoryAnalysisTool
-        #calorimetry: @local::TrackCalorimetryAnalysisTool
-    }
-}
-
-SelectionFilterEmpty: @local::SelectionFilter
-SelectionFilterEmpty.SelectionTool: { tool_type: "EmptySelection" }
-
-SignalTruthFilter: {
-    module_type: SignalTruthFilter
-}
-
-microboone_calo_mcc9_data:
-{
+microboone_calo_mcc9_data: {
     CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
     CalAmpConstants:  [ 9.2e-4, 1.062e-3, 1.08e-3 ]
     CaloDoLifeTimeCorrection: false
@@ -51,91 +12,66 @@ microboone_calo_mcc9_data:
     CaloUseModBox: true
 }
 
-Thresholds: {
-    MuonThreshold: 0.1
-    ElectronThreshold: 0.1
-
-    PionThreshold: 0.1
-    ProtonThreshold: 0.3
-    KaonThreshold: 0.2
-
-    SigmaPlusThreshold: 0.5
-    SigmaMinusThreshold: 0.5
-    XiMinusThreshold: 0.1
-    OmegaMinusThreshold: 0.1
-    
-    IncludeMesons: true
-    IncludeHyperons: true
+TruthSignalSelection: {
+    tool_type: "TruthSignalSelection"
 }
 
-MuonSignature: 
-{
+TruthBackgroundSelection: {
+    tool_type: "TruthBackgroundSelection"
+}
+
+MuonSignature: {
     tool_type: "MuonSignature"
-    @table::Thresholds
 }
 
-KaonShortSignature: 
-{
+KaonShortSignature: {
     tool_type: "KaonShortSignature"
-    @table::Thresholds
 }
 
-ChargedKaonSignature:
-{
+ChargedKaonSignature: {
     tool_type: "ChargedKaonSignature"
-    @table::Thresholds
 }
 
-ChargedSigmaSignature:
-{
+ChargedSigmaSignature: {
     tool_type: "ChargedSigmaSignature"
-    @table::Thresholds
 }
 
-LambdaSignature:
-{
+LambdaSignature: {
     tool_type: "LambdaSignature"
-    @table::Thresholds
 }
 
 PatternCompleteness: {
     tool_type: "PatternCompleteness"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
 }
 
-LambdaSignatureIntegrity: {
-    tool_type: "LambdaSignatureIntegrity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
-}
-
-KaonShortSignatureIntegrity: {
-    tool_type: "KaonShortSignatureIntegrity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
-}
-
-MuonSignatureIntegrity: {
-    tool_type: "MuonSignatureIntegrity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
-}
-
-ChargedKaonSignatureIntegrity: {
-    tool_type: "ChargedKaonSignatureIntegrity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
-}
-
-ChargedSigmaSignatureIntegrity: {
-    tool_type: "ChargedSigmaSignatureIntegrity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
+SignatureIntegrity: {
+    tool_type: "SignatureIntegrity"
 }
 
 HitExclusivity: {
     tool_type: "HitExclusivity"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim" 
-    Verbose: true
+}
+
+ClassificationAnalysis: {
+    tool_type: "ClassificationAnalysis"
+}
+
+HitImageAnalysis: {
+    tool_type: "HitImageAnalysis"
+}
+
+NeutrinoAnalysis: {
+    tool_type: "NeutrinoAnalysis"
+}
+
+PatternAnalysis: {
+    tool_type: "PatternAnalysis"
+}
+
+SliceAnalysis: {
+    tool_type: "SliceAnalysis"
+}
+
+WireImageAnalysis: {
+    tool_type: "WireImageAnalysis"
 }

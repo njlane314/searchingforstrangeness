@@ -1,4 +1,4 @@
-#include "selectionconfig.fcl"  
+#include "selectionconfig.fcl"
 
 process_name: SelectionFilterProcess
 
@@ -26,32 +26,58 @@ services.SpaceCharge.EnableSimSpatialSCE: true
 
 source:
 {
-    module_type: RootInput  
-    maxEvents: -1  
+    module_type: RootInput
+    maxEvents: -1
+}
+
+SignatureToolMuon: {
+    tool_type: "MuonSignature"
+}
+
+SignatureToolKaon: {
+    tool_type: "KaonShortSignature"
+}
+
+ClarityToolCompleteness: {
+    tool_type: "PatternCompleteness"
+}
+
+ClarityToolIntegrity: {
+    tool_type: "SignatureIntegrity"
+}
+
+ClarityToolExclusivity: {
+    tool_type: "HitExclusivity"
+}
+
+EventClassifierConfig: {
+    SignatureTools: {
+        muon: @local::SignatureToolMuon
+        kaon: @local::SignatureToolKaon
+    }
+    ClarityTools: {
+        completeness: @local::ClarityToolCompleteness
+        integrity: @local::ClarityToolIntegrity
+        exclusivity: @local::ClarityToolExclusivity
+    }
+}
+
+TruthSignalSelection: {
+    tool_type: "TruthSignalSelection"
+    EventClassifier: @local::EventClassifierConfig
 }
 
 physics:
 {
-    analyzers:
+    filters:
     {
         selectionfilter:
         {
             module_type: SelectionFilter
-            IsData: false
-            IsFakeData: false
-            Filter: true
-            SelectionTool:
-            {
-                signal_selector: "TruthSignalSelection"
-            }
-            AnalysisTools:
-            {
-                
-            }
+            SelectionTool: @local::TruthSignalSelection
         }
     }
- 
-    e1: [ selectionfilter ]     
-   
-    end_paths: [ e1 ]           
+    trigger_paths: [ e1 ]
+    end_paths: [ ]
+    e1: [ selectionfilter ]
 }
