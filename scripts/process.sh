@@ -1,9 +1,6 @@
 #!/bin/sh
 # run_fhicl_analysis.sh
 
-# USAGE: source run_fhicl_analysis.sh
-# Ensure you update the necessary input fields below
-
 # ---------------------------------------------------------------------------------
 
 set -e

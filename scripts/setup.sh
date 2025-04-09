@@ -31,5 +31,3 @@ case "$USER" in
 esac
 
 git pull
-
-source scripts/train.sh

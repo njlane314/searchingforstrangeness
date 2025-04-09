@@ -32,7 +32,7 @@ namespace signature
     };
 
     void LambdaSignature::findSignature(art::Event const& evt, Signature& signature, bool& signature_found) {
-        auto mcp_map = buildMCParticleMap(evt);
+        auto mcp_map = buildParticleMap(evt);
         auto const& mcp_h = evt.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
         
         for (const auto& mcp : *mcp_h) {

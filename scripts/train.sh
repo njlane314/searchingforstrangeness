@@ -1,1 +1,0 @@
-rm -f training_output_*.csv
