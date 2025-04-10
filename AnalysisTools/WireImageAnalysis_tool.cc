@@ -13,7 +13,7 @@ namespace analysis
     class WireImageAnalysis : public ImageGeneratorBase {
     public:
         WireImageAnalysis(const fhicl::ParameterSet& pset) 
-            : ImageGeneratorBase(pset), _pset(pset) {
+            : ImageGeneratorBase(pset), _pset(pset), _classifier(pset.get<fhicl::ParameterSet>("EventClassifier")) {
             detector_min_wire_.resize(planes_.size());
             detector_max_wire_.resize(planes_.size());
             for (size_t i = 0; i < planes_.size(); ++i) {
@@ -43,6 +43,7 @@ namespace analysis
 
     private:
         fhicl::ParameterSet _pset;
+        signature::EventClassifier _classifier;
         std::vector<double> detector_min_wire_;
         std::vector<double> detector_max_wire_;
         double detector_max_drift_;
@@ -73,14 +74,13 @@ namespace analysis
         if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
             art::fill_ptr_vector(hit_vec, hitHandle);
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
-        signature::EventClassifier classifier(_pset);
-        signature::Pattern pattern = classifier.getPattern(e);
+        signature::Pattern pattern = _classifier.getPattern(e);
         std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
         if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCTproducer))
             art::fill_ptr_vector(mcp_vec, mcpHandle);
 
         event_truth_wire_images_ = image::extractImages(
-            image::constructTruthWireImages(properties, hit_vec, mcp_bkth_assoc, pattern, classifier, *_geo, mcp_vec, _bad_channel_mask)
+            image::constructTruthWireImages(properties, hit_vec, mcp_bkth_assoc, pattern, _classifier, *_geo, mcp_vec, _bad_channel_mask)
         );
     }
 
@@ -105,14 +105,13 @@ namespace analysis
         if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
             art::fill_ptr_vector(hit_vec, hitHandle);
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
-        signature::EventClassifier classifier(_pset);
-        signature::Pattern pattern = classifier.getPattern(e);
+        signature::Pattern pattern = _classifier.getPattern(e);
         std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
         if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCTproducer))
             art::fill_ptr_vector(mcp_vec, mcpHandle);
 
         slice_truth_wire_images_ = image::extractImages(
-            image::constructTruthWireImages(properties, hit_vec, mcp_bkth_assoc, pattern, classifier, *_geo, mcp_vec, _bad_channel_mask)
+            image::constructTruthWireImages(properties, hit_vec, mcp_bkth_assoc, pattern, _classifier, *_geo, mcp_vec, _bad_channel_mask)
         );
     }
 

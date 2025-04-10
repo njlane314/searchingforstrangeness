@@ -12,7 +12,7 @@ namespace analysis
 {
     class HitImageAnalysis : public ImageGeneratorBase {
     public:
-        HitImageAnalysis(const fhicl::ParameterSet& pset) : ImageGeneratorBase(pset), _pset(pset) {}
+        HitImageAnalysis(const fhicl::ParameterSet& pset) : ImageGeneratorBase(pset), _pset(pset), _classifier(pset.get<fhicl::ParameterSet>("EventClassifier")) {}
         void analyseEvent(const art::Event& e, bool is_data) override {}
         void analyseSlice(const art::Event& e, std::vector<common::ProxyPfpElem_t>& slicePfpVector, bool is_data, bool selected) override;
         void setBranches(TTree* tree) override;
@@ -20,6 +20,7 @@ namespace analysis
 
     private:
         fhicl::ParameterSet _pset;
+        signature::EventClassifier _classifier;
         std::vector<std::vector<float>> slice_hit_images_;
         std::vector<std::vector<float>> slice_truth_hit_images_;
         bool contained_;
@@ -43,14 +44,13 @@ namespace analysis
         if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
             art::fill_ptr_vector(hit_vec, hitHandle);
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
-        signature::EventClassifier classifier(_pset);
-        signature::Pattern pattern = classifier.getPattern(e);
+        signature::Pattern pattern = _classifier.getPattern(e);
         std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
         if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCTproducer))
             art::fill_ptr_vector(mcp_vec, mcpHandle);
 
         slice_truth_hit_images_ = image::extractImages(
-            image::constructTruthHitImages(properties, hit_vec, mcp_bkth_assoc, pattern, classifier, *_geo, mcp_vec, _bad_channel_mask)
+            image::constructTruthHitImages(properties, hit_vec, mcp_bkth_assoc, pattern, _classifier, *_geo, mcp_vec, _bad_channel_mask)
         );
     }
 

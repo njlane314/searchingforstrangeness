@@ -98,7 +98,7 @@ namespace analysis
         _SpacePointModuleLabel = pset.get<art::InputTag>("SpacePointModuleLabel", "pandora");
         _mctProducer = pset.get<art::InputTag>("MCTproducer", "generator");
         _CLSproducer = pset.get<art::InputTag>("CLSproducer", "pandora");
-        _eventClassifier = std::make_unique<signature::EventClassifier>(pset);
+        _eventClassifier = std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"));
     }
 
     void SliceAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {

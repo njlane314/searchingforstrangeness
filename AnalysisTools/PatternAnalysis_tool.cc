@@ -100,12 +100,13 @@ namespace analysis
 
     PatternAnalysis::PatternAnalysis(const fhicl::ParameterSet &pset)
         : _MCTproducer(pset.get<art::InputTag>("MCTproducer", "largeant")),
-          _PFPproducer(pset.get<art::InputTag>("PFPproducer", "pandoraPatRec:allOutcomes")),
-          _Hproducer(pset.get<art::InputTag>("Hproducer", "gaushit")),
-          _BacktrackTag(pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")),
-          _FMproducer(pset.get<art::InputTag>("FMproducer", "pandora")),
-          _CLSproducer(pset.get<art::InputTag>("CLSproducer", "pandora")),
-          _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"))) {}
+        _PFPproducer(pset.get<art::InputTag>("PFPproducer", "pandoraPatRec:allOutcomes")),
+        _Hproducer(pset.get<art::InputTag>("Hproducer", "gaushit")),
+        _BacktrackTag(pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")),
+        _FMproducer(pset.get<art::InputTag>("FMproducer", "pandora")),
+        _CLSproducer(pset.get<art::InputTag>("CLSproducer", "pandora")),
+        _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier")))
+    {}
 
     void PatternAnalysis::configure(fhicl::ParameterSet const &pset) {}
 

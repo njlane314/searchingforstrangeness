@@ -49,7 +49,6 @@ namespace signature
                             continue;
                             
                         fillSignature(particle, signature);
-                        
                         traverseDecayChain(particle, mcp_map, [this, &signature, particle_pdg = particle->PdgCode()]
                                           (const art::Ptr<simb::MCParticle>& p) {
                             if (p->PdgCode() == particle_pdg) {
