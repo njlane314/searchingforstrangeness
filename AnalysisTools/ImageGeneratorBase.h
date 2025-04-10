@@ -55,7 +55,7 @@ namespace analysis
     }
 
     void ImageGeneratorBase::configure(const fhicl::ParameterSet& pset) {
-        _MCTproducer = pset.get<art::InputTag>("MCTproducer", "largeant");
+        _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
         _WREproducer = pset.get<art::InputTag>("WREproducer", "butcher");
         _HITproducer = pset.get<art::InputTag>("HITproducer", "gaushit");
         _BKTproducer = pset.get<art::InputTag>("BKTproducer", "gaushitTruthMatch");

@@ -141,10 +141,11 @@ namespace analysis
     };
 
     inline ClassificationAnalysis::ClassificationAnalysis(const fhicl::ParameterSet& pset) {
-        configure(pset);
+        this->configure(pset);
     }
 
     inline void ClassificationAnalysis::configure(const fhicl::ParameterSet& pset) {
+        std::cout << "configuring classification analysis" << std::endl;
         _classifier = std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"));
         _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
     }
@@ -208,10 +209,13 @@ namespace analysis
     }
 
     inline void ClassificationAnalysis::analyseEvent(const art::Event& e, bool is_data) {
+        std::cout << "Analysing event in classification analysis" << std::endl;
         if (is_data) return;
 
         event_type_ = static_cast<int>(_classifier->classifyEvent(e));
         is_signal_ = _classifier->isSignal(e) ? 1 : 0;
+        std::cout << event_type_ << std::endl;
+        std::cout << is_signal_ << std::endl;
 
         const auto& pattern = _classifier->getPattern(e);
         const auto& clarity_results = _classifier->getClarityResults();
@@ -231,8 +235,7 @@ namespace analysis
             clarity_V_.push_back(result.passes(common::TPC_VIEW_V) ? 1 : 0);
             clarity_W_.push_back(result.passes(common::TPC_VIEW_W) ? 1 : 0);
 
-            processSignature(sig, result);
-
+            this->processSignature(sig, result);
             auto tool = _classifier->getToolForSignature(type);
             if (tool) {
                 computeVertexMetrics(e, primary_vertex, tool);
@@ -242,6 +245,7 @@ namespace analysis
         }
 
         pass_clarity_ = _classifier->passClarity() ? 1 : 0;
+        std::cout << "Finished analysing event in classification analysis" << std::endl;
     }
 
     DEFINE_ART_CLASS_TOOL(ClassificationAnalysis)

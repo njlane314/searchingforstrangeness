@@ -90,7 +90,7 @@ namespace analysis
         std::vector<std::vector<float>> _slice_hits_w_wire;
         std::vector<std::vector<float>> _slice_hits_w_drift;
 
-        art::InputTag _MCTproducer;
+        art::InputTag _MCPproducer;
         art::InputTag _PFPproducer;
         art::InputTag _Hproducer;
         art::InputTag _BacktrackTag;
@@ -99,14 +99,15 @@ namespace analysis
     };
 
     PatternAnalysis::PatternAnalysis(const fhicl::ParameterSet &pset)
-        : _MCTproducer(pset.get<art::InputTag>("MCTproducer", "largeant")),
+        : _MCPproducer(pset.get<art::InputTag>("MCPproducer", "largeant")),
         _PFPproducer(pset.get<art::InputTag>("PFPproducer", "pandoraPatRec:allOutcomes")),
         _Hproducer(pset.get<art::InputTag>("Hproducer", "gaushit")),
         _BacktrackTag(pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")),
         _FMproducer(pset.get<art::InputTag>("FMproducer", "pandora")),
         _CLSproducer(pset.get<art::InputTag>("CLSproducer", "pandora")),
-        _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier")))
-    {}
+        _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"))) {
+            this->configure(pset);
+        }
 
     void PatternAnalysis::configure(fhicl::ParameterSet const &pset) {}
 
@@ -163,16 +164,22 @@ namespace analysis
     void PatternAnalysis::analyseEvent(art::Event const &e, bool is_data) {
         if (is_data) return;
 
+        std::cout << "Analysing event in pattern analysis" << std::endl;
+
         art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
         std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
         lar_pandora::MCParticleMap mc_particle_map;
-        if (e.getByLabel(_MCTproducer, mc_particle_handle)) {
+        if (e.getByLabel(_MCPproducer, mc_particle_handle)) {
             art::fill_ptr_vector(mc_particle_vector, mc_particle_handle);
             lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
         } else return;
 
+        std::cout << "Built particle map" << std::endl;
+
         art::Handle<std::vector<recob::PFParticle>> pf_particle_handle;
         if (!e.getByLabel(_PFPproducer, pf_particle_handle)) return;
+
+        std::cout << "getting hit label" << std::endl;
 
         art::Handle<std::vector<recob::Hit>> hit_handle;
         std::vector<art::Ptr<recob::Hit>> hit_vector;
