@@ -48,7 +48,7 @@ namespace analysis
         art::InputTag _BacktrackModuleLabel;
         art::InputTag _PFParticleModuleLabel;
         art::InputTag _SpacePointModuleLabel;
-        art::InputTag _mctProducer;
+        art::InputTag _MCPproducer;
         art::InputTag _CLSproducer;
 
         struct Slice {
@@ -96,7 +96,7 @@ namespace analysis
         _BacktrackModuleLabel = pset.get<art::InputTag>("BacktrackModuleLabel", "gaushitTruthMatch");
         _PFParticleModuleLabel = pset.get<art::InputTag>("PFParticleModuleLabel", "pandora");
         _SpacePointModuleLabel = pset.get<art::InputTag>("SpacePointModuleLabel", "pandora");
-        _mctProducer = pset.get<art::InputTag>("MCTproducer", "generator");
+        _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant"); 
         _CLSproducer = pset.get<art::InputTag>("CLSproducer", "pandora");
         _eventClassifier = std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"));
     }
@@ -104,7 +104,7 @@ namespace analysis
     void SliceAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {
         if (is_data) return;
 
-        auto mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(_mctProducer);
+        auto mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
         _neutrino_track_ids.clear();
         for (const auto& mcp : *mcp_h) {
             _neutrino_track_ids.insert(mcp.TrackId());
