@@ -30,43 +30,6 @@ source:
     maxEvents: -1
 }
 
-SignatureToolMuon: {
-    tool_type: "MuonSignature"
-}
-
-SignatureToolKaon: {
-    tool_type: "KaonShortSignature"
-}
-
-ClarityToolCompleteness: {
-    tool_type: "PatternCompleteness"
-}
-
-ClarityToolIntegrity: {
-    tool_type: "SignatureIntegrity"
-}
-
-ClarityToolExclusivity: {
-    tool_type: "HitExclusivity"
-}
-
-EventClassifierConfig: {
-    SignatureTools: {
-        muon: @local::SignatureToolMuon
-        kaon: @local::SignatureToolKaon
-    }
-    ClarityTools: {
-        completeness: @local::ClarityToolCompleteness
-        integrity: @local::ClarityToolIntegrity
-        exclusivity: @local::ClarityToolExclusivity
-    }
-}
-
-TruthSignalSelection: {
-    tool_type: "TruthSignalSelection"
-    EventClassifier: @local::EventClassifierConfig
-}
-
 physics:
 {
     filters:
@@ -75,6 +38,15 @@ physics:
         {
             module_type: SelectionFilter
             SelectionTool: @local::TruthSignalSelection
+            AnalysisTools: {
+                neutrino: @local::NeutrinoAnalysis
+                pattern: @local::PatternAnalysis
+                slice: @local::SliceAnalysis
+                classification: @local::ClassificationAnalysis
+                hitimage: @local::HitImageAnalysis
+                wireimage: @local::WireImageAnalysis
+            }
+            
         }
     }
     trigger_paths: [ e1 ]

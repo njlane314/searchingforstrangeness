@@ -12,66 +12,61 @@ microboone_calo_mcc9_data: {
     CaloUseModBox: true
 }
 
-TruthSignalSelection: {
-    tool_type: "TruthSignalSelection"
+MuonSignature: { tool_type: "MuonSignature" }
+KaonShortSignature: { tool_type: "KaonShortSignature" }
+ChargedKaonSignature: { tool_type: "ChargedKaonSignature" }
+ChargedSigmaSignature: { tool_type: "ChargedSigmaSignature" }
+LambdaSignature: { tool_type: "LambdaSignature" }
+
+NeutrinoAnalysis: { tool_type: "NeutrinoAnalysis" }
+
+PatternCompleteness: { tool_type: "PatternCompleteness" }
+HitExclusivity: { tool_type: "HitExclusivity" }
+SignatureIntegrity: { tool_type: "SignatureIntegrity" }
+
+SharedEventClassifier: {
+    SignatureTools: {
+        leptonic: @local::MuonSignature
+        hadronic: @local::KaonShortSignature
+    }
+    ClarityTools: {
+        completeness: @local::PatternCompleteness
+        hitexclusivity: @local::HitExclusivity
+        signatureintegrity: @local::SignatureIntegrity
+    }
 }
 
-TruthBackgroundSelection: {
-    tool_type: "TruthBackgroundSelection"
+SliceAnalysis: { 
+    tool_type: "SliceAnalysis" 
+    EventClassifier: @local::SharedEventClassifier
 }
 
-MuonSignature: {
-    tool_type: "MuonSignature"
+PatternAnalysis: { 
+    tool_type: "PatternAnalysis" 
+    EventClassifier: @local::SharedEventClassifier
 }
 
-KaonShortSignature: {
-    tool_type: "KaonShortSignature"
-}
-
-ChargedKaonSignature: {
-    tool_type: "ChargedKaonSignature"
-}
-
-ChargedSigmaSignature: {
-    tool_type: "ChargedSigmaSignature"
-}
-
-LambdaSignature: {
-    tool_type: "LambdaSignature"
-}
-
-PatternCompleteness: {
-    tool_type: "PatternCompleteness"
-}
-
-SignatureIntegrity: {
-    tool_type: "SignatureIntegrity"
-}
-
-HitExclusivity: {
-    tool_type: "HitExclusivity"
-}
-
-ClassificationAnalysis: {
-    tool_type: "ClassificationAnalysis"
-}
-
-HitImageAnalysis: {
-    tool_type: "HitImageAnalysis"
-}
-
-NeutrinoAnalysis: {
-    tool_type: "NeutrinoAnalysis"
-}
-
-PatternAnalysis: {
-    tool_type: "PatternAnalysis"
-}
-
-SliceAnalysis: {
-    tool_type: "SliceAnalysis"
+ClassificationAnalysis: { 
+    tool_type: "ClassificationAnalysis" 
+    EventClassifier: @local::SharedEventClassifier
 }
 
 WireImageAnalysis: {
     tool_type: "WireImageAnalysis"
+    EventClassifier: @local::SharedEventClassifier
+}
+
+HitImageAnalysis: {
+    tool_type: "HitImageAnalysis"
+    EventClassifier: @local::SharedEventClassifier
+}
+
+TruthSignalSelection: {
+    tool_type: "TruthSignalSelection"
+    EventClassifier: @local::SharedEventClassifier
+}
+
+TruthBackgroundSelection: {
+    tool_type: "TruthBackgroudnSelection"
+    EventClassifier: @local::SharedEventClassifier
 }

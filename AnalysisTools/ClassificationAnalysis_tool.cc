@@ -103,6 +103,7 @@ namespace analysis
 
         std::optional<TVector3> getPrimaryVertex(const art::Event& e) {
             art::Handle<std::vector<simb::MCTruth>> MCThandle;
+            std::cout << "Getting MCTruth with label: " << _MCTproducer.label() << std::endl;
             e.getByLabel(_MCTproducer, MCThandle);
             if (MCThandle.isValid() && !MCThandle->empty()) {
                 const auto& mct = MCThandle->at(0);
@@ -130,7 +131,6 @@ namespace analysis
                 if (sig_vertex.Mag() > 0) {
                     double distance = (sig_vertex - primary_vertex).Mag();
                     vertex_distance_.push_back(distance);
-                    // Removed vertex containment check as per request
                 } else {
                     vertex_distance_.push_back(-1.0);
                 }
@@ -145,7 +145,7 @@ namespace analysis
     }
 
     inline void ClassificationAnalysis::configure(const fhicl::ParameterSet& pset) {
-        _classifier = std::make_unique<signature::EventClassifier>(pset);
+        _classifier = std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"));
         _MCTproducer = pset.get<art::InputTag>("MCTproducer", "generator");
     }
 

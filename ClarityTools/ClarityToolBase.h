@@ -50,11 +50,11 @@ namespace signature
     class ClarityToolBase {
     public:
         ClarityToolBase(fhicl::ParameterSet const& pset) :
-        _hitProducer{pset.get<art::InputTag>("HitProducer", "gaushit")}, 
-        _mcpProducer{pset.get<art::InputTag>("MCPproducer", "largeant")},
-        _mctProducer{pset.get<art::InputTag>("MCTproducer", "generator")}, 
-        _backtrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")},
-        _deadChannelTag{pset.get<art::InputTag>("DeadChannelTag")}, 
+        _HITproducer{pset.get<art::InputTag>("HitProducer", "gaushit")}, 
+        _MCPproducer{pset.get<art::InputTag>("MCPproducer", "largeant")},
+        _MCTproducer{pset.get<art::InputTag>("MCTproducer", "generator")}, 
+        _BacktrackTag{pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")},
+        _DeadChannelTag{pset.get<art::InputTag>("DeadChannelTag", "nfbadchannels:badchannels:OverlayDetsim")}, 
         _geoService{art::ServiceHandle<geo::Geometry>()->provider()} {}
 
         virtual ~ClarityToolBase() noexcept = default;
@@ -87,11 +87,11 @@ namespace signature
         virtual std::unique_ptr<ClarityMetrics> getMetrics() const = 0;
 
     protected:
-        const art::InputTag _hitProducer;
-        const art::InputTag _mcpProducer;
-        const art::InputTag _mctProducer;
-        const art::InputTag _backtrackTag;
-        const art::InputTag _deadChannelTag;
+        const art::InputTag _HITproducer;
+        const art::InputTag _MCPproducer;
+        const art::InputTag _MCTproducer;
+        const art::InputTag _BacktrackTag;
+        const art::InputTag _DeadChannelTag;
         const geo::GeometryCore* _geoService;
     };
 

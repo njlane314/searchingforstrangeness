@@ -65,6 +65,12 @@ namespace analysis
         };
 
         Neutrino _event_neutrino; 
+        std::vector<int> _fs_pdg;
+        std::vector<float> _fs_energy;
+        std::vector<float> _fs_px;
+        std::vector<float> _fs_py; 
+        std::vector<float> _fs_pz; 
+
         void fillNeutrino(Neutrino& neutrino_data, const simb::MCNeutrino& neutrino, const simb::MCParticle& neutrino_particle);
     };
 
@@ -88,6 +94,20 @@ namespace analysis
             const auto& neutrino = truth.GetNeutrino();
             const auto& neutrino_particle = neutrino.Nu();
             this->fillNeutrino(_event_neutrino, neutrino, neutrino_particle);
+        }
+
+        auto const& mcp_handle = event.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
+        if (!mcp_handle.isValid()) 
+            return;
+
+        for (const auto& particle : *mcp_handle) {
+            if (particle.Process() == "primary") {
+                _fs_pdg.push_back(particle.PdgCode());
+                _fs_energy.push_back(particle.E());
+                _fs_px.push_back(particle.Px());
+                _fs_py.push_back(particle.Py());
+                _fs_pz.push_back(particle.Pz());
+            }
         }
     }
 
@@ -140,10 +160,20 @@ namespace analysis
         tree->Branch("vtx_u", &_event_neutrino.vtx_u, "vtx_u/F");
         tree->Branch("vtx_v", &_event_neutrino.vtx_v, "vtx_v/F");
         tree->Branch("vtx_w", &_event_neutrino.vtx_w, "vtx_w/F");
+        tree->Branch("fs_pdg", &_fs_pdg);
+        tree->Branch("fs_energy", &_fs_energy);
+        tree->Branch("fs_px", &_fs_px);
+        tree->Branch("fs_py", &_fs_py);
+        tree->Branch("fs_pz", &_fs_pz);
     }
 
     void NeutrinoAnalysis::resetTTree(TTree* /*tree*/) {
         _event_neutrino = Neutrino();
+        _fs_pdg.clear();
+        _fs_energy.clear();
+        _fs_px.clear();
+        _fs_py.clear();
+        _fs_pz.clear();
     }
 
     DEFINE_ART_CLASS_TOOL(NeutrinoAnalysis)
