@@ -76,7 +76,7 @@ namespace analysis
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
         signature::Pattern pattern = _classifier.getPattern(e);
         std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
-        if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCTproducer))
+        if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer))
             art::fill_ptr_vector(mcp_vec, mcpHandle);
 
         event_truth_wire_images_ = image::extractImages(
@@ -107,7 +107,7 @@ namespace analysis
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
         signature::Pattern pattern = _classifier.getPattern(e);
         std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
-        if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCTproducer))
+        if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer))
             art::fill_ptr_vector(mcp_vec, mcpHandle);
 
         slice_truth_wire_images_ = image::extractImages(

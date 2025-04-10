@@ -40,7 +40,7 @@ namespace analysis
 
     protected:
         art::InputTag _MCTproducer, _WREproducer, _HITproducer, _BKTproducer, _PFPproducer, _CLSproducer,
-                      _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag;
+                      _SHRproducer, _SLCproducer, _VTXproducer, _PCAproducer, _TRKproducer, _DeadChannelTag, _MCPproducer;
         std::vector<int> planes_;
         std::vector<int> width_, height_;
         float _drift_step;
@@ -66,6 +66,7 @@ namespace analysis
         _VTXproducer = pset.get<art::InputTag>("VTXproducer", "pandora");
         _PCAproducer = pset.get<art::InputTag>("PCAproducer", "pandora");
         _TRKproducer = pset.get<art::InputTag>("TRKproducer", "pandora");
+        _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
         _DeadChannelTag = pset.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
         planes_ = pset.get<std::vector<int>>("Planes", {0, 1, 2});
         width_ = pset.get<std::vector<int>>("Width", std::vector<int>(planes_.size(), 512));

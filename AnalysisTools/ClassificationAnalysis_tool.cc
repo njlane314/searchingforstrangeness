@@ -103,7 +103,6 @@ namespace analysis
 
         std::optional<TVector3> getPrimaryVertex(const art::Event& e) {
             art::Handle<std::vector<simb::MCTruth>> MCThandle;
-            std::cout << "Getting MCTruth with label: " << _MCTproducer.label() << std::endl;
             e.getByLabel(_MCTproducer, MCThandle);
             if (MCThandle.isValid() && !MCThandle->empty()) {
                 const auto& mct = MCThandle->at(0);
