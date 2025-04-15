@@ -36,6 +36,10 @@ SharedEventClassifier: {
     }
 }
 
+SharedLabelClassifier: {
+
+}
+
 SliceAnalysis: { 
     tool_type: "SliceAnalysis" 
     EventClassifier: @local::SharedEventClassifier
@@ -54,6 +58,7 @@ ClassificationAnalysis: {
 WireImageAnalysis: {
     tool_type: "WireImageAnalysis"
     EventClassifier: @local::SharedEventClassifier
+    LabelClassifier: @local::SharedLabelClassifier
 }
 
 HitImageAnalysis: {

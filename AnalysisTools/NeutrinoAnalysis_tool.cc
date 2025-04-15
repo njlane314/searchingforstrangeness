@@ -87,7 +87,6 @@ namespace analysis
     {}
 
     void NeutrinoAnalysis::analyseEvent(const art::Event& event, bool is_data) {
-        std::cout << "Analysing neutrino event" << std::endl;
         if (is_data) 
             return;
 
@@ -112,7 +111,6 @@ namespace analysis
                 _fs_pz.push_back(particle.Pz());
             }
         }
-        std::cout << "Finished analysing neutrino event" << std::endl;
     }
 
     void NeutrinoAnalysis::fillNeutrino(Neutrino& neutrino_data, const simb::MCNeutrino& neutrino, const simb::MCParticle& neutrino_particle) {

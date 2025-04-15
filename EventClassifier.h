@@ -32,8 +32,8 @@ namespace signature
         explicit EventClassifier(const fhicl::ParameterSet& pset)
             : _fiducialOffsets{pset.get<std::vector<float>>("FiducialOffsets", {10,10,10,10,10,10})},
             _mctProducer{pset.get<art::InputTag>("MCTproducer", "generator")},
-            _clarityResultsPtr(nullptr),
             _pattern(), 
+            _clarityResultsPtr(nullptr),
             _signatureDetectable() {
             const auto& sigToolsPset = pset.get<fhicl::ParameterSet>("SignatureTools");
             for (const auto& toolLabel : sigToolsPset.get_pset_names()) {
@@ -49,11 +49,8 @@ namespace signature
         }
 
         EventType classifyEvent(const art::Event& e) const {
-            std::cout << "classifying event" << std::endl;
-            createPattern(e);
-            std::cout << "finished creating pattern" << std::endl;
-            if (isSignal(e)) {
-                std::cout << "is signal" << std::endl;
+            this->createPattern(e);
+            if (this->isSignal(e)) {
                 return kSignal;
             }
             simb::Origin_t origin = getTruthOrigin(e);
@@ -62,16 +59,15 @@ namespace signature
                 case simb::kCosmicRay:    return kCosmicRay;
                 default:                  return kOther;
             }
-            std::cout << "finished classifiying event" << std::endl; 
         }
 
         const Pattern& getPattern(const art::Event& e) const {
-            createPattern(e);
+            this->createPattern(e);
             return _pattern;
         }
 
         bool isSignal(const art::Event& e) const {
-            createPattern(e);
+            this->createPattern(e);
             bool completePattern = std::all_of(_pattern.begin(), _pattern.end(),
                 [](const std::pair<SignatureType, Signature>& entry) {
                     return !entry.second.empty();
@@ -129,18 +125,12 @@ namespace signature
         }
 
         void createPattern(const art::Event& e) const {
-            std::cout << "starting to create pattern" << std::endl;
             _pattern.clear();
-            std::cout << "patterned cleared" << std::endl;
             _signatureDetectable.clear();
-            std::cout << "creating pattern" << std::endl;
             for (const auto& tool : _signatureToolsVec) {
-                std::cout << "looping signatrue vector" << std::endl;
                 Signature signature;
                 bool found = tool->constructSignature(e, signature);
-                std::cout << "finished constructing signature" << std::endl;
                 _pattern.emplace_back(tool->getSignatureType(), signature);
-                std::cout << "finished getting signature type" << std::endl;
                 _signatureDetectable.push_back(found ? tool->isDetectable(e, signature) : false);
             }
             for (const auto& entry : _pattern) {
