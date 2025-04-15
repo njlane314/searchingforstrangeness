@@ -164,8 +164,6 @@ namespace analysis
     void PatternAnalysis::analyseEvent(art::Event const &e, bool is_data) {
         if (is_data) return;
 
-        std::cout << "Analysing event in pattern analysis" << std::endl;
-
         art::Handle<std::vector<simb::MCParticle>> mc_particle_handle;
         std::vector<art::Ptr<simb::MCParticle>> mc_particle_vector;
         lar_pandora::MCParticleMap mc_particle_map;
@@ -174,12 +172,8 @@ namespace analysis
             lar_pandora::LArPandoraHelper::BuildMCParticleMap(mc_particle_vector, mc_particle_map);
         } else return;
 
-        std::cout << "Built particle map" << std::endl;
-
         art::Handle<std::vector<recob::PFParticle>> pf_particle_handle;
         if (!e.getByLabel(_PFPproducer, pf_particle_handle)) return;
-
-        std::cout << "getting hit label" << std::endl;
 
         art::Handle<std::vector<recob::Hit>> hit_handle;
         std::vector<art::Ptr<recob::Hit>> hit_vector;
