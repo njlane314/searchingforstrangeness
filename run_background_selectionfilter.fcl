@@ -1,6 +1,6 @@
 #include "selectionconfig.fcl"
 
-process_name: SelectionFilterProcess
+process_name: SelectionBackgroundFilterProcess
 
 services:
 {
@@ -37,7 +37,7 @@ physics:
         selectionfilter:
         {
             module_type: SelectionFilter
-            SelectionTool: @local::TruthSignalSelection
+            SelectionTool: @local::TruthBackgroundSelection
             AnalysisTools: {
                 neutrino: @local::NeutrinoAnalysis
                 pattern: @local::PatternAnalysis

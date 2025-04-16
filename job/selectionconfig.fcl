@@ -27,7 +27,7 @@ SignatureIntegrity: { tool_type: "SignatureIntegrity" }
 SharedEventClassifier: {
     SignatureTools: {
         leptonic: @local::MuonSignature
-        hadronic: @local::KaonShortSignature
+        hadronic: @local::LambdaSignature
     }
     ClarityTools: {
         completeness: @local::PatternCompleteness
@@ -69,9 +69,11 @@ HitImageAnalysis: {
 TruthSignalSelection: {
     tool_type: "TruthSignalSelection"
     EventClassifier: @local::SharedEventClassifier
+    EventType: "signal"
 }
 
 TruthBackgroundSelection: {
     tool_type: "TruthBackgroudnSelection"
     EventClassifier: @local::SharedEventClassifier
+    EventType: "background"
 }

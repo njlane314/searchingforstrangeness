@@ -24,6 +24,8 @@
 #include "CommonFunctions/Geometry.h"
 #include "CommonFunctions/Corrections.h"
 
+#include "EventClassifier.h"
+
 class SelectionFilter;
 
 class SelectionFilter : public art::EDFilter {
@@ -68,13 +70,17 @@ private:
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
+    signature::EventClassifier _eventClassifier;
+    std::string _eventType;
+
     void BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
     void AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void ResetTTree();
 };
 
 SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
-    : EDFilter{p} {
+    : EDFilter{p},
+      _eventClassifier(p.get<fhicl::ParameterSet>("EventClassifier")) {
     _PFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
     _SHRproducer = p.get<art::InputTag>("SHRproducer", "pandora");
     _HITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
@@ -85,8 +91,9 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     _TRKproducer = p.get<art::InputTag>("TRKproducer", "pandora");
     _MCTproducer = p.get<art::InputTag>("MCTproducer", "generator");
     _is_data = p.get<bool>("IsData", false);
-    _is_fake_data = p.get<bool>("IsFakeData",false);
+    _is_fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
+    _eventType = p.get<std::string>("EventType", "all");
 
     art::ServiceHandle<art::TFileService> tfs;
     _tree = tfs->make<TTree>("SelectionFilter", "Selection TTree");
@@ -150,32 +157,38 @@ bool SelectionFilter::filter(art::Event &e) {
         _analysisToolsVec[i]->analyseEvent(e, _is_data); 
     }
 
+    signature::EventType event_type = _eventClassifier.classifyEvent(e);
+    bool keep_based_on_type = (_eventType == "all") || 
+                              (_eventType == "signal" && event_type == signature::kSignal) || 
+                              (_eventType == "background" && event_type != signature::kSignal);
+
     bool keep_event = false;
-    for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy) {
-        if (pfp_pxy->IsPrimary() == false)
-            continue;
+    if (keep_based_on_type) {
+        for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy) {
+            if (pfp_pxy->IsPrimary() == false)
+                continue;
 
-        auto nu_pdg = fabs(pfp_pxy->PdgCode());
-        if ((nu_pdg == 12) || (nu_pdg == 14)) {
-            std::vector<ProxyPfpElem_t> slice_pfp_v;
-            this->AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
-            
-            bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
-            if (selected) {
-                keep_event = true;
-                _selected = 1;
-            }
+            auto nu_pdg = fabs(pfp_pxy->PdgCode());
+            if ((nu_pdg == 12) || (nu_pdg == 14)) {
+                std::vector<ProxyPfpElem_t> slice_pfp_v;
+                this->AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
+                
+                bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
+                if (selected) {
+                    keep_event = true;
+                    _selected = 1;
+                }
 
-            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-                _analysisToolsVec[i]->analyseSlice(e, slice_pfp_v, _is_data, selected);
+                for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+                    _analysisToolsVec[i]->analyseSlice(e, slice_pfp_v, _is_data, selected);
+                }
             }
         }
     }
 
-    _tree->Fill();
-    if (_filter == true)
-        return keep_event;
-
+    bool final_keep = keep_based_on_type && keep_event;
+    if (final_keep) _tree->Fill();
+    if (_filter) return final_keep;
     return true;
 }
 
@@ -186,7 +199,6 @@ void SelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col) {
         _pfpmap[pfp_pxy->Self()] = p;
         p++;
     }
-
     return;
 } 
 
@@ -203,12 +215,11 @@ void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfp
 
         this->AddDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
     } 
-
     return;
 } 
 
 bool SelectionFilter::endSubRun(art::SubRun &subrun) {
-    if ( (!_is_data) || (_is_fake_data) ) {
+    if ((!_is_data) || (_is_fake_data)) {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
         _pot = subrun.getByLabel(_MCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
     }
@@ -216,7 +227,6 @@ bool SelectionFilter::endSubRun(art::SubRun &subrun) {
     _run_sr = subrun.run();
     _sub_sr = subrun.subRun();
     _subrun_tree->Fill();
-
     return true;
 }
 

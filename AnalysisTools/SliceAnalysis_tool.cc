@@ -23,6 +23,7 @@
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "EventClassifier.h"
+#include <Eigen/Dense>
 
 namespace analysis 
 {
@@ -66,6 +67,11 @@ namespace analysis
             float center_y = std::numeric_limits<float>::lowest();
             float center_z = std::numeric_limits<float>::lowest();
             float charge = std::numeric_limits<float>::lowest();
+            float total_charge = std::numeric_limits<float>::lowest();
+            float pca_eigenvalues[3] = {std::numeric_limits<float>::lowest(), 
+                            std::numeric_limits<float>::lowest(), 
+                            std::numeric_limits<float>::lowest()};
+            float pca_principal_dir[3] = {0.0f, 0.0f, 0.0f};
         };
 
         Slice _event_slice;
@@ -226,6 +232,8 @@ namespace analysis
             }
         }
 
+        _event_slice.total_charge = slice_total_charge;
+
         _event_slice.hit_completeness = (_total_neutrino_hits > 0) ? static_cast<float>(slice_neutrino_hits) / _total_neutrino_hits : 0.0f;
         _event_slice.hit_purity = (_event_slice.num_hits > 0) ? static_cast<float>(slice_neutrino_hits) / _event_slice.num_hits : 0.0f;
         _event_slice.charge_completeness = (_total_neutrino_charge > 0) ? slice_neutrino_charge / _total_neutrino_charge : 0.0f;
@@ -234,6 +242,63 @@ namespace analysis
         _event_slice.pattern_hit_completeness = (_total_pattern_hits > 0) ? static_cast<float>(slice_pattern_hits) / _total_pattern_hits : 0.0f;
         _event_slice.pattern_charge_purity = (slice_total_charge > 0) ? slice_pattern_charge / slice_total_charge : 0.0f;
         _event_slice.pattern_charge_completeness = (_total_pattern_charge > 0) ? slice_pattern_charge / _total_pattern_charge : 0.0f;
+
+        std::vector<art::Ptr<recob::SpacePoint>> slice_space_points;
+        for (const auto& pfp : slice_pfp_v) {
+            auto sp_v = pfp.get<recob::SpacePoint>();
+            slice_space_points.insert(slice_space_points.end(), sp_v.begin(), sp_v.end());
+        }
+
+        std::vector<TVector3> positions;
+        for (const auto& sp : slice_space_points) {
+            const double* xyz = sp->XYZ();
+            positions.emplace_back(xyz[0], xyz[1], xyz[2]);
+        }
+
+        if (positions.size() < 2) {
+            _event_slice.pca_eigenvalues[0] = -1;
+            _event_slice.pca_eigenvalues[1] = -1;
+            _event_slice.pca_eigenvalues[2] = -1;
+            _event_slice.pca_principal_dir[0] = 0;
+            _event_slice.pca_principal_dir[1] = 0;
+            _event_slice.pca_principal_dir[2] = 0;
+        } else {
+            TVector3 centroid(0, 0, 0);
+            for (const auto& pos : positions) {
+                centroid += pos;
+            }
+            centroid *= (1.0 / static_cast<double>(positions.size()));
+
+            Eigen::MatrixXd centered(3, positions.size());
+            for (size_t i = 0; i < positions.size(); ++i) {
+                centered(0, i) = positions[i].X() - centroid.X();
+                centered(1, i) = positions[i].Y() - centroid.Y();
+                centered(2, i) = positions[i].Z() - centroid.Z();
+            }
+
+            Eigen::Matrix3d cov = (centered * centered.transpose()) / positions.size();
+
+            Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(cov);
+            if (eigensolver.info() == Eigen::Success) {
+                Eigen::Vector3d eigenvalues = eigensolver.eigenvalues();
+                Eigen::Matrix3d eigenvectors = eigensolver.eigenvectors();
+
+                _event_slice.pca_eigenvalues[0] = eigenvalues(2);
+                _event_slice.pca_eigenvalues[1] = eigenvalues(1);
+                _event_slice.pca_eigenvalues[2] = eigenvalues(0);
+
+                _event_slice.pca_principal_dir[0] = eigenvectors(0, 2);
+                _event_slice.pca_principal_dir[1] = eigenvectors(1, 2);
+                _event_slice.pca_principal_dir[2] = eigenvectors(2, 2);
+            } else {
+                _event_slice.pca_eigenvalues[0] = -1;
+                _event_slice.pca_eigenvalues[1] = -1;
+                _event_slice.pca_eigenvalues[2] = -1;
+                _event_slice.pca_principal_dir[0] = 0;
+                _event_slice.pca_principal_dir[1] = 0;
+                _event_slice.pca_principal_dir[2] = 0;
+            }
+        }
     }
 
     void SliceAnalysis::setBranches(TTree* tree) {
@@ -245,6 +310,9 @@ namespace analysis
         tree->Branch("pattern_hit_completeness", &_event_slice.pattern_hit_completeness, "pattern_hit_completeness/F");
         tree->Branch("pattern_charge_purity", &_event_slice.pattern_charge_purity, "pattern_charge_purity/F");
         tree->Branch("pattern_charge_completeness", &_event_slice.pattern_charge_completeness, "pattern_charge_completeness/F");
+        tree->Branch("slice_total_charge", &_event_slice.total_charge, "slice_total_charge/F");
+        tree->Branch("pca_eigenvalues", _event_slice.pca_eigenvalues, "pca_eigenvalues[3]/F");
+        tree->Branch("pca_principal_dir", _event_slice.pca_principal_dir, "pca_principal_dir[3]/F");
     }
 
     void SliceAnalysis::resetTTree(TTree* tree) {
