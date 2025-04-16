@@ -24,7 +24,7 @@ namespace signature
     };
 
     const std::array<std::string, 8> label_names = {
-        "MIP", "HIP", "shower", "michel", "diffuse", "invisible", "undefined", "cosmic"
+        "undefined", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
     };
 
     std::string label_to_string(Label label) {

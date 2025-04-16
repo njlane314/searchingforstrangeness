@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_trainingimage_background_lambdamuon">
+<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_signal_selectionfilter_lambda">
 ]>
 
 <job>
@@ -33,10 +33,12 @@
   <copy>0</copy>
   <version>prod_&release;</version>
 
+  <!-- Project stages -->
   <stage name="analyse">
-  <inputdef>prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0</inputdef>
+  <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
+  <!--<inputdef>prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0</inputdef>-->
   <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-  <fcl>run_trainingimageanalyser_background_lambdamuon.fcl</fcl>
+  <fcl>run_signal_selectionfilter.fcl</fcl>
   <dirlevels>1</dirlevels>
   <dirsize>100</dirsize>
   <outdir>/pnfs/uboone/scratch/users/nlane/kaon_dl/&release;/&name;/out</outdir>
