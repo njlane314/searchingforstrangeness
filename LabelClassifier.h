@@ -13,14 +13,14 @@
 namespace signature 
 {
     enum class Label {
+        undefined,
+        cosmic,  
         MIP,       
         HIP,       
         shower,    
         michel,    
         diffuse,   
         invisible, 
-        undefined,
-        cosmic  
     };
 
     const std::array<std::string, 8> label_names = {
