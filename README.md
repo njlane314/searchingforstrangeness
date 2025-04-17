@@ -483,3 +483,16 @@ project.py --xml config.xml --stage analyse --submit
 
 - **`setup libtorch <version> -q <qualifiers>`**  
   Configures libtorch for machine learning tasks.
+
+### **Grid Submission**
+
+## NuMI Input Samdefs
+
+- **New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2      # Beam background**
+- **prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2    # EXT/Beam-off background**
+- **prod_strange_resample_fhc_run2_fhc_reco2_reco2         # Enriched strangeness**
+- **make_lambda_overlay_nohadrons_reco2_reco2              # Lambda no-hadrons**
+- **prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0              # Background**
+- **cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2                  # Kaons**
+- **cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
+- **cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
