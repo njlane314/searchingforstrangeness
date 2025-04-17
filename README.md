@@ -23,162 +23,8 @@ _The framework loads a candidate neutrino slice given by Pandora, runs a single 
    - `_hadron_threshold`: Momentum threshold for hadron classification.
 
 - **ImageProcessor**: Creates image representations of detector raw data.
-  - Key classes:
    - `ImageProperties`: Defines dimensions and scaling of images.
    - `Image`: Contains pixel data and metadata for a single image.
-
-### Signature Tools
-
-Each signature tool identifies a specific strange particle topology:
-
-- **KaonShortSignature**: Neutral kaon (\( K^0_s \rightarrow \pi^+ \pi^- \))
-  - Finds \( K^0_s \) (PDG 310) decay vertices.
-  - Identifies daughter pions (PDG ±211).
-  - Creates a signature from the decay products and their interactions.
-
-- **MuonSignature**: Primary muons from neutrino interactions
-  - Detects muons (PDG ±13) with momentum above configurable threshold.
-  - Identifies primary interaction particle.
-
-- **LambdaSignature**: Lambda baryon (\( \Lambda \rightarrow p \pi^- \))
-  - Locates \( \Lambda \) (PDG 3122) decay vertices.
-  - Identifies proton (PDG 2212) and \( \pi^- \) (PDG -211) decay products.
-  - Tracks subsequent interactions of the decay products.
-
-### Analysis Tools
-
-- **WireImageAnalysis**: Converts raw detector signals to images at a consistent resolution. 
-   - `slice_input_wire_images_`: Raw detector signals organised as images.
-   - `slice_truth_wire_images_`: Truth labels corresponding to signature definitions.
-   - `slice_label_wire_images_`: Particle type classification labels, given by NuGraph definition. 
-
-- **NeutrinoAnalysis**: Extracts neutrino properties.
-   - `_event_neutrino`: Structure containing detailed neutrino info. 
-   - `_fs_pdg`, `_fs_energy`: Vectors of final state particle information, rough implementation. 
-
-
-## Configuration System
-
-The framework uses FHiCL (Fermilab Hierarchical Configuration Language) for configuration.
-
-### FHiCL Structure
-
-The main configuration files include:
-
-- **run_signal_selectionfilter.fcl**: Top-level configuration
-  ```fcl
-  process_name: SelectionSignalFilterProcess
-  services: {
-      TFileService: { fileName: "output.root" }
-      # Detector configuration
-      Geometry: @local::microboone_geo
-      DetectorPropertiesService: @local::microboone_detproperties
-      # Space charge correction
-      SpaceCharge.EnableCorrSCE: true
-  }
-  physics: {
-      filters: {
-          selectionfilter: {
-              module_type: SelectionFilter
-              SelectionTool: @local::TruthSignalSelection
-              EventType: "signal"  # Look for signal events only
-              EventClassifier: @local::SharedEventClassifier
-              AnalysisTools: {
-                  neutrino: @local::NeutrinoAnalysis
-                  pattern: @local::PatternAnalysis
-                  wireimage: @local::WireImageAnalysis
-                  # Other analysis tools...
-              }
-          }
-      }
-      trigger_paths: [ e1 ]
-      e1: [ selectionfilter ]
-  }
-  ```
-
-- **selectionconfig.fcl**: Defines tool configurations
-  ```fcl
-  # Signature tool definitions
-  MuonSignature: { tool_type: "MuonSignature" }
-  KaonShortSignature: { tool_type: "KaonShortSignature" }
-  LambdaSignature: { tool_type: "LambdaSignature" }
-  
-  # Analysis tool definitions
-  NeutrinoAnalysis: { tool_type: "NeutrinoAnalysis" }
-  
-  # Event classifier configuration
-  SharedEventClassifier: {
-      SignatureTools: {
-          leptonic: @local::MuonSignature
-          hadronic: @local::LambdaSignature  # Change this to search for different particles
-      }
-      ClarityTools: {
-          completeness: @local::PatternCompleteness
-          # Other clarity metrics...
-      }
-  }
-  
-  # Selection tool definitions
-  TruthSignalSelection: {
-      tool_type: "TruthSignalSelection"
-      EventClassifier: @local::SharedEventClassifier
-      EventType: "signal"
-  }
-  ```
-
-### Key Configuration Points
-
-1. **Event Selection**:
-   - Modify `EventType` to select "signal" or "background" events, avoiding double counting signal events that can appear in background samples. 
-   - Configure `SignatureTools` section to define what combinations of particles constitute your chosen signal. 
-
-2. **Analysis Tools**:
-   - Configure tools from the `AnalysisTools` section.
-   - Each tool produces a different subset of the output data, and can be removed or added. 
-
-## Grid Submission
-
-The project uses XML files to define grid jobs:
-
-```xml
-<job>
-<project name="&name;">
-  <numevents>-1</numevents>
-  <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
-  <larsoft>
-    <tag>&release;</tag>
-    <qual>e17:prof</qual>
-    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/StrangenessCode.tar</local>
-  </larsoft>
-  <stage name="analyse">
-    <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
-    <fcl>run_signal_selectionfilter.fcl</fcl>
-    <outdir>/pnfs/uboone/scratch/users/nlane/kaon_dl/&release;/&name;/out</outdir>
-    <memory>4000</memory>
-    <disk>20GB</disk>
-    <jobsub>--expected-lifetime=24h</jobsub>
-  </stage>
-</project>
-</job>
-```
-
-### Key XML Configuration Points
-
-1. **Job Definition**:
-   - `inputdef`: Specifies the input dataset to process
-   - `fcl`: The FHiCL configuration file to use
-   - `outdir`: Where output files will be stored
-
-2. **Software Setup**:
-   - `tag`: LArSoft release version
-   - `qual`: Build qualifiers (e17:prof)
-   - `local`: Custom code tarball location
-
-To modify this for different analyses:
-1. Change the `name` to describe your analysis
-2. Update the `inputdef` to your desired input dataset
-3. Modify the `fcl` file to change selection criteria
-4. Adjust resource requirements based on job needs
 
 ## Building the Project
 
@@ -327,9 +173,99 @@ hadd -f combined_output.root output_*.root
 rm output_*.root
 ```
 
+## Configuration System
+
+The framework uses FHiCL (Fermilab Hierarchical Configuration Language) for configuration.
+
+### FHiCL Structure
+
+The main configuration files include:
+
+- **run_signal_selectionfilter.fcl**: Top-level configuration
+  ```fcl
+  process_name: SelectionSignalFilterProcess
+  services: {
+      TFileService: { fileName: "output.root" }
+      # Detector configuration
+      Geometry: @local::microboone_geo
+      DetectorPropertiesService: @local::microboone_detproperties
+      # Space charge correction
+      SpaceCharge.EnableCorrSCE: true
+  }
+  physics: {
+      filters: {
+          selectionfilter: {
+              module_type: SelectionFilter
+              SelectionTool: @local::TruthSignalSelection
+              EventType: "signal"  # Look for signal events only
+              EventClassifier: @local::SharedEventClassifier
+              AnalysisTools: {
+                  neutrino: @local::NeutrinoAnalysis
+                  pattern: @local::PatternAnalysis
+                  wireimage: @local::WireImageAnalysis
+                  # Other analysis tools...
+              }
+          }
+      }
+      trigger_paths: [ e1 ]
+      e1: [ selectionfilter ]
+  }
+  ```
+
+- **selectionconfig.fcl**: Defines tool configurations
+  ```fcl
+  # Event classifier configuration
+  SharedEventClassifier: {
+      SignatureTools: {
+          leptonic: @local::MuonSignature
+          hadronic: @local::LambdaSignature  # Change this to search for different particles
+      }
+  }
+  
+  # Selection tool definitions
+  TruthSignalSelection: {
+      tool_type: "TruthSignalSelection"
+      EventClassifier: @local::SharedEventClassifier
+      EventType: "signal"
+  }
+  ```
+
+1. **Event Selection**:
+   - Modify `EventType` to select "signal" or "background" events, avoiding double counting signal events that can appear in background samples. 
+   - Configure `SignatureTools` section to define what combinations of particles constitute your chosen signal definition. 
+
+2. **Analysis Tools**:
+   - Configure tools from the `AnalysisTools` section.
+   - Each tool produces a different subset of the output data, and can be removed or added. 
+
+
 ### **Grid Submission**
 
 To submit jobs to the grid, you can manually run commands to package your code, authenticate, and submit jobs using `project.py`. Below are the key commands and an example.
+
+The project uses XML files to define grid jobs, modify these where necessary:
+
+```xml
+<job>
+<project name="&name;">
+  <numevents>-1</numevents>
+  <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+  <larsoft>
+    <tag>&release;</tag>
+    <qual>e17:prof</qual>
+    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/StrangenessCode.tar</local>
+  </larsoft>
+  <stage name="analyse">
+    <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
+    <fcl>run_signal_selectionfilter.fcl</fcl>
+    <outdir>/pnfs/uboone/scratch/users/nlane/kaon_dl/&release;/&name;/out</outdir>
+    <memory>4000</memory>
+    <disk>20GB</disk>
+    <jobsub>--expected-lifetime=24h</jobsub>
+  </stage>
+</project>
+</job>
+```
 
 #### Key Commands
 
