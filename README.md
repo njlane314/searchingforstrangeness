@@ -169,12 +169,7 @@ The project uses XML files to define grid jobs:
    - `fcl`: The FHiCL configuration file to use
    - `outdir`: Where output files will be stored
 
-2. **Resource Requirements**:
-   - `memory`: Memory allocation per job (4000MB)
-   - `disk`: Disk space per job (20GB)
-   - `expected-lifetime`: Maximum job duration (24h)
-
-3. **Software Setup**:
+2. **Software Setup**:
    - `tag`: LArSoft release version
    - `qual`: Build qualifiers (e17:prof)
    - `local`: Custom code tarball location
@@ -185,10 +180,6 @@ To modify this for different analyses:
 3. Modify the `fcl` file to change selection criteria
 4. Adjust resource requirements based on job needs
 
-Most common changes would be:
-- Switching the signature type in the FHiCL config
-- Changing the input dataset
-- Updating the output directory path\
 ## Building the Project
 
 1. **Set up the environment:**
