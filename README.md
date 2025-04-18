@@ -393,6 +393,9 @@ project.py --xml config.xml --stage analyse --submit
 - **`samweb prestage-dataset --defname=<definition_name>`**  
   Stages a SAM dataset for fast access.  
 
+- **`samweb create-definition my_subset "defname:make_lambda_overlay_nohadrons_reco2_reco2 with limit 100"`**
+   Creates limited dataset 
+
 ---
 
 ### **Job Submission and Monitoring**
@@ -432,3 +435,24 @@ project.py --xml config.xml --stage analyse --submit
 - **cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2                  # Kaons**
 - **cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
 - **cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
+
+
+
+
+source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
+setup larsoft v10_04_07 -q e26:prof
+setup libtorch v2_1_1a -q e26
+setup mrb
+
+cd <ProductionDir>
+mrb newDev
+source localProducts_*/setup
+
+cd srcs
+mrb g ubana
+cd ubana
+git checkout tags/v08_00_00_82
+
+cd $MRB_TOP
+mrbsetenv
+mrb i -j4

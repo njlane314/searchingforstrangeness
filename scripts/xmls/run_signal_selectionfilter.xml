@@ -35,6 +35,7 @@
 
   <!-- Project stages -->
   <stage name="analyse">
+  <!--<inputdef>make_lambda_overlay_nohadrons_reco2_reco2</inputdef>-->
   <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
   <!--<inputdef>prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0</inputdef>-->
   <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
@@ -49,7 +50,7 @@
   <prestart>1</prestart>
   <filelistdef>1</filelistdef>
   <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>1000</numjobs>
+  <numjobs>5</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>
