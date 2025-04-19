@@ -8,7 +8,6 @@ services:
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
-    ExptGeoHelperInterface: @local::microboone_geometry_helper
     Geometry: @local::microboone_geo
     DetectorPropertiesService: @local::microboone_detproperties
     LArProperties: @local::microboone_properties
@@ -36,7 +35,7 @@ physics:
     {
         selectionfilter:
         {
-            module_type: SelectionFilter
+            module_type: StrangenessSelectionFilter
             SelectionTool: @local::TruthSignalSelection
             EventType: "signal"
             EventClassifier: @local::SharedEventClassifier
@@ -45,7 +44,6 @@ physics:
                 pattern: @local::PatternAnalysis
                 slice: @local::SliceAnalysis
                 classification: @local::ClassificationAnalysis
-                hitimage: @local::HitImageAnalysis
                 wireimage: @local::WireImageAnalysis
             }
             

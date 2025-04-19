@@ -9,6 +9,10 @@ cet_build_plugin(
   ROOT::Tree
   larevt::SpaceChargeService
   larpandora::LArPandoraInterface
+  ROOT::Physics
+  larsim::Simulation
+  ROOT::Core
+  lardataobj::MCBase
 )
 
 add_subdirectory(SelectionTools)

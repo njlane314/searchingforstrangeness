@@ -24,6 +24,7 @@
 #include "../CommonFunctions/Containment.h"
 #include "TVector3.h"
 #include "VertexToolBase.h"
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace signature 
 {

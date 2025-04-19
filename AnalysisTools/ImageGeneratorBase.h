@@ -9,7 +9,9 @@
 #include "art/Framework/Principal/Event.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "canvas/Utilities/InputTag.h"
@@ -19,6 +21,7 @@
 #include "TVector3.h"
 #include <unordered_map>
 #include "../CommonFunctions/Types.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 
 namespace analysis 
 {
@@ -47,7 +50,7 @@ namespace analysis
         float _wire_pitch_u, _wire_pitch_v, _wire_pitch_w;
         std::vector<bool> _bad_channel_mask;
         const geo::GeometryCore* _geo;
-        const detinfo::DetectorProperties* _detp;
+        std::unique_ptr<detinfo::DetectorPropertiesData> _detp;
     };
 
     ImageGeneratorBase::ImageGeneratorBase(const fhicl::ParameterSet& pset) {
@@ -71,16 +74,23 @@ namespace analysis
         planes_ = pset.get<std::vector<int>>("Planes", {0, 1, 2});
         width_ = pset.get<std::vector<int>>("Width", std::vector<int>(planes_.size(), 512));
         height_ = pset.get<std::vector<int>>("Height", std::vector<int>(planes_.size(), 512));
+
         _geo = art::ServiceHandle<geo::Geometry>()->provider();
-        _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-        auto const* det_clocks = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
-        double tick_period = det_clocks->TPCClock().TickPeriod();
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+        _detp = std::make_unique<detinfo::DetectorPropertiesData>(
+            art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob()
+        );
+        detinfo::DetectorClocksData det_clocks = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
+
+        double tick_period = det_clocks.TPCClock().TickPeriod();
         double drift_velocity = _detp->DriftVelocity();
         _drift_step = tick_period * drift_velocity * 1e1;
-        _wire_pitch_u = _geo->WirePitch(geo::kU);
-        _wire_pitch_v = _geo->WirePitch(geo::kV);
-        _wire_pitch_w = _geo->WirePitch(geo::kW);
-        size_t n_channels = _geo->Nchannels();
+
+        _wire_pitch_u = wireReadout.Plane(geo::PlaneID(0, 0, geo::kU)).WirePitch();
+        _wire_pitch_v = wireReadout.Plane(geo::PlaneID(0, 0, geo::kV)).WirePitch();
+        _wire_pitch_w = wireReadout.Plane(geo::PlaneID(0, 0, geo::kW)).WirePitch();
+
+        size_t n_channels = wireReadout.Nchannels();
         _bad_channel_mask.assign(n_channels + 1, false);
     }
 

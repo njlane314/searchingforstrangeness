@@ -1,5 +1,4 @@
 #include "reco_uboone_data_mcc9_8.fcl"
-#include "services_microboone.fcl"   
 #include "mcreco.fcl"
 #include "proximityclustering.fcl"
 #include "eventweight_microboone_genie_knobs.fcl"
@@ -59,11 +58,6 @@ WireImageAnalysis: {
     tool_type: "WireImageAnalysis"
     EventClassifier: @local::SharedEventClassifier
     LabelClassifier: @local::SharedLabelClassifier
-}
-
-HitImageAnalysis: {
-    tool_type: "HitImageAnalysis"
-    EventClassifier: @local::SharedEventClassifier
 }
 
 TruthSignalSelection: {

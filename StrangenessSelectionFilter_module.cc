@@ -25,6 +25,7 @@
 #include "CommonFunctions/Corrections.h"
 
 #include "EventClassifier.h"
+#include "lardataobj/MCBase/MCShower.h"
 
 class StrangenessSelectionFilter;
 
