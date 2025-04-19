@@ -3,7 +3,8 @@
 
 #include <iostream>
 #include "SelectionToolBase.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace selection
 {

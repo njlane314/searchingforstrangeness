@@ -33,8 +33,8 @@ namespace signature
             : _fiducialOffsets{pset.get<std::vector<float>>("FiducialOffsets", {10,10,10,10,10,10})},
             _mctProducer{pset.get<art::InputTag>("MCTproducer", "generator")},
             _pattern(), 
-            _clarityResultsPtr(nullptr),
-            _signatureDetectable() {
+            _signatureDetectable(), 
+            _clarityResultsPtr(nullptr) {
             const auto& sigToolsPset = pset.get<fhicl::ParameterSet>("SignatureTools");
             for (const auto& toolLabel : sigToolsPset.get_pset_names()) {
                 auto const& toolPset = sigToolsPset.get<fhicl::ParameterSet>(toolLabel);

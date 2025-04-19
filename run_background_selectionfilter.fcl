@@ -43,7 +43,6 @@ physics:
                 pattern: @local::PatternAnalysis
                 slice: @local::SliceAnalysis
                 classification: @local::ClassificationAnalysis
-                hitimage: @local::HitImageAnalysis
                 wireimage: @local::WireImageAnalysis
             }
             
