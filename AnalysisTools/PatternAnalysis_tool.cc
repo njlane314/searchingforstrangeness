@@ -6,12 +6,12 @@
 #include "TParticlePDG.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
-#include "CommonFunctions/Backtracking.h"
-#include "CommonFunctions/Scores.h"
-#include "CommonFunctions/Corrections.h"
-#include "CommonFunctions/Scatters.h"
-#include "CommonFunctions/Pandora.h"
-#include "CommonFunctions/Types.h"
+#include "../CommonFunctions/Backtracking.h"
+#include "../CommonFunctions/Scores.h"
+#include "../CommonFunctions/Corrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/Pandora.h"
+#include "../CommonFunctions/Types.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
@@ -26,7 +26,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
 #include <iostream>
 #include <vector>
 #include <map>

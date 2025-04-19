@@ -1,8 +1,8 @@
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
-#include <torch/torch.h>
-#include <torch/script.h>
+//#include <torch/torch.h>
+//#include <torch/script.h>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -88,12 +88,12 @@ namespace image
         std::vector<float> data() const {
             return pixels_;
         }
-        const ImageProperties& properties() const { return prop_; }
+        /*const ImageProperties& properties() const { return prop_; }
         torch::Tensor tensor() const {
             return torch::from_blob(const_cast<float*>(pixels_.data()),
                                     {1, 1, (long)prop_.height(), (long)prop_.width()},
                                     torch::kFloat32).clone();
-        }
+        }*/ 
     private:
         ImageProperties prop_;
         std::vector<float> pixels_;

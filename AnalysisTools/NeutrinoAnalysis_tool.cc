@@ -9,12 +9,12 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "TVector3.h"
-#include "CommonFunctions/Backtracking.h"
-#include "CommonFunctions/Scores.h"
-#include "CommonFunctions/Corrections.h"
-#include "CommonFunctions/Scatters.h"
-#include "CommonFunctions/Geometry.h"
-#include "CommonFunctions/Pandora.h"
+#include "../CommonFunctions/Backtracking.h"
+#include "../CommonFunctions/Scores.h"
+#include "../CommonFunctions/Corrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/Geometry.h"
+#include "../CommonFunctions/Pandora.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 namespace analysis

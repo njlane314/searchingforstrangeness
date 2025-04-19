@@ -3,6 +3,7 @@
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "TVector3.h"
 #include <cmath>
 

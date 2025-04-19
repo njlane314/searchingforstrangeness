@@ -2,7 +2,7 @@
 #define SIGNATURE_INTEGRITY_H
 
 #include "ClarityToolBase.h"
-#include "CommonFunctions/Corrections.h"
+#include "../CommonFunctions/Corrections.h"
 
 namespace signature 
 {
@@ -75,13 +75,13 @@ namespace signature
 
         bool checkStart(const art::Ptr<simb::MCParticle>& part, common::PandoraView view) const {
             TVector3 mappedStart = {part->Vx(), part->Vy(), part->Vz()};
-            common::ApplySCEMapping(mappedStart);
+            common::ApplySCEMappingXYZ(mappedStart);
             return isChannelRegionActive(mappedStart, view, _channelActiveRegion);
         }
 
         bool checkEnd(const art::Ptr<simb::MCParticle>& part, common::PandoraView view) const {
             TVector3 mappedEnd = {part->EndX(), part->EndY(), part->EndZ()};
-            common::ApplySCEMapping(mappedEnd);
+            common::ApplySCEMappingXYZ(mappedEnd);
             return isChannelRegionActive(mappedEnd, view, _channelActiveRegion);
         }
     };

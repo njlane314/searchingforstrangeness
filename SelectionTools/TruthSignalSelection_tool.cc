@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include "SelectionToolBase.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
 
 namespace selection
 {

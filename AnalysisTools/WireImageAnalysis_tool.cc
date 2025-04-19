@@ -2,8 +2,8 @@
 #define WIREIMAGEGENERATOR_H
 
 #include "ImageGeneratorBase.h"
-#include "ImageProcessor.h"
-#include "LabelClassifier.h"
+#include "../ImageProcessor.h"
+#include "../LabelClassifier.h"
 #include <vector>
 #include "art/Framework/Principal/Event.h"
 #include "lardataobj/RecoBase/PFParticle.h"
