@@ -13,8 +13,8 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-#include "CommonFunctions/Pandora.h"
-#include "SignatureTools/SignatureToolBase.h"
+#include "../CommonFunctions/Pandora.h"
+#include "../SignatureTools/SignatureToolBase.h"
 
 namespace signature 
 {

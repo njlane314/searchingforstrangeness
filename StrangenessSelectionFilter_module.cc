@@ -17,7 +17,7 @@
 #include "SelectionTools/SelectionToolBase.h"
 #include "AnalysisTools/AnalysisToolBase.h"
 
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "art_root_io/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
 
@@ -25,17 +25,18 @@
 #include "CommonFunctions/Corrections.h"
 
 #include "EventClassifier.h"
+#include "lardataobj/MCBase/MCShower.h"
 
-class SelectionFilter;
+class StrangenessSelectionFilter;
 
-class SelectionFilter : public art::EDFilter {
+class StrangenessSelectionFilter : public art::EDFilter {
 public:
-    explicit SelectionFilter(fhicl::ParameterSet const &p);
+    explicit StrangenessSelectionFilter(fhicl::ParameterSet const &p);
 
-    SelectionFilter(SelectionFilter const &) = delete;
-    SelectionFilter(SelectionFilter &&) = delete;
-    SelectionFilter &operator=(SelectionFilter const &) = delete;
-    SelectionFilter &operator=(SelectionFilter &&) = delete;
+    StrangenessSelectionFilter(StrangenessSelectionFilter const &) = delete;
+    StrangenessSelectionFilter(StrangenessSelectionFilter &&) = delete;
+    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter const &) = delete;
+    StrangenessSelectionFilter &operator=(StrangenessSelectionFilter &&) = delete;
 
     bool filter(art::Event &e) override;
     bool endSubRun(art::SubRun &subrun) override;
@@ -78,7 +79,7 @@ private:
     void ResetTTree();
 };
 
-SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
+StrangenessSelectionFilter::StrangenessSelectionFilter(fhicl::ParameterSet const &p)
     : EDFilter{p},
       _eventClassifier(p.get<fhicl::ParameterSet>("EventClassifier")) {
     _PFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
@@ -96,7 +97,7 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
     _eventType = p.get<std::string>("EventType", "all");
 
     art::ServiceHandle<art::TFileService> tfs;
-    _tree = tfs->make<TTree>("SelectionFilter", "Selection TTree");
+    _tree = tfs->make<TTree>("StrangenessSelectionFilter", "Selection TTree");
     _tree->Branch("selected", &_selected, "selected/I");
     _tree->Branch("run", &_run, "run/I");
     _tree->Branch("sub", &_sub, "sub/I");
@@ -124,7 +125,7 @@ SelectionFilter::SelectionFilter(fhicl::ParameterSet const &p)
         _analysisToolsVec[i]->setBranches(_tree);
 }
 
-void SelectionFilter::ResetTTree() {
+void StrangenessSelectionFilter::ResetTTree() {
     _selected = 0;
     _run = std::numeric_limits<int>::lowest();
     _sub = std::numeric_limits<int>::lowest();
@@ -135,7 +136,7 @@ void SelectionFilter::ResetTTree() {
         _analysisToolsVec[i]->resetTTree(_tree);
 }
 
-bool SelectionFilter::filter(art::Event &e) {
+bool StrangenessSelectionFilter::filter(art::Event &e) {
     this->ResetTTree();
     std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
     
@@ -192,7 +193,7 @@ bool SelectionFilter::filter(art::Event &e) {
     return true;
 }
 
-void SelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col) {
+void StrangenessSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col) {
     _pfpmap.clear();
     unsigned int p = 0;
     for (const auto &pfp_pxy : pfp_pxy_col) {
@@ -202,7 +203,7 @@ void SelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col) {
     return;
 } 
 
-void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v) {
+void StrangenessSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v) {
     auto daughters = pfp_pxy->Daughters();
     slice_v.push_back(pfp_pxy);
 
@@ -218,7 +219,7 @@ void SelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfp
     return;
 } 
 
-bool SelectionFilter::endSubRun(art::SubRun &subrun) {
+bool StrangenessSelectionFilter::endSubRun(art::SubRun &subrun) {
     if ((!_is_data) || (_is_fake_data)) {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
         _pot = subrun.getByLabel(_MCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
@@ -230,4 +231,4 @@ bool SelectionFilter::endSubRun(art::SubRun &subrun) {
     return true;
 }
 
-DEFINE_ART_MODULE(SelectionFilter)
+DEFINE_ART_MODULE(StrangenessSelectionFilter)

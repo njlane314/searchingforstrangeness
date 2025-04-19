@@ -6,12 +6,12 @@
 #include "TParticlePDG.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
-#include "CommonFunctions/Backtracking.h"
-#include "CommonFunctions/Scores.h"
-#include "CommonFunctions/Corrections.h"
-#include "CommonFunctions/Scatters.h"
-#include "CommonFunctions/Pandora.h"
-#include "CommonFunctions/Types.h"
+#include "../CommonFunctions/Backtracking.h"
+#include "../CommonFunctions/Scores.h"
+#include "../CommonFunctions/Corrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/Pandora.h"
+#include "../CommonFunctions/Types.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
@@ -26,7 +26,7 @@
 #include "lardataobj/RecoBase/Track.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
 #include <iostream>
 #include <vector>
 #include <map>
@@ -92,20 +92,20 @@ namespace analysis
 
         art::InputTag _MCPproducer;
         art::InputTag _PFPproducer;
-        art::InputTag _Hproducer;
+        art::InputTag _HITproducer;
         art::InputTag _BacktrackTag;
         art::InputTag _FMproducer;
         art::InputTag _CLSproducer;
     };
 
     PatternAnalysis::PatternAnalysis(const fhicl::ParameterSet &pset)
-        : _MCPproducer(pset.get<art::InputTag>("MCPproducer", "largeant")),
+        : _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"))),
+        _MCPproducer(pset.get<art::InputTag>("MCPproducer", "largeant")),
         _PFPproducer(pset.get<art::InputTag>("PFPproducer", "pandoraPatRec:allOutcomes")),
-        _Hproducer(pset.get<art::InputTag>("Hproducer", "gaushit")),
+        _HITproducer(pset.get<art::InputTag>("Hproducer", "gaushit")),
         _BacktrackTag(pset.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch")),
         _FMproducer(pset.get<art::InputTag>("FMproducer", "pandora")),
-        _CLSproducer(pset.get<art::InputTag>("CLSproducer", "pandora")),
-        _classifier(std::make_unique<signature::EventClassifier>(pset.get<fhicl::ParameterSet>("EventClassifier"))) {
+        _CLSproducer(pset.get<art::InputTag>("CLSproducer", "pandora")) {
             this->configure(pset);
         }
 
@@ -177,7 +177,7 @@ namespace analysis
 
         art::Handle<std::vector<recob::Hit>> hit_handle;
         std::vector<art::Ptr<recob::Hit>> hit_vector;
-        if (e.getByLabel(_Hproducer, hit_handle)) {
+        if (e.getByLabel(_HITproducer, hit_handle)) {
             art::fill_ptr_vector(hit_vector, hit_handle);
             art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> assoc_mc_part(hit_handle, e, _BacktrackTag);
 

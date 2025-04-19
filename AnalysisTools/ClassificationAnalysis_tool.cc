@@ -2,11 +2,11 @@
 #define CLASSIFICATION_ANALYSIS_H
 
 #include "AnalysisToolBase.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
 #include "art/Framework/Principal/Event.h"
-#include "SignatureTools/SignatureToolBase.h"
-#include "ClarityTools/ClarityToolBase.h"
-#include "SignatureTools/VertexToolBase.h"
+#include "../SignatureTools/SignatureToolBase.h"
+#include "../ClarityTools/ClarityToolBase.h"
+#include "../SignatureTools/VertexToolBase.h"
 #include "TTree.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -14,6 +14,7 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace analysis 
 {

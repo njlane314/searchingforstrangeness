@@ -1,38 +1,74 @@
 cet_enable_asserts()
 
-art_make( TOOL_LIBRARIES lardataobj_RecoBase
-                         lardataobj_Simulation
-                         lardataobj_MCBase
-                         nusimdata_SimulationBase
-                         larcorealg_Geometry
-                         larcore_Geometry_Geometry_service
-                         lardata_RecoObjects
-                         lardata_Utilities
-                         larreco_RecoAlg
-                         larpandora_LArPandoraInterface
-                         ${ART_FRAMEWORK_CORE}
-                         ${ART_FRAMEWORK_PRINCIPAL}
-                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                         ${ART_FRAMEWORK_SERVICES_BASIC}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-                         art_Persistency_Common
-                         art_Persistency_Provenance
-                         art_Utilities
-                         canvas
-                         ${MF_MESSAGELOGGER}
-                         ${MF_UTILITIES}
-                         ${FHICLCPP}
-                         ${CETLIB}
-                         cetlib_except
-                         ${Boost_FILESYSTEM_LIBRARY}
-                         ${Boost_SYSTEM_LIBRARY}
-                         ${CLHEP}
-                         ${ROOT_BASIC_LIB_LIST}
-                         ${ROOT_EG}
-                         ${ROOT_MINUIT}
-        )
+cet_make_library(
+  LIBRARY_NAME StrangenessSelectionToolBase INTERFACE
+  SOURCE SelectionToolBase.h
+  LIBRARIES
+  INTERFACE
+    art::Framework_Core
+    art::Framework_Services_Registry
+    art_root_io::TFileService_service
+    fhiclcpp::fhiclcpp
+    ROOT::Tree
+    lardataobj::RecoBase  
+    lardata::RecoBaseProxy
+    nusimdata::SimulationBase
+    lardataobj::MCBase
+)
+
+cet_write_plugin_builder(
+  ubana_tool::SelectionToolBase art::tool Modules
+  INSTALL_BUILDER
+  LIBRARIES CONDITIONAL
+    ubana::SelectionToolBase
+)
+
+include(ubana_tool::SelectionToolBase)
+
+cet_build_plugin(
+  EmptySelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
+
+cet_build_plugin(
+  TruthBackgroundSelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
+
+cet_build_plugin(
+  TruthSignalSelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
 
 install_headers()
 install_source()

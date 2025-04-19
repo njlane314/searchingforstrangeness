@@ -16,11 +16,11 @@ num_files=$2
 fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 
 #samdef=make_k0signal_overlay_testing_nohadrons_reco2_reco2
-#samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
+samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
 #samdef=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0
 #samdef=Run2_FHC_New_Flux_Nu_Overlay_Pandora_reprocess_pandora_reco2_reco2
 #samdef=make_lambda_overlay_nohadrons_reco2_reco2 
-samdef=cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2
+#samdef=cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2
 output_directory="/exp/uboone/data/users/nlane/analysis"
 combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
 tempdir="${output_directory}/temp_root_files"
