@@ -41,6 +41,7 @@ cet_build_plugin(
     larpandora::LArPandoraInterface
     art_root_io::TFileService_service
     larevt::SpaceChargeService
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -54,6 +55,7 @@ cet_build_plugin(
     larpandora::LArPandoraInterface
     art_root_io::TFileService_service
     larevt::SpaceChargeService
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -67,6 +69,7 @@ cet_build_plugin(
     art_root_io::TFileService_service
     larevt::SpaceChargeService
     larevt::SpaceChargeService
+    lardataobj::MCBase
 )
 
 install_headers()

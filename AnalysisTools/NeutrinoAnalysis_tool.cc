@@ -16,6 +16,7 @@
 #include "../CommonFunctions/Geometry.h"
 #include "../CommonFunctions/Pandora.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace analysis
 {

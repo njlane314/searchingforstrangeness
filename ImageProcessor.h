@@ -1,8 +1,6 @@
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
-//#include <torch/torch.h>
-//#include <torch/script.h>
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -23,6 +21,10 @@
 #include "TDirectoryFile.h"
 #include "EventClassifier.h"
 #include "LabelClassifier.h"
+#include "art/Framework/Principal/Event.h"
+#include "larcore/Geometry/WireReadout.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "larcorealg/Geometry/geo_vectors_utils.h"
 
 namespace image 
 {
@@ -88,24 +90,22 @@ namespace image
         std::vector<float> data() const {
             return pixels_;
         }
-        /*const ImageProperties& properties() const { return prop_; }
-        torch::Tensor tensor() const {
-            return torch::from_blob(const_cast<float*>(pixels_.data()),
-                                    {1, 1, (long)prop_.height(), (long)prop_.width()},
-                                    torch::kFloat32).clone();
-        }*/ 
+        geo::View_t view() const { return prop_.view(); }
+        size_t height() const { return prop_.height(); }
+        size_t width() const { return prop_.width(); }
     private:
         ImageProperties prop_;
         std::vector<float> pixels_;
     };
 
-    void constructAllWireImages(const std::vector<ImageProperties>& properties,
+    void constructAllWireImages(const art::Event& e,
+                                const std::vector<ImageProperties>& properties,
                                 const std::vector<art::Ptr<recob::Wire>>& wires,
                                 const art::FindManyP<recob::Hit>& wire_hit_assoc,
                                 const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
                                 const signature::Pattern& pattern,
                                 const std::vector<signature::Label>& particle_labels,
-                                const geo::GeometryCore& geo,
+                                const geo::GeometryCore* geom,
                                 const std::vector<art::Ptr<simb::MCParticle>>& mcp_vec,
                                 const std::vector<bool>& bad_channel_mask,
                                 std::vector<Image>& input_images,
@@ -145,22 +145,24 @@ namespace image
             trackid_to_label[mcp_vec[i]->TrackId()] = particle_labels[i];
         }
 
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout const>()->Get();
 
         for (size_t wire_idx = 0; wire_idx < wires.size(); ++wire_idx) {
             const auto& wire = wires[wire_idx];
             auto ch_id = wire->Channel();
-            //if (ch_id < bad_channel_mask.size() && bad_channel_mask[ch_id]) continue; 
+            if (ch_id < bad_channel_mask.size() && bad_channel_mask[ch_id]) continue; 
 
-            auto wire_ids = geo.ChannelToWire(ch_id);
+            std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
             if (wire_ids.empty()) continue; 
-            auto view = geo.View(wire_ids.front());
+            geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
             size_t view_idx = view - geo::kU; 
 
-            TVector3 wire_center = geo.WireIDToWireGeo(wire_ids.front()).GetCenter();
+            geo::Point_t center = wireReadout.Wire(wire_ids.front()).GetCenter();
+            TVector3 wire_center(center.X(), center.Y(), center.Z());
             double wire_coord = (view == geo::kW) ? wire_center.Z() :
-                            (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
-                                                (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
+                                (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
+                                                    (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
 
             const auto& hits = wire_hit_assoc.at(wire_idx);
 
@@ -169,7 +171,7 @@ namespace image
                 int start_tick = range.begin_index();
                 for (size_t idx = 0; idx < adcs.size(); ++idx) {
                     int tick = start_tick + idx;
-                    double x = det_props->ConvertTicksToX(tick, wire_ids.front());
+                    double x = det_props.ConvertTicksToX(tick, wire_ids.front().planeID());
                     size_t row = properties[view_idx].row(x);
                     size_t col = properties[view_idx].col(wire_coord);
                     if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue; 
@@ -212,39 +214,38 @@ namespace image
         }
     }
 
-    std::vector<Image> constructInputWireImages(const std::vector<ImageProperties>& properties,
-                                            const std::vector<art::Ptr<recob::Wire>>& wires,
-                                            const geo::GeometryCore& geo, 
-                                            const std::vector<bool>& bad_channel_mask) {
+    /*std::vector<Image> constructInputWireImages(const art::Event& e,
+                                                const std::vector<ImageProperties>& properties,
+                                                const std::vector<art::Ptr<recob::Wire>>& wires,
+                                                const geo::GeometryCore* geom,
+                                                const std::vector<bool>& bad_channel_mask) {
         std::vector<Image> input;
         for (const auto& prop : properties) input.emplace_back(prop);
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout const>()->Get();
         for (const auto& wire : wires) {
             auto ch_id = wire->Channel();
             if (ch_id < bad_channel_mask.size() && bad_channel_mask[ch_id]) continue;
-            auto wire_ids = geo.ChannelToWire(ch_id);
+            std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
             if (wire_ids.empty()) continue;
-            auto view = geo.View(wire_ids.front());
+            geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
+            TVector3 wire_center = wireReadout.Wire(wire_ids.front()).GetCenter();
+            float coord = (view == geo::kW) ? wire_center.Z() :
+                        (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
+                                            (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
             for (const auto& range : wire->SignalROI().get_ranges()) {
                 const auto& adcs = range.data();
                 int start_idx = range.begin_index();
                 for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                    geo::PlaneID plane_id(wire_ids.front());
                     int tdc = start_idx + idx;
-                    double x = det_props->ConvertTicksToX(tdc, plane_id);
-                    TVector3 wire_center = geo.Cryostat(wire_ids.front().Cryostat)
-                                                .TPC(wire_ids.front().TPC)
-                                                .Plane(wire_ids.front().Plane)
-                                                .Wire(wire_ids.front().Wire)
-                                                .GetCenter();
-                    float coord = (view == geo::kW) ? wire_center.Z() :
-                                (wire_center.Z() * std::cos((view == geo::kU ? 1 : -1) * 1.04719758034))
-                                - (wire_center.Y() * std::sin((view == geo::kU ? 1 : -1) * 1.04719758034));
+                    double x = det_props.ConvertTicksToX(tdc, wire_ids.front().planeID());
                     for (auto& img : input) {
-                        if (img.properties().view() == view) {
-                            size_t row = img.properties().row(x);
-                            size_t col = img.properties().col(coord);
-                            img.set(row, col, adcs[idx]);
+                        if (img.view() == view) {
+                            size_t row = properties[view - geo::kU].row(x);
+                            size_t col = properties[view - geo::kU].col(coord);
+                            if (row != static_cast<size_t>(-1) && col != static_cast<size_t>(-1)) {
+                                img.set(row, col, adcs[idx]);
+                            }
                         }
                     }
                 }
@@ -253,26 +254,25 @@ namespace image
         return input;
     }
 
-    std::vector<Image> constructTruthWireImages(const std::vector<ImageProperties>& properties,
+    std::vector<Image> constructTruthWireImages(const art::Event& e,
+                                                const std::vector<ImageProperties>& properties,
                                                 const std::vector<art::Ptr<recob::Wire>>& wires,
                                                 const art::FindManyP<recob::Hit>& wire_hit_assoc,
                                                 const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
                                                 const signature::Pattern& pattern,
                                                 const signature::EventClassifier& classifier,
-                                                const geo::GeometryCore& geo,
+                                                const geo::GeometryCore* geom,
                                                 const std::vector<art::Ptr<simb::MCParticle>>& mcp_vec,
                                                 const std::vector<bool>& bad_channel_mask) {
         std::vector<Image> truth;
         truth.reserve(properties.size());
         for (const auto& prop : properties) {
-            truth.emplace_back(prop).clear(signature::kEmptySignature);
+            Image img(prop);
+            img.clear(signature::kEmptySignature);
+            truth.push_back(std::move(img));
         }
 
-        std::array<std::unordered_map<int, signature::SignatureType>, 3> truth_maps{
-            std::unordered_map<int, signature::SignatureType>{},
-            std::unordered_map<int, signature::SignatureType>{},
-            std::unordered_map<int, signature::SignatureType>{}
-        };
+        std::array<std::unordered_map<int, signature::SignatureType>, 3> truth_maps;
         for (const auto& particle : mcp_vec) {
             for (auto& map : truth_maps) map[particle->TrackId()] = signature::kNeutrinoSignature;
         }
@@ -282,7 +282,8 @@ namespace image
             }
         }
 
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout const>()->Get();
 
         for (size_t wire_idx = 0; wire_idx < wires.size(); ++wire_idx) {
             const auto& wire = wires[wire_idx];
@@ -292,45 +293,51 @@ namespace image
             const auto& hits = wire_hit_assoc.at(wire_idx);
             if (hits.empty()) continue;
 
+            std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
+            if (wire_ids.empty()) continue;
+            geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
+            size_t view_idx = view - geo::kU;
+
             signature::SignatureType label = signature::kCosmicSignature;
             for (const auto& hit : hits) {
                 if (auto data = mcp_bkth_assoc.data(hit.key()); !data.empty()) {
-                    auto& map = truth_maps[wire->View() - geo::kU];
+                    auto& map = truth_maps[view_idx];
                     for (size_t i = 0; i < data.size(); ++i) {
-                        if (data[i]->isMaxIDE == 1 && map.find(mcp_bkth_assoc.at(hit.key())[i]->TrackId()) != map.end()) {
-                            label = map[mcp_bkth_assoc.at(hit.key())[i]->TrackId()];
-                            break;
+                        if (data[i]->isMaxIDE == 1) {
+                            int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
+                            if (map.find(track_id) != map.end()) {
+                                label = map[track_id];
+                                break;
+                            }
                         }
                     }
                 }
                 if (label != signature::kCosmicSignature) break;
             }
 
-            auto wire_ids = geo.ChannelToWire(ch_id);
-            if (wire_ids.empty()) continue;
-            auto view = geo.View(wire_ids.front());
-            TVector3 wire_center = geo.WireIDToWireGeo(wire_ids.front()).GetCenter();
+            TVector3 wire_center = wireReadout.Wire(wire_ids.front()).GetCenter();
             double wire_coord = (view == geo::kW) ? wire_center.Z() :
                                 (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
                                                     (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
 
             for (const auto& range : wire->SignalROI().get_ranges()) {
                 int start_tick = range.begin_index();
-                double start_x = det_props->ConvertTicksToX(start_tick, wire_ids.front());
-                double end_x = det_props->ConvertTicksToX(start_tick + range.data().size() - 1, wire_ids.front());
+                double start_x = det_props.ConvertTicksToX(start_tick, wire_ids.front().planeID());
+                double end_x = det_props.ConvertTicksToX(start_tick + range.data().size() - 1, wire_ids.front().planeID());
 
                 for (auto& img : truth) {
-                    if (img.properties().view() != view) continue;
-                    auto [min_x, max_x] = std::make_tuple(img.properties().origin_x(), img.properties().max_x());
+                    if (img.view() != view) continue;
+                    auto min_x = img.origin_x();
+                    auto max_x = img.max_x();
                     if (start_x >= max_x || end_x <= min_x) continue;
 
-                    size_t r_start = img.properties().row(std::max(start_x, min_x));
-                    size_t r_end = img.properties().row(std::min(end_x, max_x));
-                    size_t col = img.properties().col(wire_coord);
+                    size_t r_start = properties[view_idx].row(std::max(start_x, min_x));
+                    size_t r_end = properties[view_idx].row(std::min(end_x, max_x));
+                    size_t col = properties[view_idx].col(wire_coord);
 
                     if (r_start == static_cast<size_t>(-1) || r_end == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
-                    for (size_t r = r_start; r <= r_end && r < img.properties().height() && col < img.properties().width(); ++r) {
+                    for (size_t r = r_start; r <= r_end && r < img.height() && col < img.width(); ++r) {
                         img.set(r, col, static_cast<float>(label), false);
                     }
                 }
@@ -340,13 +347,14 @@ namespace image
         return truth;
     }
 
-    std::vector<Image> constructLabelWireImages(const std::vector<ImageProperties>& properties,
+    std::vector<Image> constructLabelWireImages(const art::Event& e,
+                                                const std::vector<ImageProperties>& properties,
                                                 const std::vector<art::Ptr<recob::Wire>>& wires, 
                                                 const art::FindManyP<recob::Hit>& wire_hit_assoc,
                                                 const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
                                                 const std::vector<signature::Label>& particle_labels, 
                                                 const std::vector<art::Ptr<simb::MCParticle>>& mcp_vec,
-                                                const geo::GeometryCore& geo, 
+                                                const geo::GeometryCore* geom, 
                                                 const std::vector<bool>& bad_channel_mask) {
         std::vector<Image> label_images; 
         for (const auto& prop : properties) {
@@ -355,10 +363,11 @@ namespace image
             label_images.push_back(std::move(img));
         }
 
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+        auto const& wireReadout = art::ServiceHandle<geo::WireReadout const>()->Get();
 
         std::unordered_map<int, signature::Label> trackid_to_label;
-        for (size_t i = 0; i < mcp_vec.size(); ++i) {
+        for (size_t i = 0; i < mcp_vec.size() && i < particle_labels.size(); ++i) {
             trackid_to_label[mcp_vec[i]->TrackId()] = particle_labels[i];  
         }
 
@@ -369,6 +378,10 @@ namespace image
 
             const auto& hits = wire_hit_assoc.at(wire_idx);
             if (hits.empty()) continue;  
+
+            std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
+            if (wire_ids.empty()) continue;
+            geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
 
             signature::Label label = signature::Label::undefined;
             for (const auto& hit : hits) {
@@ -395,37 +408,30 @@ namespace image
 
             if (label == signature::Label::undefined) continue;  
 
-            auto wire_ids = geo.ChannelToWire(ch_id);
-            if (wire_ids.empty()) continue;
-            auto view = geo.View(wire_ids.front());
-            TVector3 wire_center = geo.WireIDToWireGeo(wire_ids.front()).GetCenter();
-            double wire_coord;
-            if (view == geo::kW) {
-                wire_coord = wire_center.Z();
-            } else if (view == geo::kU) {
-                wire_coord = wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034);
-            } else {  
-                wire_coord = wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034);
-            }
+            TVector3 wire_center = wireReadout.Wire(wire_ids.front()).GetCenter();
+            double wire_coord = (view == geo::kW) ? wire_center.Z() :
+                                (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
+                                                    (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
 
             for (const auto& range : wire->SignalROI().get_ranges()) {
                 int start_tick = range.begin_index();
-                double start_x = det_props->ConvertTicksToX(start_tick, wire_ids.front());
-                double end_x = det_props->ConvertTicksToX(start_tick + range.data().size() - 1, wire_ids.front());
+                double start_x = det_props.ConvertTicksToX(start_tick, wire_ids.front().planeID());
+                double end_x = det_props.ConvertTicksToX(start_tick + range.data().size() - 1, wire_ids.front().planeID());
 
                 for (auto& img : label_images) {
-                    if (img.properties().view() != view) continue;  
-                    auto min_x = img.properties().origin_x();
-                    auto max_x = img.properties().max_x();
+                    if (img.view() != view) continue;  
+                    auto min_x = img.origin_x();
+                    auto max_x = img.max_x();
                     if (start_x >= max_x || end_x <= min_x) continue;  
 
-                    size_t r_start = img.properties().row(std::max(start_x, min_x));
-                    size_t r_end = img.properties().row(std::min(end_x, max_x));
-                    size_t col = img.properties().col(wire_coord);
+                    size_t view_idx = view - geo::kU;
+                    size_t r_start = properties[view_idx].row(std::max(start_x, min_x));
+                    size_t r_end = properties[view_idx].row(std::min(end_x, max_x));
+                    size_t col = properties[view_idx].col(wire_coord);
 
                     if (r_start == static_cast<size_t>(-1) || r_end == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
-                    for (size_t r = r_start; r <= r_end && r < img.properties().height() && col < img.properties().width(); ++r) {
+                    for (size_t r = r_start; r <= r_end && r < img.height() && col < img.width(); ++r) {
                         img.set(r, col, static_cast<float>(label), false);
                     }
                 }
@@ -433,14 +439,15 @@ namespace image
         }
 
         return label_images;
-    }
+    }*/
 
-    std::vector<Image> constructTruthHitImages(const std::vector<ImageProperties>& properties,
+    /*std::vector<Image> constructTruthHitImages(const art::Event& e,
+                                               const std::vector<ImageProperties>& properties,
                                                const std::vector<art::Ptr<recob::Hit>>& hits,
                                                const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>& mcp_bkth_assoc,
                                                const signature::Pattern& pattern,
                                                const signature::EventClassifier& classifier,
-                                               const geo::GeometryCore& geo,
+                                               const geo::GeometryCore* geom,
                                                const std::vector<art::Ptr<simb::MCParticle>>& mcp_vec,
                                                const std::vector<bool>& bad_channel_mask) {
         std::vector<Image> truth;
@@ -450,7 +457,7 @@ namespace image
             img.clear(signature::kEmptySignature);
             truth.push_back(std::move(img));
         }
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
         std::unordered_map<int, signature::SignatureType> truth_particles_U;
         std::unordered_map<int, signature::SignatureType> truth_particles_V;
         std::unordered_map<int, signature::SignatureType> truth_particles_W;
@@ -460,12 +467,11 @@ namespace image
             truth_particles_W[particle->TrackId()] = signature::kNeutrinoSignature; 
         }
         for (const auto& [type, sig] : pattern) {
-            for (const auto& particle : sig) 
+            for (const auto& particle : sig) {
                 truth_particles_U[particle->TrackId()] = type;
-            for (const auto& particle : sig) 
                 truth_particles_V[particle->TrackId()] = type;
-            for (const auto& particle : sig) 
                 truth_particles_W[particle->TrackId()] = type;
+            }
         }
         constexpr float angle = 1.04719758034f;
         auto computeCoord = [angle](geo::View_t view, const TVector3& wire_center) -> float {
@@ -479,9 +485,9 @@ namespace image
                 for (int dc = -half; dc <= half; ++dc) {
                     int new_row = static_cast<int>(row) + dr;
                     int new_col = static_cast<int>(col) + dc;
-                    if (new_row < 0 || new_row >= static_cast<int>(img.properties().height()))
+                    if (new_row < 0 || new_row >= static_cast<int>(img.height()))
                         continue;
-                    if (new_col < 0 || new_col >= static_cast<int>(img.properties().width()))
+                    if (new_col < 0 || new_col >= static_cast<int>(img.width()))
                         continue;
                     if (img.get(new_row, new_col) != 0.0f) 
                         img.set(new_row, new_col, value, false);
@@ -492,20 +498,16 @@ namespace image
             auto ch_id = hit->Channel();
             if (ch_id < bad_channel_mask.size() && bad_channel_mask[ch_id]) continue;
             geo::View_t view = hit->View();
-            double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
-            TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
-                                        .TPC(hit->WireID().TPC)
-                                        .Plane(hit->WireID().Plane)
-                                        .Wire(hit->WireID().Wire)
-                                        .GetCenter();
+            double x = det_props.ConvertTicksToX(hit->PeakTime(), hit->WireID().planeID());
+            TVector3 wire_center = geom->Wire(hit->WireID()).GetCenter();
             float transformed_coord = computeCoord(view, wire_center);
             for (auto& img : truth) {
-                if (img.properties().view() != view) continue;
-                size_t row = img.properties().row(x);
-                size_t col = img.properties().col(transformed_coord);
+                if (img.view() != view) continue;
+                size_t row = img.row(x);
+                size_t col = img.col(transformed_coord);
                 if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1))
                     continue;
-                size_t ker = img.properties().kernel();
+                size_t ker = img.kernel();
                 applyKernel(img, row, col, ker, static_cast<float>(signature::kCosmicSignature));
             }
         }
@@ -552,22 +554,18 @@ namespace image
                 }
                 if (!found) 
                     continue;
-                double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
-                TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
-                                            .TPC(hit->WireID().TPC)
-                                            .Plane(hit->WireID().Plane)
-                                            .Wire(hit->WireID().Wire)
-                                            .GetCenter();
+                double x = det_props.ConvertTicksToX(hit->PeakTime(), hit->WireID().planeID());
+                TVector3 wire_center = geom->Wire(hit->WireID()).GetCenter();
                 geo::View_t view = hit->View();
                 float transformed_coord = computeCoord(view, wire_center);
                 for (auto& img : truth) {
-                    if (img.properties().view() != view) 
+                    if (img.view() != view) 
                         continue;
-                    size_t row = img.properties().row(x);
-                    size_t col = img.properties().col(transformed_coord);
+                    size_t row = img.row(x);
+                    size_t col = img.col(transformed_coord);
                     if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1))
                         continue;
-                    size_t ker = img.properties().kernel();
+                    size_t ker = img.kernel();
                     applyKernel(img, row, col, ker, static_cast<float>(label));
                 }
             } catch (const std::out_of_range&) {
@@ -577,29 +575,26 @@ namespace image
         return truth;
     }
 
-    std::vector<Image> constructInputHitImages(const std::vector<ImageProperties>& properties,
-                                                 const std::vector<art::Ptr<recob::Hit>>& hits,
-                                                 const geo::GeometryCore& geo) {
+    std::vector<Image> constructInputHitImages(const art::Event& e,
+                                               const std::vector<ImageProperties>& properties,
+                                               const std::vector<art::Ptr<recob::Hit>>& hits,
+                                               const geo::GeometryCore* geom) {
         std::vector<Image> input;
         for (const auto& prop : properties) {
             input.emplace_back(prop);
         }
-        auto const* det_props = lar::providerFrom<detinfo::DetectorPropertiesService>();
+        auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
         for (const auto& hit : hits) {
             geo::View_t view = hit->View();
-            double x = det_props->ConvertTicksToX(hit->PeakTime(), hit->WireID());
-            TVector3 wire_center = geo.Cryostat(hit->WireID().Cryostat)
-                                       .TPC(hit->WireID().TPC)
-                                       .Plane(hit->WireID().Plane)
-                                       .Wire(hit->WireID().Wire)
-                                       .GetCenter();
+            double x = det_props.ConvertTicksToX(hit->PeakTime(), hit->WireID().planeID());
+            TVector3 wire_center = geom->Wire(hit->WireID()).GetCenter();
             float coord = (view == geo::kW) ? wire_center.Z() :
                           (view == geo::kU) ? (wire_center.Z() * cos(1.04719758034) - wire_center.Y() * sin(1.04719758034)) :
                                               (wire_center.Z() * cos(-1.04719758034) - wire_center.Y() * sin(-1.04719758034));
             for (auto& img : input) {
-                if (img.properties().view() == view) {
-                    size_t row = img.properties().row(x);
-                    size_t col = img.properties().col(coord);
+                if (img.view() == view) {
+                    size_t row = img.row(x);
+                    size_t col = img.col(coord);
                     if (row != static_cast<size_t>(-1) && col != static_cast<size_t>(-1)) {
                         img.set(row, col, hit->Integral(), true); 
                     }
@@ -607,7 +602,7 @@ namespace image
             }
         }
         return input;
-    }
+    }*/
 
     std::vector<std::vector<float>> extractImages(const std::vector<image::Image>& images) {
         std::vector<std::vector<float>> data;

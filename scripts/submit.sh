@@ -19,6 +19,10 @@ xml_config_file=$1
 stage=$2
 skip_tarball=${3:-false}
 
+export TARBALL_NAME="StrangenessCode.tar"
+export TARBALL_DEST="/pnfs/uboone/resilient/users/$USER/tarballs/"
+export SEARCH_TOP="$MRB_TOP/srcs/ubana/ubana/searchingforstrangeness/"
+
 if [ -z "$TARBALL_NAME" ] || [ -z "$TARBALL_DEST" ]; then
     echo -e "${RED}-- Error: TARBALL_NAME or TARBALL_DEST is not set. Please source the setup script.${DEFAULT}"
     return 1

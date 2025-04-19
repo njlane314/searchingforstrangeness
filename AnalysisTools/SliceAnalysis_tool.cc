@@ -24,6 +24,7 @@
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "../EventClassifier.h"
 #include <Eigen/Dense>
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace analysis 
 {

@@ -18,6 +18,7 @@ cet_write_plugin_builder(
   ubana::AnalysisToolBase
   lardata::RecoBaseProxy
   lardataobj::RecoBase
+  lardataobj::MCBase
 )
 
 include(ubana_tool::AnalysisToolBase)
@@ -31,6 +32,10 @@ cet_build_plugin(
     larcore::Geometry_Geometry_service  
     larpandora::LArPandoraInterface
     larevt::SpaceChargeService
+    larsim::Simulation           
+    ROOT::Core                   
+    ROOT::Physics
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -44,6 +49,9 @@ cet_build_plugin(
     lardataalg::DetectorInfo
     lardata::Utilities
     larpandora::LArPandoraInterface
+    larsim::Simulation           
+    ROOT::Core      
+    lardataobj::MCBase             
 )
 
 cet_build_plugin(
@@ -56,6 +64,9 @@ cet_build_plugin(
     larpandora::LArPandoraInterface
     ROOT::Physics
     larevt::SpaceChargeService
+    larsim::Simulation           
+    ROOT::Core    
+    lardataobj::MCBase               
 )
 
 cet_build_plugin(
@@ -70,6 +81,10 @@ cet_build_plugin(
     larevt::SpaceChargeService
     lardata::DetectorClocksService
     larpandora::LArPandoraInterface
+    larsim::Simulation           
+    ROOT::Core                   
+    ROOT::Physics
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -84,6 +99,10 @@ cet_build_plugin(
     ROOT::Tree
     larpandora::LArPandoraInterface
     larevt::SpaceChargeService
+    larsim::Simulation           
+    ROOT::Core                   
+    ROOT::Physics
+    lardataobj::MCBase
 )
 
 install_headers()

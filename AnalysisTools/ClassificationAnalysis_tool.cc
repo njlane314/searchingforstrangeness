@@ -14,6 +14,7 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include "lardataobj/MCBase/MCShower.h"
 
 namespace analysis 
 {

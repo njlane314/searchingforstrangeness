@@ -13,6 +13,7 @@ cet_make_library(
     lardataobj::RecoBase  
     lardata::RecoBaseProxy
     nusimdata::SimulationBase
+    lardataobj::MCBase
 )
 
 cet_write_plugin_builder(
@@ -35,6 +36,8 @@ cet_build_plugin(
     nusimdata::SimulationBase
     larpandora::LArPandoraInterface
     larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -48,6 +51,8 @@ cet_build_plugin(
     nusimdata::SimulationBase
     larpandora::LArPandoraInterface
     larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
 )
 
 cet_build_plugin(
@@ -61,6 +66,8 @@ cet_build_plugin(
     nusimdata::SimulationBase
     larpandora::LArPandoraInterface
     larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
 )
 
 install_headers()
