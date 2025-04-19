@@ -2,8 +2,8 @@
 #define IMAGEGENERATORBASE_H
 
 #include "AnalysisToolBase.h"
-#include "EventClassifier.h"
-#include "ImageProcessor.h"
+#include "../EventClassifier.h"
+#include "../ImageProcessor.h"
 #include <vector>
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Principal/Event.h"
@@ -15,10 +15,10 @@
 #include "canvas/Utilities/InputTag.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "CommonFunctions/Pandora.h"
+#include "../CommonFunctions/Pandora.h"
 #include "TVector3.h"
 #include <unordered_map>
-#include "CommonFunctions/Types.h"
+#include "../CommonFunctions/Types.h"
 
 namespace analysis 
 {

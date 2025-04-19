@@ -1,54 +1,73 @@
 cet_enable_asserts()
 
-art_make( TOOL_LIBRARIES lardataobj_RecoBase
-                         lardataobj_Simulation
-                         lardataobj_MCBase
-                         lardataobj_AnalysisBase
-                         nusimdata_SimulationBase
-                         larcorealg_Geometry
-                         larcore_Geometry_Geometry_service
-                         larpandora_LArPandoraInterface
-                         lardata_RecoObjects
-                         lardata_Utilities
-                         larreco_RecoAlg
-                         larsim_EventWeight_Base
-                         ${ART_FRAMEWORK_CORE}
-                         ${ART_FRAMEWORK_PRINCIPAL}
-                         ${ART_FRAMEWORK_SERVICES_REGISTRY}
-                         ${ART_FRAMEWORK_SERVICES_BASIC}
-                         ${ART_FRAMEWORK_SERVICES_SYSTEM}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
-                         ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
-                         art_Persistency_Common
-                         art_Persistency_Provenance
-                         art_Utilities
-                         canvas
-                         hep_concurrency
-                         ${MF_MESSAGELOGGER}
-                         ${MF_UTILITIES}
-                         ${FHICLCPP}
-                         ${CETLIB}
-                         cetlib_except
-                         ${Boost_FILESYSTEM_LIBRARY}
-                         ${Boost_SYSTEM_LIBRARY}
-                         ${CLHEP}
-                         ${ROOT_BASIC_LIB_LIST}
-                         ${ROOT_EG}
-                         ${ROOT_MINUIT}
-                         ubreco_ShowerReco_ProximityClustering_Algorithms
-                         uboonecode_uboone_XGBoost
-                         art_Persistency_Common
-                         art_Framework_Services_System_TriggerNamesService_service
-                         ubreco_SelectionTool_OpT0FinderBase
-                         ubreco_SelectionTool_OpT0FinderAlgorithms
-                         ubevt_Utilities
-			 larevt_CalibrationDBI_IOVData
-                         lardataobj_RawData
-                         ubobj_Trigger
-                         ubreco_BlipRecoAlg
-           LIB_LIBRARIES ubreco_BlipRecoAlg
-        )
+cet_make_library(
+  LIBRARY_NAME ClarityToolBase INTERFACE
+  SOURCE ClarityToolBase.h
+  LIBRARIES
+  INTERFACE
+    art::Framework_Core
+    art::Framework_Principal
+    art::Persistency_Common
+    art::Utilities
+    canvas::canvas
+    fhiclcpp::fhiclcpp
+    cetlib::cetlib
+    cetlib_except::cetlib_except
+    larcore::Geometry_Geometry_service
+    lardataobj::RecoBase
+    nusimdata::SimulationBase
+    ROOT::Core
+    ROOT::Physics
+    art_root_io::TFileService_service
+)
+
+cet_write_plugin_builder(
+  ubana_tool::ClarityToolBase art::tool Modules
+  INSTALL_BUILDER
+  LIBRARIES CONDITIONAL
+    ubana::ClarityToolBase
+)
+
+include(ubana_tool::ClarityToolBase)
+
+cet_build_plugin(
+  HitExclusivity ubana_tool::ClarityToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    nusimdata::SimulationBase
+    larcore::Geometry_Geometry_service
+    larpandora::LArPandoraInterface
+    art_root_io::TFileService_service
+    larevt::SpaceChargeService
+)
+
+cet_build_plugin(
+  PatternCompleteness ubana_tool::ClarityToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    nusimdata::SimulationBase
+    larcore::Geometry_Geometry_service
+    larpandora::LArPandoraInterface
+    art_root_io::TFileService_service
+    larevt::SpaceChargeService
+)
+
+cet_build_plugin(
+  SignatureIntegrity ubana_tool::ClarityToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    nusimdata::SimulationBase
+    larcore::Geometry_Geometry_service
+    larpandora::LArPandoraInterface
+    art_root_io::TFileService_service
+    larevt::SpaceChargeService
+    larevt::SpaceChargeService
+)
 
 install_headers()
 install_source()

@@ -10,11 +10,11 @@
 #include "TParticlePDG.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TVector3.h"
-#include "CommonFunctions/Backtracking.h"
-#include "CommonFunctions/Scores.h"
-#include "CommonFunctions/Corrections.h"
-#include "CommonFunctions/Scatters.h"
-#include "CommonFunctions/Pandora.h"
+#include "../CommonFunctions/Backtracking.h"
+#include "../CommonFunctions/Scores.h"
+#include "../CommonFunctions/Corrections.h"
+#include "../CommonFunctions/Scatters.h"
+#include "../CommonFunctions/Pandora.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
@@ -22,7 +22,7 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "EventClassifier.h"
+#include "../EventClassifier.h"
 #include <Eigen/Dense>
 
 namespace analysis 
