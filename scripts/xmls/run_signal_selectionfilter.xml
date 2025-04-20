@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_signal_selectionfilter_lambda">
+<!ENTITY name "nlane_prod_strange_resample_fhc_run2_fhc_reco2_reco2_signal_selectionfilter_lambda_TEST">
 ]>
 
 <job>
@@ -25,8 +25,8 @@
   <!-- Larsoft information -->
   <larsoft>
     <tag>&release;</tag>
-    <qual>e17:prof</qual>
-    <local>/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/StrangenessCode.tar</local>
+    <qual>e26:prof</qual>
+    <local>/pnfs/uboone/resilient/users/nlane/tarballs/StrangenessCode.tar</local>
   </larsoft>
   
   <check>1</check>
@@ -35,10 +35,7 @@
 
   <!-- Project stages -->
   <stage name="analyse">
-  <!--<inputdef>make_lambda_overlay_nohadrons_reco2_reco2</inputdef>-->
   <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
-  <!--<inputdef>prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0</inputdef>-->
-  <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
   <fcl>run_signal_selectionfilter.fcl</fcl>
   <dirlevels>1</dirlevels>
   <dirsize>100</dirsize>
@@ -54,7 +51,6 @@
   <memory>4000</memory>
   <disk>20GB</disk>
   <maxfluxfilemb>0</maxfluxfilemb>
-  <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/cthorpe/HyperonCode/misc/badchannels.txt</jobsub>
   </stage>
 
   <!-- file type -->
