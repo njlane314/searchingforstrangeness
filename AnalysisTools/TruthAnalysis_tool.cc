@@ -31,7 +31,7 @@ namespace analysis
 
         enum class EventCategory {
             k_data = 0,
-            k_out_active = 1,                               
+            k_external = 1,                               
             k_nc = 2,                                   
             k_nu_e_cc = 3,                
             k_nu_mu_cc_with_strange = 4,  
@@ -43,7 +43,6 @@ namespace analysis
         };
 
         std::string fMCTproducer;
-        TTree* _mcf_tree;
 
         float _mcf_nu_e;
         float _mcf_lep_e;
@@ -176,6 +175,11 @@ namespace analysis
         }
 
         auto const& mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
+        if (mct_h->empty()) {
+            _event_category = static_cast<int>(EventCategory::k_external);
+            return;
+        }
+
         auto mct = mct_h->at(0);
         auto neutrino = mct.GetNeutrino();
         auto nu = neutrino.Nu();
@@ -215,7 +219,7 @@ namespace analysis
         }
 
         if (!_mcf_actvol) {
-            _event_category = static_cast<int>(EventCategory::k_out_active);
+            _event_category = static_cast<int>(EventCategory::k_external);
         } else {
             if (neutrino.CCNC() == 1) { // Neutral current
                 _event_category = static_cast<int>(EventCategory::k_nc);
