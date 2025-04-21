@@ -1,3 +1,6 @@
+#ifndef SELECTION_FIDUCIALVOLUME_CXX
+#define SELECTION_FIDUCIALVOLUME_CXX
+
 #include <iostream>
 #include "SelectionToolBase.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -102,6 +105,8 @@ namespace selection
         m_reco_nu_vtx_z = std::numeric_limits<double>::min();
         return false;
     }
+
+    DEFINE_ART_CLASS_TOOL(FiducialVolumeSelection)
 }
 
-DEFINE_ART_CLASS_TOOL(selection::FiducialVolumeSelection)
+#endif

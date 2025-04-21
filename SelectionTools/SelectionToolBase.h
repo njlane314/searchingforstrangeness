@@ -1,5 +1,5 @@
-#ifndef SELECTIONTOOLBASE_H
-#define SELECTIONTOOLBASE_H
+#ifndef SELECTION_TOOLBASE_H
+#define SELECTION_TOOLBASE_H
 
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
