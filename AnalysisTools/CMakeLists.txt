@@ -1,7 +1,7 @@
 cet_enable_asserts()
 
 cet_make_library(
-  LIBRARY_NAME StrangenessAnalysisToolBase INTERFACE
+  LIBRARY_NAME _AnalysisToolBase INTERFACE
   SOURCE AnalysisToolBase.h
   LIBRARIES
   INTERFACE

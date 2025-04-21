@@ -1,5 +1,5 @@
 cet_build_plugin(
-  StrangenessSelectionFilter art::EDFilter
+  EventSelectionFilter art::EDFilter
   LIBRARIES
   PRIVATE
   lardata::Utilities
@@ -17,9 +17,6 @@ cet_build_plugin(
 
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
-add_subdirectory(SignatureTools)
-add_subdirectory(ClarityTools)
-add_subdirectory(job)
 
 install_headers()
 install_fhicl()

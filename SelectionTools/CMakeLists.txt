@@ -1,7 +1,7 @@
 cet_enable_asserts()
 
 cet_make_library(
-  LIBRARY_NAME StrangenessSelectionToolBase INTERFACE
+  LIBRARY_NAME _SelectionToolBase INTERFACE
   SOURCE SelectionToolBase.h
   LIBRARIES
   INTERFACE
@@ -41,7 +41,7 @@ cet_build_plugin(
 )
 
 cet_build_plugin(
-  TruthBackgroundSelection ubana_tool::SelectionToolBase
+  FiducialVolumeSelection ubana_tool::SelectionToolBase
   LIBRARIES
   PRIVATE
     art::Framework_Core
@@ -56,7 +56,37 @@ cet_build_plugin(
 )
 
 cet_build_plugin(
-  TruthSignalSelection ubana_tool::SelectionToolBase
+  TopologySelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
+
+cet_build_plugin(
+  ImageSelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
+
+cet_build_plugin(
+  ContrastiveSelection ubana_tool::SelectionToolBase
   LIBRARIES
   PRIVATE
     art::Framework_Core
