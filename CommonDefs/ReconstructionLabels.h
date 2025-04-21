@@ -13,7 +13,7 @@
 namespace reco_labels 
 {
     enum class ReconstructionLabel {
-        undefined,
+        empty,
         cosmic,  
         MIP,       
         HIP,       
@@ -24,7 +24,7 @@ namespace reco_labels
     };
 
     const std::array<std::string, 8> label_names = {
-        "undefined", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
+        "empty", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
     };
 
     inline std::string label_to_string(ReconstructionLabel label) {
@@ -49,11 +49,11 @@ namespace reco_labels
             id_to_index[particles[i].TrackId()] = i;
         }
 
-        std::vector<ReconstructionLabel> particle_labels(particles.size(), ReconstructionLabel::undefined);
+        std::vector<ReconstructionLabel> particle_labels(particles.size(), ReconstructionLabel::empty);
 
         for (size_t i = 0; i < particles.size(); ++i) {
             if (particles[i].Mother() == 0) {
-                process_particle(i, particles, ReconstructionLabel::undefined, particle_labels, id_to_index, gamma_threshold, hadron_threshold);
+                process_particle(i, particles, ReconstructionLabel::empty, particle_labels, id_to_index, gamma_threshold, hadron_threshold);
             }
         }
         return particle_labels;
@@ -89,12 +89,12 @@ namespace reco_labels
         double gamma_threshold,
         double hadron_threshold
     ) {
-        if (sl_from_parent != ReconstructionLabel::undefined) {
+        if (sl_from_parent != ReconstructionLabel::empty) {
             return {sl_from_parent, sl_from_parent};
         }
 
         ReconstructionLabel sl = ReconstructionLabel::invisible;  
-        ReconstructionLabel slc = ReconstructionLabel::undefined; 
+        ReconstructionLabel slc = ReconstructionLabel::empty; 
 
         int pdg = part.PdgCode();
         double momentum = part.P();
