@@ -67,6 +67,22 @@ _The framework loads a candidate neutrino slice given by Pandora, runs a single 
 
    - Clones the `ubana` repository into the `srcs/ubana` directory using the `mrb` tool.
 
+
+   cd srcs/ubana
+   vim CMakeLists.txt 
+
+   And modify the compiler flags so that it is this: 
+   
+cet_set_compiler_flags(DIAGS CAUTIOUS
+  #WERROR
+  NO_UNDEFINED
+  ALLOW_DEPRECATIONS
+  EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs -Wno-expansion-to-defined -Wno-variadic-macros -Wno-pedantic 
+  #-Wno-error=unused-variable 
+)
+
+i.e. comment out #WERROR and add -Wno-variadic-macros -Wno-pedantic 
+
 4. **Clone additional repository:**
 
    ```bash

@@ -41,3 +41,4 @@ Sandbox/*
 !Sandbox/.keep
 
 run_subrun_event_log.txt
+job/*.xml

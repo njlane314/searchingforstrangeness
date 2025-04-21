@@ -1,0 +1,114 @@
+#include "selectionconfig.fcl"
+
+process_name: SelectionSignalFilterProcess
+
+services:
+{
+    TFileService: { fileName: "output.root" }
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source:
+{
+    module_type: RootInput
+    maxEvents: -1
+}
+
+physics:
+{
+    producers:
+    {
+        imageproducer:
+        {
+            module_type: ImageProducer
+            SelectionFilterLabel: "selectionfilterA"
+            PfpTag: "pandora"  # Adjust to your PFParticle producer
+            WireTag: "wires"
+            HitTag: "hits"
+            MCParticleTag: "mcparticles"
+            ADCThreshold: 10.0
+            ImageProperties: [
+                { center_x: 0.0, center_y: 0.0, width: 800, height: 600, pixel_h: 0.1, pixel_w: 0.1, view: 0, kernel: 1 },  # kU
+                { center_x: 0.0, center_y: 0.0, width: 800, height: 600, pixel_h: 0.1, pixel_w: 0.1, view: 1, kernel: 1 },  # kV
+                { center_x: 0.0, center_y: 0.0, width: 800, height: 600, pixel_h: 0.1, pixel_w: 0.1, view: 2, kernel: 1 }   # kW
+            ]
+        }
+        selectionaggregator:
+        {
+            module_type: SelectionAggregator
+            filter_labels: [ "selectionfilterA", "selectionfilterB" ]
+            use_and: true
+        }
+    }
+    filters:
+    {
+        selectionfilterA:
+        {
+            module_type: StrangenessSelectionFilter
+            SelectionTool: @local::TruthSignalSelection
+            Filter: true
+            TreeName: "SelectionA"
+            EventType: "signal"
+            EventClassifier: @local::SharedEventClassifier
+            AnalysisTools: {
+                neutrino: @local::NeutrinoAnalysis
+                pattern: @local::PatternAnalysis
+                slice: @local::SliceAnalysis
+                classification: @local::ClassificationAnalysis
+                wireimage: @local::WireImageAnalysis
+            }
+        }
+        selectionfilterB:
+        {
+            module_type: StrangenessSelectionFilter
+            SelectionTool: @local::AnotherSelectionTool
+            Filter: true
+            TreeName: "SelectionB"
+            EventType: "signal"
+            EventClassifier: @local::SharedEventClassifier
+            AnalysisTools: {
+                neutrino: @local::NeutrinoAnalysis
+                pattern: @local::PatternAnalysis
+                slice: @local::SliceAnalysis
+                classification: @local::ClassificationAnalysis
+                wireimage: @local::WireImageAnalysis
+            }
+        }
+        imagebasedfilterA:
+        {
+            module_type: ImageBasedSelectionFilter  # Hypothetical module
+            ImageTag: "imageproducer:inputImages"
+            ImageTruthTag: "imageproducer:truthImages"
+            ImageLabelTag: "imageproducer:labelImages"
+            # Add parameters for image-based selection
+        }
+        imagebasedfilterB:
+        {
+            module_type: AnotherImageBasedSelectionFilter  # Hypothetical module
+            ImageTag: "imageproducer:inputImages"
+            ImageTruthTag: "imageproducer:truthImages"
+            ImageLabelTag: "imageproducer:labelImages"
+            # Add parameters for image-based selection
+        }
+    }
+    trigger_paths: [ f1, p1, f2 ]
+    end_paths: [ ]
+    f1: [ selectionfilterA, selectionfilterB ]
+    p1: [ selectionaggregator, imageproducer ]
+    f2: [ imagebasedfilterA, imagebasedfilterB ]
+}

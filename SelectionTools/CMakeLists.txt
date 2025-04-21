@@ -1,7 +1,11 @@
 cet_enable_asserts()
 
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+include_directories(${TORCH_INCLUDE_DIRS})
+
 cet_make_library(
-  LIBRARY_NAME StrangenessSelectionToolBase INTERFACE
+  LIBRARY_NAME _SelectionToolBase INTERFACE
   SOURCE SelectionToolBase.h
   LIBRARIES
   INTERFACE
@@ -41,7 +45,7 @@ cet_build_plugin(
 )
 
 cet_build_plugin(
-  TruthBackgroundSelection ubana_tool::SelectionToolBase
+  FiducialVolumeSelection ubana_tool::SelectionToolBase
   LIBRARIES
   PRIVATE
     art::Framework_Core
@@ -56,7 +60,7 @@ cet_build_plugin(
 )
 
 cet_build_plugin(
-  TruthSignalSelection ubana_tool::SelectionToolBase
+  TopologySelection ubana_tool::SelectionToolBase
   LIBRARIES
   PRIVATE
     art::Framework_Core
@@ -68,6 +72,43 @@ cet_build_plugin(
     larevt::SpaceChargeService
     larsim::Simulation
     lardataobj::MCBase
+    ubana::XGBoost
+)
+
+cet_build_plugin(
+  ImageSelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+)
+
+cet_build_plugin(
+  ContrastiveSelection ubana_tool::SelectionToolBase
+  LIBRARIES
+  PRIVATE
+    art::Framework_Core
+    lardataobj::RecoBase
+    lardata::RecoBaseProxy
+    larcore::Geometry_Geometry_service
+    nusimdata::SimulationBase
+    larpandora::LArPandoraInterface
+    larevt::SpaceChargeService
+    larsim::Simulation
+    lardataobj::MCBase
+    ${TORCH_LIBRARIES}
+)
+
+set_source_files_properties(
+    ContrastiveSelection_tool.cc
+    PROPERTIES COMPILE_FLAGS "-Wno-error=variadic-macros"
 )
 
 install_headers()
