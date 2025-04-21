@@ -1,9 +1,9 @@
 #!/bin/bash
 
-export MRB_BOT=$(pwd)
+export WRK_DIR=$(pwd)
 cd $MRB_TOP
 
 mrbsetenv
 mrb i -j10 
 
-cd $MRB_BOT
+cd $WRK_DIR
