@@ -19,11 +19,16 @@
 #include "TVector3.h"
 #include "CommonDefs/Image.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larcore/Geometry/WireReadout.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "CommonFunctions/Pandora.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "SimpleLabelClassifier.h"
+#include "PrimaryLabeler.h"
 
 class EventSelectionFilter : public art::EDFilter {
 public:
@@ -49,12 +54,14 @@ private:
     art::InputTag fMCTproducer;
     art::InputTag fWIREproducer;
     art::InputTag fDeadChannelTag;
+    std::string fBackTrackerLabel;  
+    double fGammaThreshold;         
+    double fHadronThreshold;        
 
     bool _verbose;
     bool _data;
     bool _fake_data;
     bool _filter;
-    bool _process_signal;
 
     TTree *_tree;
     int _run;
@@ -91,10 +98,23 @@ private:
     void printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList);
     void AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void ResetTTree();
+
     void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
+
     std::vector<ProxyPfpElem_t> collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy);
-    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice);
-    std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
+
+    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, 
+                                                        const std::vector<ProxyPfpElem_t>& neutrino_slice);
+
+    std::pair<double, double> calculateCentroid(const art::Event& e, 
+                                                common::PandoraView view, 
+                                                const std::vector<art::Ptr<recob::Hit>>& hits);
+
+    void constructImages(const art::Event& e,
+                        const std::vector<ImageProperties>& properties,
+                        std::vector<Image>& calo_images,
+                        std::vector<Image>& reco_images,
+                        std::vector<Image>& label_images);
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
@@ -110,12 +130,16 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fDeadChannelTag = p.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
+    fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
+    fGammaThreshold = p.get<double>("GammaThreshold", 0.1);         
+    fHadronThreshold = p.get<double>("HadronThreshold", 0.1);
+
     _verbose = p.get<bool>("Verbose");
     _data = p.get<bool>("IsData");
     _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
-    _process_signal = p.get<bool>("ProcessSignal", true);
     _adc_image_threshold = p.get<float>("ADCthreshold", 10.0);
+
     _image_width = p.get<int>("ImageWidth", 512);
     _image_height = p.get<int>("ImageHeight", 512);
 
@@ -163,9 +187,8 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
 
 bool EventSelectionFilter::filter(art::Event &e) {
     this->ResetTTree();
-    if (_verbose) {
+    if (_verbose) 
         std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
-    }
 
     _evt = e.event();
     _sub = e.subRun();
@@ -219,12 +242,10 @@ bool EventSelectionFilter::filter(art::Event &e) {
         properties.emplace_back(centroid_wire_v, centroid_drift_v, _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV);
         properties.emplace_back(centroid_wire_w, centroid_drift_w, _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW);
 
-        std::vector<image::Image> input_images;
-        for (const auto& prop : properties) {
-            input_images.emplace_back(prop);
-        }
+        std::vector<image::Image> calo_images, reco_images, label_images;
+        this->constructImages(e, properties, calo_images, reco_images, label_images);
 
-        bool selected = _selectionTool->selectEvent(e, neutrino_slice, input_images);
+        bool selected = _selectionTool->selectEvent(e, neutrino_slice, calo_images, reco_images, label_images);
         if (selected) {
             keepEvent = true;
             _selected = 1;
@@ -233,7 +254,6 @@ bool EventSelectionFilter::filter(art::Event &e) {
         for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
             _analysisToolsVec[i]->analyzeSlice(e, neutrino_slice, _data, selected);
         }
-        
     }
 
     _tree->Fill();
@@ -241,6 +261,113 @@ bool EventSelectionFilter::filter(art::Event &e) {
         return keepEvent;
 
     return true;
+}
+
+void EventSelectionFilter::constructImages(const art::Event& e,
+                                            const std::vector<ImageProperties>& properties,
+                                            std::vector<Image>& calo_images,
+                                            std::vector<Image>& reco_images,
+                                            std::vector<Image>& label_images) {
+    calo_images.clear();
+    reco_images.clear();
+    label_images.clear();
+
+    for (const auto& prop : properties) {
+        Image calo_image(prop);
+        calo_image.clear(static_cast<float>(0.0));
+        calo_images.push_back(std::move(calo_image));
+
+        Image reco_image(prop);
+        reco_image.clear(static_cast<float>(reco_labels::ReconstructionLabel::empty));
+        reco_images.push_back(std::move(reco_image));
+
+        Image label_image(prop);
+        label_image.clear(static_cast<float>(truth_labels::PrimaryLabel::empty));
+        label_images.push_back(std::move(label_image));
+    }
+
+    auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
+    auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+    auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(fMCTproducer);
+
+    art::FindManyP<recob::Hit> wire_hit_assoc(wireHandle, e, fWIREproducer);
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hitHandle, e, fBackTrackerLabel);
+
+    std::vector<truth_labels::PrimaryLabel> primary_labels = truth_labels::classifyParticles(e, fMCTproducer, fGammaThreshold, fHadronThreshold);
+    std::vector<reco_labels::ReconstructionLabel> reco_labels = reco_labels::classifyParticles(e, fMCTproducer, fGammaThreshold, fHadronThreshold);
+
+    std::map<int, size_t> trackid_to_index;
+    for (size_t i = 0; i < mcpHandle->size(); ++i) {
+        trackid_to_index[mcpHandle->at(i).TrackId()] = i;
+    }
+
+    auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
+
+    for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
+        const auto& wire = wireHandle->at(wire_idx);
+        auto ch_id = wire.Channel();
+        //if (ch_id < _bad_channel_mask.size() && _bad_channel_mask[ch_id]) continue;
+
+        std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
+        if (wire_ids.empty()) continue;
+        geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
+        size_t view_idx = view - geo::kU;
+
+        geo::Point_t center = wireReadout.Wire(wire_ids.front()).GetCenter();
+        TVector3 wire_center(center.X(), center.Y(), center.Z());
+        double wire_coord = (view == geo::kW) ? wire_center.Z() :
+                            (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
+                                                (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
+
+        const auto& hits = wire_hit_assoc.at(wire_idx);
+
+        for (const auto& range : wire.SignalROI().get_ranges()) {
+            const auto& adcs = range.data();
+            int start_tick = range.begin_index();
+            for (size_t idx = 0; idx < adcs.size(); ++idx) {
+                int tick = start_tick + idx;
+                double x = det_props.ConvertTicksToX(tick, wire_ids.front().planeID());
+                size_t row = properties[view_idx].row(x);
+                size_t col = properties[view_idx].col(wire_coord);
+                if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
+
+                reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::cosmic;
+                truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::cosmic;
+
+                for (const auto& hit : hits) {
+                    if (tick >= hit->StartTick() && tick < hit->EndTick()) {
+                        auto bkth_data = mcp_bkth_assoc.data(hit.key());
+                        if (!bkth_data.empty()) {
+                            for (size_t i = 0; i < bkth_data.size(); ++i) {
+                                if (bkth_data[i]->isMaxIDE == 1) {
+                                    int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
+                                    auto it = trackid_to_index.find(track_id);
+                                    if (it != trackid_to_index.end()) {
+                                        size_t particle_idx = it->second;
+                                        if (particle_idx < primary_labels.size()) {
+                                            primary_label = primary_labels[particle_idx];
+                                        }
+                                        if (particle_idx < reco_labels.size()) {
+                                            reco_label = reco_labels[particle_idx];
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                if (adcs[idx] > _adc_image_threshold) {
+                    calo_images[view_idx].set(row, col, adcs[idx]);
+                    reco_images[view_idx].set(row, col, static_cast<float>(reco_label), false);
+                    label_images[view_idx].set(row, col, static_cast<float>(primary_label), false);
+                }
+            }
+        }
+    }
 }
 
 template <typename T>
