@@ -11,63 +11,126 @@ microboone_calo_mcc9_data: {
     CaloUseModBox: true
 }
 
-MuonSignature: { tool_type: "MuonSignature" }
-KaonShortSignature: { tool_type: "KaonShortSignature" }
-ChargedKaonSignature: { tool_type: "ChargedKaonSignature" }
-ChargedSigmaSignature: { tool_type: "ChargedSigmaSignature" }
-LambdaSignature: { tool_type: "LambdaSignature" }
+FiducialVolume: {
+    Xstart: 10.0  
+    Xend: 10.0    
+    Ystart: 10.0  
+    Yend: 10.0    
+    Zstart: 10.0  
+    Zend: 10.0    
+}
 
-NeutrinoAnalysis: { tool_type: "NeutrinoAnalysis" }
+BaseEventSelectionFilter: {
+    module_type: "EventSelectionFilter"
+    PFPproducer: "pandora"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    HITproducer: "gaushit"
+    SHRproducer: "pandora"
+    VTXproducer: "pandora"
+    TRKproducer: "pandora"
+    PCAproducer: "pandora"
+    MCTproducer: "generator"
+    WIREproducer: "caldata"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
+    BackTrackerLabel: "gaushit"
+    GammaThreshold: 0.1
+    HadronThreshold: 0.1
+    Verbose: false
+    IsData: false
+    IsFakeData: false
+    Filter: true
+    ADCthreshold: 10.0
+    ImageWidth: 512
+    ImageHeight: 512
+}
 
-PatternCompleteness: { tool_type: "PatternCompleteness" }
-HitExclusivity: { tool_type: "HitExclusivity" }
-SignatureIntegrity: { tool_type: "SignatureIntegrity" }
-
-SharedEventClassifier: {
-    SignatureTools: {
-        leptonic: @local::MuonSignature
-        hadronic: @local::LambdaSignature
+FiducialFilter: {
+    @table::BaseEventSelectionFilter
+    SelectionTool: @local::FiducialVolumeSelection
+    AnalysisTools: {
+        truth: @local::TruthAnalysis
     }
-    ClarityTools: {
-        completeness: @local::PatternCompleteness
-        hitexclusivity: @local::HitExclusivity
-        signatureintegrity: @local::SignatureIntegrity
+    TFileService: { fileName: "output_fiducial.root" }
+}
+
+ContrastiveFilter: {
+    @table::BaseEventSelectionFilter
+    SelectionTool: @local::ContrastiveSelection
+    AnalysisTools: {
+        neutrino: @local::NeutrinoAnalysis
+        eventweight: @local::EventWeightAnalysis
+        nugraph: @local::NuGraphAnalysis
+        truth: @local::TruthAnalysis
     }
+    TFileService: { fileName: "output_contrastive.root" }
 }
 
-SharedLabelClassifier: {
-
+TopologyFilter: {
+    @table::BaseEventSelectionFilter
+    SelectionTool: @local::TopologySelection
+    AnalysisTools: {
+        neutrino: @local::NeutrinoAnalysis
+        eventweight: @local::EventWeightAnalysis
+        nugraph: @local::NuGraphAnalysis
+        truth: @local::TruthAnalysis
+    }
+    TFileService: { fileName: "output_topology.root" }
 }
 
-SliceAnalysis: { 
-    tool_type: "SliceAnalysis" 
-    EventClassifier: @local::SharedEventClassifier
+NeutrinoAnalysis: {
+    MCTproducer: "generator"    
+    MCPproducer: "largeant"     
 }
 
-PatternAnalysis: { 
-    tool_type: "PatternAnalysis" 
-    EventClassifier: @local::SharedEventClassifier
+EventWeightAnalysis: {
+    createDedicatedTree: true                                   // Create a separate TTree for weights
+    createMapBranch: false                                      // Do not create map branch
+    createFluxBranch: true                                      // Include flux weights
+    createGenieBranch: true                                     // Include GENIE weights
+    createReintBranch: true                                     // Include reinteraction weights
+    createSplineBranch: true                                    // Include spline weights
+    createTuneBranch: true                                      // Include tune weights
+    createSplineTimesTuneBranch: true                           // Include spline*tune weights
+    createPPFXBranch: false                                     // Do not include PPFX weights
+    SaveAllFlux: false                                          // Do not save all flux weights
+    createGenieUpDnVecs: false                                  // Do not create up/down vectors for GENIE
+    GenieAllUniverses: 500                                      // Number of GENIE universes
+    makeNuMINtuple: false                                       // Do not make NuMI tuple
+    useReweightedFlux: false                                    // Use nominal flux
+    eventWeightProcessName00: "EventWeightSep24"                // Event weight process names
+    eventWeightProcessName01: "EventWeightSep24ExtraGENIE1"
+    eventWeightProcessName02: "EventWeightSep24ExtraGENIE2"
+    eventWeightProcessName03: "EventWeightSep24ExtraGENIE3"
+    eventWeightProcessName04: "EventWeightSep24ExtraGENIE4"
+    eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
-ClassificationAnalysis: { 
-    tool_type: "ClassificationAnalysis" 
-    EventClassifier: @local::SharedEventClassifier
+NuGraphAnalysis: {
+    CLSproducer: "pandora"      
+    SLCproducer: "pandora"      
+    NG2producer: "nugraph2"     
 }
 
-WireImageAnalysis: {
-    tool_type: "WireImageAnalysis"
-    EventClassifier: @local::SharedEventClassifier
-    LabelClassifier: @local::SharedLabelClassifier
+TruthAnalysis: {
+    MCTproducer: "generator"    
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
 }
 
-TruthSignalSelection: {
-    tool_type: "TruthSignalSelection"
-    EventClassifier: @local::SharedEventClassifier
-    EventType: "signal"
+ImageSelection: {
+    tool_type: "ImageSelection"
 }
 
-TruthBackgroundSelection: {
-    tool_type: "TruthBackgroudnSelection"
-    EventClassifier: @local::SharedEventClassifier
-    EventType: "background"
+ImageFilter: {
+    @table::BaseEventSelectionFilter
+    SelectionTool: @local::ImageSelection
+    AnalysisTools: {
+        truth: @local::TruthAnalysis
+    }
+    TreeName: "imageTree"
 }
