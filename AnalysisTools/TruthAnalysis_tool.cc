@@ -1,3 +1,6 @@
+#ifndef ANALYSIS_TRUTH_CXX
+#define ANALYSIS_TRUTH_CXX
+
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -255,3 +258,5 @@ namespace analysis
 
     DEFINE_ART_MODULE(TruthAnalysis)
 }
+
+#endif

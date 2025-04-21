@@ -1,3 +1,6 @@
+#ifndef SELECTION_TOPOLOGY_CXX
+#define SELECTION_TOPOLOGY_CXX
+
 #include "SelectionToolBase.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -9,7 +12,8 @@
 #include <vector>
 #include <limits>
 
-namespace selection {
+namespace selection 
+{
     class TopologySelection : public SelectionToolBase {
     public:
         explicit TopologySelection(const fhicl::ParameterSet& pset) { configure(pset); }
@@ -146,6 +150,8 @@ namespace selection {
         m_timeRangeU = m_timeRangeV = m_timeRangeW = 0.0f;
         m_bdtScore = -1.0f;
     }
+
+    DEFINE_ART_CLASS_TOOL(TopologySelection)
 }
 
-DEFINE_ART_CLASS_TOOL(selection::TopologySelection)
+#endif
