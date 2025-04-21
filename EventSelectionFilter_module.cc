@@ -7,77 +7,94 @@
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "lardataobj/RecoBase/PFParticleMetadata.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
-
 #include "SelectionTools/SelectionToolBase.h"
 #include "AnalysisTools/AnalysisToolBase.h"
 #include "art_root_io/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
-
-class EventSelectionFilter;
+#include "CommonDefs/Image.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "CommonFunctions/Pandora.h"
 
 class EventSelectionFilter : public art::EDFilter {
 public:
     explicit EventSelectionFilter(fhicl::ParameterSet const &p);
-
     EventSelectionFilter(EventSelectionFilter const &) = delete;
     EventSelectionFilter(EventSelectionFilter &&) = delete;
     EventSelectionFilter &operator=(EventSelectionFilter const &) = delete;
     EventSelectionFilter &operator=(EventSelectionFilter &&) = delete;
-
     bool filter(art::Event &e) override;
-
     bool endSubRun(art::SubRun &subrun) override;
-
     using ProxyPfpColl_t = selection::ProxyPfpColl_t;
     using ProxyPfpElem_t = selection::ProxyPfpElem_t;
 
 private:
     art::InputTag fPFPproducer;
-    art::InputTag fCLSproducer; // cluster associated to PFP
-    art::InputTag fSLCproducer; // slice associated to PFP
-    art::InputTag fHITproducer; // hit associated to cluster
-    art::InputTag fSHRproducer; // shower associated to PFP
-    art::InputTag fVTXproducer; // vertex associated to PFP
-    art::InputTag fTRKproducer; // track associated to PFP
-    art::InputTag fPCAproducer; // PCAxis associated to PFP
+    art::InputTag fCLSproducer;
+    art::InputTag fSLCproducer;
+    art::InputTag fHITproducer;
+    art::InputTag fSHRproducer;
+    art::InputTag fVTXproducer;
+    art::InputTag fTRKproducer;
+    art::InputTag fPCAproducer;
     art::InputTag fMCTproducer;
+    art::InputTag fWIREproducer;
+    art::InputTag fDeadChannelTag;
+
     bool _verbose;
-    bool _data, _fake_data;
+    bool _data;
+    bool _fake_data;
     bool _filter;
+    bool _process_signal;
 
     TTree *_tree;
-    int _run, _sub, _evt;
+    int _run;
+    int _sub;
+    int _evt;
     int _selected;
 
     TTree *_subrun_tree;
-    int _run_sr; // The run number
-    int _sub_sr; // The subRun number
-    float _pot;  // The total amount of POT for the current sub run
+    int _run_sr;
+    int _sub_sr;
+    float _pot;
 
-    // a map linking the PFP Self() attribute used for hierarchy building to the PFP index in the event record
+    mage::ImageProperties image_properties_;
+    float adc_image_threshold;
+
     std::map<unsigned int, unsigned int> _pfpmap;
 
-    // selection tool
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
-
-    // analysis tool
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
+
+    std::vector<bool> _bad_channel_mask;
+    const geo::GeometryCore* _geo;
+    const detinfo::DetectorProperties* _detp;
+
+    float _drift_step;
+    float _wire_pitch_u;
+    float _wire_pitch_v;
+    float _wire_pitch_w;
+    int _image_width;
+    int _image_height;
 
     void BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col);
     template <typename T>
-    void printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
-                                const T &pfParticleMetadataList);
-    void AddDaughters(const ProxyPfpElem_t &pfp_pxy,
-                      const ProxyPfpColl_t &pfp_pxy_col,
-                      std::vector<ProxyPfpElem_t> &slice_v);
+    void printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList);
+    void AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v);
     void ResetTTree();
+    void filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires);
+    std::vector<ProxyPfpElem_t> collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy);
+    std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice);
+    std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
@@ -91,12 +108,31 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fPCAproducer = p.get<art::InputTag>("PCAproducer");
     fTRKproducer = p.get<art::InputTag>("TRKproducer");
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
+    fWIREproducer = p.get<art::InputTag>("WIREproducer");
+    fDeadChannelTag = p.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
     _verbose = p.get<bool>("Verbose");
     _data = p.get<bool>("IsData");
-    _fake_data = p.get<bool>("IsFakeData",false);
+    _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
+    _process_signal = p.get<bool>("ProcessSignal", true);
+    _adc_image_threshold = p.get<float>("ADCthreshold", 10.0);
+    _image_width = p.get<int>("ImageWidth", 512);
+    _image_height = p.get<int>("ImageHeight", 512);
+
+    _geo = art::ServiceHandle<geo::Geometry>()->provider();
+    _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
+    auto const* det_clocks = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
+
+    double tick_period = det_clocks->TPCClock().TickPeriod();
+    double drift_velocity = _detp->DriftVelocity();
+
+    _drift_step = tick_period * drift_velocity * 1e1;
+    _wire_pitch_u = _geo->WirePitch(geo::kU);
+    _wire_pitch_v = _geo->WirePitch(geo::kV);
+    _wire_pitch_w = _geo->WirePitch(geo::kW);
 
     art::ServiceHandle<art::TFileService> tfs;
+
     _tree = tfs->make<TTree>("EventSelectionFilter", "Neutrino Selection TTree");
     _tree->Branch("selected", &_selected, "selected/I");
     _tree->Branch("run", &_run, "run/I");
@@ -107,12 +143,11 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _subrun_tree->Branch("run", &_run_sr, "run/I");
     _subrun_tree->Branch("subRun", &_sub_sr, "subRun/I");
 
-    if ( (!_data) || (_fake_data) )
+    if ((!_data) || (_fake_data))
         _subrun_tree->Branch("pot", &_pot, "pot/F");
 
     const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
-
     _selectionTool->setBranches(_tree);
     _selectionTool->SetData(_data);
 
@@ -128,140 +163,113 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
 
 bool EventSelectionFilter::filter(art::Event &e) {
     this->ResetTTree();
-
     if (_verbose) {
-      std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
+        std::cout << "new event : [run,event] : [" << e.run() << ", " << e.event() << "]" << std::endl;
     }
+
     _evt = e.event();
     _sub = e.subRun();
     _run = e.run();
 
+    size_t n_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(n_channels + 1, false);
+
+    art::Handle<std::vector<int>> bad_ch_h;
+    if (e.getByLabel(fDeadChannelTag, bad_ch_h)) {
+        std::vector<art::Ptr<int>> bad_ch_v;
+        art::fill_ptr_vector(bad_ch_v, bad_ch_h);
+        for (auto ch : bad_ch_v) {
+            if (*ch < n_channels)
+                _bad_channel_mask[*ch] = true;
+        }
+    }
+
+    std::vector<art::Ptr<recob::Wire>> wire_vec;
+    if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(fWIREproducer))
+        art::fill_ptr_vector(wire_vec, wireHandle);
+
+    this->filterBadChannels(wire_vec);
     selection::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
-                              proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
-                              proxy::withAssociated<recob::Cluster>(fCLSproducer),
-                              proxy::withAssociated<recob::Slice>(fSLCproducer),
-                              proxy::withAssociated<recob::Track>(fTRKproducer),
-                              proxy::withAssociated<recob::Vertex>(fVTXproducer),
-                              proxy::withAssociated<recob::PCAxis>(fPCAproducer),
-                              proxy::withAssociated<recob::Shower>(fSHRproducer),
-                              proxy::withAssociated<recob::SpacePoint>(fPFPproducer));
+        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
+        proxy::withAssociated<recob::Cluster>(fCLSproducer),
+        proxy::withAssociated<recob::Slice>(fSLCproducer),
+        proxy::withAssociated<recob::Track>(fTRKproducer),
+        proxy::withAssociated<recob::Vertex>(fVTXproducer),
+        proxy::withAssociated<recob::PCAxis>(fPCAproducer),
+        proxy::withAssociated<recob::Shower>(fSHRproducer),
+        proxy::withAssociated<recob::SpacePoint>(fPFPproducer));
 
     this->BuildPFPMap(pfp_proxy);
 
     for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-      _analysisToolsVec[i]->analyzeEvent(e, _data); 
+        _analysisToolsVec[i]->analyzeEvent(e, _data);
     }
 
     bool keepEvent = false;
+    auto neutrino_slice = this->collectNeutrinoSlice(pfp_proxy);
+    if (!neutrino_slice.empty()) {
+        auto neutrino_hits = this->collectNeutrinoHits(e, neutrino_slice);
+        
+        std::vector<image::ImageProperties> properties;
+        auto [centroid_wire_u, centroid_drift_u] = this->calculateCentroid(e, common::TPC_VIEW_U, neutrino_hits);
+        auto [centroid_wire_v, centroid_drift_v] = this->calculateCentroid(e, common::TPC_VIEW_V, neutrino_hits);
+        auto [centroid_wire_w, centroid_drift_w] = this->calculateCentroid(e, common::TPC_VIEW_W, neutrino_hits);
 
-    for (const ProxyPfpElem_t &pfp_pxy : pfp_proxy) {
-      const auto &pfParticleMetadataList = pfp_pxy.get<larpandoraobj::PFParticleMetadata>();
+        properties.emplace_back(centroid_wire_u, centroid_drift_u, _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU);
+        properties.emplace_back(centroid_wire_v, centroid_drift_v, _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV);
+        properties.emplace_back(centroid_wire_w, centroid_drift_w, _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW);
 
-      if (pfp_pxy->IsPrimary() == false)
-        continue;
+        std::vector<image::Image> input_images;
+        for (const auto& prop : properties) {
+            input_images.emplace_back(prop);
+        }
 
-      auto PDG = fabs(pfp_pxy->PdgCode());
+        bool selected = _selectionTool->selectEvent(e, neutrino_slice, input_images);
+        if (selected) {
+            keepEvent = true;
+            _selected = 1;
+        }
 
-      if ((PDG == 12) || (PDG == 14)) {
-            if (_verbose)
-                this->printPFParticleMetadata(pfp_pxy, pfParticleMetadataList);
-
-            std::vector<ProxyPfpElem_t> slice_pfp_v;
-            this->AddDaughters(pfp_pxy, pfp_proxy, slice_pfp_v);
-
-            if (_verbose)
-                std::cout << "This slice has " << slice_pfp_v.size() << " daughter PFParticles" << std::endl;
-
-            std::vector<art::Ptr<recob::Track>> sliceTracks;
-            std::vector<art::Ptr<recob::Shower>> sliceShowers;
-
-            for (auto pfp : slice_pfp_v) {
-                auto const &ass_trk_v = pfp.get<recob::Track>();
-                if (ass_trk_v.size() == 1)
-                    sliceTracks.push_back(ass_trk_v.at(0));
-                auto const &ass_shr_v = pfp.get<recob::Shower>();
-                if (ass_shr_v.size() == 1)
-                    sliceShowers.push_back(ass_shr_v.at(0));
-            } 
-
-            bool selected = _selectionTool->selectEvent(e, slice_pfp_v);
-            if (selected) {
-                keepEvent = true;
-                _selected = 1;
-            }
-
-            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-                _analysisToolsVec[i]->analyzeSlice(e, slice_pfp_v, _data, selected);
-            }
-        } // if a neutrino PFParticle
-    } // for all PFParticles
+        for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+            _analysisToolsVec[i]->analyzeSlice(e, neutrino_slice, _data, selected);
+        }
+        
+    }
 
     _tree->Fill();
-
-    if (_filter == true)
+    if (_filter)
         return keepEvent;
 
     return true;
 }
 
 template <typename T>
-void EventSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy,
-                                                      const T &pfParticleMetadataList) {
-
+void EventSelectionFilter::printPFParticleMetadata(const ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList) {
     if (pfParticleMetadataList.size() != 0) {
         for (unsigned int j = 0; j < pfParticleMetadataList.size(); ++j) {
             const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(pfParticleMetadataList.at(j));
             auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
+
             if (!pfParticlePropertiesMap.empty()) {
                 if (_verbose)
-                std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
+                    std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
                 for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it) {
                     if (_verbose)
                         std::cout << "  - " << it->first << " = " << it->second << std::endl;
                 }
             }
         }
-    } // if PFP metadata exists
-    return;
+    }
 }
 
 void EventSelectionFilter::BuildPFPMap(const ProxyPfpColl_t &pfp_pxy_col) {
     _pfpmap.clear();
-
     unsigned int p = 0;
     for (const auto &pfp_pxy : pfp_pxy_col) {
         _pfpmap[pfp_pxy->Self()] = p;
         p++;
     }
-
-    return;
-} // BuildPFPMap
-
-void EventSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy,
-                                           const ProxyPfpColl_t &pfp_pxy_col,
-                                           std::vector<ProxyPfpElem_t> &slice_v) {
-
-    auto daughters = pfp_pxy->Daughters();
-
-    slice_v.push_back(pfp_pxy);
-
-    if (_verbose)
-        std::cout << "\t PFP w/ PdgCode " << pfp_pxy->PdgCode() << " has " << daughters.size() << " daughters" << std::endl;
-
-    for (auto const &daughterid : daughters)
-    {
-        if (_pfpmap.find(daughterid) == _pfpmap.end())
-            continue;
-
-        auto pfp_pxy2 = pfp_pxy_col.begin();
-        for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
-        ++pfp_pxy2;
-
-        this->AddDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
-    } // for all daughters
-
-    return;
-} // AddDaughters
+}
 
 void EventSelectionFilter::ResetTTree() {
     _selected = 0;
@@ -283,7 +291,79 @@ bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
     _run_sr = subrun.run();
     _sub_sr = subrun.subRun();
     _subrun_tree->Fill();
+
     return true;
+}
+
+void EventSelectionFilter::filterBadChannels(std::vector<art::Ptr<recob::Wire>>& wires) {
+    wires.erase(std::remove_if(wires.begin(), wires.end(),
+        [this](const art::Ptr<recob::Wire>& wire) {
+            return _bad_channel_mask[wire->Channel()];
+        }), wires.end());
+}
+
+void EventSelectionFilter::AddDaughters(const ProxyPfpElem_t &pfp_pxy, const ProxyPfpColl_t &pfp_pxy_col, std::vector<ProxyPfpElem_t> &slice_v) {
+    auto daughters = pfp_pxy->Daughters();
+    slice_v.push_back(pfp_pxy);
+
+    if (_verbose)
+        std::cout << "\t PFP w/ PdgCode " << pfp_pxy->PdgCode() << " has " << daughters.size() << " daughters" << std::endl;
+
+    for (auto const &daughterid : daughters) {
+        if (_pfpmap.find(daughterid) == _pfpmap.end())
+            continue;
+
+        auto pfp_pxy2 = pfp_pxy_col.begin();
+        for (size_t j = 0; j < _pfpmap.at(daughterid); ++j)
+            ++pfp_pxy2;
+
+        this->AddDaughters(*pfp_pxy2, pfp_pxy_col, slice_v);
+    }
+}
+
+std::vector<ProxyPfpElem_t> EventSelectionFilter::collectNeutrinoSlice(const ProxyPfpColl_t& pfp_proxy) {
+    std::vector<ProxyPfpElem_t> neutrino_slice;
+    for (const ProxyPfpElem_t& pfp_pxy : pfp_proxy) {
+        if (pfp_pxy->IsPrimary() && (fabs(pfp_pxy->PdgCode()) == 12 || fabs(pfp_pxy->PdgCode()) == 14)) {
+            this->AddDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
+        }
+    }
+
+    return neutrino_slice;
+}
+
+std::vector<art::Ptr<recob::Hit>> EventSelectionFilter::collectNeutrinoHits(const art::Event& e, const std::vector<ProxyPfpElem_t>& neutrino_slice) {
+    std::vector<art::Ptr<recob::Hit>> neutrino_hits;
+    auto clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
+    
+    for (const auto& pfp : neutrino_slice) {
+        if (pfp->IsPrimary()) continue;
+        for (auto ass_clus : pfp.get<recob::Cluster>()) {
+            auto clus_hit_v = clus_proxy[ass_clus.key()].get<recob::Hit>();
+            neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
+        }
+    }
+
+    return neutrino_hits;
+}
+
+std::pair<double, double> EventSelectionFilter::calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) {
+    double sum_charge = 0.0;
+    double sum_wire = 0.0;
+    double sum_drift = 0.0;
+
+    for (const auto& hit : hits) {
+        if (common::GetPandoraView(hit) != view) continue;
+        double charge = hit->Integral();
+        TVector3 hit_pos = common::GetPandoraHitPosition(e, hit, view);
+        sum_charge += charge;
+        sum_wire += hit_pos.Z() * charge;
+        sum_drift += hit_pos.X() * charge;
+    }
+
+    if (sum_charge == 0.0) return {0.0, 0.0};
+
+    return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
 DEFINE_ART_MODULE(EventSelectionFilter)
