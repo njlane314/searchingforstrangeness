@@ -1,198 +1,254 @@
-#ifndef ANALYSIS_MCFILTER_CXX
-#define ANALYSIS_MCFILTER_CXX
-
-#include <iostream>
-#include "AnalysisToolBase.h"
-
+#include "art/Framework/Core/EDFilter.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "fhiclcpp/ParameterSet.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "lardataobj/MCBase/MCShower.h"
+#include "TTree.h"
 #include "larcore/Geometry/Geometry.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include <limits>
 
-namespace analysis
-{
-class TruthAnalysis : public AnalysisToolBase
-{
+namespace analysis {
+    class TruthAnalysis : public art::EDFilter {
+    public:
+        explicit TruthAnalysis(fhicl::ParameterSet const& p);
+        virtual ~TruthAnalysis() = default;
 
-public:
-  TruthAnalysis(const fhicl::ParameterSet &pset);
+        void configure(fhicl::ParameterSet const& p);
 
-  ~TruthAnalysis(){};
+        void analyseEvent(art::Event const &e, bool fData) override;
+        void analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
 
-  void configure(fhicl::ParameterSet const &pset);
+        void setBranches(TTree* _tree);
+        void resetTTree();
 
-  void analyzeEvent(art::Event const &e, bool fData) override;
+    private:
+        bool isFiducial(const double x[3]) const;
+        bool isActive(const double x[3]) const;
 
-  void analyzeSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+        enum class EventCategory {
+            k_data = 0,
+            k_out_active = 1,                               
+            k_nc = 2,                                   
+            k_nu_e_cc = 3,                
+            k_nu_mu_cc_with_strange = 4,  
+            k_nu_mu_cc_with_protons = 5, 
+            k_nu_mu_cc_with_pions = 6, 
+            k_nu_mu_cc_with_protons_pions = 7, 
+            k_nu_mu_cc_other = 8,         
+            k_other = 9                   
+        };
 
-  void SaveTruth(art::Event const &e);
+        std::string fMCTproducer;
+        TTree* _mcf_tree;
 
-  void setBranches(TTree *_tree) override;
+        float _mcf_nu_e;
+        float _mcf_lep_e;
+        int _mcf_actvol;
+        int _mcf_fidvol; 
+        int _event_category;
 
-  void resetTTree(TTree *_tree) override;
+        int _mcf_nmm;
+        int _mcf_nmp;
+        int _mcf_nem;
+        int _mcf_nep;
+        int _mcf_np0;
+        int _mcf_npp;
+        int _mcf_npm;
+        int _mcf_nkp;
+        int _mcf_nkm;
+        int _mcf_nk0;
+        int _mcf_npr;
+        int _mcf_nne;
+        int _mcf_nlambda;
+        int _mcf_nsigma_p;
+        int _mcf_nsigma_0;
+        int _mcf_nsigma_m;
+        int _mcf_nxi_0;
+        int _mcf_nxi_m;
+        int _mcf_nomega;
 
-private:
+        float m_fidvolXstart;
+        float m_fidvolXend;
+        float m_fidvolYstart;
+        float m_fidvolYend;
+        float m_fidvolZstart;
+        float m_fidvolZend;
+    };
 
-  art::InputTag fMCTproducer;
-  art::InputTag fMCRproducer;
-
-  float _mcf_nu_e;
-  float _mcf_lep_e;
-  int _mcf_actvol;
-  int _mcf_nmm;
-  int _mcf_nmp;
-  int _mcf_nem;
-  int _mcf_nep;
-  int _mcf_np0;
-  int _mcf_npp;
-  int _mcf_npm;
-  int _mcf_nkp;
-  int _mcf_nkm;
-  int _mcf_nk0;
-  int _mcf_npr;
-  int _mcf_nne;
-  float _mcf_mcshr_elec_etot;
-  int _mcf_pass_ccpi0;
-  int _mcf_pass_ncpi0;
-  int _mcf_pass_ccnopi;
-  int _mcf_pass_ncnopi;
-  int _mcf_pass_cccpi;
-  int _mcf_pass_nccpi;
-};
-
-TruthAnalysis::TruthAnalysis(const fhicl::ParameterSet &p)
-{
-  fMCTproducer = p.get<art::InputTag>("MCTproducer");
-  fMCRproducer = p.get<art::InputTag>("MCRproducer");
-}
-
-void TruthAnalysis::configure(fhicl::ParameterSet const &p) {}
-
-void TruthAnalysis::analyzeEvent(art::Event const &e, bool fData)
-{
-  if (fData) return;
-
-  auto const &mct_h = e.getValidHandle<std::vector<simb::MCTruth> >(fMCTproducer);
-
-  auto mct = mct_h->at(0);
-  auto neutrino = mct.GetNeutrino();
-  auto nu = neutrino.Nu();
-
-  _mcf_nu_e = nu.Trajectory().E(0);
-  _mcf_lep_e = neutrino.Lepton().E();
-
-  art::ServiceHandle<geo::Geometry const> geo;
-  auto const& tpcActiveBox = geo->TPC().ActiveBoundingBox();
-  _mcf_actvol = tpcActiveBox.ContainsPosition(geo::Point_t(nu.Vx(),nu.Vy(),nu.Vz()));
-
-  size_t npart = mct.NParticles();
-  for (size_t i = 0; i < npart; i++) {
-    auto const &part = mct.GetParticle(i);
-    if (part.StatusCode() != 1) continue;
-    if (part.PdgCode() == 13) _mcf_nmm += 1;
-    if (part.PdgCode() == -13) _mcf_nmp += 1;
-    if (part.PdgCode() == 11) _mcf_nem += 1;
-    if (part.PdgCode() == -11) _mcf_nep += 1;
-    if (part.PdgCode() == 111) _mcf_np0 += 1;
-    if (part.PdgCode() == 211) _mcf_npp += 1;
-    if (part.PdgCode() == -211) _mcf_npm += 1;
-    if (part.PdgCode() == 321) _mcf_nkp += 1;
-    if (part.PdgCode() == -321) _mcf_nkm += 1;
-    if (part.PdgCode() == 311) _mcf_nk0 += 1;
-    if (part.PdgCode() == 2212) _mcf_npr += 1;
-    if (part.PdgCode() == 2112) _mcf_nne += 1;
-  }
-
-  float maxElecMCShwEMeV = 0.;
-  const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower> >(fMCRproducer));
-  for (auto& mcs : inputMCShower) {
-    if (std::abs(mcs.PdgCode())==11) {
-      if (mcs.Start().E()>maxElecMCShwEMeV) {
-	_mcf_mcshr_elec_etot = mcs.Start().E();
-	maxElecMCShwEMeV = _mcf_mcshr_elec_etot;
-      }
+    TruthAnalysis::TruthAnalysis(fhicl::ParameterSet const& p) {
+        this->configure(p);
     }
-  }
 
-  _mcf_pass_ccpi0 = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==1 && _mcf_nem==0 && _mcf_nep==0 && _mcf_np0==1) _mcf_pass_ccpi0 = 1;
+    void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
+        fMCTproducer = p.get<std::string>("MCTproducer", "generator");
+        m_fidvolXstart = p.get<float>("fidvolXstart", 10.0);
+        m_fidvolXend = p.get<float>("fidvolXend", 10.0);
+        m_fidvolYstart = p.get<float>("fidvolYstart", 10.0);
+        m_fidvolYend = p.get<float>("fidvolYend", 10.0);
+        m_fidvolZstart = p.get<float>("fidvolZstart", 10.0);
+        m_fidvolZend = p.get<float>("fidvolZend", 10.0);
+    }
 
-  _mcf_pass_ncpi0 = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==0 && _mcf_nmp==0 && _mcf_nem==0 && _mcf_nep==0 && _mcf_np0==1) _mcf_pass_ncpi0 = 1;
+    void TruthAnalysis::setBranches(TTree* _tree) {
+        _tree->Branch("event_category", &_event_category, "event_category/I");
+        _tree->Branch("mcf_nu_e", &_mcf_nu_e, "mcf_nu_e/F");
+        _tree->Branch("mcf_lep_e", &_mcf_lep_e, "mcf_lep_e/F");
+        _tree->Branch("mcf_actvol", &_mcf_actvol, "mcf_actvol/I");
+        _tree->Branch("mcf_fidvol", &_mcf_fidvol, "mcf_fidvol/I"); 
+        _tree->Branch("mcf_nmm", &_mcf_nmm, "mcf_nmm/I");
+        _tree->Branch("mcf_nmp", &_mcf_nmp, "mcf_nmp/I");
+        _tree->Branch("mcf_nem", &_mcf_nem, "mcf_nem/I");
+        _tree->Branch("mcf_nep", &_mcf_nep, "mcf_nep/I");
+        _tree->Branch("mcf_np0", &_mcf_np0, "mcf_np0/I");
+        _tree->Branch("mcf_npp", &_mcf_npp, "mcf_npp/I");
+        _tree->Branch("mcf_npm", &_mcf_npm, "mcf_npm/I");
+        _tree->Branch("mcf_nkp", &_mcf_nkp, "mcf_nkp/I");
+        _tree->Branch("mcf_nkm", &_mcf_nkm, "mcf_nkm/I");
+        _tree->Branch("mcf_nk0", &_mcf_nk0, "mcf_nk0/I");
+        _tree->Branch("mcf_npr", &_mcf_npr, "mcf_npr/I");
+        _tree->Branch("mcf_nne", &_mcf_nne, "mcf_nne/I");
+        _tree->Branch("mcf_nlambda", &_mcf_nlambda, "mcf_nlambda/I");
+        _tree->Branch("mcf_nsigma_p", &_mcf_nsigma_p, "mcf_nsigma_p/I");
+        _tree->Branch("mcf_nsigma_0", &_mcf_nsigma_0, "mcf_nsigma_0/I");
+        _tree->Branch("mcf_nsigma_m", &_mcf_nsigma_m, "mcf_nsigma_m/I");
+        _tree->Branch("mcf_nxi_0", &_mcf_nxi_0, "mcf_nxi_0/I");
+        _tree->Branch("mcf_nxi_m", &_mcf_nxi_m, "mcf_nxi_m/I");
+        _tree->Branch("mcf_nomega", &_mcf_nomega, "mcf_nomega/I");
+    }
 
-  _mcf_pass_ccnopi = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==1 && _mcf_nem==0 && _mcf_nep==0 &&
-      _mcf_np0==0 && _mcf_npp==0 && _mcf_npm==0 &&
-      (((_mcf_lep_e-0.105)>0.02 && _mcf_lep_e<0.3) || _mcf_mcshr_elec_etot>15)) _mcf_pass_ccnopi = 1;
+    void TruthAnalysis::resetTTree() {
+        _mcf_nu_e = std::numeric_limits<float>::lowest();
+        _mcf_lep_e = std::numeric_limits<float>::lowest();
+        _mcf_actvol = std::numeric_limits<int>::lowest();
+        _mcf_fidvol = std::numeric_limits<int>::lowest(); 
+        _event_category = std::numeric_limits<int>::lowest();
+        _mcf_nmm = 0;
+        _mcf_nmp = 0;
+        _mcf_nem = 0;
+        _mcf_nep = 0;
+        _mcf_np0 = 0;
+        _mcf_npp = 0;
+        _mcf_npm = 0;
+        _mcf_nkp = 0;
+        _mcf_nkm = 0;
+        _mcf_nk0 = 0;
+        _mcf_npr = 0;
+        _mcf_nne = 0;
+        _mcf_nlambda = 0;
+        _mcf_nsigma_p = 0;
+        _mcf_nsigma_0 = 0;
+        _mcf_nsigma_m = 0;
+        _mcf_nxi_0 = 0;
+        _mcf_nxi_m = 0;
+        _mcf_nomega = 0;
+    }
 
-  _mcf_pass_ncnopi = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==0 && _mcf_nmp==0 && _mcf_nem==0 && _mcf_nep==0 &&
-      _mcf_np0==0 && _mcf_npp==0 && _mcf_npm==0 && _mcf_nu_e>0.9) _mcf_pass_ncnopi = 1;
+    bool TruthAnalysis::isFiducial(const double x[3]) const {
+        auto const& tpc = art::ServiceHandle<geo::Geometry>()->TPC();
+        std::vector<double> bnd = {
+            0., 2. * tpc.HalfWidth(), -tpc.HalfHeight(), tpc.HalfHeight(),
+            0., tpc.Length()
+        };
+        bool is_x = x[0] > (bnd[0] + m_fidvolXstart) && x[0] < (bnd[1] - m_fidvolXend);
+        bool is_y = x[1] > (bnd[2] + m_fidvolYstart) && x[1] < (bnd[3] - m_fidvolYend);
+        bool is_z = x[2] > (bnd[4] + m_fidvolZstart) && x[2] < (bnd[5] - m_fidvolZend);
+        return is_x && is_y && is_z;
+    }
 
-  _mcf_pass_cccpi = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==1 && _mcf_nem==0 && _mcf_nep==0 &&
-      _mcf_np0==0 && (_mcf_npp==1 || _mcf_npm==1) &&
-      (((_mcf_lep_e-0.105)>0.02 && _mcf_lep_e<0.4) || _mcf_mcshr_elec_etot>35)) _mcf_pass_cccpi = 1;
+    bool TruthAnalysis::isActive(const double x[3]) const {
+        auto const& tpc = art::ServiceHandle<geo::Geometry>()->TPC();
+        std::vector<double> bnd = {
+            0., 2. * tpc.HalfWidth(), -tpc.HalfHeight(), tpc.HalfHeight(),
+            0., tpc.Length()
+        };
+        bool is_x = x[0] > bnd[0] && x[0] < bnd[1];
+        bool is_y = x[1] > bnd[2] && x[1] < bnd[3];
+        bool is_z = x[2] > bnd[4] && x[2] < bnd[5];
+        return is_x && is_y && is_z;
+    }
 
-  _mcf_pass_nccpi = 0;
-  if (_mcf_actvol==1 && _mcf_nmm==0 && _mcf_nmp==0 && _mcf_nem==0 && _mcf_nep==0 &&
-      _mcf_np0==0 && (_mcf_npp==1 || _mcf_npm==1)) _mcf_pass_nccpi = 1;
+    void TruthAnalysis::analyseEvent(art::Event const& e, bool fData) {
+        if (fData) {
+            _event_category = static_cast<int>(EventCategory::k_data);
+            return;
+        }
+
+        auto const& mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
+        auto mct = mct_h->at(0);
+        auto neutrino = mct.GetNeutrino();
+        auto nu = neutrino.Nu();
+
+        _mcf_nu_e = nu.Trajectory().E(0);
+        _mcf_lep_e = neutrino.Lepton().E();
+
+        double vertex[3] = {nu.Vx(), nu.Vy(), nu.Vz()};
+        _mcf_actvol = this->isActive(vertex);
+        _mcf_fidvol = this->isFiducial(vertex); 
+
+        size_t npart = mct.NParticles();
+        for (size_t i = 0; i < npart; i++) {
+            auto const& part = mct.GetParticle(i);
+            if (part.StatusCode() != 1) continue;
+            int pdg = part.PdgCode();
+            int abs_pdg = std::abs(pdg);
+            if (pdg == 13) _mcf_nmm += 1;        // mu-
+            else if (pdg == -13) _mcf_nmp += 1;  // mu+
+            else if (pdg == 11) _mcf_nem += 1;   // e-
+            else if (pdg == -11) _mcf_nep += 1;  // e+
+            else if (abs_pdg == 111) _mcf_np0 += 1; // pi0
+            else if (pdg == 211) _mcf_npp += 1;  // pi+
+            else if (pdg == -211) _mcf_npm += 1; // pi-
+            else if (pdg == 321) _mcf_nkp += 1;  // K+
+            else if (pdg == -321) _mcf_nkm += 1; // K-
+            else if (abs_pdg == 311) _mcf_nk0 += 1; // K0
+            else if (pdg == 2212) _mcf_npr += 1; // proton
+            else if (pdg == 2112) _mcf_nne += 1; // neutron
+            else if (abs_pdg == 3122) _mcf_nlambda += 1; // Lambda
+            else if (abs_pdg == 3222) _mcf_nsigma_p += 1; // Sigma+
+            else if (abs_pdg == 3212) _mcf_nsigma_0 += 1; // Sigma0
+            else if (abs_pdg == 3112) _mcf_nsigma_m += 1; // Sigma-
+            else if (abs_pdg == 3322) _mcf_nxi_0 += 1; // Xi0
+            else if (abs_pdg == 3312) _mcf_nxi_m += 1; // Xi-
+            else if (abs_pdg == 3334) _mcf_nomega += 1; // Omega-
+        }
+
+        if (!_mcf_actvol) {
+            _event_category = static_cast<int>(EventCategory::k_out_active);
+        } else {
+            if (neutrino.CCNC() == 1) { // Neutral current
+                _event_category = static_cast<int>(EventCategory::k_nc);
+            } else { // Charged current
+                int lepton_pdg = std::abs(neutrino.Lepton().PdgCode());
+                if (lepton_pdg == 11) { // Electron-neutrino CC
+                    _event_category = static_cast<int>(EventCategory::k_nu_e_cc);
+                } else if (lepton_pdg == 13) { // Muon-neutrino CC
+                    bool has_strange_hadron = (_mcf_nkp > 0 || _mcf_nkm > 0 || _mcf_nk0 > 0 ||
+                                            _mcf_nlambda > 0 || _mcf_nsigma_p > 0 || _mcf_nsigma_0 > 0 ||
+                                            _mcf_nsigma_m > 0 || _mcf_nxi_0 > 0 || _mcf_nxi_m > 0 ||
+                                            _mcf_nomega > 0);
+                    bool has_protons = (_mcf_npr > 0); 
+                    bool has_pions = (_mcf_npp > 0 || _mcf_npm > 0);
+                    bool has_pi0 = (_mcf_np0 > 0);
+                    if (has_strange_hadron) {
+                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_strange);
+                    } else if (has_proton && !has_pions && !has_pi0) {
+                        _event_category = static_cast<int>(Eventcategory::k_nu_mu_cc_with_protons); 
+                    } else if (!has_proton && has_pions && !has_pi0) {
+                        _event_category = static_cast<int>(Eventcategory::k_nu_mu_cc_with_pions); 
+                    } else if (has_protons && has_pions && !has_pi0) {
+                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_protons_pions);
+                    } else {
+                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_other);
+                    }
+                } else {
+                    _event_category = static_cast<int>(EventCategory::k_other);
+                }
+            }
+        }
+    }
+
+    DEFINE_ART_MODULE(TruthAnalysis)
 }
-
-void TruthAnalysis::analyzeSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected){}
-
-void TruthAnalysis::setBranches(TTree *_tree)
-{
-  _tree->Branch("mcf_nu_e", &_mcf_nu_e, "mcf_nu_e/F");
-  _tree->Branch("mcf_lep_e", &_mcf_lep_e, "mcf_lep_e/F");
-  _tree->Branch("mcf_actvol", &_mcf_actvol, "mcf_actvol/I");
-  _tree->Branch("mcf_nmm", &_mcf_nmm, "mcf_nmm/I");
-  _tree->Branch("mcf_nmp", &_mcf_nmp, "mcf_nmp/I");
-  _tree->Branch("mcf_nem", &_mcf_nem, "mcf_nem/I");
-  _tree->Branch("mcf_nep", &_mcf_nep, "mcf_nep/I");
-  _tree->Branch("mcf_np0", &_mcf_np0, "mcf_np0/I");
-  _tree->Branch("mcf_npp", &_mcf_npp, "mcf_npp/I");
-  _tree->Branch("mcf_npm", &_mcf_npm, "mcf_npm/I");
-  _tree->Branch("mcf_nkp", &_mcf_nkp, "mcf_nkp/I");
-  _tree->Branch("mcf_nkm", &_mcf_nkm, "mcf_nkm/I");
-  _tree->Branch("mcf_nk0", &_mcf_nk0, "mcf_nk0/I");
-  _tree->Branch("mcf_npr", &_mcf_npr, "mcf_npr/I");
-  _tree->Branch("mcf_nne", &_mcf_nne, "mcf_nne/I");
-  _tree->Branch("mcf_mcshr_elec_etot", &_mcf_mcshr_elec_etot, "mcf_mcshr_elec_etot/F");
-  _tree->Branch("mcf_pass_ccpi0", &_mcf_pass_ccpi0, "mcf_pass_ccpi0/I");
-  _tree->Branch("mcf_pass_ncpi0", &_mcf_pass_ncpi0, "mcf_pass_ncpi0/I");
-  _tree->Branch("mcf_pass_ccnopi", &_mcf_pass_ccnopi, "mcf_pass_ccnopi/I");
-  _tree->Branch("mcf_pass_ncnopi", &_mcf_pass_ncnopi, "mcf_pass_ncnopi/I");
-  _tree->Branch("mcf_pass_cccpi", &_mcf_pass_cccpi, "mcf_pass_cccpi/I");
-  _tree->Branch("mcf_pass_nccpi", &_mcf_pass_nccpi, "mcf_pass_nccpi/I");
-}
-
-void TruthAnalysis::resetTTree(TTree *_tree)
-{
-  _mcf_nu_e = -1.;
-  _mcf_lep_e = -1;
-  _mcf_actvol = -1;
-  _mcf_nmm = 0;
-  _mcf_nmp = 0;
-  _mcf_nem = 0;
-  _mcf_nep = 0;
-  _mcf_np0 = 0;
-  _mcf_npp = 0;
-  _mcf_npm = 0;
-  _mcf_nkp = 0;
-  _mcf_nkm = 0;
-  _mcf_nk0 = 0;
-  _mcf_npr = 0;
-  _mcf_nne = 0;
-  _mcf_mcshr_elec_etot = -1.;
-  _mcf_pass_ccpi0 = -1;
-  _mcf_pass_ncpi0 = -1;
-  _mcf_pass_ccnopi = -1;
-  _mcf_pass_ncnopi = -1;
-  _mcf_pass_cccpi = -1;
-  _mcf_pass_nccpi = -1;
-}
-
-DEFINE_ART_CLASS_TOOL(TruthAnalysis)
-} // namespace analysis
-
-#endif
