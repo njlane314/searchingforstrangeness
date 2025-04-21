@@ -1,32 +1,32 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: $0 -r RELEASE -t FILE_TYPE -u USER -n NAME -i INPUTDEF -f FCL -j NUMJOBS -o OUTPUT_XML"
-  echo "Options:"
-  echo "  -r  Release version"
-  echo "  -t  File type"
-  echo "  -u  Username"
-  echo "  -n  Project name"
-  echo "  -i  Input dataset definition"
-  echo "  -f  FCL file"
-  echo "  -j  Number of jobs"
-  echo "  -o  Output XML file"
-  exit 1
+    echo "Usage: $0 -r RELEASE -t FILE_TYPE -u USER -n NAME -i INPUTDEF -f FCL -j NUMJOBS -o OUTPUT_XML"
+    echo "Options:"
+    echo "  -r  Release version"
+    echo "  -t  File type"
+    echo "  -u  Username"
+    echo "  -n  Project name"
+    echo "  -i  Input dataset definition"
+    echo "  -f  FCL file"
+    echo "  -j  Number of jobs"
+    echo "  -o  Output XML file"
+    exit 1
 }
 
 while getopts "r:t:u:n:i:f:j:o:h" opt; do
-  case $opt in
-    r) RELEASE=$OPTARG ;;
-    t) FILE_TYPE=$OPTARG ;;
-    u) USER=$OPTARG ;;
-    n) NAME=$OPTARG ;;
-    i) INPUTDEF=$OPTARG ;;
-    f) FCL=$OPTARG ;;
-    j) NUMJOBS=$OPTARG ;;
-    o) OUTPUT_XML=$OPTARG ;;
-    h) usage ;;
-    ?) usage ;;
-  esac
+    case $opt in
+        r) RELEASE=$OPTARG ;;
+        t) FILE_TYPE=$OPTARG ;;
+        u) USER=$OPTARG ;;
+        n) NAME=$OPTARG ;;
+        i) INPUTDEF=$OPTARG ;;
+        f) FCL=$OPTARG ;;
+        j) NUMJOBS=$OPTARG ;;
+        o) OUTPUT_XML=$OPTARG ;;
+        h) usage ;;
+        ?) usage ;;
+    esac
 done
 
 [ -z "$RELEASE" ] || [ -z "$FILE_TYPE" ] || [ -z "$USER" ] || [ -z "$NAME" ] || \

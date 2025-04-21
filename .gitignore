@@ -40,5 +40,4 @@ build_log.txt
 Sandbox/*
 !Sandbox/.keep
 
-run_subrun_event_log.txt
-job/*.xml
+@jobs/*.xml
