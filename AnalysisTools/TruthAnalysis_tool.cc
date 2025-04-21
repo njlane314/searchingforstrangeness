@@ -1,7 +1,7 @@
 #ifndef ANALYSIS_TRUTH_CXX
 #define ANALYSIS_TRUTH_CXX
 
-#include "art/Framework/Core/EDFilter.h"
+#include "AnalysisToolBase.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -10,23 +10,20 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TTree.h"
 #include "larcore/Geometry/Geometry.h"
-#include "art/Framework/Services/Optional/TFileService.h"
 #include <limits>
 
 namespace analysis 
 {
-    class TruthAnalysis : public art::EDFilter {
+    class TruthAnalysis : public AnalysisToolBase {
     public:
         explicit TruthAnalysis(fhicl::ParameterSet const& p);
         virtual ~TruthAnalysis() = default;
 
-        void configure(fhicl::ParameterSet const& p);
-
-        void analyseEvent(art::Event const &e, bool fData) override;
-        void analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
-
-        void setBranches(TTree* _tree);
-        void resetTTree();
+        void configure(const fhicl::ParameterSet& pset) override;  
+        void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override;
+        void analyseEvent(const art::Event& event, bool is_data) override;
+        void setBranches(TTree* tree) override;
+        void resetTTree(TTree* tree) override;
 
     private:
         bool isFiducial(const double x[3]) const;
@@ -122,7 +119,7 @@ namespace analysis
         _tree->Branch("mcf_nomega", &_mcf_nomega, "mcf_nomega/I");
     }
 
-    void TruthAnalysis::resetTTree() {
+    void TruthAnalysis::resetTTree(TTree* tree) {
         _mcf_nu_e = std::numeric_limits<float>::lowest();
         _mcf_lep_e = std::numeric_limits<float>::lowest();
         _mcf_actvol = std::numeric_limits<int>::lowest();
@@ -170,6 +167,8 @@ namespace analysis
         bool is_z = x[2] > bnd[4] && x[2] < bnd[5];
         return is_x && is_y && is_z;
     }
+
+    void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {}
 
     void TruthAnalysis::analyseEvent(art::Event const& e, bool fData) {
         if (fData) {
@@ -256,7 +255,7 @@ namespace analysis
         }
     }
 
-    DEFINE_ART_MODULE(TruthAnalysis)
+    DEFINE_ART_CLASS_TOOL(TruthAnalysis)
 }
 
 #endif

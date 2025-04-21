@@ -4,6 +4,7 @@
 #include "AnalysisToolBase.h"
 
 #include "larsim/EventWeight/Base/MCEventWeight.h"
+#include "../CommonDefs/Types.h"
 
 namespace analysis
 {
@@ -14,7 +15,7 @@ namespace analysis
 
         void configure(fhicl::ParameterSet const & pset);
         void analyseEvent(art::Event const& e, bool is_data) override;
-        void analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+        void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
         void setBranches(TTree* _tree) override;
         void resetTTree(TTree* _tree) override;
 
@@ -436,7 +437,7 @@ namespace analysis
             _weightstree->Fill();
     }
 
-    void EventWeightAnalysis::analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) {}
+    void EventWeightAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) {}
 
     void EventWeightAnalysis::setBranches(TTree *_tree){
         if(_createDedicatedTree){

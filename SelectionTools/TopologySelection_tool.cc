@@ -3,6 +3,8 @@
 
 #include "SelectionToolBase.h"
 #include "art/Framework/Principal/Event.h"
+#include <canvas/Persistency/Common/FindManyP.h>
+#include "lardata/Utilities/AssociationUtil.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "fhiclcpp/ParameterSet.h"
@@ -19,13 +21,18 @@ namespace selection
         explicit TopologySelection(const fhicl::ParameterSet& pset) { configure(pset); }
         ~TopologySelection() { if (m_bdt) XGBoosterFree(m_bdt); }
 
-        void configure(fhicl::ParameterSet const& pset) override;
-        bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) override;
-        void analyzeSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
-        void setBranches(TTree* tree) override;
-        void resetTTree(TTree* tree) override;
+        void configure(fhicl::ParameterSet const& pset);
+        bool selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images);
+        void analyseSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
+        void setBranches(TTree* tree);
+        void resetTTree(TTree* tree);
 
     private:
+        art::InputTag fCLSproducer;
         float m_bdtThreshold;
         bool m_inferenceMode;
         BoosterHandle m_bdt = nullptr;
@@ -36,13 +43,14 @@ namespace selection
         float m_wireRangeU, m_wireRangeV, m_wireRangeW;
         float m_timeRangeU, m_timeRangeV, m_timeRangeW;
 
-        void computeFeatures(const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
+        void computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
         float predictBDT(const std::vector<float>& features);
     };
 
     void TopologySelection::configure(fhicl::ParameterSet const& pset) {
-        m_bdtThreshold = pfp.get<float>("BDTThreshold", 0.5);
+        m_bdtThreshold = pset.get<float>("BDTThreshold", 0.5);
         m_inferenceMode = pset.get<bool>("InferenceMode", false);
+        fCLSproducer = pset.get<art::InputTag>("CLSproducer");
 
         if (m_inferenceMode) {
             cet::search_path sp("FW_SEARCH_PATH");
@@ -54,11 +62,15 @@ namespace selection
         }
     }
 
-    void TopologySelection::analyzeSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
-        computeFeatures(slice_pfp_v);
+    void TopologySelection::analyseSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
+        computeFeatures(e, slice_pfp_v);
     }
 
-    bool TopologySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
+    bool TopologySelection::selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images) {
         if (!m_inferenceMode) {
             return false;
         }
@@ -73,13 +85,20 @@ namespace selection
         return m_bdtScore > m_bdtThreshold; 
     }
 
-    void TopologySelection::computeFeatures(const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
+    void TopologySelection::computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
+        auto clusterHandle = e.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
+        art::FindManyP<recob::Hit> clusterHits(clusterHandle, e, fCLSproducer);
+        
         std::map<int, std::vector<art::Ptr<recob::Hit>>> sliceHitsPerPlane;
         for (const auto& pfp : slice_pfp_v) {
-            auto hits = pfp.get<recob::Hit>();
-            for (const auto& hit : hits) {
-                int plane = hit->WireID().planeID().Plane;
-                sliceHitsPerPlane[plane].push_back(hit);
+            auto clusters = pfp.get<recob::Cluster>();
+            for (const auto& cluster : clusters) {
+                const std::vector<art::Ptr<recob::Hit>>& hits = clusterHits.at(cluster.key());
+                for (const auto& hit : hits) {
+                    int plane = hit->WireID().planeID().Plane;
+                    if (plane < 0 || plane > 2) continue;  
+                    sliceHitsPerPlane[plane].push_back(hit);
+                }
             }
         }
 

@@ -1,5 +1,10 @@
 cet_enable_asserts()
 
+add_compile_options(-Wno-variadic-macros)
+
+find_package(Torch REQUIRED)
+include_directories(${TORCH_INCLUDE_DIRS})
+
 cet_make_library(
   LIBRARY_NAME _SelectionToolBase INTERFACE
   SOURCE SelectionToolBase.h
@@ -68,6 +73,7 @@ cet_build_plugin(
     larevt::SpaceChargeService
     larsim::Simulation
     lardataobj::MCBase
+    ubana::XGBoost
 )
 
 cet_build_plugin(
@@ -98,6 +104,11 @@ cet_build_plugin(
     larevt::SpaceChargeService
     larsim::Simulation
     lardataobj::MCBase
+)
+
+set_source_files_properties(
+    ContrastiveSelection_tool.cc
+    PROPERTIES COMPILE_FLAGS "-Wno-error=variadic-macros"
 )
 
 install_headers()

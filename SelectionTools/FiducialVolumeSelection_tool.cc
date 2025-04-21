@@ -6,7 +6,7 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larcore/Geometry/Geometry.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "../CommonDefs/SCECorrectionsFuncs.h" 
+#include "../CommonDefs/Corrections.h" 
 
 namespace selection
 {
@@ -16,7 +16,11 @@ namespace selection
         ~FiducialVolumeSelection() {}
 
         void configure(fhicl::ParameterSet const & pset);
-        bool selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v);
+        bool selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images);
         void setBranches(TTree* _tree);
         void resetTTree(TTree* _tree);
         
@@ -70,7 +74,11 @@ namespace selection
         return is_x && is_y && is_z;
     }
 
-    bool FiducialVolumeSelection::selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v) {
+    bool FiducialVolumeSelection::selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images) {
         for (const auto& pfp_pxy : pfp_pxy_v) {
             if (pfp_pxy->IsPrimary()) {
                 auto vertices = pfp_pxy.get<recob::Vertex>();
@@ -83,7 +91,7 @@ namespace selection
                     float y = static_cast<float>(xyz[1]);
                     float z = static_cast<float>(xyz[2]);
 
-                    searchingfornues::ApplySCECorrectionXYZ(x, y, z);
+                    common::ApplySCECorrectionXYZ(x, y, z);
 
                     xyz[0] = static_cast<double>(x);
                     xyz[1] = static_cast<double>(y);

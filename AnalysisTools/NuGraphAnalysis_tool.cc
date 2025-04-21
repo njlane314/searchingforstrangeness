@@ -16,7 +16,7 @@ namespace analysis
 
         void configure(fhicl::ParameterSet const &pset);
         void analyseEvent(art::Event const &e, bool fData) override;
-        void analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+        void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
         void SaveTruth(art::Event const &e);
         void setBranches(TTree *_tree) override;
         void resetTTree(TTree *_tree) override;
@@ -71,8 +71,8 @@ namespace analysis
 
     void NuGraphAnalysis::analyseEvent(art::Event const &e, bool fData) {}
 
-    void NuGraphAnalysis::analyseSlice(art::Event const &e, std::vector<ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
-        ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
+    void NuGraphAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
+        common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
         art::ValidHandle<std::vector<recob::Slice>> inputSlice = e.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
         auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(new art::FindManyP<recob::Hit>(inputSlice, e, fSLCproducer));
 

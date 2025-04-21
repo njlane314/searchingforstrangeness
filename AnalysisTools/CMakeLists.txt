@@ -9,6 +9,7 @@ cet_make_library(
   art_root_io::TFileService_service
   fhiclcpp::fhiclcpp
   ROOT::Tree
+  ubana::XGBoost
 )
 
 cet_write_plugin_builder(
