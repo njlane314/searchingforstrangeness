@@ -20,6 +20,7 @@
 #include "CommonDefs/Image.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/WireReadout.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -85,7 +86,7 @@ private:
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
     const geo::GeometryCore* _geo;
-    detinfo::DetectorProperties _detp;
+    detinfo::DetectorPropertiesData _detp;
 
     float _drift_step;
     float _wire_pitch_u;
@@ -117,7 +118,10 @@ private:
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
-    : EDFilter{p} {
+    : EDFilter{p},
+      _detp(art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(
+          art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob())) {
+    // Retrieve parameters from the parameter set
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fSHRproducer = p.get<art::InputTag>("SHRproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
@@ -143,17 +147,18 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _image_height = p.get<int>("ImageHeight", 512);
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
-    _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob();
-    auto det_clocks = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
 
-    double tick_period = det_clocks.TPCClock().TickPeriod();
+    auto const& channelMap = art::ServiceHandle<geo::WireReadout>()->Get();
+    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
+    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
+
+    double tick_period = clockData.TPCClock().TickPeriod();
     double drift_velocity = _detp.DriftVelocity();
-
     _drift_step = tick_period * drift_velocity * 1e1;
-    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
-    _wire_pitch_u = wireReadout.Plane(geo::PlaneID(0, 0, geo::kU)).WirePitch();
-    _wire_pitch_v = wireReadout.Plane(geo::PlaneID(0, 0, geo::kV)).WirePitch();
-    _wire_pitch_w = wireReadout.Plane(geo::PlaneID(0, 0, geo::kW)).WirePitch();
+
+    _wire_pitch_u = channelMap.Plane(geo::PlaneID(0, 0, geo::kU)).WirePitch();
+    _wire_pitch_v = channelMap.Plane(geo::PlaneID(0, 0, geo::kV)).WirePitch();
+    _wire_pitch_w = channelMap.Plane(geo::PlaneID(0, 0, geo::kW)).WirePitch();
 
     art::ServiceHandle<art::TFileService> tfs;
 
