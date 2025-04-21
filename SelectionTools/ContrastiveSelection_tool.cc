@@ -3,13 +3,16 @@
 
 #include <iostream>
 #include <vector>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
 #include <torch/script.h>
+#pragma GCC diagnostic pop
 #include "SelectionToolBase.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "ImageProcessor.h"
+#include "../CommonDefs/Image.h"
 #include "cetlib/search_path.h"
 
 namespace selection
@@ -18,15 +21,18 @@ namespace selection
     public:
         explicit ContrastiveSelection(const fhicl::ParameterSet& pset);
         ~ContrastiveSelection() override = default;
-        void configure(const fhicl::ParameterSet& pset) override;
-        bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) override;
-        void setBranches(TTree* _tree) override;
-        void resetTTree(TTree* _tree) override;
+        void configure(const fhicl::ParameterSet& pset);
+        bool selectEvent(art::Event const& e, 
+                        const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                        const std::vector<image::Image>& calo_images, 
+                        const std::vector<image::Image>& reco_images, 
+                        const std::vector<image::Image>& label_images);
+        void setBranches(TTree* _tree);
+        void resetTTree(TTree* _tree);
     private:
         std::string image_label_;
         float selection_threshold_;
         torch::jit::script::Module resnet_model_;
-        TTree* my_tree_;
         std::vector<float> plane_scores_;
         float final_score_;
         std::vector<float> getPlaneScores(const std::vector<image::Image>& images);
@@ -50,7 +56,11 @@ namespace selection
         }
     }
 
-    bool ContrastiveSelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
+    bool ContrastiveSelection::selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images) {
         auto images = e.getValidHandle<std::vector<image::Image>>(image_label_);
         if (images->size() != 3) {
             mf::LogWarning("ContrastiveSelection") << "Expected 3 images, got " << images->size();
@@ -81,9 +91,8 @@ namespace selection
     }
 
     void ContrastiveSelection::setBranches(TTree* _tree) {
-        my_tree_ = _tree;
-        my_tree_->Branch("plane_scores", &plane_scores_);
-        my_tree_->Branch("final_score", &final_score_, "final_score/F");
+        _tree->Branch("plane_scores", &plane_scores_);
+        _tree->Branch("final_score", &final_score_, "final_score/F");
     }
 
     void ContrastiveSelection::resetTTree(TTree* _tree) {

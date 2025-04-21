@@ -4,7 +4,7 @@
 #include "SelectionToolBase.h"
 #include <vector>
 #include "art/Framework/Principal/Event.h"
-#include "ImageProcessor.h"
+#include "../CommonDefs/Image.h"
 
 namespace selection 
 {
@@ -14,7 +14,11 @@ namespace selection
         ~ImageSelection() {}
 
         void configure(fhicl::ParameterSet const& pset);
-        bool selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& neutrino_slice, const std::vector<image::Image>& calo_images, const std::vector<image::Image>& reco_images, const std::vector<image::Image>& label_images);
+        bool selectEvent(art::Event const& e, 
+                        const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                        const std::vector<image::Image>& calo_images, 
+                        const std::vector<image::Image>& reco_images, 
+                        const std::vector<image::Image>& label_images);
         void setBranches(TTree* _tree);
         void resetTTree(TTree* _tree);
 
@@ -92,7 +96,7 @@ namespace selection
         label_W_pixels.clear();
     }
 
-    bool ImageSelection::selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& neutrino_slice, const std::vector<image::Image>& calo_images, const std::vector<image::Image>& reco_images, const std::vector<image::Image>& label_images) {
+    bool ImageSelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, const std::vector<image::Image>& calo_images, const std::vector<image::Image>& reco_images, const std::vector<image::Image>& label_images) {
         if (calo_images.size() != 3 || reco_images.size() != 3 || label_images.size() != 3) {
             return false;
         }

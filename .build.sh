@@ -4,6 +4,8 @@ export WRK_DIR=$(pwd)
 cd $MRB_TOP
 
 mrbsetenv
-mrb i -j10 
+mrb i -j12
 
 cd $WRK_DIR
+
+# mrb z # for clean build

@@ -19,8 +19,6 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "TDirectoryFile.h"
-#include "EventClassifier.h"
-#include "LabelClassifier.h"
 #include "art/Framework/Principal/Event.h"
 #include "larcore/Geometry/WireReadout.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -30,8 +28,9 @@ namespace image
 {
     class ImageProperties {
     public:
-        ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view, int kernel)
-            : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view), kernel_(kernel) {
+        ImageProperties() = default;
+        ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
+            : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
             origin_x_ = center_x - (width * pixel_w) / 2.0;
             origin_y_ = center_y - (height * pixel_h) / 2.0;
         }
@@ -52,7 +51,6 @@ namespace image
         double pixel_w() const { return pixel_w_; }
         double pixel_h() const { return pixel_h_; }
         geo::View_t view() const { return view_; }
-        int kernel() const { return kernel_; }
         double origin_x() const { return origin_x_; }
         double origin_y() const { return origin_y_; }
         double max_x() const { return origin_x_ + width_ * pixel_w_; }
@@ -63,7 +61,6 @@ namespace image
         size_t height_, width_;
         double pixel_w_, pixel_h_;
         geo::View_t view_;
-        int kernel_; 
     };
 
     class Image {

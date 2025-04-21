@@ -9,7 +9,8 @@
 #include "art_root_io/TFileService.h"
 #include "art/Framework/Principal/Event.h"
 
-#include "../CommonFunctions/Types.h"
+#include "../CommonDefs/Types.h"
+#include "../CommonDefs/Image.h"
 
 #include "TTree.h"
 #include <limits>
@@ -22,7 +23,11 @@ namespace selection
 
         void configure(const fhicl::ParameterSet&){};
 
-        virtual bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) = 0;
+        virtual bool selectEvent(art::Event const& e, 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
+                                const std::vector<image::Image>& calo_images, 
+                                const std::vector<image::Image>& reco_images, 
+                                const std::vector<image::Image>& label_images) = 0;
 
         virtual void setBranches(TTree* _tree) = 0;
 

@@ -26,56 +26,14 @@ enum class PrimaryLabel {
     charged_kaon,
     neutral_kaon,
     lambda,
-    charged_sigma
+    charged_sigma,
+    other
 };
 
-const std::array<std::string, 16> label_names = {
+const std::array<std::string, 17> label_names = {
     "empty", "cosmic", "neutrino", "proton", "neutron", "charged_pion", "neutral_pion", "muon", "electron", "photon",
-    "charged_kaon", "neutral_kaon", "lambda", "charged_sigma"
+    "charged_kaon", "neutral_kaon", "lambda", "charged_sigma", "other"
 };
-
-inline std::vector<PrimaryLabel> classifyParticles(
-    const art::Event& event,
-    const art::InputTag& particle_label,
-    double gamma_threshold,
-    double hadron_threshold
-) {
-    auto const& particle_handle = event.getValidHandle<std::vector<simb::MCParticle>>(particle_label);
-    const auto& particles = *particle_handle;
-
-    std::map<int, size_t> id_to_index;
-    for (size_t i = 0; i < particles.size(); ++i) {
-        id_to_index[particles[i].TrackId()] = i;
-    }
-
-    for (size_t i = 0; i < particles.size(); ++i) {
-        if (particles[i].Mother() == 0) {
-             if (auto it = track_id_to_particle_index.find(mcp.TrackId()); it != track_id_to_particle_index.end()) {
-                PrimaryLabel label = getPrimaryLabel(mcp.PdgCode());
-                processPrimaryParticle(it->second, particles, particle_labels, track_id_to_particle_index, label);
-            }
-        }
-    }
-    
-    return particle_labels;
-}
-
-inline void processPrimaryParticle(
-    size_t particle_index,
-    const std::vector<simb::MCParticle>& particles,
-    std::vector<PrimaryLabel>& particle_labels,
-    const std::unordered_map<int, size_t>& track_id_to_particle_index,
-    PrimaryLabel primary_label
-) {
-    particle_labels[particle_index] = primary_label; 
-    const auto& particle = particles[particle_index];
-
-    for (int daughter_index = 0; daughter_index < particle.NumberDaughters(); ++daughter_index) {
-        if (auto it = track_id_to_particle_index.find(particle.Daughter(daughter_index)); it != track_id_to_particle_index.end()) {
-            processPrimaryParticle(it->second, particles, particle_labels, track_id_to_particle_index, primary_label);
-        }
-    }
-}
 
 inline PrimaryLabel getPrimaryLabel(int pdg) {
     pdg = std::abs(pdg);
@@ -90,10 +48,54 @@ inline PrimaryLabel getPrimaryLabel(int pdg) {
     if (pdg == 311) return PrimaryLabel::neutral_kaon;
     if (pdg == 3122) return PrimaryLabel::lambda;
     if (pdg == 3222 || pdg == 3112) return PrimaryLabel::charged_sigma;
-    if (pdg == 3212) return PrimaryLabel::neutral_sigma;
-    if (pdg == 3322 || pdg == 3312 || pdg == 3334) return PrimaryLabel::other_hyperon;
     return PrimaryLabel::other;
 }
+
+inline void processPrimaryParticle(
+    size_t particle_index,
+    const std::vector<simb::MCParticle>& particles,
+    std::vector<PrimaryLabel>& particle_labels,
+    const std::unordered_map<int, size_t>& track_id_to_index,
+    PrimaryLabel primary_label
+) {
+    particle_labels[particle_index] = primary_label; 
+    const auto& particle = particles[particle_index];
+
+    for (int daughter_index = 0; daughter_index < particle.NumberDaughters(); ++daughter_index) {
+        if (auto it = track_id_to_index.find(particle.Daughter(daughter_index)); it != track_id_to_index.end()) {
+            processPrimaryParticle(it->second, particles, particle_labels, track_id_to_index, primary_label);
+        }
+    }
+}
+
+inline std::vector<PrimaryLabel> classifyParticles(
+    const art::Event& event,
+    const art::InputTag& particle_label,
+    double gamma_threshold,
+    double hadron_threshold
+) {
+    auto const& particle_handle = event.getValidHandle<std::vector<simb::MCParticle>>(particle_label);
+    const auto& particles = *particle_handle;
+
+    std::unordered_map<int, size_t> track_id_to_index;
+    for (size_t i = 0; i < particles.size(); ++i) {
+        track_id_to_index[particles[i].TrackId()] = i;
+    }
+
+    std::vector<PrimaryLabel> particle_labels(particles.size(), PrimaryLabel::empty);
+
+    for (size_t i = 0; i < particles.size(); ++i) {
+        if (particles[i].Mother() == 0) {  
+            if (auto it = track_id_to_index.find(particles[i].TrackId()); it != track_id_to_index.end()) {
+                PrimaryLabel label = getPrimaryLabel(particles[i].PdgCode());
+                processPrimaryParticle(it->second, particles, particle_labels, track_id_to_index, label);
+            }
+        }
+    }
+    
+    return particle_labels;
+}
+
 
 }
 
