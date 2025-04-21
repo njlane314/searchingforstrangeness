@@ -1,9 +1,9 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: $0 XML_FILE"
-  echo "  XML_FILE: Path to the XML file to submit"
-  exit 1
+    echo "Usage: $0 XML_FILE"
+    echo "  XML_FILE: Path to the XML file to submit"
+    exit 1
 }
 
 [ $# -ne 1 ] && usage

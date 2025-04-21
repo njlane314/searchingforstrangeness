@@ -10,7 +10,6 @@
 #include "lardataobj/MCBase/MCShower.h"
 #include "TVector3.h"
 #include "../CommonDefs/Backtracking.h"
-#include "../CommonDefs/Scores.h"
 #include "../CommonDefs/Corrections.h"
 #include "../CommonDefs/Scatters.h"
 #include "../CommonDefs/Geometry.h"
