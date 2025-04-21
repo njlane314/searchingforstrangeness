@@ -7,10 +7,10 @@
 
 namespace selection
 {
-    class FiducialSelection : public SelectionToolBase {
+    class FiducialVolumeSelection : public SelectionToolBase {
     public:
-        FiducialSelection(const fhicl::ParameterSet& pset);
-        ~FiducialSelection() {}
+        FiducialVolumeSelection(const fhicl::ParameterSet& pset);
+        ~FiducialVolumeSelection() {}
 
         void configure(fhicl::ParameterSet const & pset);
         bool selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v);
@@ -32,11 +32,11 @@ namespace selection
         double m_reco_nu_vtx_z;
     };
 
-    FiducialSelection::FiducialSelection(const fhicl::ParameterSet& pset) {
+    FiducialVolumeSelection::FiducialVolumeSelection(const fhicl::ParameterSet& pset) {
         this->configure(pset);
     }
 
-    void FiducialSelection::configure(fhicl::ParameterSet const & pset) {
+    void FiducialVolumeSelection::configure(fhicl::ParameterSet const & pset) {
         m_fidvolXstart = pset.get<double>("fidvolXstart");
         m_fidvolXend = pset.get<double>("fidvolXend");
         m_fidvolYstart = pset.get<double>("fidvolYstart");
@@ -45,19 +45,19 @@ namespace selection
         m_fidvolZend = pset.get<double>("fidvolZend");
     }
 
-    void FiducialSelection::setBranches(TTree* _tree) {
+    void FiducialVolumeSelection::setBranches(TTree* _tree) {
         _tree->Branch("reco_nu_vtx_x", &m_reco_nu_vtx_x, "reco_nu_vtx_x/D"); 
         _tree->Branch("reco_nu_vtx_y", &m_reco_nu_vtx_y, "reco_nu_vtx_y/D"); 
         _tree->Branch("reco_nu_vtx_z", &m_reco_nu_vtx_z, "reco_nu_vtx_z/D"); 
     }
 
-    void FiducialSelection::resetTTree(TTree* _tree) {
+    void FiducialVolumeSelection::resetTTree(TTree* _tree) {
         m_reco_nu_vtx_x = std::numeric_limits<double>::min(); 
         m_reco_nu_vtx_y = std::numeric_limits<double>::min();
         m_reco_nu_vtx_z = std::numeric_limits<double>::min();
     }
 
-    bool FiducialSelection::isFiducial(const double x[3]) const {
+    bool FiducialVolumeSelection::isFiducial(const double x[3]) const {
         geo::TPCGeo const &thisTPC = _geometry->TPC();
         geo::BoxBoundedGeo theTpcGeo = thisTPC.ActiveBoundingBox();
         std::vector<double> bnd = {theTpcGeo.MinX(), theTpcGeo.MaxX(), theTpcGeo.MinY(), theTpcGeo.MaxY(), theTpcGeo.MinZ(), theTpcGeo.MaxZ()};
@@ -67,7 +67,7 @@ namespace selection
         return is_x && is_y && is_z;
     }
 
-    bool FiducialSelection::selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v) {
+    bool FiducialVolumeSelection::selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v) {
         for (const auto& pfp_pxy : pfp_pxy_v) {
             if (pfp_pxy->IsPrimary()) {
                 auto vertices = pfp_pxy.get<recob::Vertex>();
@@ -104,4 +104,4 @@ namespace selection
     }
 }
 
-DEFINE_ART_CLASS_TOOL(selection::FiducialSelection)
+DEFINE_ART_CLASS_TOOL(selection::FiducialVolumeSelection)
