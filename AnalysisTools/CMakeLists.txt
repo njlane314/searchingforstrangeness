@@ -62,7 +62,6 @@ cet_build_plugin(
     nusimdata::SimulationBase
 )
 
-
 install_headers()
 install_source()
 install_fhicl()

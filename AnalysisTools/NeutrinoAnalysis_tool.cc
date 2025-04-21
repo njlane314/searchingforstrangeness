@@ -84,8 +84,7 @@ namespace analysis
         _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
     }
 
-    void NeutrinoAnalysis::analyseSlice(const art::Event& /*event*/, std::vector<common::ProxyPfpElem_t>& /*slice_pfp_v*/, bool /*is_data*/, bool /*selected*/) 
-    {}
+    void NeutrinoAnalysis::analyseSlice(const art::Event& /*event*/, std::vector<common::ProxyPfpElem_t>& /*slice_pfp_v*/, bool /*is_data*/, bool /*selected*/) {}
 
     void NeutrinoAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (is_data) 

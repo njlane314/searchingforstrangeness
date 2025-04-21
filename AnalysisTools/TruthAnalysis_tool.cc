@@ -10,7 +10,8 @@
 #include "art/Framework/Services/Optional/TFileService.h"
 #include <limits>
 
-namespace analysis {
+namespace analysis 
+{
     class TruthAnalysis : public art::EDFilter {
     public:
         explicit TruthAnalysis(fhicl::ParameterSet const& p);
@@ -148,10 +149,8 @@ namespace analysis {
 
     bool TruthAnalysis::isFiducial(const double x[3]) const {
         auto const& tpc = art::ServiceHandle<geo::Geometry>()->TPC();
-        std::vector<double> bnd = {
-            0., 2. * tpc.HalfWidth(), -tpc.HalfHeight(), tpc.HalfHeight(),
-            0., tpc.Length()
-        };
+        geo::BoxBoundedGeo theTpcGeo = tpc.ActiveBoundingBox();
+        std::vector<double> bnd = {theTpcGeo.MinX(), theTpcGeo.MaxX(), theTpcGeo.MinY(), theTpcGeo.MaxY(), theTpcGeo.MinZ(), theTpcGeo.MaxZ()};
         bool is_x = x[0] > (bnd[0] + m_fidvolXstart) && x[0] < (bnd[1] - m_fidvolXend);
         bool is_y = x[1] > (bnd[2] + m_fidvolYstart) && x[1] < (bnd[3] - m_fidvolYend);
         bool is_z = x[2] > (bnd[4] + m_fidvolZstart) && x[2] < (bnd[5] - m_fidvolZend);
@@ -234,10 +233,10 @@ namespace analysis {
                     bool has_pi0 = (_mcf_np0 > 0);
                     if (has_strange_hadron) {
                         _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_strange);
-                    } else if (has_proton && !has_pions && !has_pi0) {
-                        _event_category = static_cast<int>(Eventcategory::k_nu_mu_cc_with_protons); 
-                    } else if (!has_proton && has_pions && !has_pi0) {
-                        _event_category = static_cast<int>(Eventcategory::k_nu_mu_cc_with_pions); 
+                    } else if (has_protons && !has_pions && !has_pi0) {
+                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_protons); 
+                    } else if (!has_protons && has_pions && !has_pi0) {
+                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_pions); 
                     } else if (has_protons && has_pions && !has_pi0) {
                         _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_protons_pions);
                     } else {
