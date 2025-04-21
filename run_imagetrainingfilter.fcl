@@ -1,6 +1,6 @@
 #include "selectionconfig.fcl"
 
-process_name: EventSelectionFilterProcess
+process_name: ImageTrainingFilterProcess
 
 services: {
     TFileService: { fileName: "output.root" }
@@ -30,7 +30,8 @@ source: {
 physics: {
     filters: {
         fiducialFilter: @local::FiducialFilter
-        topologyFilter: @local::TopologyFilter
+        imageFilter: @local::ImageFilter
     }
-    trigger_paths: [ fiducialFilter, topologyFilter ]
+    path1: [ fiducialFilter, imageFilter ]
+    trigger_paths: [ path1 ]
 }
