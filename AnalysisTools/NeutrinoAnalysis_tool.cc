@@ -9,12 +9,12 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "TVector3.h"
-#include "../CommonFunctions/Backtracking.h"
-#include "../CommonFunctions/Scores.h"
-#include "../CommonFunctions/Corrections.h"
-#include "../CommonFunctions/Scatters.h"
-#include "../CommonFunctions/Geometry.h"
-#include "../CommonFunctions/Pandora.h"
+#include "../CommonDefs/Backtracking.h"
+#include "../CommonDefs/Scores.h"
+#include "../CommonDefs/Corrections.h"
+#include "../CommonDefs/Scatters.h"
+#include "../CommonDefs/Geometry.h"
+#include "../CommonDefs/Pandora.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "lardataobj/MCBase/MCShower.h"
 
@@ -84,8 +84,7 @@ namespace analysis
         _MCPproducer = pset.get<art::InputTag>("MCPproducer", "largeant");
     }
 
-    void NeutrinoAnalysis::analyseSlice(const art::Event& /*event*/, std::vector<common::ProxyPfpElem_t>& /*slice_pfp_v*/, bool /*is_data*/, bool /*selected*/) 
-    {}
+    void NeutrinoAnalysis::analyseSlice(const art::Event& /*event*/, std::vector<common::ProxyPfpElem_t>& /*slice_pfp_v*/, bool /*is_data*/, bool /*selected*/) {}
 
     void NeutrinoAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (is_data) 

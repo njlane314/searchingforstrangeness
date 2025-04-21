@@ -1,7 +1,7 @@
 cet_enable_asserts()
 
 cet_make_library(
-  LIBRARY_NAME StrangenessAnalysisToolBase INTERFACE
+  LIBRARY_NAME _AnalysisToolBase INTERFACE
   SOURCE AnalysisToolBase.h
   LIBRARIES
   INTERFACE
@@ -9,6 +9,7 @@ cet_make_library(
   art_root_io::TFileService_service
   fhiclcpp::fhiclcpp
   ROOT::Tree
+  ubana::XGBoost
 )
 
 cet_write_plugin_builder(
@@ -24,18 +25,10 @@ cet_write_plugin_builder(
 include(ubana_tool::AnalysisToolBase)
 
 cet_build_plugin(
-  ClassificationAnalysis ubana_tool::AnalysisToolBase
+  EventWeightAnalysis ubana_tool::AnalysisToolBase
   LIBRARIES
   PRIVATE
-    art::Framework_Core              
-    nusimdata::SimulationBase        
-    larcore::Geometry_Geometry_service  
-    larpandora::LArPandoraInterface
-    larevt::SpaceChargeService
-    larsim::Simulation           
-    ROOT::Core                   
-    ROOT::Physics
-    lardataobj::MCBase
+    larsim::EventWeight_Base
 )
 
 cet_build_plugin(
@@ -55,54 +48,19 @@ cet_build_plugin(
 )
 
 cet_build_plugin(
-  PatternAnalysis ubana_tool::AnalysisToolBase
+  NuGraphAnalysis ubana_tool::AnalysisToolBase
   LIBRARIES
   PRIVATE
-    art::Framework_Core
-    nusimdata::SimulationBase
-    lardataobj::RecoBase
-    larpandora::LArPandoraInterface
-    ROOT::Physics
-    larevt::SpaceChargeService
-    larsim::Simulation           
-    ROOT::Core    
-    lardataobj::MCBase               
+    lardata::Utilities
+    lardataobj::AnalysisBase
 )
 
 cet_build_plugin(
-  SliceAnalysis ubana_tool::AnalysisToolBase
+  TruthAnalysis ubana_tool::AnalysisToolBase
   LIBRARIES
   PRIVATE
-    art::Framework_Core
     larcore::Geometry_Geometry_service
     nusimdata::SimulationBase
-    lardataobj::RecoBase
-    Eigen3::Eigen
-    larevt::SpaceChargeService
-    lardata::DetectorClocksService
-    larpandora::LArPandoraInterface
-    larsim::Simulation           
-    ROOT::Core                   
-    ROOT::Physics
-    lardataobj::MCBase
-)
-
-cet_build_plugin(
-  WireImageAnalysis ubana_tool::AnalysisToolBase
-  LIBRARIES
-  PRIVATE
-    art::Framework_Core
-    lardataobj::RecoBase
-    nusimdata::SimulationBase
-    larcore::Geometry_Geometry_service
-    lardata::DetectorInfoServices_DetectorPropertiesServiceStandard_service
-    ROOT::Tree
-    larpandora::LArPandoraInterface
-    larevt::SpaceChargeService
-    larsim::Simulation           
-    ROOT::Core                   
-    ROOT::Physics
-    lardataobj::MCBase
 )
 
 install_headers()
