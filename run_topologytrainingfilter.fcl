@@ -1,9 +1,9 @@
 #include "selectionconfig.fcl"
 
-process_name: EventSelectionFilterProcess
+process_name: TrainingSampleGeneration
 
 services: {
-    TFileService: { fileName: "output.root" }
+    TFileService: { fileName: "training_samples.root" }
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -30,7 +30,21 @@ source: {
 physics: {
     filters: {
         fiducialFilter: @local::FiducialFilter
-        topologyFilter: @local::TopologyFilter
+        topologyTrainingFilter: {
+            @table::BaseEventSelectionFilter
+            SelectionTool: {
+                tool_type: "TopologySelection"
+                CLSproducer: "pandora"
+                BDTThreshold: 0.5
+                InferenceMode: true
+                BDTModel: "" 
+            }
+            AnalysisTools: {
+                truth: @local::TruthAnalysis
+            }
+            TreeName: "trainingSampleTree"
+        }
     }
-    trigger_paths: [ fiducialFilter, topologyFilter ]
+    path1: [ fiducialFilter, topologyTrainingFilter ]
+    trigger_paths: [ path1 ]
 }
