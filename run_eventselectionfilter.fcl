@@ -48,6 +48,12 @@ physics:
                 { center_x: 0.0, center_y: 0.0, width: 800, height: 600, pixel_h: 0.1, pixel_w: 0.1, view: 2, kernel: 1 }   # kW
             ]
         }
+        selectionaggregator:
+        {
+            module_type: SelectionAggregator
+            filter_labels: [ "selectionfilterA", "selectionfilterB" ]
+            use_and: true
+        }
     }
     filters:
     {
@@ -103,6 +109,6 @@ physics:
     trigger_paths: [ f1, p1, f2 ]
     end_paths: [ ]
     f1: [ selectionfilterA, selectionfilterB ]
-    p1: [ imageproducer ]
+    p1: [ selectionaggregator, imageproducer ]
     f2: [ imagebasedfilterA, imagebasedfilterB ]
 }
