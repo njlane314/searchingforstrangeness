@@ -14,10 +14,7 @@ namespace selection
         void configure(fhicl::ParameterSet const & pset);
         bool selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v);
         void setBranches(TTree* _tree){};
-        void resetTTree(TTree* _tree){};
-        
-    private:
-        
+        void resetTTree(TTree* _tree){};   
     };
    
     EmptySelection::EmptySelection(const fhicl::ParameterSet& pset){}
