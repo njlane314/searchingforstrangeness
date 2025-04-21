@@ -1,203 +1,207 @@
-#ifndef SELECTION_TOPOLOGYSELECTION_H
-#define SELECTION_TOPOLOGYSELECTION_H
-
 #include <iostream>
 #include <vector>
 #include <map>
-#include <utility>
-#include <limits>
-#include <Eigen/Dense>
+#include <cmath>
+#include <fstream>
 #include "SelectionToolBase.h"
 #include "art/Framework/Principal/Event.h"
-#include "canvas/Persistency/Common/Ptr.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Wire.h"
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "ubana/XGBoost/xgboost/c_api.h"
+#include "cetlib/search_path.h"
 
+// containment, charge threshold and then this
+// probably only use hits and extent here and place a loose cut
 namespace selection
 {
     class TopologySelection : public SelectionToolBase {
     public:
-        TopologySelection(const fhicl::ParameterSet& pset);
-        ~TopologySelection() {}
+        explicit TopologySelection(const fhicl::ParameterSet& pset);
+        ~TopologySelection();
 
-        void configure(fhicl::ParameterSet const & pset);
-        bool selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v);
-        void setBranches(TTree* _tree);
-        void resetTTree(TTree* _tree);
+        void configure(fhicl::ParameterSet const& pset) override;
+        bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) override;
+        void setBranches(TTree* _tree) override;
+        void resetTTree(TTree* _tree) override;
 
     private:
-        std::string _wire_tag;    // Tag for wire data product
-        double _threshold;        // Threshold for lambda2 / lambda1 ratio
+        std::string hitLabel_;
+        int minHitsPerPlane_;
+        float bdtThreshold_;
+        bool trainingMode_;
+        std::string trainingDataFile_;
+        BoosterHandle bdt_;
+        TTree* myTree_;
 
-        art::ServiceHandle<geo::Geometry> _geometry;
-        art::ServiceHandle<detinfo::DetectorPropertiesService> _detprop;
+        // Features
+        int nHitsU_, nHitsV_, nHitsW_;
+        float totalChargeU_, totalChargeV_, totalChargeW_;
+        float wireRangeU_, wireRangeV_, wireRangeW_;
+        float timeRangeU_, timeRangeV_, timeRangeW_;
+        float bdtScore_;
+        int isSignal_; // For training data
 
-        double m_lambda1;         // First eigenvalue
-        double m_lambda2;         // Second eigenvalue
-        double m_lambda3;         // Third eigenvalue
-        double m_ratio;           // Ratio of lambda2 / lambda1
+        // Helper functions
+        std::vector<float> computeFeatures(const art::Event& e);
+        float predictBDT(const std::vector<float>& features, BoosterHandle bdt, int nTrees);
+        void writeTrainingData(const std::vector<float>& features, int label);
     };
 
     TopologySelection::TopologySelection(const fhicl::ParameterSet& pset) {
-        this->configure(pset);
+        configure(pset);
     }
 
-    void TopologySelection::configure(fhicl::ParameterSet const & pset) {
-        _wire_tag = pset.get<std::string>("wire_tag");
-        _threshold = pset.get<double>("threshold");
+    TopologySelection::~TopologySelection() {
+        if (bdt_) XGBoosterFree(bdt_);
+    }
+
+    void TopologySelection::configure(fhicl::ParameterSet const& pset) {
+        hitLabel_ = pset.get<std::string>("HitLabel", "gaushit");
+        minHitsPerPlane_ = pset.get<int>("MinHitsPerPlane", 5);
+        bdtThreshold_ = pset.get<float>("BDTThreshold", 0.5);
+        trainingMode_ = pset.get<bool>("TrainingMode", false);
+        trainingDataFile_ = pset.get<std::string>("TrainingDataFile", "training_data.txt");
+
+        if (!trainingMode_) {
+            int xgtest = -1;
+            cet::search_path sp("FW_SEARCH_PATH");
+            std::string filename;
+            xgtest = XGBoosterCreate(NULL, 0, &bdt_);
+            sp.find_file(pset.get<std::string>("BDTModel"), filename);
+            xgtest = XGBoosterLoadModel(bdt_, filename.c_str());
+            if (xgtest != 0) throw cet::exception("TopologySelection") << "XGBoost error: " << xgtest;
+        }
+    }
+
+    bool TopologySelection::selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
+        std::vector<float> features = computeFeatures(e);
+
+        if (trainingMode_) {
+            int label = 0; // Placeholder: 0 = background, 1 = signal (requires simulation truth info)
+            writeTrainingData(features, label);
+            return false; // Training mode: no selection
+        } else {
+            bdtScore_ = predictBDT(features, bdt_, 100);
+            return bdtScore_ > bdtThreshold_;
+        }
+    }
+
+    std::vector<float> TopologySelection::computeFeatures(const art::Event& e) {
+        art::Handle<std::vector<recob::Hit>> hitHandle;
+        e.getByLabel(hitLabel_, hitHandle);
+        if (!hitHandle.isValid()) {
+            mf::LogWarning("TopologySelection") << "No hits found with label: " << hitLabel_;
+            return std::vector<float>(12, 0.0f);
+        }
+
+        std::map<int, std::vector<art::Ptr<recob::Hit>>> hitsPerPlane;
+        for (size_t i = 0; i < hitHandle->size(); ++i) {
+            art::Ptr<recob::Hit> hit(hitHandle, i);
+            int plane = hit->WireID().planeID().Plane;
+            hitsPerPlane[plane].push_back(hit);
+        }
+
+        nHitsU_ = nHitsV_ = nHitsW_ = 0;
+        totalChargeU_ = totalChargeV_ = totalChargeW_ = 0.0f;
+        wireRangeU_ = wireRangeV_ = wireRangeW_ = 0.0f;
+        timeRangeU_ = timeRangeV_ = timeRangeW_ = 0.0f;
+
+        for (int plane = 0; plane < 3; ++plane) {
+            auto& hits = hitsPerPlane[plane];
+            if (hits.size() < static_cast<size_t>(minHitsPerPlane_)) continue;
+
+            float minWire = std::numeric_limits<float>::max(), maxWire = std::numeric_limits<float>::lowest();
+            float minTime = std::numeric_limits<float>::max(), maxTime = std::numeric_limits<float>::lowest();
+            float chargeSum = 0.0f;
+
+            for (const auto& hit : hits) {
+                float wire = hit->WireID().Wire;
+                float time = hit->PeakTime();
+                minWire = std::min(minWire, wire);
+                maxWire = std::max(maxWire, wire);
+                minTime = std::min(minTime, time);
+                maxTime = std::max(maxTime, time);
+                chargeSum += hit->Integral();
+            }
+
+            int nHits = hits.size();
+            float wireRange = (nHits > 0) ? maxWire - minWire : 0.0f;
+            float timeRange = (nHits > 0) ? maxTime - minTime : 0.0f;
+
+            if (plane == 0) {
+                nHitsU_ = nHits;
+                totalChargeU_ = chargeSum;
+                wireRangeU_ = wireRange;
+                timeRangeU_ = timeRange;
+            } else if (plane == 1) {
+                nHitsV_ = nHits;
+                totalChargeV_ = chargeSum;
+                wireRangeV_ = wireRange;
+                timeRangeV_ = timeRange;
+            } else {
+                nHitsW_ = nHits;
+                totalChargeW_ = chargeSum;
+                wireRangeW_ = wireRange;
+                timeRangeW_ = timeRange;
+            }
+        }
+
+        return {
+            static_cast<float>(nHitsU_), static_cast<float>(nHitsV_), static_cast<float>(nHitsW_),
+            totalChargeU_, totalChargeV_, totalChargeW_,
+            wireRangeU_, wireRangeV_, wireRangeW_,
+            timeRangeU_, timeRangeV_, timeRangeW_
+        };
+    }
+
+    float TopologySelection::predictBDT(const std::vector<float>& features, BoosterHandle bdt, int nTrees) {
+        int xgtest = -1;
+        DMatrixHandle dmat;
+        xgtest = XGDMatrixCreateFromMat(const_cast<float*>(features.data()), 1, features.size(), 0, &dmat);
+        bst_ulong out_len = 0;
+        const float* out_result = NULL;
+        xgtest = XGBoosterPredict(bdt, dmat, 0, nTrees, &out_len, &out_result);
+        if (xgtest != 0) throw cet::exception("TopologySelection") << "XGBoost predict error: " << xgtest;
+        float result = *out_result;
+        XGDMatrixFree(dmat);
+        return result;
+    }
+
+    void TopologySelection::writeTrainingData(const std::vector<float>& features, int label) {
+        std::ofstream outfile(trainingDataFile_, std::ios_base::app);
+        for (float f : features) {
+            outfile << f << " ";
+        }
+        outfile << label << std::endl;
     }
 
     void TopologySelection::setBranches(TTree* _tree) {
-        _tree->Branch("lambda1", &m_lambda1, "lambda1/D");
-        _tree->Branch("lambda2", &m_lambda2, "lambda2/D");
-        _tree->Branch("lambda3", &m_lambda3, "lambda3/D");
-        _tree->Branch("ratio", &m_ratio, "ratio/D");
+        _tree->Branch("nHitsU", &nHitsU_, "nHitsU/I");
+        _tree->Branch("nHitsV", &nHitsV_, "nHitsV/I");
+        _tree->Branch("nHitsW", &nHitsW_, "nHitsW/I");
+        _tree->Branch("totalChargeU", &totalChargeU_, "totalChargeU/F");
+        _tree->Branch("totalChargeV", &totalChargeV_, "totalChargeV/F");
+        _tree->Branch("totalChargeW", &totalChargeW_, "totalChargeW/F");
+        _tree->Branch("wireRangeU", &wireRangeU_, "wireRangeU/F");
+        _tree->Branch("wireRangeV", &wireRangeV_, "wireRangeV/F");
+        _tree->Branch("wireRangeW", &wireRangeW_, "wireRangeW/F");
+        _tree->Branch("timeRangeU", &timeRangeU_, "timeRangeU/F");
+        _tree->Branch("timeRangeV", &timeRangeV_, "timeRangeV/F");
+        _tree->Branch("timeRangeW", &timeRangeW_, "timeRangeW/F");
+        _tree->Branch("bdtScore", &bdtScore_, "bdtScore/F");
+        _tree->Branch("isSignal", &isSignal_, "isSignal/I");
     }
 
     void TopologySelection::resetTTree(TTree* _tree) {
-        m_lambda1 = std::numeric_limits<double>::lowest();
-        m_lambda2 = std::numeric_limits<double>::lowest();
-        m_lambda3 = std::numeric_limits<double>::lowest();
-        m_ratio = -1.0;
+        nHitsU_ = nHitsV_ = nHitsW_ = 0;
+        totalChargeU_ = totalChargeV_ = totalChargeW_ = 0.0f;
+        wireRangeU_ = wireRangeV_ = wireRangeW_ = 0.0f;
+        timeRangeU_ = timeRangeV_ = timeRangeW_ = 0.0f;
+        bdtScore_ = -1.0f;
+        isSignal_ = -1;
     }
 
-    bool TopologySelection::selectEvent(art::Event const& e, const std::vector<ProxyPfpElem_t>& pfp_pxy_v) {
-        // Retrieve wires
-        auto wire_handle = e.getValidHandle<std::vector<recob::Wire>>(_wire_tag);
-        std::vector<art::Ptr<recob::Wire>> wire_vec;
-        art::fill_ptr_vector(wire_vec, wire_handle);
-
-        // Create wire map: (Plane, Wire) -> wire pointer
-        std::map<std::pair<unsigned int, unsigned int>, art::Ptr<recob::Wire>> wire_map;
-        for (const auto& wire_ptr : wire_vec) {
-            auto channel = wire_ptr->Channel();
-            auto wids = _geometry->ChannelToWire(channel);
-            if (!wids.empty()) {
-                auto wid = wids[0]; // Assuming one wire per channel
-                wire_map[{wid.Plane, wid.Wire}] = wire_ptr;
-            }
-        }
-
-        // Collect hits from slice
-        std::vector<art::Ptr<recob::Hit>> slice_hits;
-        for (const auto& pfp_pxy : pfp_pxy_v) {
-            auto hits = pfp_pxy.get<recob::Hit>();
-            slice_hits.insert(slice_hits.end(), hits.begin(), hits.end());
-        }
-
-        // Collect points from ROIs
-        std::vector<double> x_pos, y_pos, z_pos, weights;
-        for (const auto& hit : slice_hits) {
-            auto wid = hit->WireID();
-            auto key = std::make_pair(wid.Plane, wid.Wire);
-            auto it = wire_map.find(key);
-            if (it == wire_map.end()) continue;
-            const auto& wire = *it->second;
-
-            // Get the signal ROI
-            const auto& signal = wire.SignalROI();
-            int hit_start_tick = hit->StartTick();
-            int hit_end_tick = hit->EndTick();
-
-            for (const auto& range : signal.get_ranges()) {
-                int range_start = range.begin_index();
-                int range_end = range_start + range.data().size();
-                int overlap_start = std::max(range_start, hit_start_tick);
-                int overlap_end = std::min(range_end, hit_end_tick);
-                if (overlap_start >= overlap_end) continue;
-
-                for (int tick = overlap_start; tick < overlap_end; ++tick) {
-                    float adc = range.data()[tick - range_start];
-                    if (adc <= 0) continue;
-
-                    double x = _detprop->ConvertTicksToX(tick, wid.Plane);
-                    auto wire_pos = _geometry->WireIDToWireGeo(wid).GetCenter();
-                    double y = wire_pos.Y();
-                    double z = wire_pos.Z();
-
-                    x_pos.push_back(x);
-                    y_pos.push_back(y);
-                    z_pos.push_back(z);
-                    weights.push_back(adc);
-                }
-            }
-        }
-
-        size_t n_points = x_pos.size();
-        if (n_points == 0) {
-            m_lambda1 = std::numeric_limits<double>::lowest();
-            m_lambda2 = std::numeric_limits<double>::lowest();
-            m_lambda3 = std::numeric_limits<double>::lowest();
-            m_ratio = -1.0;
-            return false;
-        }
-
-        // Compute weighted mean
-        double total_weight = 0.0;
-        double sum_x = 0.0, sum_y = 0.0, sum_z = 0.0;
-        for (size_t i = 0; i < n_points; ++i) {
-            sum_x += weights[i] * x_pos[i];
-            sum_y += weights[i] * y_pos[i];
-            sum_z += weights[i] * z_pos[i];
-            total_weight += weights[i];
-        }
-
-        if (total_weight <= 0) {
-            m_lambda1 = std::numeric_limits<double>::lowest();
-            m_lambda2 = std::numeric_limits<double>::lowest();
-            m_lambda3 = std::numeric_limits<double>::lowest();
-            m_ratio = -1.0;
-            return false;
-        }
-
-        double mean_x = sum_x / total_weight;
-        double mean_y = sum_y / total_weight;
-        double mean_z = sum_z / total_weight;
-
-        // Compute centered data
-        Eigen::MatrixXd centered(n_points, 3);
-        for (size_t i = 0; i < n_points; ++i) {
-            centered(i, 0) = x_pos[i] - mean_x;
-            centered(i, 1) = y_pos[i] - mean_y;
-            centered(i, 2) = z_pos[i] - mean_z;
-        }
-
-        // Compute weighted covariance matrix
-        Eigen::MatrixXd cov(3,3);
-        cov.setZero();
-        for (size_t i = 0; i < n_points; ++i) {
-            Eigen::Vector3d centered_vec = centered.row(i);
-            cov += weights[i] * (centered_vec * centered_vec.transpose());
-        }
-        cov /= total_weight;
-
-        // Compute eigenvalues
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig(cov);
-        if (eig.info() != Eigen::Success) {
-            m_lambda1 = std::numeric_limits<double>::lowest();
-            m_lambda2 = std::numeric_limits<double>::lowest();
-            m_lambda3 = std::numeric_limits<double>::lowest();
-            m_ratio = -1.0;
-            return false;
-        }
-
-        Eigen::VectorXd eigenvalues = eig.eigenvalues().reverse();
-        m_lambda1 = eigenvalues(0);
-        m_lambda2 = eigenvalues(1);
-        m_lambda3 = eigenvalues(2);
-
-        if (m_lambda1 > 0) {
-            m_ratio = m_lambda2 / m_lambda1;
-        } else {
-            m_ratio = -1.0;
-        }
-
-        return m_ratio > _threshold;
-    }
+    DEFINE_ART_CLASS_TOOL(TopologySelection)
 }
-
-DEFINE_ART_CLASS_TOOL(selection::TopologySelection)
-#endif

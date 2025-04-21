@@ -1,101 +1,89 @@
-#ifndef WIREIMAGEGENERATOR_H
-#define WIREIMAGEGENERATOR_H
+#ifndef WIREIMAGESAVER_H
+#define WIREIMAGESAVER_H
 
-#include "ImageGeneratorBase.h"
-#include "../ImageProcessor.h"
-#include "../LabelClassifier.h"
-#include <vector>
+#include "AnalysisToolBase.h"
 #include "art/Framework/Principal/Event.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
+#include "art/Framework/Principal/Handle.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "ImageProcessor.h"
+#include <vector>
+#include <string>
 
-namespace analysis 
+namespace analysis
 {
-    class WireImageAnalysis : public ImageGeneratorBase {
+    class WireImageAnalysis : public AnalysisToolBase {
     public:
-        WireImageAnalysis(const fhicl::ParameterSet& pset) 
-            : ImageGeneratorBase(pset), _pset(pset), _event_classifier(pset.get<fhicl::ParameterSet>("EventClassifier")), _label_classifier(pset.get<fhicl::ParameterSet>("LabelClassifier")) {}
-        void analyseEvent(const art::Event& e, bool is_data) override;
-        void analyseSlice(const art::Event& e, std::vector<common::ProxyPfpElem_t>& slicePfpVector, bool is_data, bool selected) override;
-        void setBranches(TTree* tree) override;
-        void resetTTree(TTree* tree) override;
+        explicit WireImageAnalysis(const fhicl::ParameterSet& pset);
+        void configure(fhicl::ParameterSet const& pset) override;
+        void analyzeEvent(art::Event const& e, bool is_data) override;
+        void analyzeSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override {}
+        void setBranches(TTree* _tree) override;
+        void resetTTree(TTree* _tree) override;
 
     private:
-        fhicl::ParameterSet _pset;
-        signature::EventClassifier _event_classifier;
-        signature::LabelClassifier _label_classifier;
-        std::vector<std::vector<float>> event_wire_images_;
-        std::vector<std::vector<float>> slice_wire_images_;
-        std::vector<std::vector<float>> event_truth_wire_images_;
-        std::vector<std::vector<float>> slice_truth_wire_images_;
-        std::vector<std::vector<float>> event_label_wire_images_; 
-        std::vector<std::vector<float>> slice_label_wire_images_; 
-        bool contained_;
+        std::string input_images_label_;
+        std::string truth_images_label_;
+        std::string label_images_label_;
+        std::vector<std::vector<float>> input_images_;
+        std::vector<std::vector<float>> truth_images_;
+        std::vector<std::vector<float>> label_images_;
     };
 
-    void WireImageAnalysis::analyseEvent(const art::Event& e, bool is_data) {}
+    WireImageAnalysis::WireImageAnalysis(const fhicl::ParameterSet& pset) {
+        configure(pset);
+    }
 
-    void WireImageAnalysis::analyseSlice(const art::Event& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {
-        if (is_data) return;
+    void WireImageAnalysis::configure(fhicl::ParameterSet const& pset) {
+        input_images_label_ = pset.get<std::string>("InputImagesLabel", "inputImages");
+        truth_images_label_ = pset.get<std::string>("TruthImagesLabel", "truthImages");
+        label_images_label_ = pset.get<std::string>("LabelImagesLabel", "labelImages");
+    }
 
-        std::vector<art::Ptr<recob::Wire>> wire_vec;
-        if (auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(_WREproducer)) 
-            art::fill_ptr_vector(wire_vec, wireHandle);
+    void WireImageAnalysis::setBranches(TTree* _tree) {
+        _tree->Branch("input_images", &input_images_);
+        _tree->Branch("truth_images", &truth_images_);
+        _tree->Branch("label_images", &label_images_);
+    }
 
-        art::FindManyP<recob::Hit> wire_hit_assoc(wire_vec, e, _HITproducer);
+    void WireImageAnalysis::resetTTree(TTree* _tree) {
+        input_images_.clear();
+        truth_images_.clear();
+        label_images_.clear();
+    }
 
-        auto neutrino_hits = this->collectNeutrinoHits(e, slice_pfp_v);
-        std::vector<double> centroid_wires(planes_.size()), centroid_drifts(planes_.size());
-        for (size_t i = 0; i < planes_.size(); ++i) {
-            auto view = static_cast<common::PandoraView>(planes_[i]);
-            auto [wire, drift] = this->calculateCentroid(e, view, neutrino_hits);
-            centroid_wires[i] = wire;
-            centroid_drifts[i] = drift;
+    void WireImageAnalysis::analyzeEvent(art::Event const& e, bool is_data) {
+        art::Handle<std::vector<image::Image>> input_handle;
+        e.getByLabel(input_images_label_, input_handle);
+        if (input_handle.isValid()) {
+            for (const auto& img : *input_handle) {
+                input_images_.push_back(img.data());
+            }
+        } else {
+            mf::LogWarning("WireImageAnalysis") << "No input images found with label: " << input_images_label_;
         }
-        auto properties = this->buildImageProperties(centroid_wires, centroid_drifts);
 
-        std::vector<art::Ptr<recob::Hit>> hit_vec;
-        if (auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(_HITproducer))
-            art::fill_ptr_vector(hit_vec, hitHandle);
-        art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vec, e, _BKTproducer);
-        signature::Pattern pattern = _event_classifier.getPattern(e);
-        std::vector<art::Ptr<simb::MCParticle>> mcp_vec;
-        if (auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer))
-            art::fill_ptr_vector(mcp_vec, mcpHandle);
-        std::vector<signature::Label> particle_labels = _label_classifier.classifyParticles(e);
+        if (!is_data) {
+            art::Handle<std::vector<image::Image>> truth_handle;
+            e.getByLabel(truth_images_label_, truth_handle);
+            if (truth_handle.isValid()) {
+                for (const auto& img : *truth_handle) {
+                    truth_images_.push_back(img.data());
+                }
+            } else {
+                mf::LogWarning("WireImageAnalysis") << "No truth images found with label: " << truth_images_label_;
+            }
 
-        float adc_threshold = _pset.get<float>("ADCThreshold", 0.0f);
-
-        std::vector<image::Image> input_imgs, truth_imgs, label_imgs;
-        image::constructAllWireImages(
-            e, properties, wire_vec, wire_hit_assoc, mcp_bkth_assoc, pattern, particle_labels,
-            _geo, mcp_vec, _bad_channel_mask, input_imgs, truth_imgs, label_imgs, adc_threshold
-        );
-
-        slice_wire_images_ = image::extractImages(input_imgs);
-        slice_truth_wire_images_ = image::extractImages(truth_imgs);
-        slice_label_wire_images_ = image::extractImages(label_imgs);
-        contained_ = this->isNeutrinoContained(e, properties, centroid_drifts);
-    }
-
-    void WireImageAnalysis::setBranches(TTree* tree) {
-        tree->Branch("event_wire_images", &event_wire_images_);
-        tree->Branch("slice_wire_images", &slice_wire_images_);
-        tree->Branch("event_truth_wire_images", &event_truth_wire_images_);
-        tree->Branch("slice_truth_wire_images", &slice_truth_wire_images_);
-        tree->Branch("event_label_wire_images", &event_label_wire_images_); 
-        tree->Branch("slice_label_wire_images", &slice_label_wire_images_); 
-        tree->Branch("slice_wire_contained", &contained_);
-    }
-
-    void WireImageAnalysis::resetTTree(TTree* tree) {
-        event_wire_images_.clear();
-        slice_wire_images_.clear();
-        event_truth_wire_images_.clear();
-        slice_truth_wire_images_.clear();
-        event_label_wire_images_.clear(); 
-        slice_label_wire_images_.clear();
-        contained_ = false;
+            art::Handle<std::vector<image::Image>> label_handle;
+            e.getByLabel(label_images_label_, label_handle);
+            if (label_handle.isValid()) {
+                for (const auto& img : *label_handle) {
+                    label_images_.push_back(img.data());
+                }
+            } else {
+                mf::LogWarning("WireImageAnalysis") << "No label images found with label: " << label_images_label_;
+            }
+        }
     }
 
     DEFINE_ART_CLASS_TOOL(WireImageAnalysis)
