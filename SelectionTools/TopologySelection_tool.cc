@@ -36,12 +36,12 @@ namespace selection
         float m_bdtThreshold;
         bool m_inferenceMode;
         BoosterHandle m_bdt = nullptr;
-        float m_bdtScore = -1.0f;
+        float m_bdt_score = -1.0f;
 
-        int m_nHitsU, m_nHitsV, m_nHitsW;
-        float m_totalChargeU, m_totalChargeV, m_totalChargeW;
-        float m_wireRangeU, m_wireRangeV, m_wireRangeW;
-        float m_timeRangeU, m_timeRangeV, m_timeRangeW;
+        int m_nhit_u, m_nhits_v, m_nhits_w;
+        float m_charge_u, m_charge_v, m_charge_w;
+        float m_wirerange_u, m_wirerange_v, m_wirerange_w;
+        float m_timerange_u, m_timerange_v, m_timerange_w;
 
         void computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
         float predictBDT(const std::vector<float>& features);
@@ -76,13 +76,13 @@ namespace selection
         }
 
         std::vector<float> features = {
-            static_cast<float>(m_nHitsU), static_cast<float>(m_nHitsV), static_cast<float>(m_nHitsW),
-            m_totalChargeU, m_totalChargeV, m_totalChargeW,
-            m_wireRangeU, m_wireRangeV, m_wireRangeW,
-            m_timeRangeU, m_timeRangeV, m_timeRangeW
+            static_cast<float>(m_nhit_u), static_cast<float>(m_nhits_v), static_cast<float>(m_nhits_w),
+            m_charge_u, m_charge_v, m_charge_w,
+            m_wirerange_u, m_wirerange_v, m_wirerange_w,
+            m_timerange_u, m_timerange_v, m_timerange_w
         };
-        m_bdtScore = predictBDT(features);
-        return m_bdtScore > m_bdtThreshold; 
+        m_bdt_score = predictBDT(features);
+        return m_bdt_score > m_bdtThreshold; 
     }
 
     void TopologySelection::computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
@@ -104,27 +104,27 @@ namespace selection
 
         for (int plane = 0; plane < 3; ++plane) {
             auto& hits = sliceHitsPerPlane[plane];
-            float minWire = std::numeric_limits<float>::max(), maxWire = std::numeric_limits<float>::lowest();
-            float minTime = std::numeric_limits<float>::max(), maxTime = std::numeric_limits<float>::lowest();
-            float chargeSum = 0.0f;
+            float min_wire = std::numeric_limits<float>::max(), max_wire = std::numeric_limits<float>::lowest();
+            float min_time = std::numeric_limits<float>::max(), max_time = std::numeric_limits<float>::lowest();
+            float charge_sum = 0.0f;
 
             for (const auto& hit : hits) {
                 float wire = hit->WireID().Wire, time = hit->PeakTime();
-                minWire = std::min(minWire, wire); maxWire = std::max(maxWire, wire);
-                minTime = std::min(minTime, time); maxTime = std::max(maxTime, time);
-                chargeSum += hit->Integral();
+                min_wire = std::min(min_wire, wire); max_wire = std::max(max_wire, wire);
+                min_time = std::min(min_time, time); max_time = std::max(max_time, time);
+                charge_sum += hit->Integral();
             }
 
-            int nHits = hits.size();
-            float wireRange = nHits ? maxWire - minWire : 0.0f;
-            float timeRange = nHits ? maxTime - minTime : 0.0f;
+            int nhits = hits.size();
+            float wirerange = nhits ? max_wire - min_wire : 0.0f;
+            float timerange = nhits ? max_time - min_time : 0.0f;
 
             if (plane == 0) {
-                m_nHitsU = nHits; m_totalChargeU = chargeSum; m_wireRangeU = wireRange; m_timeRangeU = timeRange;
+                m_nhit_u = nhits; m_charge_u = charge_sum; m_wirerange_u = wirerange; m_timerange_u = timerange;
             } else if (plane == 1) {
-                m_nHitsV = nHits; m_totalChargeV = chargeSum; m_wireRangeV = wireRange; m_timeRangeV = timeRange;
+                m_nhits_v = nhits; m_charge_v = charge_sum; m_wirerange_v = wirerange; m_timerange_v = timerange;
             } else {
-                m_nHitsW = nHits; m_totalChargeW = chargeSum; m_wireRangeW = wireRange; m_timeRangeW = timeRange;
+                m_nhits_w = nhits; m_charge_w = charge_sum; m_wirerange_w = wirerange; m_timerange_w = timerange;
             }
         }
     }
@@ -145,29 +145,29 @@ namespace selection
     }
 
     void TopologySelection::setBranches(TTree* tree) {
-        tree->Branch("nHitsU", &m_nHitsU, "nHitsU/I");
-        tree->Branch("nHitsV", &m_nHitsV, "nHitsV/I");
-        tree->Branch("nHitsW", &m_nHitsW, "nHitsW/I");
-        tree->Branch("totalChargeU", &m_totalChargeU, "totalChargeU/F");
-        tree->Branch("totalChargeV", &m_totalChargeV, "totalChargeV/F");
-        tree->Branch("totalChargeW", &m_totalChargeW, "totalChargeW/F");
-        tree->Branch("wireRangeU", &m_wireRangeU, "wireRangeU/F");
-        tree->Branch("wireRangeV", &m_wireRangeV, "wireRangeV/F");
-        tree->Branch("wireRangeW", &m_wireRangeW, "wireRangeW/F");
-        tree->Branch("timeRangeU", &m_timeRangeU, "timeRangeU/F");
-        tree->Branch("timeRangeV", &m_timeRangeV, "timeRangeV/F");
-        tree->Branch("timeRangeW", &m_timeRangeW, "timeRangeW/F");
+        tree->Branch("nhits_u", &m_nhit_u, "nhits_u/I");
+        tree->Branch("nhit_v", &m_nhits_v, "nhit_v/I");
+        tree->Branch("nhit_w", &m_nhits_w, "nhit_w/I");
+        tree->Branch("charge_u", &m_charge_u, "charge_u/F");
+        tree->Branch("charge_v", &m_charge_v, "charge_v/F");
+        tree->Branch("chare_w", &m_charge_w, "chare_w/F");
+        tree->Branch("wirerange_u", &m_wirerange_u, "wirerange_u/F");
+        tree->Branch("wirerange_v", &m_wirerange_v, "wirerange_v/F");
+        tree->Branch("wirerange_w", &m_wirerange_w, "wirerange_w/F");
+        tree->Branch("timerange_u", &m_timerange_u, "timerange_u/F");
+        tree->Branch("timerange_v", &m_timerange_v, "timerange_v/F");
+        tree->Branch("timerange_w", &m_timerange_w, "timerange_w/F");
         if (m_inferenceMode) {
-            tree->Branch("bdtScore", &m_bdtScore, "bdtScore/F");
+            tree->Branch("bdt_score", &m_bdt_score, "bdt_score/F");
         }
     }
 
     void TopologySelection::resetTTree(TTree* tree) {
-        m_nHitsU = m_nHitsV = m_nHitsW = 0;
-        m_totalChargeU = m_totalChargeV = m_totalChargeW = 0.0f;
-        m_wireRangeU = m_wireRangeV = m_wireRangeW = 0.0f;
-        m_timeRangeU = m_timeRangeV = m_timeRangeW = 0.0f;
-        m_bdtScore = -1.0f;
+        m_nhit_u = m_nhits_v = m_nhits_w = 0;
+        m_charge_u = m_charge_v = m_charge_w = 0.0f;
+        m_wirerange_u = m_wirerange_v = m_wirerange_w = 0.0f;
+        m_timerange_u = m_timerange_v = m_timerange_w = 0.0f;
+        m_bdt_score = -1.0f;
     }
 
     DEFINE_ART_CLASS_TOOL(TopologySelection)
