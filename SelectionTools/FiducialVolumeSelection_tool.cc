@@ -27,9 +27,9 @@ namespace selection
         bool isFiducial(const double x[3]) const;
 
     private:
-        double m_fidvolXstart, m_fidvolXend;
-        double m_fidvolYstart, m_fidvolYend;
-        double m_fidvolZstart, m_fidvolZend;
+        double m_fidvol_xstart, m_fidvol_xend;
+        double m_fidvol_ystart, m_fidvol_yend;
+        double m_fidvol_zstart, m_fidvol_zend;
 
         art::ServiceHandle<geo::Geometry> _geometry;
         art::ServiceHandle<detinfo::DetectorPropertiesService> _detprop;
@@ -44,12 +44,12 @@ namespace selection
     }
 
     void FiducialVolumeSelection::configure(fhicl::ParameterSet const & pset) {
-        m_fidvolXstart = pset.get<double>("fidvolXstart");
-        m_fidvolXend = pset.get<double>("fidvolXend");
-        m_fidvolYstart = pset.get<double>("fidvolYstart");
-        m_fidvolYend = pset.get<double>("fidvolYend");
-        m_fidvolZstart = pset.get<double>("fidvolZstart");
-        m_fidvolZend = pset.get<double>("fidvolZend");
+        m_fidvol_xstart = pset.get<double>("fidvolXstart");
+        m_fidvol_xend = pset.get<double>("fidvolXend");
+        m_fidvol_ystart = pset.get<double>("fidvolYstart");
+        m_fidvol_yend = pset.get<double>("fidvolYend");
+        m_fidvol_zstart = pset.get<double>("fidvolZstart");
+        m_fidvol_zend = pset.get<double>("fidvolZend");
     }
 
     void FiducialVolumeSelection::setBranches(TTree* _tree) {
@@ -68,9 +68,9 @@ namespace selection
         geo::TPCGeo const &thisTPC = _geometry->TPC();
         geo::BoxBoundedGeo theTpcGeo = thisTPC.ActiveBoundingBox();
         std::vector<double> bnd = {theTpcGeo.MinX(), theTpcGeo.MaxX(), theTpcGeo.MinY(), theTpcGeo.MaxY(), theTpcGeo.MinZ(), theTpcGeo.MaxZ()};
-        bool is_x = x[0] > (bnd[0] + m_fidvolXstart) && x[0] < (bnd[1] - m_fidvolXend);
-        bool is_y = x[1] > (bnd[2] + m_fidvolYstart) && x[1] < (bnd[3] - m_fidvolYend);
-        bool is_z = x[2] > (bnd[4] + m_fidvolZstart) && x[2] < (bnd[5] - m_fidvolZend);
+        bool is_x = x[0] > (bnd[0] + m_fidvol_xstart) && x[0] < (bnd[1] - m_fidvol_xend);
+        bool is_y = x[1] > (bnd[2] + m_fidvol_ystart) && x[1] < (bnd[3] - m_fidvol_yend);
+        bool is_z = x[2] > (bnd[4] + m_fidvol_zstart) && x[2] < (bnd[5] - m_fidvol_zend);
         return is_x && is_y && is_z;
     }
 

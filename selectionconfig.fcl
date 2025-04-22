@@ -12,12 +12,12 @@ microboone_calo_mcc9_data: {
 }
 
 FiducialVolume: {
-    Xstart: 10.0  
-    Xend: 10.0    
-    Ystart: 10.0  
-    Yend: 10.0    
-    Zstart: 10.0  
-    Zend: 10.0    
+    Xstart: 10.
+    Xend:   10.
+    Ystart: 15.
+    Yend:   15.
+    Zstart: 10.
+    Zend:   50.
 }
 
 BaseEventSelectionFilter: {
