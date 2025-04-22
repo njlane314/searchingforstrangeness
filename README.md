@@ -125,35 +125,35 @@ To process ROOT files locally, you can manually run a series of commands to fetc
    files=$(samweb list-files defname:<sam_definition> | head -n <num_files>)
    ```
    - Retrieves a specified number of files from a SAM dataset.
-   - **Example**: `files=$(samweb list-files defname:my_dataset | head -n 5)` fetches the first 5 files.
+   Example**: `files=$(samweb list-files defname:my_dataset | head -n 5)` fetches the first 5 files.
 
 2. **Locate the File Path**:
    ```bash
    filedir=$(samweb locate-file <file> | grep -o '/pnfs/.*' | head -n 1)
    ```
    - Finds the physical directory path of a file.
-   - **Example**: `filedir=$(samweb locate-file somefile.root | grep -o '/pnfs/.*' | head -n 1)`.
+   Example**: `filedir=$(samweb locate-file somefile.root | grep -o '/pnfs/.*' | head -n 1)`.
 
 3. **Process a File with `lar`**:
    ```bash
    lar -c <fhicl_file> -s <filepath> -T <outputfile>
    ```
    - Runs the `lar` analysis tool on a file using a FHiCL configuration.
-   - **Example**: `lar -c analysis.fcl -s /pnfs/uboone/some/path/somefile.root -T output_1.root`.
+   Example**: `lar -c analysis.fcl -s /pnfs/uboone/some/path/somefile.root -T output_1.root`.
 
 4. **Combine Output Files**:
    ```bash
    hadd -f <combined_output> <outputfiles>
    ```
    - Merges multiple ROOT files into one.
-   - **Example**: `hadd -f combined_output.root output_*.root`.
+   Example**: `hadd -f combined_output.root output_*.root`.
 
 5. **Clean Up Temporary Files**:
    ```bash
    rm <outputfiles>
    ```
    - Deletes temporary output files.
-   - **Example**: `rm output_*.root`.
+   Example**: `rm output_*.root`.
 
 #### Example: Process Several Files Locally
 ```bash
@@ -212,28 +212,28 @@ The project uses XML files to define grid jobs, modify these where necessary:
    make_tar_uboone.sh <tarball_name>
    ```
    - Packages your code into a tarball.
-   - **Example**: `make_tar_uboone.sh my_tarball.tar`.
+   Example**: `make_tar_uboone.sh my_tarball.tar`.
 
 2. **Copy the Tarball**:
    ```bash
    cp -f <tarball_name> <tarball_dest>
    ```
    - Copies the tarball to a resilient directory.
-   - **Example**: `cp -f my_tarball.tar /pnfs/uboone/resilient/users/myuser/`.
+   Example**: `cp -f my_tarball.tar /pnfs/uboone/resilient/users/myuser/`.
 
 3. **Authenticate for Grid Access**:
    ```bash
    htgettoken -a <vault_server> -i <experiment>
    ```
    - Obtains an authentication token.
-   - **Example**: `htgettoken -a htvaultprod.fnal.gov -i uboone`.
+   Example**: `htgettoken -a htvaultprod.fnal.gov -i uboone`.
 
 4. **Submit Jobs to the Grid**:
    ```bash
    project.py --xml <xml_config_file> --stage <stage> --submit
    ```
    - Submits jobs using a configuration file.
-   - **Example**: `project.py --xml config.xml --stage analyse --submit`.
+   Example**: `project.py --xml config.xml --stage analyse --submit`.
 
 5. **Clean and Retry**:
    ```bash
@@ -241,7 +241,7 @@ The project uses XML files to define grid jobs, modify these where necessary:
    project.py --xml <xml_config_file> --stage <stage> --submit
    ```
    - Cleans up and retries submission.
-   - **Example**: `project.py --xml config.xml --stage analyse --clean` followed by `project.py --xml config.xml --stage analyse --submit`.
+   Example**: `project.py --xml config.xml --stage analyse --clean` followed by `project.py --xml config.xml --stage analyse --submit`.
 
 #### Example: Submit Jobs to the Grid
 ```bash
@@ -264,9 +264,9 @@ project.py --xml config.xml --stage analyse --submit
 
 ### **Environment and Container Management**
 
-- **`apptainer shell [options] /path/to/container`**  
+`apptainer shell [options] /path/to/container`**  
     Launches an interactive shell within an Apptainer container, providing an isolated environment for running applications.  
-    - **Example**: 
+    Example**: 
         ```bash
         apptainer shell \
                 -B /cvmfs \
@@ -280,93 +280,94 @@ project.py --xml config.xml --stage analyse --submit
                 /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7
         ```
 
-- **`source setup.sh`**  
+`source setup.sh`**  
     Executes a script to configure the shell environment, often setting variables or loading dependencies.  
-    - **Example**: `source /setup.sh` loads necessary configurations.
-    - **Script**: 
+    Example**: `source /setup.sh` loads necessary configurations.
+    Script**: 
         ```bash
         source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
         setup uboonecode vv10_04_07_04 -q "e26:prof"
         ```
 
-- **`setup <product> <version> -q <qualifiers>`**  
+`setup <product> <version> -q <qualifiers>`**  
     Configures the environment for a specific software product and version using UPS (Unix Product Support).  
-    - **Example**: see above
+    Example**: see above
 
 ---
 
 ### **Authentication and Grid Access**
 
-- **`kx509`**  
+`kx509`**  
   Converts a Kerberos ticket into an X.509 certificate for secure authentication to access grid resources.  
-  - **Example**: Run `kx509` after `kinit` to obtain a certificate.
+  Example**: Run `kx509` after `kinit` to obtain a certificate.
 
-- **`voms-proxy-init -noregen -voms <virtual_organization>`**  
+`voms-proxy-init -noregen -voms <virtual_organization>`**  
   Generates a proxy certificate for grid authentication tied to a virtual organization.  
-  - **Example**: `voms-proxy-init -noregen -voms fermilab:/fermilab/uboone/Role=Analysis` creates a proxy for Fermilab.
+  Example**: `voms-proxy-init -noregen -voms fermilab:/fermilab/uboone/Role=Analysis` creates a proxy for Fermilab.
 
 ---
 
 ### **File and Data Management**
 
-- **`find /path/to/directory -type f -name "*.root"`**  
+`find /path/to/directory -type f -name "*.root"`**  
   Searches for files. 
 
-- **`hadd -f output.root file1.root file2.root ...`**  
+`hadd -f output.root file1.root file2.root ...`**  
   Merges multiple ROOT files into one.  
-  - **Example**: `hadd -f combined.root run1.root run2.root` merges two files.
+  Example**: `hadd -f combined.root run1.root run2.root` merges two files.
 
-- **`tar -cvf tarball_name.tar /path/to/code`**  
+`tar -cvf tarball_name.tar /path/to/code`**  
   Creates a tarball of a directory or files.  
 
-- **`samweb list-files defname:<sam_definition>`**  
+`samweb list-files defname:<sam_definition>`**  
   Lists files in a SAM dataset.  
 
-- **`samweb locate-file <file>`**  
+`samweb locate-file <file>`**  
   Finds the physical location of a SAM-managed file.  
 
-- **`samweb count-files defname:<definition_name>`**  
+`samweb count-files defname:<definition_name>`**  
   Counts files in a SAM dataset.  
 
-- **`samweb prestage-dataset --defname=<definition_name>`**  
+`samweb prestage-dataset --defname=<definition_name>`**  
   Stages a SAM dataset for fast access.  
 
-- **`samweb create-definition my_subset "defname:make_lambda_overlay_nohadrons_reco2_reco2 with limit 100"`**
+`samweb create-definition my_subset "defname:make_lambda_overlay_nohadrons_reco2_reco2 with limit 100"`**
    Creates limited dataset 
 
 ---
 
 ### **Job Submission and Monitoring**
 
-- **`jobsub_q $USER`**  
+`jobsub_q $USER`**  
   Queries the status of a user's grid jobs.  
 
-- **`project.py --xml <xml_file> --stage <stage> --submit`**  
+`project.py --xml <xml_file> --stage <stage> --submit`**  
   Submits jobs to the grid, automates workflow with `*.xml` configurations.  
 
 ---
 
 ### **Data Processing and Analysis**
 
-- **`lar -c <fhicl_file> -s <input_file> -T <output_file>`**  
+`lar -c <fhicl_file> -s <input_file> -T <output_file>`**  
   Runs LArSoft with a FHiCL configuration.  
 
-- **`lar -c eventdump.fcl -s <your.root> | grep recob::Wire`**  
+`lar -c eventdump.fcl -s <your.root> | grep recob::Wire`**  
   Dumps event information from a `*.root` file and searches for `recob::Wire` objects.
 
 ---
 
 ## NuMI Input Samdefs
 
-- **New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2      # Beam background**
-- **prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2    # EXT/Beam-off background**
-- **prod_strange_resample_fhc_run2_fhc_reco2_reco2         # Enriched strangeness**
-- **make_lambda_overlay_nohadrons_reco2_reco2              # Lambda no-hadrons**
-- **prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0              # Background**
-- **cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2                  # Kaons**
-- **cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
-- **cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
-
+```bash
+New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2      # Beam background**
+prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2    # EXT/Beam-off background**
+prod_strange_resample_fhc_run2_fhc_reco2_reco2         # Enriched strangeness**
+make_lambda_overlay_nohadrons_reco2_reco2              # Lambda no-hadrons**
+prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0              # Background**
+cthorpe_make_k0s_events_numi_rhc_reco2_REAL_reco2_reco2                  # Kaons**
+cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
+cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
+```
 
 ### **Splitting Input Definitions**
 
