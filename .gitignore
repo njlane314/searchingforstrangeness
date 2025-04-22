@@ -43,3 +43,4 @@ Sandbox/*
 @jobs/*.xml
 
 *.log
+*.tar
