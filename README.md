@@ -1,31 +1,5 @@
 # **searchingforstrangeness**
 
-_This [searchingforstrangeness](https://github.com/njlane314/searchingforstrangeness) code is a [Pandora](https://github.com/PandoraPFA/larpandora) neutrino selection framework, built with [LArSoft](https://github.com/LArSoft/larsoft), using the design implemented in [searchingfornues](https://github.com/ubneutrinos/searchingfornues)._
-
-_The framework loads a candidate neutrino slice given by Pandora, runs a single selection tool for each event, and a series of analysis tools for each slice. The selection and analysis tools are configurable at run, and the output is to a single root file. This implementation is specifically designed to search for rare neutrino processes that give distinct topologies or identifiable pattern signatures within the MicroBooNE detector; these signatures are identified using a visual deep-learning network that processes each of the wire planes independently._
-
-## Code Structure
-
-### Core Components
-
-- **SelectionFilter**: Main module that processes events and applies a selection, filtering events. 
-   - `_selectionTool`: A tool that determines if an event passes a defined selection. 
-   - `_analysisToolsVec`: A collection of analysis tools applied to each slice, and event. 
-   - `_eventClassifier`: Categorises events by the configurable signal defintion and event type. 
-
-- **EventClassifier**: Determines if an event is signal or background.
-   - `_pattern`: Collection of event signatures defined by signature tools. 
-   - `_signatureToolsVec`: Tools that define specific particle signatures from their decay topology.
-   - `_clarityToolsVec`: Tools that evaluate the clarity of event topologies in the detector.
-
-- **LabelClassifier**: Assigns particle-level truth classifications, basde on NuGraph definition. 
-   - `_gamma_threshold`: Energy threshold for photon classification.
-   - `_hadron_threshold`: Momentum threshold for hadron classification.
-
-- **ImageProcessor**: Creates image representations of detector raw data.
-   - `ImageProperties`: Defines dimensions and scaling of images.
-   - `Image`: Contains pixel data and metadata for a single image.
-
 ## Building the Project
 
 1. **Set up the environment:**
