@@ -30,7 +30,7 @@ BaseEventSelectionFilter: {
     VTXproducer: "pandora"
     TRKproducer: "pandora"
     PCAproducer: "pandora"
-    MCTproducer: "generator"
+    MCPproducer: "largeant"
     WIREproducer: "butcher"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
     BackTrackerLabel: "gaushit"

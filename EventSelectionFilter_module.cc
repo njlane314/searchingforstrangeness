@@ -54,7 +54,7 @@ private:
     art::InputTag fVTXproducer;
     art::InputTag fTRKproducer;
     art::InputTag fPCAproducer;
-    art::InputTag fMCTproducer;
+    art::InputTag fMCPproducer;
     art::InputTag fWIREproducer;
     art::InputTag fDeadChannelTag;
     std::string fBackTrackerLabel;  
@@ -130,7 +130,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fVTXproducer = p.get<art::InputTag>("VTXproducer");
     fPCAproducer = p.get<art::InputTag>("PCAproducer");
     fTRKproducer = p.get<art::InputTag>("TRKproducer");
-    fMCTproducer = p.get<art::InputTag>("MCTproducer");
+    fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fDeadChannelTag = p.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
     fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
@@ -279,13 +279,13 @@ void EventSelectionFilter::constructImages(const art::Event& e,
 
     auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
     auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-    auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(fMCTproducer);
+    auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
 
-    art::FindManyP<recob::Hit> wire_hit_assoc(wireHandle, e, fWIREproducer);
+    art::FindManyP<recob::Hit> wire_hit_assoc(wireHandle, e, fHITproducer);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hitHandle, e, fBackTrackerLabel);
 
-    std::vector<truth_labels::PrimaryLabel> primary_labels = truth_labels::classifyParticles(e, fMCTproducer, fGammaThreshold, fHadronThreshold);
-    std::vector<reco_labels::ReconstructionLabel> reco_labels = reco_labels::classifyParticles(e, fMCTproducer, fGammaThreshold, fHadronThreshold);
+    std::vector<truth_labels::PrimaryLabel> primary_labels = truth_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
+    std::vector<reco_labels::ReconstructionLabel> reco_labels = reco_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
 
     std::map<int, size_t> trackid_to_index;
     for (size_t i = 0; i < mcpHandle->size(); ++i) {
@@ -403,7 +403,7 @@ void EventSelectionFilter::ResetTTree() {
 bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
     if ((!_data) || (_fake_data)) {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
-        _pot = subrun.getByLabel(fMCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
+        _pot = subrun.getByLabel(fMCPproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
     }
 
     _run_sr = subrun.run();
