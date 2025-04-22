@@ -41,3 +41,5 @@ Sandbox/*
 !Sandbox/.keep
 
 @jobs/*.xml
+
+*.log

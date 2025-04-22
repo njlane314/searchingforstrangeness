@@ -165,7 +165,8 @@ counter=1
 for file in $files; do
     filedir=$(samweb locate-file $file | grep -o '/pnfs/.*' | head -n 1)
     filepath="${filedir}/${file}"
-    lar -c analysis.fcl -s $filepath -T output_$counter.root
+    # Aftering configuring the ficl properly 
+    lar -c run_eventselectionfilter.fcl -s $filepath -T output_$counter.root
     counter=$((counter + 1))
 done
 
@@ -366,3 +367,65 @@ project.py --xml config.xml --stage analyse --submit
 - **cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
 - **cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
 
+
+### **Splitting Input Definitions**
+
+   ```bash
+   samweb create-definition nl_numi_fhc_beam_run1_reco2_training_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with limit 250"   
+   samweb create-definition nl_numi_fhc_beam_run1_reco2_validation_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with offset 250 with limit 250" 
+   samweb list-files --summary "defname: nl_numi_fhc_beam_run1_reco2_validation_250"
+   # The output
+   File count:	250
+   Total size:	427206702740
+   Event count:	71153
+   samweb list-files --summary "defname: nl_numi_fhc_beam_run1_reco2_training_250"
+   # The output
+   File count:	250
+   Total size:	423907381578
+   Event count:	70649
+   # Even check user's list
+   samweb list-definitions --user=${USER}
+   ```
+
+   ```bash
+   Apptainer> samweb list-files --summary "defname: nl_ext_numi_fhc_beamoff_run1_reco2_validation_2500"
+   File count:	2500
+   Total size:	414497642823
+   Event count:	78718
+   Apptainer> samweb create-definition nl_ext_numi_fhc_beamoff_run1_reco2_training_2500 "defname: prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2 with limit 2500" 
+   Dataset definition 'nl_ext_numi_fhc_beamoff_run1_reco2_training_2500' has been created with id 110354423
+   Apptainer> samweb list-files --summary "defname: nl_ext_numi_fhc_beamoff_run1_reco2_training_2500"
+   File count:	2500
+   Total size:	367920309642
+   Event count:	70654
+   ```
+
+   ```bash
+   Apptainer> samweb create-definition nl_strange_numi_fhc_run2_reco2_training_982 "defname: prod_strange_resample_fhc_run2_fhc_reco2_reco2 with limit 982" 
+   Dataset definition 'nl_strange_numi_fhc_run2_reco2_training_982' has been created with id 110354485
+   Apptainer> samweb create-definition nl_strange_numi_fhc_run2_reco2_validation_982 "defname: prod_strange_resample_fhc_run2_fhc_reco2_reco2 with offset 982 with limit 982"
+   Dataset definition 'nl_strange_numi_fhc_run2_reco2_validation_982' has been created with id 110354661
+   Apptainer> samweb list-files --summary "defname: nl_strange_numi_fhc_run2_reco2_validation_982"
+   File count:	982
+   Total size:	564656729004
+   Event count:	62935
+   Apptainer> samweb list-files --summary "defname: nl_strange_numi_fhc_run2_reco2_training_982"
+   File count:	982
+   Total size:	1135851562244
+   Event count:	126422
+   ```
+
+   ```bash
+   Apptainer> samweb create-definition nl_lambda_nohadrons_reco2_validation_2000 "defname: make_lambda_overlay_nohadrons_reco2_reco2 with offset 2000 with limit 2000"
+   Dataset definition 'nl_lambda_nohadrons_reco2_validation_2000' has been created with id 110354575
+   Apptainer> samweb create-definition nl_lambda_nohadrons_reco2_training_2000 "defname: make_lambda_overlay_nohadrons_reco2_reco2 with limit 2000"
+   Dataset definition 'nl_lambda_nohadrons_reco2_training_2000' has been created with id 110354663
+   Apptainer> samweb list-files --summary "defname: nl_lambda_nohadrons_reco2_training_2000"
+   File count:	2000
+   Total size:	486050774712
+   Event count:	71325
+   Apptainer> samweb list-files --summary "defname: nl_lambda_nohadrons_reco2_validation_2000"
+   File count:	2000
+   Total size:	629748141141
+   Event count:	91988
+   ```
