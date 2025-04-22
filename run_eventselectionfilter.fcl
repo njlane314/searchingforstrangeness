@@ -30,7 +30,7 @@ source: {
 physics: {
     filters: {
         fiducialFilter: @local::FiducialFilter
-        topologyFilter: @local::TopologyFilter
     }
-    trigger_paths: [ fiducialFilter, topologyFilter ]
+    path1: [ fiducialFilter ]
+    trigger_paths: [ path1 ]
 }

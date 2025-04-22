@@ -20,15 +20,6 @@ FiducialVolume: {
     Zend: 10.0    
 }
 
-FiducialVolumeSelection: {
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
-}
-
 BaseEventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: "pandora"
@@ -40,7 +31,7 @@ BaseEventSelectionFilter: {
     TRKproducer: "pandora"
     PCAproducer: "pandora"
     MCTproducer: "generator"
-    WIREproducer: "caldata"
+    WIREproducer: "butcher"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
     BackTrackerLabel: "gaushit"
     GammaThreshold: 0.1
@@ -54,45 +45,25 @@ BaseEventSelectionFilter: {
     ImageHeight: 512
 }
 
-FiducialFilter: {
-    @table::BaseEventSelectionFilter
-    SelectionTool: @local::FiducialVolumeSelection
-    AnalysisTools: {
-        truth: @local::TruthAnalysis
-    }
-    TFileService: { fileName: "output_fiducial.root" }
-}
-
-ContrastiveFilter: {
-    @table::BaseEventSelectionFilter
-    SelectionTool: @local::ContrastiveSelection
-    AnalysisTools: {
-        neutrino: @local::NeutrinoAnalysis
-        eventweight: @local::EventWeightAnalysis
-        nugraph: @local::NuGraphAnalysis
-        truth: @local::TruthAnalysis
-    }
-    TFileService: { fileName: "output_contrastive.root" }
-}
-
-TopologyFilter: {
-    @table::BaseEventSelectionFilter
-    SelectionTool: @local::TopologySelection
-    AnalysisTools: {
-        neutrino: @local::NeutrinoAnalysis
-        eventweight: @local::EventWeightAnalysis
-        nugraph: @local::NuGraphAnalysis
-        truth: @local::TruthAnalysis
-    }
-    TFileService: { fileName: "output_topology.root" }
+TruthAnalysis: {
+    tool_type: TruthAnalysis
+    MCTproducer: "generator"    
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
 }
 
 NeutrinoAnalysis: {
+    tool_type: NeutrinoAnalysis
     MCTproducer: "generator"    
     MCPproducer: "largeant"     
 }
 
 EventWeightAnalysis: {
+    tool_type: EventWeightAnalysis
     createDedicatedTree: true                                   // Create a separate TTree for weights
     createMapBranch: false                                      // Do not create map branch
     createFluxBranch: true                                      // Include flux weights
@@ -116,13 +87,14 @@ EventWeightAnalysis: {
 }
 
 NuGraphAnalysis: {
+    tool_type: NuGraphAnalysis
     CLSproducer: "pandora"      
     SLCproducer: "pandora"      
     NG2producer: "nugraph2"     
 }
 
-TruthAnalysis: {
-    MCTproducer: "generator"    
+FiducialVolumeSelection: {
+    tool_type: FiducialVolumeSelection
     fidvolXstart: @local::FiducialVolume.Xstart
     fidvolXend: @local::FiducialVolume.Xend
     fidvolYstart: @local::FiducialVolume.Ystart
@@ -131,15 +103,10 @@ TruthAnalysis: {
     fidvolZend: @local::FiducialVolume.Zend
 }
 
-ImageSelection: {
-    tool_type: "ImageSelection"
-}
-
-ImageFilter: {
+FiducialFilter: {
     @table::BaseEventSelectionFilter
-    SelectionTool: @local::ImageSelection
+    SelectionTool: @local::FiducialVolumeSelection
     AnalysisTools: {
         truth: @local::TruthAnalysis
     }
-    TreeName: "imageTree"
 }
