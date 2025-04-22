@@ -33,7 +33,7 @@ BaseEventSelectionFilter: {
     MCPproducer: "largeant"
     WIREproducer: "butcher"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
-    BackTrackerLabel: "gaushit"
+    BackTrackerLabel: "gaushitTruthMatch"
     GammaThreshold: 0.1
     HadronThreshold: 0.1
     Verbose: false
