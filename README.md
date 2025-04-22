@@ -21,7 +21,7 @@
    setup mrb -o
    ```
 
-   - This configures the environment using the `ubooncode` setup script with version `v08_00_00_80` and profile `e17:prof`, then sets up the `mrb` tool.
+   - This configures the environment using the `ubooncode` setup script with version `v08_00_00_89` and profile `e17:prof`, then sets up the `mrb` tool.
 
 2. **Create a development area:**
 
@@ -446,3 +446,129 @@ git checkout tags/v08_00_00_82
 cd $MRB_TOP
 mrbsetenv
 mrb i -j4
+
+
+
+
+
+
+cd [nlane@uboonegpvm03 ~]$ cd /exp/uboone/app/users/nlane/production/
+[nlane@uboonegpvm03 production]$ 
+[nlane@uboonegpvm03 production]$ 
+[nlane@uboonegpvm03 production]$ 
+[nlane@uboonegpvm03 production]$ 
+[nlane@uboonegpvm03 production]$ apptainer shell           -B /cvmfs           -B /exp/uboone           -B /pnfs/uboone           -B /run/user           -B /etc/hosts           -B /etc/localtime           -s /bin/bash           --env UPS_OVERRIDE='-H Linux64bit+3.10-2.17'           /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7
+Apptainer> 
+Apptainer> 
+Apptainer> 
+Apptainer> 
+Apptainer> ls
+build_instructions.txt	deprecated  strangeness_mcc10  strangeness_mcc9
+Apptainer> rm -rf strangeness_mcc9 
+Apptainer> mkdir strangeness_mcc9 
+Apptainer> 
+Apptainer> 
+Apptainer> 
+Apptainer> cd strangeness_mcc
+bash: cd: strangeness_mcc: No such file or directory
+Apptainer> 
+Apptainer> 
+Apptainer> cd strangeness_mcc9 
+Apptainer> 
+Apptainer> 
+Apptainer> 
+Apptainer> 
+Apptainer> mrb newDev -q e17:prof
+bash: mrb: command not found
+Apptainer> setup mrb
+bash: setup: command not found
+Apptainer> source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh 
+Setting LC_ALL=C
+Scientific Linux 7.9 (Nitrogen)
+Setting up larsoft UPS area... /cvmfs/larsoft.opensciencegrid.org/products
+Setting up uboone UPS area... /cvmfs/uboone.opensciencegrid.org/products
+Setting up fermilab common UPS area... /cvmfs/fermilab.opensciencegrid.org/products/common/db
+Apptainer> mrb newDev -q e17:prof
+
+building development area for larsoft  -q e17:prof
+
+
+The following configuration is defined:
+  The top level directory is .
+  The source code directory will be under .
+  The build directory will be under .
+  The local product directory will be under .
+
+MRB_BUILDDIR is /exp/uboone/app/users/nlane/production/strangeness_mcc9/build_slf7.x86_64
+MRB_SOURCE is /exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs 
+INFO: cannot find larsoft//releaseDB/base_dependency_database
+      or larsoftcode//releaseDB/base_dependency_database
+      mrb checkDeps and pullDeps will not have complete information
+
+IMPORTANT: You must type
+    source /exp/uboone/app/users/nlane/production/strangeness_mcc9/localProducts_larsoft__e17_prof/setup
+NOW and whenever you log in
+
+Apptainer> source /exp/uboone/app/users/nlane/production/strangeness_mcc9/localProducts_larsoft__e17_prof/setup
+
+MRB_PROJECT=larsoft
+MRB_PROJECT_VERSION=
+MRB_QUALS=e17:prof
+MRB_TOP=/exp/uboone/app/users/nlane/production/strangeness_mcc9
+MRB_SOURCE=/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs
+MRB_BUILDDIR=/exp/uboone/app/users/nlane/production/strangeness_mcc9/build_slf7.x86_64
+MRB_INSTALL=/exp/uboone/app/users/nlane/production/strangeness_mcc9/localProducts_larsoft__e17_prof
+
+PRODUCTS=/exp/uboone/app/users/nlane/production/strangeness_mcc9/localProducts_larsoft__e17_prof:/cvmfs/uboone.opensciencegrid.org/products:/cvmfs/larsoft.opensciencegrid.org/products:/cvmfs/fermilab.opensciencegrid.org/products/common/db
+
+Apptainer> pwd
+/exp/uboone/app/users/nlane/production/strangeness_mcc9
+Apptainer> mrb g ubana
+Cloning into 'ubana'...
+remote: Enumerating objects: 66440, done.
+remote: Counting objects: 100% (88/88), done.
+remote: Compressing objects: 100% (73/73), done.
+remote: Total 66440 (delta 39), reused 36 (delta 15), pack-reused 66352 (from 1)
+Receiving objects: 100% (66440/66440), 27.73 MiB | 39.11 MiB/s, done.
+Resolving deltas: 100% (49193/49193), done.
+NOTICE: Adding ubana to CMakeLists.txt file
+Apptainer> pwd
+/exp/uboone/app/users/nlane/production/strangeness_mcc9
+Apptainer> ls
+build_slf7.x86_64  localProducts_larsoft__e17_prof  srcs
+Apptainer> cd srcs/
+Apptainer> 
+Apptainer> 
+Apptainer> ls
+CMakeLists.txt  ubana
+Apptainer> cd ubana/          
+Apptainer> git checkout tags/v08_00_00_82
+Note: switching to 'tags/v08_00_00_82'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at e0379f989 v08_00_00_82
+Apptainer> cd ../..
+Apptainer> ls
+build_slf7.x86_64  localProducts_larsoft__e17_prof  srcs
+Apptainer> pwd
+/exp/uboone/app/users/nlane/production/strangeness_mcc9
+Apptainer> mrbsetenv
+The working build directory is /exp/uboone/app/users/nlane/production/strangeness_mcc9/build_slf7.x86_64
+The source code directory is /exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs
+----------- check this block for errors -----------------------
+----------------------------------------------------------------
+Apptainer> mrb b

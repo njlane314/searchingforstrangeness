@@ -20,6 +20,15 @@ FiducialVolume: {
     Zend: 10.0    
 }
 
+FiducialVolumeSelection: {
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
+}
+
 BaseEventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: "pandora"

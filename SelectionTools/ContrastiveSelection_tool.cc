@@ -3,10 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvariadic-macros"
 #include <torch/script.h>
-#pragma GCC diagnostic pop
 #include "SelectionToolBase.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
