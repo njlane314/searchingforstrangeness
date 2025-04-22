@@ -36,7 +36,7 @@ physics: {
                 tool_type: "TopologySelection"
                 CLSproducer: "pandora"
                 BDTThreshold: 0.5
-                InferenceMode: true
+                InferenceMode: false
                 BDTModel: "" 
             }
             AnalysisTools: {
