@@ -9,7 +9,7 @@ setup sam_web_client
 setup mrb
 
 export WRK_DIR=$(pwd)
-source $WRK_DIRcd ../../../../localProducts_*/setup
+source ../../../../localProducts_*/setup
 mrbslp
 
 htgettoken -a htvaultprod.fnal.gov -i uboone

@@ -60,12 +60,15 @@
    ```bash
    cd srcs/ubana/ubana
    git clone https://github.com/njlane314/searchingforstrangeness.git
+   cd searchingforstrangeness
+   source .setup
    ```
 
 5. **Modify CMakeLists.txt:**
 
    ```bash
-   # Add the following line to CMakeLists.txt to include searchingforstrangeness in the build
+   # Add the following line to CMakeLists.txt to include searchingforstrangeness in the build 
+   cd ../../ # back to src/ubana/ubana
    echo "add_subdirectory(searchingforstrangeness)" >> CMakeLists.txt
    ```
 
