@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nl_lambda_nohadrons_eventselectionfilter">
+<!ENTITY name "nl_lambda_nohadrons_eventselectionfilter_test">
 ]>
 
 <job>
@@ -35,7 +35,8 @@
 
   <!-- Project stages -->
   <stage name="analyse">
-  <inputdef>nl_lambda_nohadrons_reco2_training_2000</inputdef>
+  <!--<inputdef>nl_lambda_nohadrons_reco2_training_2000</inputdef>-->
+  <inputdef>prod_strange_resample_fhc_run2_fhc_reco2_reco2</inputdef>
   <fcl>run_eventselectionfilter.fcl</fcl>
   <dirlevels>1</dirlevels>
   <dirsize>100</dirsize>
