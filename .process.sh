@@ -13,9 +13,9 @@ num_files=$2
 
 fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 
-samdef=nl_lambda_nohadrons_reco2_validation_2000
+#samdef=nl_lambda_nohadrons_reco2_validation_2000
 #samdef=make_k0signal_overlay_testing_nohadrons_reco2_reco2
-#samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
+samdef=prod_strange_resample_fhc_run2_fhc_reco2_reco2
 output_directory="/exp/uboone/data/users/$USER/analysis"
 combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
 tempdir="${output_directory}/temp_root_files"

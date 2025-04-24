@@ -1,3 +1,6 @@
+#ifdef ClassDef
+#undef ClassDef
+#endif
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
