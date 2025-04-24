@@ -14,12 +14,11 @@
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "SelectionTools/SelectionToolBase.h"
 #include "AnalysisTools/AnalysisToolBase.h"
-#include "art_root_io/TFileService.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
 #include "CommonDefs/Image.h"
 #include "larcore/Geometry/Geometry.h"
-#include "larcore/Geometry/WireReadout.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -86,7 +85,7 @@ private:
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
     const geo::GeometryCore* _geo;
-    detinfo::DetectorPropertiesData _detp;
+    const detinfo::DetectorProperties* _detp;
 
     float _drift_step;
     float _wire_pitch_u;
@@ -118,10 +117,7 @@ private:
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
-    : EDFilter{p},
-      _detp(art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(
-          art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob())) {
-    // Retrieve parameters from the parameter set
+    : EDFilter{p} {
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fSHRproducer = p.get<art::InputTag>("SHRproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
@@ -147,18 +143,16 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _image_height = p.get<int>("ImageHeight", 512);
 
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
+    _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
 
-    auto const& channelMap = art::ServiceHandle<geo::WireReadout>()->Get();
-    auto const clockData = art::ServiceHandle<detinfo::DetectorClocksService>()->DataForJob();
-    auto const detProp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataForJob(clockData);
-
-    double tick_period = clockData.TPCClock().TickPeriod();
-    double drift_velocity = _detp.DriftVelocity();
+    auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
+    double tick_period = clock->TPCClock().TickPeriod();
+    double drift_velocity = _detp->DriftVelocity();
     _drift_step = tick_period * drift_velocity * 1e1;
 
-    _wire_pitch_u = channelMap.Plane(geo::PlaneID(0, 0, geo::kU)).WirePitch();
-    _wire_pitch_v = channelMap.Plane(geo::PlaneID(0, 0, geo::kV)).WirePitch();
-    _wire_pitch_w = channelMap.Plane(geo::PlaneID(0, 0, geo::kW)).WirePitch();
+    _wire_pitch_u = _geo->WirePitch(geo::kU);
+    _wire_pitch_v = _geo->WirePitch(geo::kV);
+    _wire_pitch_w = _geo->WirePitch(geo::kW);
 
     art::ServiceHandle<art::TFileService> tfs;
 
@@ -292,20 +286,16 @@ void EventSelectionFilter::constructImages(const art::Event& e,
         trackid_to_index[mcpHandle->at(i).TrackId()] = i;
     }
 
-    auto const det_props = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
-    auto const& wireReadout = art::ServiceHandle<geo::WireReadout>()->Get();
-
     for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
         const auto& wire = wireHandle->at(wire_idx);
         auto ch_id = wire.Channel();
-        //if (ch_id < _bad_channel_mask.size() && _bad_channel_mask[ch_id]) continue;
-
-        std::vector<geo::WireID> wire_ids = wireReadout.ChannelToWire(ch_id);
+        std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
         if (wire_ids.empty()) continue;
-        geo::View_t view = wireReadout.Plane(wire_ids.front().planeID()).View();
+        geo::View_t view = _geo->View(wire_ids.front().planeID());
         size_t view_idx = view - geo::kU;
 
-        geo::Point_t center = wireReadout.Wire(wire_ids.front()).GetCenter();
+        const geo::WireGeo* wire_geo = _geo->WirePtr(wire_ids.front());
+        TVector3 center = wire_geo->GetCenter();
         TVector3 wire_center(center.X(), center.Y(), center.Z());
         double wire_coord = (view == geo::kW) ? wire_center.Z() :
                             (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
@@ -318,7 +308,7 @@ void EventSelectionFilter::constructImages(const art::Event& e,
             int start_tick = range.begin_index();
             for (size_t idx = 0; idx < adcs.size(); ++idx) {
                 int tick = start_tick + idx;
-                double x = det_props.ConvertTicksToX(tick, wire_ids.front().planeID());
+                double x = _detp->ConvertTicksToX(tick, wire_ids.front().planeID());
                 size_t row = properties[view_idx].row(x);
                 size_t col = properties[view_idx].col(wire_coord);
                 if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;

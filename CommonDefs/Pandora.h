@@ -3,14 +3,11 @@
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "TVector3.h"
 #include <cmath>
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
 #include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/Utilities/GeometryUtilities.h"
-#include "larcore/Geometry/WireReadout.h"
 
 namespace common
 {
@@ -61,23 +58,18 @@ namespace common
         return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(y_coord, z_coord) : pandora_view == TPC_VIEW_V ? YZtoV(y_coord, z_coord) : YZtoW(y_coord, z_coord));
     }
 
-    TVector3 GetPandoraHitPosition(const art::Event& e, art::Ptr<recob::Hit> hit, PandoraView view) 
+    TVector3 GetPandoraHitPosition(const art::Event &e, const art::Ptr<recob::Hit> hit, const PandoraView pandora_view)
     {
-        auto const& wireReadout = art::ServiceHandle<geo::WireReadout const>()->Get();
-        auto const detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->DataFor(e);
+        art::ServiceHandle<geo::Geometry> geo;
+        auto const* det = lar::providerFrom<detinfo::DetectorPropertiesService>();
 
-        const geo::WireID hit_wire = hit->WireID();
-        const double hit_time = hit->PeakTime();
+        const geo::WireID hit_wire(hit->WireID());
+        const double hit_time(hit->PeakTime()+0.5);
 
-        double x_coord = detp.ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
+        const double x_coord = det->ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
+        TVector3 xyz = geo->Cryostat(hit_wire.Cryostat).TPC(hit_wire.TPC).Plane(hit_wire.Plane).Wire(hit_wire.Wire).GetCenter();
 
-        auto const wire_geo = wireReadout.Wire(hit_wire);
-        auto const center = wire_geo.GetCenter();
-
-        TVector3 xyz(center.X(), center.Y(), center.Z());
-
-        xyz.SetX(x_coord);
-        return xyz;
+        return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(xyz.Y(), xyz.Z()) : pandora_view == TPC_VIEW_V ? YZtoV(xyz.Y(), xyz.Z()) : YZtoW(xyz.Y(), xyz.Z()));
     }
 } 
 

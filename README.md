@@ -26,7 +26,7 @@
    cd /exp/uboone/app/users/$USER/production/
    mkdir strangeness
    cd strangeness
-   mrb newDev -q e26:prof
+   mrb newDev -q e17:prof
    source /exp/uboone/app/users/$USER/production/strangenes/localProducts_*/setup
    ```
 
@@ -39,21 +39,26 @@
    ```
 
    - Clones the `ubana` repository into the `srcs/ubana` directory using the `mrb` tool.
-   
-    ```bash
-    cd srcs/ubana
-    vim CMakeLists.txt
-    # Modify the compiler flags as such 
-    cet_set_compiler_flags(DIAGS CAUTIOUS
-      #WERROR
-      NO_UNDEFINED
-      ALLOW_DEPRECATIONS
-      EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs -Wno-expansion-to-defined -Wno-variadic-macros -Wno-pedantic 
-      #-Wno-error=unused-variable 
-    )
-    ```
 
-    - Modify the compiler flags to disable treat warning as errors, this is needed for the LibTorch library. 
+   ```bash
+   cd srcs/ubana  # Go to srcs/ubana
+   git checkout tags/v08_00_00_82
+   ```
+   
+   ```bash
+   cd srcs/ubana
+   vim CMakeLists.txt
+   # Modify the compiler flags as such 
+   cet_set_compiler_flags(DIAGS CAUTIOUS
+   #WERROR
+   NO_UNDEFINED
+   ALLOW_DEPRECATIONS
+   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs -Wno-expansion-to-defined -Wno-variadic-macros -Wno-pedantic 
+   #-Wno-error=unused-variable 
+   )
+   ```
+
+   - Modify the compiler flags to disable treat warning as errors, this is needed for the LibTorch library. 
 
 4. **Clone additional repository:**
 
@@ -74,14 +79,8 @@
 
    - Integrate the cloned repository into the build process.
 
-6. **Checkout the desired tag:**
 
-   ```bash
-   cd ../..  # Go back to srcs/ubana
-   git checkout tags/v10_04_07_04
-   ```
-
-7. **Set up the build environment:**
+6. **Set up the build environment:**
 
    ```bash
    cd $MRB_TOP
@@ -90,7 +89,7 @@
 
    - Moves to the top-level directory and sets up the build environment.
 
-8. **Build the project:**
+7. **Build the project:**
 
    ```bash
    mrb i -j4
@@ -98,7 +97,7 @@
 
    - Builds the project using `mrb` with 4 parallel jobs (`-j4`).
 
-9. **Automated building**
+8. **Automated building**
 
    ```bash
    cd srcs/ubana/ubana/searchingforstrangeness

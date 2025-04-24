@@ -5,7 +5,7 @@
 #include "art/Utilities/make_tool.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art_root_io/TFileService.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Principal/Event.h"
 #include "../CommonDefs/Types.h"
 #include "TTree.h"

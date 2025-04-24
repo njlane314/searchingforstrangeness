@@ -20,7 +20,6 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "TDirectoryFile.h"
 #include "art/Framework/Principal/Event.h"
-#include "larcore/Geometry/WireReadout.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "larcorealg/Geometry/geo_vectors_utils.h"
 

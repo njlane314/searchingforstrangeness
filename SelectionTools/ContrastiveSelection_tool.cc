@@ -29,7 +29,7 @@ namespace selection
     private:
         std::string image_label_;
         float selection_threshold_;
-        torch::jit::script::Module resnet_model_;
+        std::shared_ptr<torch::jit::script::Module> resnet_model_;
         std::vector<float> plane_scores_;
         float final_score_;
         std::vector<float> getPlaneScores(const std::vector<image::Image>& images);
@@ -47,7 +47,7 @@ namespace selection
         sp.find_file(pset.get<std::string>("ResNetModel"), resnet_path);
         try {
             resnet_model_ = torch::jit::load(resnet_path);
-            resnet_model_.eval();
+            resnet_model_->eval(); 
         } catch (const c10::Error& e) {
             throw cet::exception("ContrastiveSelection") << "Failed to load ResNet model: " << e.what();
         }
@@ -79,8 +79,7 @@ namespace selection
             torch::Tensor tensor = torch::from_blob(const_cast<float*>(data.data()), {1, 1, static_cast<long>(img.height()), static_cast<long>(img.width())})
                                       .to(torch::kFloat32);
             tensor = (tensor - tensor.mean()) / tensor.std();
-            torch::NoGradGuard no_grad;
-            torch::Tensor output = resnet_model_.forward({tensor}).toTensor();
+            torch::Tensor output = resnet_model_->forward({tensor}).toTensor();
             float score = torch::softmax(output, 1)[0][1].item<float>();
             scores.push_back(score);
         }
