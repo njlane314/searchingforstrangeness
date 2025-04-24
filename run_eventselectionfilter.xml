@@ -6,7 +6,7 @@
 <!ENTITY file_type "mc">
 <!ENTITY run_type "physics">
 <!ENTITY user "nlane">
-<!ENTITY name "nl_lambda_nohadrons_eventselectionfilter_test">
+<!ENTITY name "nl_lambda_nohadrons_eventselectionfilter_test2">
 ]>
 
 <job>
