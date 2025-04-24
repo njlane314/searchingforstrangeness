@@ -114,9 +114,9 @@ private:
 
     void constructImages(const art::Event& e,
                         const std::vector<image::ImageProperties>& properties,
-                        std::vector<image::Image>& calo_images,
-                        std::vector<image::Image>& reco_images,
-                        std::vector<image::Image>& label_images);
+                        std::vector<image::Image<float>>& calo_images,
+                        std::vector<image::Image<int>>& reco_images,
+                        std::vector<image::Image<int>>& label_images);
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
@@ -140,7 +140,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _data = p.get<bool>("IsData");
     _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
-    _adc_image_threshold = p.get<float>("ADCthreshold", 10.0);
+    _adc_image_threshold = p.get<float>("ADCthreshold", 1.0);
 
     _image_width = p.get<int>("ImageWidth", 512);
     _image_height = p.get<int>("ImageHeight", 512);
@@ -230,7 +230,9 @@ bool EventSelectionFilter::filter(art::Event &e) {
         properties.emplace_back(centroid_wire_v, centroid_drift_v, _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV);
         properties.emplace_back(centroid_wire_w, centroid_drift_w, _image_height, _image_width, _wire_pitch_w, _drift_step, geo::kW);
 
-        std::vector<image::Image> calo_images, reco_images, label_images;
+        std::vector<image::Image<float>> calo_images;
+        std::vector<image::Image<int>> reco_images;
+        std::vector<image::Image<int>> label_images;
         this->constructImages(e, properties, calo_images, reco_images, label_images);
 
         bool selected = _selectionTool->selectEvent(e, neutrino_slice, calo_images, reco_images, label_images);
@@ -253,24 +255,24 @@ bool EventSelectionFilter::filter(art::Event &e) {
 
 void EventSelectionFilter::constructImages(const art::Event& e,
                                             const std::vector<image::ImageProperties>& properties,
-                                            std::vector<image::Image>& calo_images,
-                                            std::vector<image::Image>& reco_images,
-                                            std::vector<image::Image>& label_images) {
+                                            std::vector<image::Image<float>>& calo_images,
+                                            std::vector<image::Image<int>>& reco_images,
+                                            std::vector<image::Image<int>>& label_images) {
     calo_images.clear();
     reco_images.clear();
     label_images.clear();
 
     for (const auto& prop : properties) {
-        image::Image calo_image(prop);
-        calo_image.clear(static_cast<float>(0.0));
+        image::Image<float> calo_image(prop);
+        calo_image.clear(0.0);
         calo_images.push_back(std::move(calo_image));
 
-        image::Image reco_image(prop);
-        reco_image.clear(static_cast<float>(reco_labels::ReconstructionLabel::empty));
+        image::Image<int> reco_image(prop);
+        reco_image.clear(static_cast<int>(reco_labels::ReconstructionLabel::empty));
         reco_images.push_back(std::move(reco_image));
 
-        image::Image label_image(prop);
-        label_image.clear(static_cast<float>(truth_labels::PrimaryLabel::empty));
+        image::Image<int> label_image(prop);
+        label_image.clear(static_cast<int>(truth_labels::PrimaryLabel::empty));
         label_images.push_back(std::move(label_image));
     }
 
@@ -346,8 +348,8 @@ void EventSelectionFilter::constructImages(const art::Event& e,
 
                 if (adcs[idx] > _adc_image_threshold) {
                     calo_images[view_idx].set(row, col, adcs[idx]);
-                    reco_images[view_idx].set(row, col, static_cast<float>(reco_label), false);
-                    label_images[view_idx].set(row, col, static_cast<float>(primary_label), false);
+                    reco_images[view_idx].set(row, col, static_cast<int>(reco_label), false);
+                    label_images[view_idx].set(row, col, static_cast<int>(primary_label), false);
                 }
             }
         }

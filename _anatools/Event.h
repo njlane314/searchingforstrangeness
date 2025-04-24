@@ -284,84 +284,23 @@ namespace analysis {
 
     struct Event {
         int run, sub, evt;
-
-        int event_type;
-        tree::ManagedPointer<std::vector<int>> signature_types; 
-        int is_signal;
-
-        int nu_pdg;
-        int ccnc;
-        float nu_e;
-        float nu_theta;
-        float nu_pt;
-        InteractionType interaction; 
-        int target_nucleus;
-        int hit_nucleon;
-        float W;
-        float X;
-        float Y;
-        float QSqr;
-
-        tree::ManagedPointer<std::vector<std::vector<float>>> wire_input_plane_images;
-        tree::ManagedPointer<std::vector<std::vector<float>>> wire_label_plane_images;
-        tree::ManagedPointer<std::vector<std::vector<float>>> wire_truth_plane_images;
-
-        float slice_total_charge;
-
-       std::array<tree::ManagedPointer<std::vector<double>>, 3> completeness_hit;
-        std::array<tree::ManagedPointer<std::vector<double>>, 3> completeness_total_hits;
-        std::array<tree::ManagedPointer<std::vector<double>>, 3> exclusivity_ratio;
-        std::array<tree::ManagedPointer<std::vector<double>>, 3> hit_exclusivity_fraction;
-        std::array<tree::ManagedPointer<std::vector<int>>, 3> particle_start_active;
-        std::array<tree::ManagedPointer<std::vector<int>>, 3> particle_end_active;
-
-        tree::ManagedPointer<std::vector<double>> vertex_distance;
+        tree::ManagedPointer<std::vector<float>> calo_pixels_u, calo_pixels_v, calo_pixels_w;
+        tree::ManagedPointer<std::vector<float>> reco_pixels_u, reco_pixels_v, reco_pixels_w;
+        tree::ManagedPointer<std::vector<float>> label_pixels_u, label_pixels_v, label_pixels_w;
 
         void SetBranches(TTree* tree) {
             tree->SetBranchAddress("run", &run);
             tree->SetBranchAddress("sub", &sub);
             tree->SetBranchAddress("evt", &evt);
-            tree->SetBranchAddress("event_type", &event_type);
-            tree::set_object_input_branch_address(*tree, "signature_types", signature_types);
-            tree->SetBranchAddress("is_signal", &is_signal);
-            tree->SetBranchAddress("nu_pdg", &nu_pdg);
-            tree->SetBranchAddress("ccnc", &ccnc);
-            tree->SetBranchAddress("nu_e", &nu_e);
-            tree->SetBranchAddress("nu_theta", &nu_theta);
-            tree->SetBranchAddress("nu_pt", &nu_pt);
-            tree->SetBranchAddress("interaction", &interaction); 
-            tree->SetBranchAddress("target_nucleus", &target_nucleus);
-            tree->SetBranchAddress("hit_nucleon", &hit_nucleon);
-            tree->SetBranchAddress("W", &W);
-            tree->SetBranchAddress("X", &X);
-            tree->SetBranchAddress("Y", &Y);
-            tree->SetBranchAddress("QSqr", &QSqr);
-
-            tree::set_object_input_branch_address(*tree, "slice_wire_images", wire_input_plane_images);
-            tree::set_object_input_branch_address(*tree, "slice_label_wire_images", wire_label_plane_images);
-            tree::set_object_input_branch_address(*tree, "slice_truth_wire_images", wire_truth_plane_images);
-
-            tree->SetBranchAddress("slice_total_charge", &slice_total_charge);
-
-            tree::set_object_input_branch_address(*tree, "completeness_hit_U", completeness_hit[0]);
-            tree::set_object_input_branch_address(*tree, "completeness_hit_V", completeness_hit[1]);
-            tree::set_object_input_branch_address(*tree, "completeness_hit_W", completeness_hit[2]);
-            tree::set_object_input_branch_address(*tree, "completeness_total_hits_U", completeness_total_hits[0]);
-            tree::set_object_input_branch_address(*tree, "completeness_total_hits_V", completeness_total_hits[1]);
-            tree::set_object_input_branch_address(*tree, "completeness_total_hits_W", completeness_total_hits[2]);
-            tree::set_object_input_branch_address(*tree, "exclusivity_ratio_U", exclusivity_ratio[0]);
-            tree::set_object_input_branch_address(*tree, "exclusivity_ratio_V", exclusivity_ratio[1]);
-            tree::set_object_input_branch_address(*tree, "exclusivity_ratio_W", exclusivity_ratio[2]);
-            tree::set_object_input_branch_address(*tree, "hit_exclusivity_fraction_U", hit_exclusivity_fraction[0]);
-            tree::set_object_input_branch_address(*tree, "hit_exclusivity_fraction_V", hit_exclusivity_fraction[1]);
-            tree::set_object_input_branch_address(*tree, "hit_exclusivity_fraction_W", hit_exclusivity_fraction[2]);
-            tree::set_object_input_branch_address(*tree, "particle_start_active_U", particle_start_active[0]);
-            tree::set_object_input_branch_address(*tree, "particle_start_active_V", particle_start_active[1]);
-            tree::set_object_input_branch_address(*tree, "particle_start_active_W", particle_start_active[2]);
-            tree::set_object_input_branch_address(*tree, "particle_end_active_U", particle_end_active[0]);
-            tree::set_object_input_branch_address(*tree, "particle_end_active_V", particle_end_active[1]);
-            tree::set_object_input_branch_address(*tree, "particle_end_active_W", particle_end_active[2]);
-            tree::set_object_input_branch_address(*tree, "vertex_distance", vertex_distance);
+            tree::set_object_input_branch_address(*tree, "calo_pixels_u", calo_pixels_u);
+            tree::set_object_input_branch_address(*tree, "calo_pixels_v", calo_pixels_v);
+            tree::set_object_input_branch_address(*tree, "calo_pixels_w", calo_pixels_w);
+            tree::set_object_input_branch_address(*tree, "reco_pixels_u", reco_pixels_u);
+            tree::set_object_input_branch_address(*tree, "reco_pixels_v", reco_pixels_v);
+            tree::set_object_input_branch_address(*tree, "reco_pixels_w", reco_pixels_w);
+            tree::set_object_input_branch_address(*tree, "label_pixels_u", label_pixels_u);
+            tree::set_object_input_branch_address(*tree, "label_pixels_v", label_pixels_v);
+            tree::set_object_input_branch_address(*tree, "label_pixels_w", label_pixels_w);
         }
     };
 }

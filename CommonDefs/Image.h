@@ -1,5 +1,5 @@
-#ifndef IMAGEPROCESSOR_H
-#define IMAGEPROCESSOR_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include <vector>
 #include <algorithm>
@@ -62,12 +62,13 @@ namespace image
         geo::View_t view_;
     };
 
+    template <typename T>
     class Image {
     public:
         Image() = default;
         Image(const ImageProperties& prop)
-            : prop_(prop), pixels_(prop.height() * prop.width(), 0.0f) {}
-        void set(size_t row, size_t col, float value, bool accumulate = true) {
+            : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
+        void set(size_t row, size_t col, T value, bool accumulate = true) {
             size_t idx = prop_.index(row, col);
             if (idx != static_cast<size_t>(-1)) {
                 if (accumulate)
@@ -76,14 +77,14 @@ namespace image
                     pixels_[idx] = value;
             }
         }
-        float get(size_t row, size_t col) const {
+        T get(size_t row, size_t col) const {
             size_t idx = prop_.index(row, col);
-            return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : 0.0f;
+            return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : T(0);
         }
-        void clear(float value = 0.0f) {
+        void clear(T value = T(0)) {
             std::fill(pixels_.begin(), pixels_.end(), value);
         }
-        std::vector<float> data() const {
+        std::vector<T> data() const {
             return pixels_;
         }
         geo::View_t view() const { return prop_.view(); }
@@ -91,7 +92,7 @@ namespace image
         size_t width() const { return prop_.width(); }
     private:
         ImageProperties prop_;
-        std::vector<float> pixels_;
+        std::vector<T> pixels_;
     };
 } 
 

@@ -5,10 +5,7 @@ BIN_DIR="./bin"
 mkdir -p "$BIN_DIR"
 
 MACROS=(
-    "plot_neutrino_energy.c plot_neutrino_energy"
     "plot_random_display.c plot_random_display"
-    "plot_slice_info.c plot_slice_info"
-    "plot_clarity_metrics.c plot_clarity_metrics"
 )
 
 COMPILE_CMD="g++ -o"

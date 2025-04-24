@@ -28,9 +28,8 @@ namespace plot {
     public:
         Display(int img_size, const std::string& output_dir);
         void VisualiseInput(const analysis::Sample& sample, int event_index);
-        void VisualiseLabels(const analysis::Sample& sample, int event_index);  
+        void VisualiseLabels(const analysis::Sample& sample, int event_index);
         void VisualiseTruth(const analysis::Sample& sample, int event_index);
-        
         void PlotLabelsLegend();
         void PlotTruthLegend();
 
@@ -54,9 +53,11 @@ namespace plot {
 
         chain->GetEntry(event_index);
 
+        std::vector<std::vector<float>*> plane_data = {&(*event.calo_pixels_u), &(*event.calo_pixels_v), &(*event.calo_pixels_w)};
+
         for (int plane = 0; plane < 3; ++plane) {
-            std::vector<float> plane_data = (*event.wire_input_plane_images)[plane];
-            if (plane_data.size() != static_cast<size_t>(img_size_ * img_size_)) 
+            std::vector<float>& data = *plane_data[plane];
+            if (data.size() != static_cast<size_t>(img_size_ * img_size_)) 
                 continue;
 
             std::string hist_name = "h_input_" + plane_names_[plane];
@@ -64,13 +65,13 @@ namespace plot {
                                 ", Subrun " + std::to_string(event.sub) + ", Event " + std::to_string(event.evt) + ")";
             TH2F* h_input = new TH2F(hist_name.c_str(), title.c_str(), img_size_, 0, img_size_, img_size_, 0, img_size_);
 
-            float threshold = 10.0;
-            float min_value = 10.0;
+            float threshold = 8;
+            float min_value = 8;
             float max_value = min_value;
 
             for (int i = 0; i < img_size_; ++i) {
                 for (int j = 0; j < img_size_; ++j) {
-                    float value = plane_data[j * img_size_ + i];
+                    float value = data[j * img_size_ + i];
                     if (value > threshold) {
                         h_input->SetBinContent(i + 1, j + 1, value);
                         if (value > max_value) max_value = value;
@@ -114,9 +115,11 @@ namespace plot {
 
         chain->GetEntry(event_index);
 
+        std::vector<std::vector<float>*> plane_data = {&(*event.reco_pixels_u), &(*event.reco_pixels_v), &(*event.reco_pixels_w)};
+
         for (int plane = 0; plane < 3; ++plane) {
-            std::vector<float> plane_data = (*event.wire_label_plane_images)[plane];
-            if (plane_data.size() != static_cast<size_t>(img_size_ * img_size_)) 
+            std::vector<float>& data = *plane_data[plane];
+            if (data.size() != static_cast<size_t>(img_size_ * img_size_)) 
                 continue;
 
             std::string hist_name = "h_label_" + plane_names_[plane];
@@ -126,7 +129,7 @@ namespace plot {
 
             for (int i = 0; i < img_size_; ++i) {
                 for (int j = 0; j < img_size_; ++j) {
-                    float value = plane_data[j * img_size_ + i];
+                    float value = data[j * img_size_ + i];
                     h_label->SetBinContent(i + 1, j + 1, value);
                 }
             }
@@ -134,7 +137,7 @@ namespace plot {
             this->SetHistogramStyle(h_label);
 
             const int n_labels = 8;
-            int colors[n_labels] = {kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kGray, kMagenta};
+            int colors[n_labels] = {kWhite, kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan};
             gStyle->SetNumberContours(n_labels);
             gStyle->SetPalette(n_labels, colors);
             h_label->SetMinimum(-0.5);
@@ -169,9 +172,11 @@ namespace plot {
 
         chain->GetEntry(event_index);
 
+        std::vector<std::vector<float>*> plane_data = {&(*event.label_pixels_u), &(*event.label_pixels_v), &(*event.label_pixels_w)};
+
         for (int plane = 0; plane < 3; ++plane) {
-            std::vector<float> plane_data = (*event.wire_truth_plane_images)[plane];
-            if (plane_data.size() != static_cast<size_t>(img_size_ * img_size_)) 
+            std::vector<float>& data = *plane_data[plane];
+            if (data.size() != static_cast<size_t>(img_size_ * img_size_)) 
                 continue;
 
             std::string hist_name = "h_truth_" + plane_names_[plane];
@@ -181,15 +186,16 @@ namespace plot {
 
             for (int i = 0; i < img_size_; ++i) {
                 for (int j = 0; j < img_size_; ++j) {
-                    float value = plane_data[j * img_size_ + i];
+                    float value = data[j * img_size_ + i];
                     h_truth->SetBinContent(i + 1, j + 1, value);
                 }
             }
 
             this->SetHistogramStyle(h_truth);
 
-            const int n_labels = 8;
-            int colors[n_labels] = {kWhite, kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan};
+            const int n_labels = 18;
+            int colors[18] = {kWhite, kGray, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kMagenta, kOrange, kSpring, kTeal, kAzure, kViolet, kPink, kBlue+1, kRed+1, kGreen+1};
+            
             gStyle->SetNumberContours(n_labels);
             gStyle->SetPalette(n_labels, colors);
             h_truth->SetMinimum(-0.5);
@@ -216,24 +222,24 @@ namespace plot {
         }
     }
 
-   void Display::PlotLabelsLegend() {
-        const std::array<std::string, 8> legend_label_names = {
-            "MIP", "HIP", "shower", "michel", "diffuse", "invisible", "undefined", "cosmic"
+    void Display::PlotLabelsLegend() {
+        const std::array<std::string, 9> legend_label_names = {
+            "empty", "MIP", "HIP", "shower", "michel", "diffuse", "invisible", "undefined", "cosmic"
         };
 
-        const std::array<int, 8> label_colors = {
-            kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kGray, kMagenta
+        const std::array<int, 9> label_colors = {
+            kWhite, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kGray, kMagenta
         };
 
         TCanvas* c_legend = new TCanvas("legend", "Label Legend", 800, 600);
         c_legend->SetFillColor(kWhite);
 
         TLegend* leg = new TLegend(0.64, 0.32, 0.94, 0.85);
-        leg->SetBorderSize(0); 
-        leg->SetFillStyle(0);   
-        leg->SetTextSize(0.03); 
-        leg->SetTextFont(42);   
-        leg->SetHeader("Labels", "C"); 
+        leg->SetBorderSize(0);
+        leg->SetFillStyle(0);
+        leg->SetTextSize(0.03);
+        leg->SetTextFont(42);
+        leg->SetHeader("Labels", "C");
 
         for (size_t i = 0; i < legend_label_names.size(); ++i) {
             TBox* box = new TBox(0, 0, 1, 1);
@@ -261,10 +267,10 @@ namespace plot {
         c_legend->SetFillColor(kWhite);
 
         TLegend* leg = new TLegend(0.64, 0.32, 0.94, 0.85);
-        leg->SetBorderSize(0);  
-        leg->SetFillStyle(0);  
-        leg->SetTextSize(0.03); 
-        leg->SetTextFont(42);  
+        leg->SetBorderSize(0);
+        leg->SetFillStyle(0);
+        leg->SetTextSize(0.03);
+        leg->SetTextFont(42);
         leg->SetHeader("Truth Labels", "C");
 
         for (size_t i = 0; i < truth_label_names.size(); ++i) {
@@ -299,8 +305,8 @@ namespace plot {
         hist->GetYaxis()->SetTickLength(0);
         hist->GetXaxis()->CenterTitle();
         hist->GetYaxis()->CenterTitle();
-        hist->SetStats(0);  
+        hist->SetStats(0);
     }
-} 
+}
 
 #endif

@@ -24,9 +24,9 @@ namespace selection
         void configure(fhicl::ParameterSet const& pset);
         bool selectEvent(art::Event const& e, 
                                 const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
-                                const std::vector<image::Image>& calo_images, 
-                                const std::vector<image::Image>& reco_images, 
-                                const std::vector<image::Image>& label_images);
+                                const std::vector<image::Image<float>>& calo_images, 
+                                const std::vector<image::Image<int>>& reco_images, 
+                                const std::vector<image::Image<int>>& label_images);
         void analyseSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
         void setBranches(TTree* tree);
         void resetTTree(TTree* tree);
@@ -68,9 +68,9 @@ namespace selection
 
     bool TopologySelection::selectEvent(art::Event const& e, 
                                 const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
-                                const std::vector<image::Image>& calo_images, 
-                                const std::vector<image::Image>& reco_images, 
-                                const std::vector<image::Image>& label_images) {
+                                const std::vector<image::Image<float>>& calo_images, 
+                                const std::vector<image::Image<int>>& reco_images, 
+                                const std::vector<image::Image<int>>& label_images) {
         if (!m_inferenceMode) {
             return false;
         }

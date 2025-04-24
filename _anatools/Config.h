@@ -35,8 +35,8 @@ namespace analysis {
     private:
         static inline std::map<std::string, SampleConfig> configs_ = {
             {"default", {
-                {SampleType::SIGNAL, {"/exp/uboone/data/users/nlane/analysis/prod_strange_resample_fhc_run2_fhc_reco2_reco2_signal_selectionfilter_15_new_analysis.root"}},
-                {SampleType::GENIE, {"/exp/uboone/data/users/nlane/analysis/Run2_FHC_New_Flux_Nu_Overlay_Pandora_reprocess_pandora_reco2_reco2_selectionfilter_20_new_analysis.root"}}
+                {SampleType::SIGNAL, {"/exp/uboone/data/users/nlane/analysis/prod_strange_resample_fhc_run2_fhc_reco2_reco2_imagetrainingfilter_1_new_analysis.root"}},
+                //{SampleType::GENIE, {"/exp/uboone/data/users/nlane/analysis/Run2_FHC_New_Flux_Nu_Overlay_Pandora_reprocess_pandora_reco2_reco2_selectionfilter_20_new_analysis.root"}}
             }}
         };
     };

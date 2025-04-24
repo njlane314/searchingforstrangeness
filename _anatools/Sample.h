@@ -19,8 +19,8 @@ namespace analysis {
     public:
         explicit Sample(SampleType type) 
             : type_(type), 
-            event_chain_(std::make_unique<TChain>("selectionfilter/SelectionFilter")), 
-            subrun_chain_(std::make_unique<TChain>("selectionfilter/SubRun")), 
+            event_chain_(std::make_unique<TChain>("imageFilter/EventSelectionFilter")), 
+            subrun_chain_(std::make_unique<TChain>("imageFilter/SubRun")), 
             total_pot(0.0) {}
 
         void AddFile(const std::string& filename) {
