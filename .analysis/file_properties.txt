@@ -1,0 +1,12 @@
+# Trigger counts and POT exposures are taken from the searching4nues
+# spreadsheet: tinyurl.com/pelee-nue-ntuples
+# file_name run file_type [triggers POT (for data only)]
+#
+# Open beam-on data
+# /exp/uboone/data/users/gardiner/ntuples-stv/stv-data_bnb_mcc9.1_v08_00_00_25_reco2_C1_beam_good_reco2_5e19.root 1 onBNB 10080350 4.54e19
+# /exp/uboone/data/users/gardiner/ntuples-stv/stv-data_bnb_mcc9.1_v08_00_00_25_reco2_G1_beam_good_reco2_1e19.root 3 onBNB  2271036 9.43e18
+#
+# Beam-off data
+# /exp/uboone/data/users/gardiner/ntuples-stv/stv-data_extbnb_mcc9.1_v08_00_00_25_reco2_C_all_reco2.root 1 extBNB 65498807 0
+# /exp/uboone/data/users/gardiner/ntuples-stv/stv-data_extbnb_mcc9.1_v08_00_00_25_reco2_D_E_all_reco2.root 2 extBNB 152404890 0
+# /exp/uboone/data/users/gardiner/ntuples-stv/stv-data_extbnb_mcc9.1_v08_00_00_25_reco2_F_G_all_reco2.root 3 extBNB 214555174 0
