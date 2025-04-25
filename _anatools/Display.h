@@ -137,7 +137,7 @@ namespace plot {
             this->SetHistogramStyle(h_label);
 
             const int n_labels = 8;
-            int colors[n_labels] = {kWhite, kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan};
+            int colors[n_labels] = {kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan, kOrange};
             gStyle->SetNumberContours(n_labels);
             gStyle->SetPalette(n_labels, colors);
             h_label->SetMinimum(-0.5);
@@ -194,7 +194,7 @@ namespace plot {
             this->SetHistogramStyle(h_truth);
 
             const int n_labels = 18;
-            int colors[18] = {kWhite, kGray, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kMagenta, kOrange, kSpring, kTeal, kAzure, kViolet, kPink, kBlue+1, kRed+1, kGreen+1};
+            int colors[18] = {kGray, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kMagenta, kOrange, kSpring, kTeal, kAzure, kViolet, kPink, kBlue+1, kRed+1, kGreen+1, kOrange+1};
             
             gStyle->SetNumberContours(n_labels);
             gStyle->SetPalette(n_labels, colors);

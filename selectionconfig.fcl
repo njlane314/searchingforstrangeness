@@ -40,7 +40,7 @@ BaseEventSelectionFilter: {
     IsData: false
     IsFakeData: false
     Filter: true
-    ADCthreshold: 8.0
+    ADCthreshold: 4.0
     ImageWidth: 512
     ImageHeight: 512
 }
