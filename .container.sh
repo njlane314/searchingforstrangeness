@@ -1,5 +1,6 @@
 #!/bin/bash
 
+: '
 apptainer shell \
           -B /cvmfs \
           -B /exp/uboone \
@@ -9,4 +10,7 @@ apptainer shell \
           -B /etc/localtime \
           -s /bin/bash \
           --env UPS_OVERRIDE='-H Linux64bit+3.10-2.17' \
-          /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7
+          /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:jsl
+'
+
+/cvmfs/uboone.opensciencegrid.org/bin/shell_apptainer.sh -i /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:jsl

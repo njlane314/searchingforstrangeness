@@ -223,12 +223,12 @@ namespace plot {
     }
 
     void Display::PlotLabelsLegend() {
-        const std::array<std::string, 9> legend_label_names = {
-            "empty", "MIP", "HIP", "shower", "michel", "diffuse", "invisible", "undefined", "cosmic"
+        const std::array<std::string, 8> legend_label_names = {
+            "empty", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
         };
 
-        const std::array<int, 9> label_colors = {
-            kWhite, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kGray, kMagenta
+        const std::array<int, 8> label_colors = {
+            kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan, kOrange
         };
 
         TCanvas* c_legend = new TCanvas("legend", "Label Legend", 800, 600);
@@ -255,12 +255,14 @@ namespace plot {
     }
 
     void Display::PlotTruthLegend() {
-        const std::array<std::string, 8> truth_label_names = {
-            "Empty", "Cosmic", "Neutrino", "Primary Muon", "Charged Kaon", "Kaon Short", "Lambda", "Charged Sigma"
+        const std::array<std::string, 13> truth_label_names = {
+            "empty", "cosmic", "muon", "electron", "photon",
+            "proton", "pion", "neutral_pion", "kaon", "neutral_kaon", 
+            "lambda", "sigma", "other"
         };
 
-        const std::array<int, 8> label_colors = {
-            kWhite, kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan
+        const std::array<int, 13> label_colors = {
+            kGray, kBlue, kRed, kGreen, kYellow, kMagenta, kCyan, kOrange, kSpring, kTeal, kAzure, kViolet, kPink
         };
 
         TCanvas* c_legend = new TCanvas("truth_legend", "Truth Label Legend", 800, 600);
