@@ -37,7 +37,8 @@
   <stage name="analyse">
   <!--<inputdef>nl_lambda_nohadrons_reco2_training_2000</inputdef>-->
   <!--<inputdef>nl_strange_numi_fhc_run2_reco2_validation_982</inputdef>-->
-  <inputdef>nl_strange_numi_fhc_run2_reco2_training_982</inputdef>
+  <!--<inputdef>nl_strange_numi_fhc_run2_reco2_training_982</inputdef>-->
+  <inputdef>nl_strange_numi_test_10</inputdef>
   <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
   <fcl>run_eventselectionfilter.fcl</fcl>
   <dirlevels>1</dirlevels>
@@ -53,6 +54,7 @@
   <numjobs>10</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
+  <schema>hrtps</schema>
   </stage>
 
 </project>

@@ -97,6 +97,12 @@ private:
     int _image_width;
     int _image_height;
 
+    std::string _bad_channel_file;
+    bool _veto_bad_channels;
+    std::vector<bool> _bad_channel_mask;
+    double _hit_exclus_thresh;
+
+    void initialiseBadChannelMask();
     void BuildPFPMap(const common::ProxyPfpColl_t &pfp_pxy_col);
     template <typename T>
     void printPFParticleMetadata(const common::ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList);
@@ -135,12 +141,16 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
     fGammaThreshold = p.get<double>("GammaThreshold", 0.1);         
     fHadronThreshold = p.get<double>("HadronThreshold", 0.1);
+    
+    _bad_channel_file = p.get<std::string>("BadChannelFile", "badchannels.txt");
+    _veto_bad_channels = p.get<bool>("VetoBadChannels", true);
+    _hit_exclus_thresh = p.get<double>("HitExclusivityThreshold", 0.5);
 
     _verbose = p.get<bool>("Verbose");
     _data = p.get<bool>("IsData");
     _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
-    _adc_image_threshold = p.get<float>("ADCthreshold", 1.0);
+    _adc_image_threshold = p.get<float>("ADCthreshold", 4.0);
 
     _image_width = p.get<int>("ImageWidth", 512);
     _image_height = p.get<int>("ImageHeight", 512);
@@ -156,6 +166,12 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _wire_pitch_u = _geo->WirePitch(geo::kU);
     _wire_pitch_v = _geo->WirePitch(geo::kV);
     _wire_pitch_w = _geo->WirePitch(geo::kW);
+
+    size_t num_channels = _geo->Nchannels();
+    _bad_channel_mask.resize(num_channels, false);
+
+    if (_veto_bad_channels) 
+        this->initialiseBadChannelMask();
 
     art::ServiceHandle<art::TFileService> tfs;
 
@@ -253,11 +269,36 @@ bool EventSelectionFilter::filter(art::Event &e) {
     return true;
 }
 
+void EventSelectionFilter::initialiseBadChannelMask() {
+    if (!_bad_channel_file.empty()) {
+        cet::search_path sp("FW_SEARCH_PATH");
+        std::string fullname;
+        sp.find_file(_bad_channel_file, fullname);
+        if (fullname.empty()) {
+            throw cet::exception("EventSelectionFilter") << "Bad channel file not found: " << _bad_channel_file;
+        }
+
+        std::ifstream inFile(fullname, std::ios::in);
+        std::string line;
+        while (std::getline(inFile, line)) {
+            if (line.find("#") != std::string::npos) continue;
+            std::istringstream ss(line);
+            int ch1, ch2;
+            ss >> ch1;
+            if (!(ss >> ch2)) ch2 = ch1;
+            for (int i = ch1; i <= ch2; ++i) {
+                _bad_channel_mask[i] = true;
+            }
+        }
+        std::cout << "Loaded bad channels from: " << fullname << std::endl;
+    }
+}
+
 void EventSelectionFilter::constructImages(const art::Event& e,
-                                            const std::vector<image::ImageProperties>& properties,
-                                            std::vector<image::Image<float>>& calo_images,
-                                            std::vector<image::Image<int>>& reco_images,
-                                            std::vector<image::Image<int>>& label_images) {
+                                           const std::vector<image::ImageProperties>& properties,
+                                           std::vector<image::Image<float>>& calo_images,
+                                           std::vector<image::Image<int>>& reco_images,
+                                           std::vector<image::Image<int>>& label_images) {
     calo_images.clear();
     reco_images.clear();
     label_images.clear();
@@ -318,8 +359,8 @@ void EventSelectionFilter::constructImages(const art::Event& e,
                 size_t col = properties[view_idx].col(wire_coord);
                 if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
-                reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::cosmic;
-                truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::cosmic;
+                reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::invisible;
+                truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::other;
 
                 for (const auto& hit : hits) {
                     if (tick >= hit->StartTick() && tick < hit->EndTick()) {
@@ -331,21 +372,25 @@ void EventSelectionFilter::constructImages(const art::Event& e,
                                     auto it = trackid_to_index.find(track_id);
                                     if (it != trackid_to_index.end()) {
                                         size_t particle_idx = it->second;
-                                        if (particle_idx < primary_labels.size()) {
-                                            primary_label = primary_labels[particle_idx];
-                                        }
                                         if (particle_idx < reco_labels.size()) {
                                             reco_label = reco_labels[particle_idx];
+                                        }
+                                        if (particle_idx < primary_labels.size()) {
+                                            primary_label = primary_labels[particle_idx];
                                         }
                                     }
                                     break;
                                 }
                             }
+                        } else {
+                            reco_label = reco_labels::ReconstructionLabel::cosmic;
+                            primary_label = truth_labels::PrimaryLabel::cosmic;
                         }
                         break;
                     }
                 }
 
+                if (_bad_channel_mask[ch_id]) continue;
                 if (adcs[idx] > _adc_image_threshold) {
                     calo_images[view_idx].set(row, col, adcs[idx]);
                     reco_images[view_idx].set(row, col, static_cast<int>(reco_label), false);

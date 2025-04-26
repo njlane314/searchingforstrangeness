@@ -22,6 +22,7 @@
 #include <TStyle.h>
 #include <TLine.h>
 #include <TBox.h>
+#include <array>
 
 namespace plot {
     class Display {
@@ -38,6 +39,43 @@ namespace plot {
         std::string output_dir_;
         std::vector<std::string> plane_names_ = {"U", "V", "W"};
         void SetHistogramStyle(TH2F* hist);
+
+        static const int n_label_colors = 8;
+        static const int label_colors[n_label_colors];
+        static const int n_truth_colors = 18;
+        static const int truth_colors[n_truth_colors];
+    };
+
+    const int Display::label_colors[n_label_colors] = {
+        kGray,                         
+        TColor::GetColor(0, 0, 255),   
+        TColor::GetColor(0, 255, 0),   
+        TColor::GetColor(255, 0, 0),   
+        TColor::GetColor(255, 255, 0), 
+        TColor::GetColor(255, 0, 255), 
+        TColor::GetColor(0, 255, 255), 
+        TColor::GetColor(255, 165, 0),
+    };
+
+    const int Display::truth_colors[n_truth_colors] = {
+        kGray,                         
+        TColor::GetColor(0, 0, 255),   
+        TColor::GetColor(255, 0, 0),   
+        TColor::GetColor(0, 255, 0),   
+        TColor::GetColor(255, 255, 0), 
+        TColor::GetColor(255, 0, 255), 
+        TColor::GetColor(0, 255, 255), 
+        TColor::GetColor(255, 165, 0), 
+        TColor::GetColor(128, 0, 128), 
+        TColor::GetColor(0, 128, 128), 
+        TColor::GetColor(128, 128, 0), 
+        TColor::GetColor(128, 0, 0),   
+        TColor::GetColor(0, 128, 0),   
+        TColor::GetColor(0, 0, 128),   
+        TColor::GetColor(128, 128, 128),
+        TColor::GetColor(255, 192, 203),
+        TColor::GetColor(255, 215, 0), 
+        TColor::GetColor(75, 0, 130),
     };
 
     Display::Display(int img_size, const std::string& output_dir)
@@ -136,12 +174,10 @@ namespace plot {
 
             this->SetHistogramStyle(h_label);
 
-            const int n_labels = 8;
-            int colors[n_labels] = {kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan, kOrange};
-            gStyle->SetNumberContours(n_labels);
-            gStyle->SetPalette(n_labels, colors);
+            gStyle->SetNumberContours(n_label_colors);
+            gStyle->SetPalette(n_label_colors, const_cast<int*>(label_colors));
             h_label->SetMinimum(-0.5);
-            h_label->SetMaximum(n_labels - 0.5);
+            h_label->SetMaximum(n_label_colors - 0.5);
 
             TCanvas* c_label = new TCanvas(("c_label_" + plane_names_[plane]).c_str(), title.c_str(), 1200, 1200);
             c_label->SetFillColor(kWhite);
@@ -153,8 +189,8 @@ namespace plot {
             h_label->Draw("COL");
 
             std::string output_path = output_dir_ + "/label_" + std::to_string(event.run) + "_" +
-                                      std::to_string(event.sub) + "_" + std::to_string(event.evt) +
-                                      "_plane_" + plane_names_[plane] + ".png";
+                                    std::to_string(event.sub) + "_" + std::to_string(event.evt) +
+                                    "_plane_" + plane_names_[plane] + ".png";
             c_label->SaveAs(output_path.c_str());
 
             delete c_label;
@@ -193,13 +229,10 @@ namespace plot {
 
             this->SetHistogramStyle(h_truth);
 
-            const int n_labels = 18;
-            int colors[18] = {kGray, kBlue, kRed, kGreen, kYellow, kCyan, kBlack, kMagenta, kOrange, kSpring, kTeal, kAzure, kViolet, kPink, kBlue+1, kRed+1, kGreen+1, kOrange+1};
-            
-            gStyle->SetNumberContours(n_labels);
-            gStyle->SetPalette(n_labels, colors);
+            gStyle->SetNumberContours(n_truth_colors);
+            gStyle->SetPalette(n_truth_colors, const_cast<int*>(truth_colors));
             h_truth->SetMinimum(-0.5);
-            h_truth->SetMaximum(n_labels - 0.5);
+            h_truth->SetMaximum(n_truth_colors - 0.5);
 
             TCanvas* c_truth = new TCanvas(("c_truth_" + plane_names_[plane]).c_str(), title.c_str(), 1200, 1200);
             c_truth->SetFillColor(kWhite);
@@ -213,8 +246,8 @@ namespace plot {
             h_truth->Draw("COL");
 
             std::string output_path = output_dir_ + "/truth_" + std::to_string(event.run) + "_" +
-                                      std::to_string(event.sub) + "_" + std::to_string(event.evt) +
-                                      "_plane_" + plane_names_[plane] + ".png";
+                                    std::to_string(event.sub) + "_" + std::to_string(event.evt) +
+                                    "_plane_" + plane_names_[plane] + ".png";
             c_truth->SaveAs(output_path.c_str());
 
             delete c_truth;
@@ -227,10 +260,6 @@ namespace plot {
             "empty", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
         };
 
-        const std::array<int, 8> label_colors = {
-            kGray, kBlue, kGreen, kRed, kYellow, kMagenta, kCyan, kOrange
-        };
-
         TCanvas* c_legend = new TCanvas("legend", "Label Legend", 800, 600);
         c_legend->SetFillColor(kWhite);
 
@@ -239,7 +268,7 @@ namespace plot {
         leg->SetFillStyle(0);
         leg->SetTextSize(0.03);
         leg->SetTextFont(42);
-        leg->SetHeader("Labels", "C");
+        leg->SetHeader("NuGraph Labels", "C");
 
         for (size_t i = 0; i < legend_label_names.size(); ++i) {
             TBox* box = new TBox(0, 0, 1, 1);
@@ -257,12 +286,8 @@ namespace plot {
     void Display::PlotTruthLegend() {
         const std::array<std::string, 13> truth_label_names = {
             "empty", "cosmic", "muon", "electron", "photon",
-            "proton", "pion", "neutral_pion", "kaon", "neutral_kaon", 
+            "proton", "pion", "neutral_pion", "kaon", "neutral_kaon",
             "lambda", "sigma", "other"
-        };
-
-        const std::array<int, 13> label_colors = {
-            kGray, kBlue, kRed, kGreen, kYellow, kMagenta, kCyan, kOrange, kSpring, kTeal, kAzure, kViolet, kPink
         };
 
         TCanvas* c_legend = new TCanvas("truth_legend", "Truth Label Legend", 800, 600);
@@ -277,7 +302,7 @@ namespace plot {
 
         for (size_t i = 0; i < truth_label_names.size(); ++i) {
             TBox* box = new TBox(0, 0, 1, 1);
-            box->SetFillColor(label_colors[i]);
+            box->SetFillColor(truth_colors[i]);
             box->SetLineColor(kBlack);
             leg->AddEntry(box, truth_label_names[i].c_str(), "f");
         }

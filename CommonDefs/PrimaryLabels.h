@@ -25,13 +25,14 @@ enum class PrimaryLabel {
     neutral_kaon, 
     lambda, 
     sigma,
-    other
+    other, 
+    ambiguous
 };
 
-const std::array<std::string, 13> label_names = {
+const std::array<std::string, 14> label_names = {
     "empty", "cosmic", "muon", "electron", "photon",
      "proton", "pion", "neutral_pion", "kaon", "neutral_kaon", 
-     "lambda", "sigma", "other"
+     "lambda", "sigma", "other", "ambiguous"
 };
 
 inline PrimaryLabel getPrimaryLabel(int pdg) {
