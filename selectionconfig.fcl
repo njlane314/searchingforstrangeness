@@ -122,3 +122,14 @@ ImageFilter: {
         truth: @local::TruthAnalysis
     }
 }
+
+StrangenessSelection: {
+    tool_type: StrangenessSelection
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
+    CLSproducer: "pandora"
+}

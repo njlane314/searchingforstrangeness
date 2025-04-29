@@ -372,7 +372,8 @@ cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyper
 ```
 
 ### **Splitting Input Definitions**
-
+nl_numi_fhc_beam_run1_reco2_1000
+nl_numi_fhc_ext_run1_reco2_6000
    ```bash
    samweb create-definition nl_numi_fhc_beam_run1_reco2_training_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with limit 250"   
    samweb create-definition nl_numi_fhc_beam_run1_reco2_validation_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with offset 250 with limit 250" 
@@ -432,19 +433,22 @@ cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyper
    Total size:	629748141141
    Event count:	91988
    ```
-[SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb create-definition nl_prodgeni_numi_uboone_overlay_rhc_training_1600 "defname: 
-prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0 with limit 1600"
-Dataset definition 'nl_prodgeni_numi_uboone_overlay_rhc_training_1600' has been created with id 110403641
-[SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb create-definition nl_prodgeni_numi_uboone_overlay_rhc_validation_1600 "defname
-: prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0 with offset 1600 with limit 1600"
-Dataset definition 'nl_prodgeni_numi_uboone_overlay_rhc_validation_1600' has been created with id 110403659
-[SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb list-files --summary "defname:nl_prodgeni_numi_uboone_overlay_rhc_validation_1600"
-File count:     1600
-Total size:     501561617815
-Event count:    73411
-[SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb list-files --summary "defname:nl_prodgeni_numi_uboone_overlay_rhc_training_160
-0"
-File count:     1600
-Total size:     496891362474
-Event count:    72822
-[SL7][nlane@uboonegpvm03 searchingforstrangeness]$ 
+   
+   ```bash
+   [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb create-definition nl_prodgeni_numi_uboone_overlay_rhc_training_1600 "defname: 
+   prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0 with limit 1600"
+   Dataset definition 'nl_prodgeni_numi_uboone_overlay_rhc_training_1600' has been created with id 110403641
+   [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb create-definition nl_prodgeni_numi_uboone_overlay_rhc_validation_1600 "defname
+   : prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0 with offset 1600 with limit 1600"
+   Dataset definition 'nl_prodgeni_numi_uboone_overlay_rhc_validation_1600' has been created with id 110403659
+   [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb list-files --summary "defname:nl_prodgeni_numi_uboone_overlay_rhc_validation_1600"
+   File count:     1600
+   Total size:     501561617815
+   Event count:    73411
+   [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ samweb list-files --summary "defname:nl_prodgeni_numi_uboone_overlay_rhc_training_160
+   0"
+   File count:     1600
+   Total size:     496891362474
+   Event count:    72822
+   [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ 
+   ```

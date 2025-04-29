@@ -88,17 +88,18 @@ namespace analysis
     void NeutrinoAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (is_data) 
             return;
-
-        auto const& truth_handle = event.getValidHandle<std::vector<simb::MCTruth>>(_MCTproducer);   
-        if (!truth_handle->empty() && truth_handle->at(0).NeutrinoSet()) {
+        
+        art::Handle<std::vector<simb::MCTruth>> truth_handle;
+        if (!event.getByLabel(_MCTproducer, truth_handle) || truth_handle->empty()){
             const auto& truth = truth_handle->at(0);
             const auto& neutrino = truth.GetNeutrino();
             const auto& neutrino_particle = neutrino.Nu();
             this->fillNeutrino(_event_neutrino, neutrino, neutrino_particle);
+            return;
         }
 
-        auto const& mcp_handle = event.getValidHandle<std::vector<simb::MCParticle>>(_MCPproducer);
-        if (!mcp_handle.isValid()) 
+        art::Handle<std::vector<simb::MCParticle>> mcp_handle;
+        if (!event.getByLabel(_MCPproducer, mcp_handle) || mcp_handle->empty()) 
             return;
 
         for (const auto& particle : *mcp_handle) {

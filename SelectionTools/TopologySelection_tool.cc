@@ -147,7 +147,7 @@ namespace selection
         tree->Branch("nhit_w", &m_nhits_w, "nhit_w/I");
         tree->Branch("charge_u", &m_charge_u, "charge_u/F");
         tree->Branch("charge_v", &m_charge_v, "charge_v/F");
-        tree->Branch("chare_w", &m_charge_w, "chare_w/F");
+        tree->Branch("charge_w", &m_charge_w, "charge_w/F");
         tree->Branch("wirerange_u", &m_wirerange_u, "wirerange_u/F");
         tree->Branch("wirerange_v", &m_wirerange_v, "wirerange_v/F");
         tree->Branch("wirerange_w", &m_wirerange_w, "wirerange_w/F");
