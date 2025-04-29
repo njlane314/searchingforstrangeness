@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limit>
 
 #include "TChain.h"
 #include "TFile.h"
@@ -11,14 +12,12 @@
 #include "TTree.h"
 #include "TDirectory.h"
 
-constexpr int BOGUS_INT = 9999;
+struct EventIdentifier {
+    int run = std::numeric_limits<int>::max();
+    int sub = std::numeric_limits<int>::max();
+    int evt = std::numeric_limits<int>::max();
 
-struct EventID {
-    int run = BOGUS_INT;
-    int sub = BOGUS_INT;
-    int evt = BOGUS_INT;
-
-    bool operator<(const EventID& other) const {
+    bool operator<(const EventIdentifier& other) const {
         if (run != other.run) return run < other.run;
         if (sub != other.sub) return sub < other.sub;
         return evt < other.evt;
@@ -36,13 +35,13 @@ private:
     std::vector<std::string> in_file_names_;
     std::string output_filename_;
 
-    void set_input_branch_addresses(TTree& tree, EventID& id, bool& selected, float& weight);
-    void set_output_branch_addresses(TTree& out_tree, EventID& id, bool& pass_fv, bool& pass_image, float& weight, bool create = false);
+    void set_input_branch_addresses(TTree& tree, EventIdentifier& id, bool& selected, float& weight);
+    void set_output_branch_addresses(TTree& out_tree, EventIdentifier& id, bool& pass_fv, bool& pass_image, float& weight, bool create = false);
     float calculate_total_pot(TChain& subruns_ch);
     void check_branch_status(TTree& tree);
 };
 
-void SelectionAnalyser::set_input_branch_addresses(TTree& tree, EventID& id, bool& selected, float& weight) {
+void SelectionAnalyser::set_input_branch_addresses(TTree& tree, EventIdentifier& id, bool& selected, float& weight) {
     tree.SetBranchAddress("run", &id.run);
     tree.SetBranchAddress("sub", &id.sub);
     tree.SetBranchAddress("evt", &id.evt);
@@ -50,7 +49,7 @@ void SelectionAnalyser::set_input_branch_addresses(TTree& tree, EventID& id, boo
     tree.SetBranchAddress("weight", &weight);
 }
 
-void SelectionAnalyser::set_output_branch_addresses(TTree& out_tree, EventID& id, bool& pass_fv, bool& pass_image, float& weight, bool create) {
+void SelectionAnalyser::set_output_branch_addresses(TTree& out_tree, EventIdentifier& id, bool& pass_fv, bool& pass_image, float& weight, bool create) {
     if (create) {
         out_tree.Branch("run", &id.run, "run/I");
         out_tree.Branch("sub", &id.sub, "sub/I");
@@ -112,7 +111,7 @@ void SelectionAnalyser::process_selections() {
     TParameter<int> n_input_files("n_input_files", in_file_names_.size());
     n_input_files.Write();
 
-    std::map<EventID, std::tuple<bool, bool, float>> event_flags;
+    std::map<EventIdentifier, std::tuple<bool, bool, float>> event_flags;
 
     std::vector<std::pair<std::string, int>> selections = {
         {"fiducialFilter", 0},
@@ -128,7 +127,7 @@ void SelectionAnalyser::process_selections() {
             events_ch.Add(f_name.c_str());
         }
 
-        EventID id;
+        EventIdentifier id;
         bool selected = false;
         float weight = 1.0;
         set_input_branch_addresses(events_ch, id, selected, weight);
@@ -148,7 +147,7 @@ void SelectionAnalyser::process_selections() {
         }
     }
 
-    EventID out_id;
+    EventIdentifier out_id;
     bool pass_fv_selection = false;
     bool pass_image_selection = false;
     float out_weight = 1.0;

@@ -27,7 +27,6 @@ namespace selection
                                 const std::vector<image::Image<float>>& calo_images, 
                                 const std::vector<image::Image<int>>& reco_images, 
                                 const std::vector<image::Image<int>>& label_images);
-        void analyseSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
         void setBranches(TTree* tree);
         void resetTTree(TTree* tree);
 
@@ -43,7 +42,7 @@ namespace selection
         float m_wirerange_u, m_wirerange_v, m_wirerange_w;
         float m_timerange_u, m_timerange_v, m_timerange_w;
 
-        void computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v);
+        void computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         float predictBDT(const std::vector<float>& features);
     };
 
@@ -62,15 +61,13 @@ namespace selection
         }
     }
 
-    void TopologySelection::analyseSlice(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
-        computeFeatures(e, slice_pfp_v);
-    }
-
     bool TopologySelection::selectEvent(art::Event const& e, 
                                 const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
                                 const std::vector<image::Image<float>>& calo_images, 
                                 const std::vector<image::Image<int>>& reco_images, 
                                 const std::vector<image::Image<int>>& label_images) {
+        this->computeFeatures(e, pfp_pxy_v);
+        
         if (!m_inferenceMode) {
             return false;
         }
@@ -85,12 +82,12 @@ namespace selection
         return m_bdt_score > m_bdtThreshold; 
     }
 
-    void TopologySelection::computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& slice_pfp_v) {
+    void TopologySelection::computeFeatures(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
         auto clusterHandle = e.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
         art::FindManyP<recob::Hit> clusterHits(clusterHandle, e, fCLSproducer);
         
         std::map<int, std::vector<art::Ptr<recob::Hit>>> sliceHitsPerPlane;
-        for (const auto& pfp : slice_pfp_v) {
+        for (const auto& pfp : pfp_pxy_v) {
             auto clusters = pfp.get<recob::Cluster>();
             for (const auto& cluster : clusters) {
                 const std::vector<art::Ptr<recob::Hit>>& hits = clusterHits.at(cluster.key());
@@ -145,7 +142,7 @@ namespace selection
     }
 
     void TopologySelection::setBranches(TTree* tree) {
-        tree->Branch("nhits_u", &m_nhit_u, "nhits_u/I");
+        tree->Branch("nhit_u", &m_nhit_u, "nhit_u/I");
         tree->Branch("nhit_v", &m_nhits_v, "nhit_v/I");
         tree->Branch("nhit_w", &m_nhits_w, "nhit_w/I");
         tree->Branch("charge_u", &m_charge_u, "charge_u/F");

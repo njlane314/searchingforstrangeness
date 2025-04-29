@@ -53,6 +53,7 @@
   <numjobs>10</numjobs>
   <memory>4000</memory>
   <disk>20GB</disk>
+  <schema>hrtps</schema>
   </stage>
 
 </project>

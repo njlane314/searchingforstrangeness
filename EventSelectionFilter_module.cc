@@ -319,17 +319,29 @@ void EventSelectionFilter::constructImages(const art::Event& e,
 
     auto wireHandle = e.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
     auto hitHandle = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-    auto mcpHandle = e.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
+
+    art::Handle<std::vector<simb::MCParticle>> mcpHandle;
+    bool hasMCParticles = e.getByLabel(fMCPproducer, mcpHandle);
 
     art::FindManyP<recob::Hit> wire_hit_assoc(wireHandle, e, fHITproducer);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hitHandle, e, fBackTrackerLabel);
 
-    std::vector<truth_labels::PrimaryLabel> primary_labels = truth_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
-    std::vector<reco_labels::ReconstructionLabel> reco_labels = reco_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
+    std::vector<truth_labels::PrimaryLabel> primary_labels;
+    std::vector<reco_labels::ReconstructionLabel> reco_labels;
+
+    if (hasMCParticles && mcpHandle.isValid()) {
+        primary_labels = truth_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
+        reco_labels = reco_labels::classifyParticles(e, fMCPproducer, fGammaThreshold, fHadronThreshold);
+    } else {
+        primary_labels = {truth_labels::PrimaryLabel::cosmic};
+        reco_labels = {reco_labels::ReconstructionLabel::cosmic};
+    }
 
     std::map<int, size_t> trackid_to_index;
-    for (size_t i = 0; i < mcpHandle->size(); ++i) {
-        trackid_to_index[mcpHandle->at(i).TrackId()] = i;
+    if (hasMCParticles && mcpHandle.isValid()) {
+        for (size_t i = 0; i < mcpHandle->size(); ++i) {
+            trackid_to_index[mcpHandle->at(i).TrackId()] = i;
+        }
     }
 
     for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
@@ -362,32 +374,37 @@ void EventSelectionFilter::constructImages(const art::Event& e,
                 reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::invisible;
                 truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::other;
 
-                for (const auto& hit : hits) {
-                    if (tick >= hit->StartTick() && tick < hit->EndTick()) {
-                        auto bkth_data = mcp_bkth_assoc.data(hit.key());
-                        if (!bkth_data.empty()) {
-                            for (size_t i = 0; i < bkth_data.size(); ++i) {
-                                if (bkth_data[i]->isMaxIDE == 1) {
-                                    int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
-                                    auto it = trackid_to_index.find(track_id);
-                                    if (it != trackid_to_index.end()) {
-                                        size_t particle_idx = it->second;
-                                        if (particle_idx < reco_labels.size()) {
-                                            reco_label = reco_labels[particle_idx];
+                if (hasMCParticles && mcpHandle.isValid()) {
+                    for (const auto& hit : hits) {
+                        if (tick >= hit->StartTick() && tick < hit->EndTick()) {
+                            auto bkth_data = mcp_bkth_assoc.data(hit.key());
+                            if (!bkth_data.empty()) {
+                                for (size_t i = 0; i < bkth_data.size(); ++i) {
+                                    if (bkth_data[i]->isMaxIDE == 1) {
+                                        int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
+                                        auto it = trackid_to_index.find(track_id);
+                                        if (it != trackid_to_index.end()) {
+                                            size_t particle_idx = it->second;
+                                            if (particle_idx < reco_labels.size()) {
+                                                reco_label = reco_labels[particle_idx];
+                                            }
+                                            if (particle_idx < primary_labels.size()) {
+                                                primary_label = primary_labels[particle_idx];
+                                            }
                                         }
-                                        if (particle_idx < primary_labels.size()) {
-                                            primary_label = primary_labels[particle_idx];
-                                        }
+                                        break;
                                     }
-                                    break;
                                 }
+                            } else {
+                                reco_label = reco_labels::ReconstructionLabel::cosmic;
+                                primary_label = truth_labels::PrimaryLabel::cosmic;
                             }
-                        } else {
-                            reco_label = reco_labels::ReconstructionLabel::cosmic;
-                            primary_label = truth_labels::PrimaryLabel::cosmic;
+                            break;
                         }
-                        break;
                     }
+                } else {
+                    reco_label = reco_labels::ReconstructionLabel::cosmic;
+                    primary_label = truth_labels::PrimaryLabel::cosmic;
                 }
 
                 if (_bad_channel_mask[ch_id]) continue;

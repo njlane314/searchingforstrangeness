@@ -9,3 +9,7 @@ cp -f $TARBALL_NAME $TARBALL_DEST
 
 export TARBALL_DEST="/pnfs/uboone/resilient/users/nlane/NeutralKaon/tarballs/"
 export TARBALL_NAME="StrangenessCode.tar"
+
+
+
+samweb list-files --summary "defname: prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0

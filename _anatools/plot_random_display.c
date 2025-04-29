@@ -46,23 +46,6 @@ int main() {
         analysis::Event event;
         event.SetBranches(chain);
 
-        /*std::vector<int> signal_indices;
-        int n_entries = chain->GetEntries();
-        for (int i = 0; i < n_entries; ++i) {
-            chain->GetEntry(i);
-            if (event.event_type == 0) {  
-                signal_indices.push_back(i);
-            }
-        }
-
-        if (!signal_indices.empty()) {
-            TRandom3 rand(0);
-            int random_indice = signal_indices[rand.Integer(signal_indices.size())];
-            display.VisualiseInput(sample, random_indice);
-            display.VisualiseLabels(sample, random_indice);
-            display.VisualiseTruth(sample, random_indice);
-        }*/
-
         TRandom3 rand(0);
         int random_indice = rand.Integer(chain->GetEntries());
         display.VisualiseInput(sample, random_indice);

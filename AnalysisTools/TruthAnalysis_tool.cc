@@ -176,8 +176,8 @@ namespace analysis
             return;
         }
 
-        auto const& mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
-        if (mct_h->empty()) {
+        art::Handle<std::vector<simb::MCTruth>> mct_h;
+        if (!e.getByLabel(fMCTproducer, mct_h) || mct_h->empty()) {
             _event_category = static_cast<int>(EventCategory::k_external);
             return;
         }
