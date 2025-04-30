@@ -10,10 +10,10 @@
 #include <stdexcept>
 
 enum class NtupleFileType {
-    kOnBNB,
-    kExtBNB,
+    kOnNuMI, 
+    kExtNuMI,
     kNumuMC,
-    kIntrinsicNueMC,
+    kStrangenessMC,
     kDirtMC,
     kDetVarMCCV,
     kDetVarMCLYatten,
@@ -53,12 +53,13 @@ bool ntuple_type_is_altCV(const NtupleFileType& type) {
 }
 
 bool ntuple_type_is_mc(const NtupleFileType& type) {
-    if (type != NtupleFileType::kOnBNB && type != NtupleFileType::kExtBNB) return true;
+    if (type != NtupleFileType::kOnNuMI && type != NtupleFileType::kExtNuMI) return true;
     return false;
 }
 
 bool ntuple_type_is_reweightable_mc(const NtupleFileType& type) {
-    if (type == NtupleFileType::kNumuMC || type == NtupleFileType::kIntrinsicNueMC || type == NtupleFileType::kDirtMC) return true;
+    if (type == NtupleFileType::kNumuMC ||
+        type == NtupleFileType::kDirtMC || type == NtupleFileType::kStrangenessMC) return true;
     return false;
 }
 
@@ -191,10 +192,10 @@ private:
     std::map<int, std::map<NtupleFileType, std::set<std::string>>> ntuple_file_map_;
     std::map<std::string, TriggersAndPOT> data_norm_map_;
     std::map<std::string, NtupleFileType> string_to_file_type_map_ = {
-        { "onBNB", NtupleFileType::kOnBNB },
-        { "extBNB", NtupleFileType::kExtBNB },
+        { "onNuMI", NtupleFileType::kOnNuMI },
+        { "extNuMI", NtupleFileType::kExtNuMI },
         { "numuMC", NtupleFileType::kNumuMC },
-        { "nueMC", NtupleFileType::kIntrinsicNueMC },
+        { "strangenessMC", NtupleFileType::kStrangenessMC },
         { "dirtMC", NtupleFileType::kDirtMC },
         { "detVarCV", NtupleFileType::kDetVarMCCV },
         { "detVarLYatten", NtupleFileType::kDetVarMCLYatten },

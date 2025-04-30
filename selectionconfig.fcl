@@ -56,12 +56,6 @@ TruthAnalysis: {
     fidvolZend: @local::FiducialVolume.Zend
 }
 
-NeutrinoAnalysis: {
-    tool_type: NeutrinoAnalysis
-    MCTproducer: "generator"    
-    MCPproducer: "largeant"     
-}
-
 EventWeightAnalysis: {
     tool_type: EventWeightAnalysis
     createDedicatedTree: true                                   // Create a separate TTree for weights

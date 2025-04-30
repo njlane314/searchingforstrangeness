@@ -1,11 +1,9 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#pragma once
 
 #include "Config.h"
 #include "Sample.h"
 #include "Event.h"
 #include "Plotter.h"
-
 #include <TH1F.h>
 #include <TH2F.h>
 #include <THStack.h>
@@ -24,64 +22,19 @@
 #include <TBox.h>
 #include <array>
 
-namespace plot {
-    class Display {
-    public:
-        Display(int img_size, const std::string& output_dir);
-        void VisualiseInput(const analysis::Sample& sample, int event_index);
-        void VisualiseLabels(const analysis::Sample& sample, int event_index);
-        void VisualiseTruth(const analysis::Sample& sample, int event_index);
-        void PlotLabelsLegend();
-        void PlotTruthLegend();
+class Display {
+public:
+    Display(const Display&) = delete;
+    Display(Display&&) = delete;
+    Display& operator=(const Display&) = delete;
+    Display& operator=(Display&&) = delete;
 
-    private:
-        int img_size_;
-        std::string output_dir_;
-        std::vector<std::string> plane_names_ = {"U", "V", "W"};
-        void SetHistogramStyle(TH2F* hist);
+    inline static Display& Instance() {
+        static std::unique_ptr<Display> the_instance(new Display(512, "output"));
+        return *the_instance;
+    }
 
-        static const int n_label_colors = 8;
-        static const int label_colors[n_label_colors];
-        static const int n_truth_colors = 18;
-        static const int truth_colors[n_truth_colors];
-    };
-
-    const int Display::label_colors[n_label_colors] = {
-        kGray,                         
-        TColor::GetColor(0, 0, 255),   
-        TColor::GetColor(0, 255, 0),   
-        TColor::GetColor(255, 0, 0),   
-        TColor::GetColor(255, 255, 0), 
-        TColor::GetColor(255, 0, 255), 
-        TColor::GetColor(0, 255, 255), 
-        TColor::GetColor(255, 165, 0),
-    };
-
-    const int Display::truth_colors[n_truth_colors] = {
-        kGray,                         
-        TColor::GetColor(0, 0, 255),   
-        TColor::GetColor(255, 0, 0),   
-        TColor::GetColor(0, 255, 0),   
-        TColor::GetColor(255, 255, 0), 
-        TColor::GetColor(255, 0, 255), 
-        TColor::GetColor(0, 255, 255), 
-        TColor::GetColor(255, 165, 0), 
-        TColor::GetColor(128, 0, 128), 
-        TColor::GetColor(0, 128, 128), 
-        TColor::GetColor(128, 128, 0), 
-        TColor::GetColor(128, 0, 0),   
-        TColor::GetColor(0, 128, 0),   
-        TColor::GetColor(0, 0, 128),   
-        TColor::GetColor(128, 128, 128),
-        TColor::GetColor(255, 192, 203),
-        TColor::GetColor(255, 215, 0), 
-        TColor::GetColor(75, 0, 130),
-    };
-
-    Display::Display(int img_size, const std::string& output_dir)
-        : img_size_(img_size), output_dir_(output_dir) {}
-
-    void Display::VisualiseInput(const analysis::Sample& sample, int event_index) {
+    inline void VisualiseInput(const analysis::Sample& sample, int event_index) {
         TChain* chain = sample.GetEventChain();
         analysis::Event event;
         event.SetBranches(chain);
@@ -119,7 +72,7 @@ namespace plot {
                 }
             }
 
-            this->SetHistogramStyle(h_input);
+            SetHistogramStyle(h_input);
             h_input->SetMinimum(min_value);
             h_input->SetMaximum(max_value);
 
@@ -143,7 +96,7 @@ namespace plot {
         }
     }
 
-    void Display::VisualiseLabels(const analysis::Sample& sample, int event_index) {
+    inline void VisualiseLabels(const analysis::Sample& sample, int event_index) {
         TChain* chain = sample.GetEventChain();
         analysis::Event event;
         event.SetBranches(chain);
@@ -172,7 +125,7 @@ namespace plot {
                 }
             }
 
-            this->SetHistogramStyle(h_label);
+            SetHistogramStyle(h_label);
 
             gStyle->SetNumberContours(n_label_colors);
             gStyle->SetPalette(n_label_colors, const_cast<int*>(label_colors));
@@ -189,8 +142,8 @@ namespace plot {
             h_label->Draw("COL");
 
             std::string output_path = output_dir_ + "/label_" + std::to_string(event.run) + "_" +
-                                    std::to_string(event.sub) + "_" + std::to_string(event.evt) +
-                                    "_plane_" + plane_names_[plane] + ".png";
+                                      std::to_string(event.sub) + "_" + std::to_string(event.evt) +
+                                      "_plane_" + plane_names_[plane] + ".png";
             c_label->SaveAs(output_path.c_str());
 
             delete c_label;
@@ -198,7 +151,7 @@ namespace plot {
         }
     }
 
-    void Display::VisualiseTruth(const analysis::Sample& sample, int event_index) {
+    inline void VisualiseTruth(const analysis::Sample& sample, int event_index) {
         TChain* chain = sample.GetEventChain();
         analysis::Event event;
         event.SetBranches(chain);
@@ -227,7 +180,7 @@ namespace plot {
                 }
             }
 
-            this->SetHistogramStyle(h_truth);
+            SetHistogramStyle(h_truth);
 
             gStyle->SetNumberContours(n_truth_colors);
             gStyle->SetPalette(n_truth_colors, const_cast<int*>(truth_colors));
@@ -246,8 +199,8 @@ namespace plot {
             h_truth->Draw("COL");
 
             std::string output_path = output_dir_ + "/truth_" + std::to_string(event.run) + "_" +
-                                    std::to_string(event.sub) + "_" + std::to_string(event.evt) +
-                                    "_plane_" + plane_names_[plane] + ".png";
+                                      std::to_string(event.sub) + "_" + std::to_string(event.evt) +
+                                      "_plane_" + plane_names_[plane] + ".png";
             c_truth->SaveAs(output_path.c_str());
 
             delete c_truth;
@@ -255,7 +208,7 @@ namespace plot {
         }
     }
 
-    void Display::PlotLabelsLegend() {
+    inline void PlotLabelsLegend() {
         const std::array<std::string, 8> legend_label_names = {
             "empty", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
         };
@@ -283,7 +236,7 @@ namespace plot {
         delete c_legend;
     }
 
-    void Display::PlotTruthLegend() {
+    inline void PlotTruthLegend() {
         const std::array<std::string, 13> truth_label_names = {
             "empty", "cosmic", "muon", "electron", "photon",
             "proton", "pion", "neutral_pion", "kaon", "neutral_kaon",
@@ -313,7 +266,14 @@ namespace plot {
         delete c_legend;
     }
 
-    void Display::SetHistogramStyle(TH2F* hist) {
+private:
+    Display(int img_size, const std::string& output_dir) : img_size_(img_size), output_dir_(output_dir) {}
+
+    int img_size_;
+    std::string output_dir_;
+    std::vector<std::string> plane_names_ = {"U", "V", "W"};
+
+    inline void SetHistogramStyle(TH2F* hist) {
         hist->GetXaxis()->SetTitle("Local Drift Time");
         hist->GetYaxis()->SetTitle("Local Wire Coordinate");
         hist->GetXaxis()->SetTitleOffset(1.0);
@@ -334,6 +294,41 @@ namespace plot {
         hist->GetYaxis()->CenterTitle();
         hist->SetStats(0);
     }
-}
 
-#endif
+    static const int n_label_colors = 8;
+    static const int label_colors[n_label_colors];
+    static const int n_truth_colors = 18;
+    static const int truth_colors[n_truth_colors];
+};
+
+const int Display::label_colors[n_label_colors] = {
+    kGray,
+    TColor::GetColor(0, 0, 255),
+    TColor::GetColor(0, 255, 0),
+    TColor::GetColor(255, 0, 0),
+    TColor::GetColor(255, 255, 0),
+    TColor::GetColor(255, 0, 255),
+    TColor::GetColor(0, 255, 255),
+    TColor::GetColor(255, 165, 0),
+};
+
+const int Display::truth_colors[n_truth_colors] = {
+    kGray,
+    TColor::GetColor(0, 0, 255),
+    TColor::GetColor(255, 0, 0),
+    TColor::GetColor(0, 255, 0),
+    TColor::GetColor(255, 255, 0),
+    TColor::GetColor(255, 0, 255),
+    TColor::GetColor(0, 255, 255),
+    TColor::GetColor(255, 165, 0),
+    TColor::GetColor(128, 0, 128),
+    TColor::GetColor(0, 128, 128),
+    TColor::GetColor(128, 128, 0),
+    TColor::GetColor(128, 0, 0),
+    TColor::GetColor(0, 128, 0),
+    TColor::GetColor(0, 0, 128),
+    TColor::GetColor(128, 128, 128),
+    TColor::GetColor(255, 192, 203),
+    TColor::GetColor(255, 215, 0),
+    TColor::GetColor(75, 0, 130),
+};

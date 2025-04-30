@@ -206,7 +206,7 @@ namespace selection
             }
         }
 
-        return m_in_fiducial;
+        return true;
     }
 
     void StrangenessSelection::setBranches(TTree* _tree) {

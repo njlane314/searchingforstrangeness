@@ -29,26 +29,30 @@ namespace analysis
         bool isFiducial(const double x[3]) const;
         bool isActive(const double x[3]) const;
 
-        enum class EventCategory {
-            k_data = 0,
-            k_external = 1,                               
-            k_nc = 2,                                   
-            k_nu_e_cc = 3,                
-            k_nu_mu_cc_with_strange = 4,  
-            k_nu_mu_cc_with_protons = 5, 
-            k_nu_mu_cc_with_pions = 6, 
-            k_nu_mu_cc_with_protons_pions = 7, 
-            k_nu_mu_cc_other = 8,         
-            k_other = 9                   
-        };
-
         std::string fMCTproducer;
+
+        bool _is_mc;
 
         float _mcf_nu_e;
         float _mcf_lep_e;
+        int _mcf_nu_pdg;
+        int _mcf_ccnc;
+        int _mcf_mode;
+        int _mcf_interaction;
+        int _mcf_target_nucleus;
+        int _mcf_hit_nucleon;
+        float _mcf_W;
+        float _mcf_X;
+        float _mcf_Y;
+        float _mcf_QSqr;
+        float _mcf_px;
+        float _mcf_py;
+        float _mcf_pz;
+        float _mcf_theta;
+        float _mcf_pt;
+
         int _mcf_actvol;
         int _mcf_fidvol; 
-        int _event_category;
 
         int _mcf_nmm;
         int _mcf_nmp;
@@ -93,11 +97,29 @@ namespace analysis
     }
 
     void TruthAnalysis::setBranches(TTree* _tree) {
-        _tree->Branch("event_category", &_event_category, "event_category/I");
+        _tree->Branch("is_mc", &_is_mc, "is_mc/B");
+
         _tree->Branch("mcf_nu_e", &_mcf_nu_e, "mcf_nu_e/F");
         _tree->Branch("mcf_lep_e", &_mcf_lep_e, "mcf_lep_e/F");
+        _tree->Branch("mcf_nu_pdg", &_mcf_nu_pdg, "mcf_nu_pdg/I");
+        _tree->Branch("mcf_ccnc", &_mcf_ccnc, "mcf_ccnc/I");
+        _tree->Branch("mcf_mode", &_mcf_mode, "mcf_mode/I");
+        _tree->Branch("mcf_interaction", &_mcf_interaction, "mcf_interaction/I");
+        _tree->Branch("mcf_target_nucleus", &_mcf_target_nucleus, "mcf_target_nucleus/I");
+        _tree->Branch("mcf_hit_nucleon", &_mcf_hit_nucleon, "mcf_hit_nucleon/I");
+        _tree->Branch("mcf_W", &_mcf_W, "mcf_W/F");
+        _tree->Branch("mcf_X", &_mcf_X, "mcf_X/F");
+        _tree->Branch("mcf_Y", &_mcf_Y, "mcf_Y/F");
+        _tree->Branch("mcf_QSqr", &_mcf_QSqr, "mcf_QSqr/F");
+        _tree->Branch("mcf_px", &_mcf_px, "mcf_px/F");
+        _tree->Branch("mcf_py", &_mcf_py, "mcf_py/F");
+        _tree->Branch("mcf_pz", &_mcf_pz, "mcf_pz/F");
+        _tree->Branch("mcf_theta", &_mcf_theta, "mcf_theta/F");
+        _tree->Branch("mcf_pt", &_mcf_pt, "mcf_pt/F");
+
         _tree->Branch("mcf_actvol", &_mcf_actvol, "mcf_actvol/I");
         _tree->Branch("mcf_fidvol", &_mcf_fidvol, "mcf_fidvol/I"); 
+
         _tree->Branch("mcf_nmm", &_mcf_nmm, "mcf_nmm/I");
         _tree->Branch("mcf_nmp", &_mcf_nmp, "mcf_nmp/I");
         _tree->Branch("mcf_nem", &_mcf_nem, "mcf_nem/I");
@@ -120,11 +142,29 @@ namespace analysis
     }
 
     void TruthAnalysis::resetTTree(TTree* tree) {
+        _is_mc = true;
+
         _mcf_nu_e = std::numeric_limits<float>::lowest();
         _mcf_lep_e = std::numeric_limits<float>::lowest();
+        _mcf_nu_pdg = std::numeric_limits<int>::lowest();
+        _mcf_ccnc = std::numeric_limits<int>::lowest();
+        _mcf_mode = std::numeric_limits<int>::lowest();
+        _mcf_interaction = std::numeric_limits<int>::lowest();
+        _mcf_target_nucleus = std::numeric_limits<int>::lowest();
+        _mcf_hit_nucleon = std::numeric_limits<int>::lowest();
+        _mcf_W = std::numeric_limits<float>::lowest();
+        _mcf_X = std::numeric_limits<float>::lowest();
+        _mcf_Y = std::numeric_limits<float>::lowest();
+        _mcf_QSqr = std::numeric_limits<float>::lowest();
+        _mcf_px = std::numeric_limits<float>::lowest();
+        _mcf_py = std::numeric_limits<float>::lowest();
+        _mcf_pz = std::numeric_limits<float>::lowest();
+        _mcf_theta = std::numeric_limits<float>::lowest();
+        _mcf_pt = std::numeric_limits<float>::lowest();
+
         _mcf_actvol = std::numeric_limits<int>::lowest();
         _mcf_fidvol = std::numeric_limits<int>::lowest(); 
-        _event_category = std::numeric_limits<int>::lowest();
+       
         _mcf_nmm = 0;
         _mcf_nmp = 0;
         _mcf_nem = 0;
@@ -170,15 +210,15 @@ namespace analysis
 
     void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {}
 
-    void TruthAnalysis::analyseEvent(art::Event const& e, bool fData) {
-        if (fData) {
-            _event_category = static_cast<int>(EventCategory::k_data);
+    void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
+        if (is_data) {
+            _is_mc = false;
             return;
         }
 
         art::Handle<std::vector<simb::MCTruth>> mct_h;
         if (!e.getByLabel(fMCTproducer, mct_h) || mct_h->empty()) {
-            _event_category = static_cast<int>(EventCategory::k_external);
+            _is_mc = false;
             return;
         }
 
@@ -188,6 +228,21 @@ namespace analysis
 
         _mcf_nu_e = nu.Trajectory().E(0);
         _mcf_lep_e = neutrino.Lepton().E();
+        _mcf_nu_pdg = nu.PdgCode();
+        _mcf_ccnc = neutrino.CCNC();
+        _mcf_mode = neutrino.Mode();
+        _mcf_interaction = neutrino.InteractionType();
+        _mcf_target_nucleus = neutrino.Target();
+        _mcf_hit_nucleon = neutrino.HitNuc();
+        _mcf_W = neutrino.W();
+        _mcf_X = neutrino.X();
+        _mcf_Y = neutrino.Y();
+        _mcf_QSqr = neutrino.QSqr();
+        _mcf_px = nu.Px();
+        _mcf_py = nu.Py();
+        _mcf_pz = nu.Pz();
+        _mcf_theta = neutrino.Theta();
+        _mcf_pt = neutrino.Pt();
 
         double vertex[3] = {nu.Vx(), nu.Vy(), nu.Vz()};
         _mcf_actvol = this->isActive(vertex);
@@ -218,40 +273,6 @@ namespace analysis
             else if (abs_pdg == 3322) _mcf_nxi_0 += 1; // Xi0
             else if (abs_pdg == 3312) _mcf_nxi_m += 1; // Xi-
             else if (abs_pdg == 3334) _mcf_nomega += 1; // Omega-
-        }
-
-        if (!_mcf_actvol) {
-            _event_category = static_cast<int>(EventCategory::k_external);
-        } else {
-            if (neutrino.CCNC() == 1) { // Neutral current
-                _event_category = static_cast<int>(EventCategory::k_nc);
-            } else { // Charged current
-                int lepton_pdg = std::abs(neutrino.Lepton().PdgCode());
-                if (lepton_pdg == 11) { // Electron-neutrino CC
-                    _event_category = static_cast<int>(EventCategory::k_nu_e_cc);
-                } else if (lepton_pdg == 13) { // Muon-neutrino CC
-                    bool has_strange_hadron = (_mcf_nkp > 0 || _mcf_nkm > 0 || _mcf_nk0 > 0 ||
-                                            _mcf_nlambda > 0 || _mcf_nsigma_p > 0 || _mcf_nsigma_0 > 0 ||
-                                            _mcf_nsigma_m > 0 || _mcf_nxi_0 > 0 || _mcf_nxi_m > 0 ||
-                                            _mcf_nomega > 0);
-                    bool has_protons = (_mcf_npr > 0); 
-                    bool has_pions = (_mcf_npp > 0 || _mcf_npm > 0);
-                    bool has_pi0 = (_mcf_np0 > 0);
-                    if (has_strange_hadron) {
-                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_strange);
-                    } else if (has_protons && !has_pions && !has_pi0) {
-                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_protons); 
-                    } else if (!has_protons && has_pions && !has_pi0) {
-                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_pions); 
-                    } else if (has_protons && has_pions && !has_pi0) {
-                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_with_protons_pions);
-                    } else {
-                        _event_category = static_cast<int>(EventCategory::k_nu_mu_cc_other);
-                    }
-                } else {
-                    _event_category = static_cast<int>(EventCategory::k_other);
-                }
-            }
         }
     }
 
