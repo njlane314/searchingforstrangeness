@@ -102,6 +102,8 @@ private:
     std::vector<bool> _bad_channel_mask;
     double _hit_exclus_thresh;
 
+    bool fUseHits;
+
     void initialiseBadChannelMask();
     void BuildPFPMap(const common::ProxyPfpColl_t &pfp_pxy_col);
     template <typename T>
@@ -141,6 +143,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
     fGammaThreshold = p.get<double>("GammaThreshold", 0.1);         
     fHadronThreshold = p.get<double>("HadronThreshold", 0.1);
+    fUseHits = p.get<bool>("UseHits", false);
     
     _bad_channel_file = p.get<std::string>("BadChannelFile", "badchannels.txt");
     _veto_bad_channels = p.get<bool>("VetoBadChannels", true);
@@ -344,60 +347,126 @@ void EventSelectionFilter::constructImages(const art::Event& e,
         }
     }
 
-    for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
-        const auto& wire = wireHandle->at(wire_idx);
-        auto ch_id = wire.Channel();
-        std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
-        if (wire_ids.empty()) continue;
-        geo::View_t view = _geo->View(wire_ids.front().planeID());
-        size_t view_idx = view - geo::kU;
+    if (!fUseHits) {
+        for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
+            const auto& wire = wireHandle->at(wire_idx);
+            auto ch_id = wire.Channel();
+            std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
+            if (wire_ids.empty()) continue;
+            geo::View_t view = _geo->View(wire_ids.front().planeID());
+            size_t view_idx = view - geo::kU;
 
-        const geo::WireGeo* wire_geo = _geo->WirePtr(wire_ids.front());
-        TVector3 center = wire_geo->GetCenter();
-        TVector3 wire_center(center.X(), center.Y(), center.Z());
-        double wire_coord = (view == geo::kW) ? wire_center.Z() :
-                            (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
-                                                (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
+            const geo::WireGeo* wire_geo = _geo->WirePtr(wire_ids.front());
+            TVector3 center = wire_geo->GetCenter();
+            TVector3 wire_center(center.X(), center.Y(), center.Z());
+            double wire_coord = (view == geo::kW) ? wire_center.Z() :
+                                (view == geo::kU) ? (wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034)) :
+                                                    (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
 
-        const auto& hits = wire_hit_assoc.at(wire_idx);
+            const auto& hits = wire_hit_assoc.at(wire_idx);
 
-        for (const auto& range : wire.SignalROI().get_ranges()) {
-            const auto& adcs = range.data();
-            int start_tick = range.begin_index();
-            for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                int tick = start_tick + idx;
-                double x = _detp->ConvertTicksToX(tick, wire_ids.front().planeID());
-                size_t row = properties[view_idx].row(x);
-                size_t col = properties[view_idx].col(wire_coord);
-                if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
+            for (const auto& range : wire.SignalROI().get_ranges()) {
+                const auto& adcs = range.data();
+                int start_tick = range.begin_index();
+                for (size_t idx = 0; idx < adcs.size(); ++idx) {
+                    int tick = start_tick + idx;
+                    double x = _detp->ConvertTicksToX(tick, wire_ids.front().planeID());
+                    size_t row = properties[view_idx].row(x);
+                    size_t col = properties[view_idx].col(wire_coord);
+                    if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
-                reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::invisible;
-                truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::other;
+                    reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::invisible;
+                    truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::other;
 
-                if (hasMCParticles && mcpHandle.isValid()) {
-                    for (const auto& hit : hits) {
-                        if (tick >= hit->StartTick() && tick < hit->EndTick()) {
-                            auto bkth_data = mcp_bkth_assoc.data(hit.key());
-                            if (!bkth_data.empty()) {
-                                for (size_t i = 0; i < bkth_data.size(); ++i) {
-                                    if (bkth_data[i]->isMaxIDE == 1) {
-                                        int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
-                                        auto it = trackid_to_index.find(track_id);
-                                        if (it != trackid_to_index.end()) {
-                                            size_t particle_idx = it->second;
-                                            if (particle_idx < reco_labels.size()) {
-                                                reco_label = reco_labels[particle_idx];
+                    if (hasMCParticles && mcpHandle.isValid()) {
+                        for (const auto& hit : hits) {
+                            if (tick >= hit->StartTick() && tick < hit->EndTick()) {
+                                auto bkth_data = mcp_bkth_assoc.data(hit.key());
+                                if (!bkth_data.empty()) {
+                                    for (size_t i = 0; i < bkth_data.size(); ++i) {
+                                        if (bkth_data[i]->isMaxIDE == 1) {
+                                            int track_id = mcp_bkth_assoc.at(hit.key())[i]->TrackId();
+                                            auto it = trackid_to_index.find(track_id);
+                                            if (it != trackid_to_index.end()) {
+                                                size_t particle_idx = it->second;
+                                                if (particle_idx < reco_labels.size()) {
+                                                    reco_label = reco_labels[particle_idx];
+                                                }
+                                                if (particle_idx < primary_labels.size()) {
+                                                    primary_label = primary_labels[particle_idx];
+                                                }
                                             }
-                                            if (particle_idx < primary_labels.size()) {
-                                                primary_label = primary_labels[particle_idx];
-                                            }
+                                            break;
                                         }
-                                        break;
                                     }
+                                } else {
+                                    reco_label = reco_labels::ReconstructionLabel::cosmic;
+                                    primary_label = truth_labels::PrimaryLabel::cosmic;
                                 }
-                            } else {
-                                reco_label = reco_labels::ReconstructionLabel::cosmic;
-                                primary_label = truth_labels::PrimaryLabel::cosmic;
+                                break;
+                            }
+                        }
+                    } else {
+                        reco_label = reco_labels::ReconstructionLabel::cosmic;
+                        primary_label = truth_labels::PrimaryLabel::cosmic;
+                    }
+
+                    if (_bad_channel_mask[ch_id]) continue;
+                    if (adcs[idx] > _adc_image_threshold) {
+                        calo_images[view_idx].set(row, col, adcs[idx]);
+                        reco_images[view_idx].set(row, col, static_cast<int>(reco_label), false);
+                        label_images[view_idx].set(row, col, static_cast<int>(primary_label), false);
+                    }
+                }
+            }
+        }
+    } else { 
+        for (size_t hit_idx = 0; hit_idx < hitHandle->size(); ++hit_idx) {
+            const auto& hit = hitHandle->at(hit_idx);
+            //auto ch_id = hit.Channel();
+            //if (_bad_channel_mask[ch_id]) continue;
+
+            geo::View_t view = hit.View();
+            size_t view_idx = view - geo::kU;
+            geo::WireID wire_id = hit.WireID();
+
+            const geo::WireGeo* wire_geo = _geo->WirePtr(wire_id);
+            if (!wire_geo) continue;
+            TVector3 center = wire_geo->GetCenter();
+            TVector3 wire_center(center.X(), center.Y(), center.Z());
+            double wire_coord;
+            if (view == geo::kW) {
+                wire_coord = wire_center.Z();
+            } else if (view == geo::kU) {
+                wire_coord = wire_center.Z() * std::cos(1.04719758034) - wire_center.Y() * std::sin(1.04719758034);
+            } else {
+                wire_coord = wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034);
+            }
+
+            int central_tick = std::round(hit.PeakTime());
+
+            float adc = hit.PeakAmplitude();
+            if (adc <= _adc_image_threshold) continue;
+
+            double x = _detp->ConvertTicksToX(central_tick, wire_id.planeID());
+            size_t row = properties[view_idx].row(x);
+            size_t col = properties[view_idx].col(wire_coord);
+            if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
+
+            reco_labels::ReconstructionLabel reco_label = reco_labels::ReconstructionLabel::invisible;
+            truth_labels::PrimaryLabel primary_label = truth_labels::PrimaryLabel::other;
+
+            if (hasMCParticles && mcpHandle.isValid()) {
+                auto bkth_data = mcp_bkth_assoc.data(hit_idx);
+                if (!bkth_data.empty()) {
+                    for (size_t i = 0; i < bkth_data.size(); ++i) {
+                        if (bkth_data[i]->isMaxIDE == 1) {
+                            int track_id = mcp_bkth_assoc.at(hit_idx)[i]->TrackId();
+                            auto it = trackid_to_index.find(track_id);
+                            if (it != trackid_to_index.end()) {
+                                size_t particle_idx = it->second;
+                                if (particle_idx < reco_labels.size()) reco_label = reco_labels[particle_idx];
+                                if (particle_idx < primary_labels.size()) primary_label = primary_labels[particle_idx];
                             }
                             break;
                         }
@@ -406,14 +475,14 @@ void EventSelectionFilter::constructImages(const art::Event& e,
                     reco_label = reco_labels::ReconstructionLabel::cosmic;
                     primary_label = truth_labels::PrimaryLabel::cosmic;
                 }
-
-                if (_bad_channel_mask[ch_id]) continue;
-                if (adcs[idx] > _adc_image_threshold) {
-                    calo_images[view_idx].set(row, col, adcs[idx]);
-                    reco_images[view_idx].set(row, col, static_cast<int>(reco_label), false);
-                    label_images[view_idx].set(row, col, static_cast<int>(primary_label), false);
-                }
+            } else {
+                reco_label = reco_labels::ReconstructionLabel::cosmic;
+                primary_label = truth_labels::PrimaryLabel::cosmic;
             }
+
+            calo_images[view_idx].set(row, col, adc);
+            reco_images[view_idx].set(row, col, static_cast<int>(reco_label), false);
+            label_images[view_idx].set(row, col, static_cast<int>(primary_label), false);
         }
     }
 }
