@@ -13,10 +13,7 @@ namespace selection
         
         void configure(fhicl::ParameterSet const & pset);
         bool selectEvent(art::Event const& e, 
-                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
-                                const std::vector<image::Image<float>>& calo_images, 
-                                const std::vector<image::Image<int>>& reco_images, 
-                                const std::vector<image::Image<int>>& label_images);
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         void setBranches(TTree* _tree){};
         void resetTTree(TTree* _tree){};   
     };
@@ -26,10 +23,7 @@ namespace selection
     void EmptySelection::configure(fhicl::ParameterSet const & pset) {}
     
     bool EmptySelection::selectEvent(art::Event const& e, 
-                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, 
-                                const std::vector<image::Image<float>>& calo_images, 
-                                const std::vector<image::Image<int>>& reco_images, 
-                                const std::vector<image::Image<int>>& label_images) { 
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) { 
         return true;
     }
     

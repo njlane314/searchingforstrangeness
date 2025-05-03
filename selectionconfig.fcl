@@ -43,6 +43,8 @@ BaseEventSelectionFilter: {
     ADCthreshold: 4.0
     ImageWidth: 512
     ImageHeight: 512
+    UseHits: true
+    CaloAlg: @local::microboone_calo_mcc9_data
 }
 
 TruthAnalysis: {
@@ -56,30 +58,6 @@ TruthAnalysis: {
     fidvolZend: @local::FiducialVolume.Zend
 }
 
-EventWeightAnalysis: {
-    tool_type: EventWeightAnalysis
-    createDedicatedTree: true                                   // Create a separate TTree for weights
-    createMapBranch: false                                      // Do not create map branch
-    createFluxBranch: true                                      // Include flux weights
-    createGenieBranch: true                                     // Include GENIE weights
-    createReintBranch: true                                     // Include reinteraction weights
-    createSplineBranch: true                                    // Include spline weights
-    createTuneBranch: true                                      // Include tune weights
-    createSplineTimesTuneBranch: true                           // Include spline*tune weights
-    createPPFXBranch: false                                     // Do not include PPFX weights
-    SaveAllFlux: false                                          // Do not save all flux weights
-    createGenieUpDnVecs: false                                  // Do not create up/down vectors for GENIE
-    GenieAllUniverses: 500                                      // Number of GENIE universes
-    makeNuMINtuple: false                                       // Do not make NuMI tuple
-    useReweightedFlux: false                                    // Use nominal flux
-    eventWeightProcessName00: "EventWeightSep24"                // Event weight process names
-    eventWeightProcessName01: "EventWeightSep24ExtraGENIE1"
-    eventWeightProcessName02: "EventWeightSep24ExtraGENIE2"
-    eventWeightProcessName03: "EventWeightSep24ExtraGENIE3"
-    eventWeightProcessName04: "EventWeightSep24ExtraGENIE4"
-    eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
-}
-
 NuGraphAnalysis: {
     tool_type: NuGraphAnalysis
     CLSproducer: "pandora"      
@@ -87,43 +65,55 @@ NuGraphAnalysis: {
     NG2producer: "nugraph2"     
 }
 
-FiducialVolumeSelection: {
-    tool_type: FiducialVolumeSelection
+ImageAnalysis: {
+    tool_type: "ImageAnalysis"
+    PFPproducer: "pandora"
+    CLSproducer: "pandora"
+    HITproducer: "gaushit"
+    WIREproducer: "butcher"
+    MCPproducer: "largeant"
+    BackTrackerLabel: "gaushitTruthMatch"
+    GammaThreshold: 0.1
+    HadronThreshold: 0.1
+    ImageWidth: 512
+    ImageHeight: 512
+    ADCthreshold: 4.0
+}
+
+TrackAnalysisTool: {
+    tool_type: "TrackAnalysis"
+    TRKproducer: "pandoraTrack"
+    CALOproducer: "pandoraTrackcali"    
+    PIDproducer: "pandoraTrackcalipid" 
+    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    RecalibrateHits: true
+}
+
+NuMuSelection: {
+    tool_type: "NuMuSelection"
+    TRKproducer: "pandoraTrack"
+    PIDproducer: "pandoraTrackcalipid"
+    CALOproducer: "pandoraTrackcali"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+    TrkScoreCut: 0.5
+    VertexDistanceCut: 4.0
+    TrackLengthCut: 10.0
+    LLRPIDScoreCut: 0.2
+    RecalibrateHits: false
+    EnergyThresholdForMCHits: 0.1
+    ADCtoE: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
     fidvolXstart: @local::FiducialVolume.Xstart
     fidvolXend: @local::FiducialVolume.Xend
     fidvolYstart: @local::FiducialVolume.Ystart
     fidvolYend: @local::FiducialVolume.Yend
     fidvolZstart: @local::FiducialVolume.Zstart
     fidvolZend: @local::FiducialVolume.Zend
-}
-
-FiducialFilter: {
-    @table::BaseEventSelectionFilter
-    SelectionTool: @local::FiducialVolumeSelection
-    AnalysisTools: {
-        truth: @local::TruthAnalysis
-    }
-}
-
-ImageSelection: {
-    tool_type: ImageSelection
-}
-
-ImageFilter: {
-    @table::BaseEventSelectionFilter
-    SelectionTool: @local::ImageSelection
-    AnalysisTools: {
-        truth: @local::TruthAnalysis
-    }
 }
 
 StrangenessSelection: {
     tool_type: StrangenessSelection
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
+    
     CLSproducer: "pandora"
 }

@@ -15,46 +15,46 @@ namespace analysis
         ~NuGraphAnalysis(){};
 
         void configure(fhicl::ParameterSet const &pset);
+
         void analyseEvent(art::Event const &e, bool fData) override;
+
         void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+
         void SaveTruth(art::Event const &e);
+
         void setBranches(TTree *_tree) override;
+        
         void resetTTree(TTree *_tree) override;
 
     private:
-        art::InputTag fCLSproducer; // cluster associated to PFP
-        art::InputTag fSLCproducer; // slice associated to PFP
-        art::InputTag fNG2producer; // nugraph2 producer
+        art::InputTag fCLSproducer; 
+        art::InputTag fSLCproducer; 
+        art::InputTag fNG2producer; 
 
         template <typename T, typename A>
         int arg_max(std::vector<T, A> const& vec) {
             return static_cast<int>(std::distance(vec.begin(), max_element(vec.begin(), vec.end())));
         }
 
-        // TTree variables
+        int slcng2mip;   // Number of MIP hits in the slice
+        int slcng2hip;   // Number of HIP hits in the slice
+        int slcng2shr;   // Number of shower hits in the slice
+        int slcng2mcl;   // Number of Michel hits in the slice
+        int slcng2dfs;   // Number of diffuse hits in the slice
 
-        //nu graph slice hit counts
-        int slcng2mip;   // Number of MIP (Minimum Ionizing Particle) hits in the slice, e.g., from muons
-        int slcng2hip;   // Number of HIP (Highly Ionizing Particle) hits in the slice, e.g., from protons
-        int slcng2shr;   // Number of shower hits in the slice, e.g., from electron/photon cascades
-        int slcng2mcl;   // Number of Michel hits in the slice, from muon decay electrons
-        int slcng2dfs;   // Number of diffuse hits in the slice, not clearly tied to a specific particle type
-
-        //nu graph clustered hit counts
-        int clung2mip;   // Number of MIP hits in clustered hits, grouped from PFPs
+        int clung2mip;   // Number of MIP hits in clustered hits
         int clung2hip;   // Number of HIP hits in clustered hits
         int clung2shr;   // Number of shower hits in clustered hits
         int clung2mcl;   // Number of Michel hits in clustered hits
         int clung2dfs;   // Number of diffuse hits in clustered hits
 
-        //nu graph pfp counts
-        std::vector<int> pfng2semlabel;    // Semantic label for each PFP, indicating most likely particle type
+        std::vector<int> pfng2semlabel;    // Semantic label for each PFP
         std::vector<float> pfng2mipfrac;   // Fraction of MIP hits in each PFP
         std::vector<float> pfng2hipfrac;   // Fraction of HIP hits in each PFP
         std::vector<float> pfng2shrfrac;   // Fraction of shower hits in each PFP
         std::vector<float> pfng2mclfrac;   // Fraction of Michel hits in each PFP
         std::vector<float> pfng2dfsfrac;   // Fraction of diffuse hits in each PFP
-        std::vector<float> pfng2mipavrg;   // Average MIP score for each PFP from NuGraph2 output
+        std::vector<float> pfng2mipavrg;   // Average MIP score for each PFP 
         std::vector<float> pfng2hipavrg;   // Average HIP score for each PFP
         std::vector<float> pfng2shravrg;   // Average shower score for each PFP
         std::vector<float> pfng2mclavrg;   // Average Michel score for each PFP
@@ -98,12 +98,11 @@ namespace analysis
             auto clus_pxy_v = pfp.get<recob::Cluster>();
             if (clus_pxy_v.size() != 0) {
                 for (auto ass_clus : clus_pxy_v) {
-                    // get cluster proxy
                     const auto &clus = clus_proxy[ass_clus.key()];
                     auto clus_hit_v = clus.get<recob::Hit>();
                     for (const auto &hit : clus_hit_v)
                     hit_v.push_back(hit);
-                } // for all clusters associated to PFP
+                } 
             }
 
             if (hit_v.size()>0) {
@@ -144,15 +143,14 @@ namespace analysis
                 pfng2mclavrg.push_back(-1);
                 pfng2dfsavrg.push_back(-1);
             }
-        //
         }   
-        //
+        
         slcng2mip = ng2semslccounts[0];
         slcng2hip = ng2semslccounts[1];
         slcng2shr = ng2semslccounts[2];
         slcng2mcl = ng2semslccounts[3];
         slcng2dfs = ng2semslccounts[4];
-        //
+        
         clung2mip = ng2semclucounts[0];
         clung2hip = ng2semclucounts[1];
         clung2shr = ng2semclucounts[2];
@@ -163,19 +161,19 @@ namespace analysis
     }
 
     void NuGraphAnalysis::setBranches(TTree *_tree) {
-        //
+        
         _tree->Branch("slcng2mip", &slcng2mip, "slcng2mip/I");
         _tree->Branch("slcng2hip", &slcng2hip, "slcng2hip/I");
         _tree->Branch("slcng2shr", &slcng2shr, "slcng2shr/I");
         _tree->Branch("slcng2mcl", &slcng2mcl, "slcng2mcl/I");
         _tree->Branch("slcng2dfs", &slcng2dfs, "slcng2dfs/I");
-        //
+        
         _tree->Branch("clung2mip", &clung2mip, "clung2mip/I");
         _tree->Branch("clung2hip", &clung2hip, "clung2hip/I");
         _tree->Branch("clung2shr", &clung2shr, "clung2shr/I");
         _tree->Branch("clung2mcl", &clung2mcl, "clung2mcl/I");
         _tree->Branch("clung2dfs", &clung2dfs, "clung2dfs/I");
-        //
+        
         _tree->Branch("pfng2semlabel", &pfng2semlabel);
         _tree->Branch("pfng2mipfrac", &pfng2mipfrac);
         _tree->Branch("pfng2hipfrac", &pfng2hipfrac);
@@ -191,19 +189,18 @@ namespace analysis
 
     void NuGraphAnalysis::resetTTree(TTree *_tree)
     {
-        //nu graph slice hit counts
         slcng2mip = std::numeric_limits<int>::min();
         slcng2hip = std::numeric_limits<int>::min();
         slcng2shr = std::numeric_limits<int>::min();
         slcng2mcl = std::numeric_limits<int>::min();
         slcng2dfs = std::numeric_limits<int>::min();
-        //nu graph clustered hit counts
+      
         clung2mip = std::numeric_limits<int>::min();
         clung2hip = std::numeric_limits<int>::min();
         clung2shr = std::numeric_limits<int>::min();
         clung2mcl = std::numeric_limits<int>::min();
         clung2dfs = std::numeric_limits<int>::min();
-        //nu graph pfp counts
+       
         pfng2semlabel.clear();
         pfng2mipfrac.clear();
         pfng2hipfrac.clear();

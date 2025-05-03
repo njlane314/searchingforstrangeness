@@ -27,14 +27,6 @@ namespace reco_labels
         "empty", "cosmic", "MIP", "HIP", "shower", "michel", "diffuse", "invisible"
     };
 
-    /*inline std::string label_to_string(ReconstructionLabel label) {
-        size_t index = static_cast<size_t>(label);
-        if (index < label_names.size()) {
-            return label_names[index];
-        }
-        return "unknown";
-    }*/
-
     inline std::pair<ReconstructionLabel, ReconstructionLabel> compute_label(
         const std::vector<simb::MCParticle>& particles,
         const simb::MCParticle& part,
