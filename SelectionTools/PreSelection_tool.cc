@@ -20,10 +20,10 @@
 
 namespace selection 
 {
-    class NuMuSelection : public SelectionToolBase {
+    class PreSelection : public SelectionToolBase {
     public:
-        NuMuSelection(const fhicl::ParameterSet &pset);
-        ~NuMuSelection();
+        PreSelection(const fhicl::ParameterSet &pset);
+        ~PreSelection();
 
         void configure(const fhicl::ParameterSet &pset);
 
@@ -70,13 +70,13 @@ namespace selection
         bool isFiducial(const double x[3]) const;
     };
 
-    NuMuSelection::NuMuSelection(const fhicl::ParameterSet &pset) {
-        configure(pset);
+    PreSelection::PreSelection(const fhicl::ParameterSet &pset) {
+        this->configure(pset);
     }
 
-    NuMuSelection::~NuMuSelection() {}
+    PreSelection::~PreSelection() {}
 
-    void NuMuSelection::configure(const fhicl::ParameterSet &pset) {
+    void PreSelection::configure(const fhicl::ParameterSet &pset) {
         fTRKproducer = pset.get<art::InputTag>("TRKproducer", "pandoraTrack");
         fPIDproducer = pset.get<art::InputTag>("PIDproducer", "pandoraTrackcalipid");
         fCALOproducer = pset.get<art::InputTag>("CALOproducer", "pandoraTrackcali");
@@ -122,7 +122,7 @@ namespace selection
         }
     }
 
-    bool NuMuSelection::selectEvent(art::Event const &e, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_v) {
+    bool PreSelection::selectEvent(art::Event const &e, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_v) {
         common::ProxyPIDColl_t const &pid_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer, proxy::withAssociated<anab::ParticleID>(fPIDproducer));
         common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer, proxy::withAssociated<anab::Calorimetry>(fCALOproducer));
 
@@ -252,7 +252,7 @@ namespace selection
         return sel_nu_mu_cc;
     }
 
-    void NuMuSelection::setBranches(TTree *_tree) {
+    void PreSelection::setBranches(TTree *_tree) {
         _tree->Branch("sel_vertex_in_fv", &sel_vertex_in_fv, "sel_vertex_in_fv/O");
         _tree->Branch("sel_pfp_track_passed", &sel_pfp_track_passed, "sel_pfp_track_passed/O");
         _tree->Branch("sel_has_mu_candidate", &sel_has_mu_candidate, "sel_has_mu_candidate/O");
@@ -262,7 +262,7 @@ namespace selection
         _tree->Branch("sel_topo_score_passed", &sel_topo_score_passed, "sel_topo_score_passed/O");
     }
 
-    void NuMuSelection::resetTTree(TTree *_tree) {
+    void PreSelection::resetTTree(TTree *_tree) {
         sel_vertex_in_fv = false;
         sel_pfp_track_passed = false;
         sel_has_mu_candidate = false;
@@ -272,7 +272,7 @@ namespace selection
         sel_topo_score_passed = false;
     }
 
-    bool NuMuSelection::isFiducial(const double x[3]) const {
+    bool PreSelection::isFiducial(const double x[3]) const {
         auto const& tpc = art::ServiceHandle<geo::Geometry>{}->TPC();
         std::vector<double> bnd = {0., 2. * tpc.HalfWidth(), -tpc.HalfHeight(), tpc.HalfHeight(), 0., tpc.Length()};
         bool is_x = x[0] > (bnd[0] + fFidvolXstart) && x[0] < (bnd[1] - fFidvolXend);
@@ -281,7 +281,7 @@ namespace selection
         return is_x && is_y && is_z;
     }
 
-    DEFINE_ART_CLASS_TOOL(NuMuSelection)
+    DEFINE_ART_CLASS_TOOL(PreSelection)
 } 
 
 #endif

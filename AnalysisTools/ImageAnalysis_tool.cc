@@ -70,7 +70,7 @@ namespace analysis
         std::vector<std::vector<float>> raw_images;
         std::vector<std::vector<int>> nugraph_images;
         std::vector<std::vector<int>> truth_images;
-        bool vertex_in_image; 
+        bool is_vertex_image; 
 
         std::vector<art::Ptr<recob::Hit>> collectNeutrinoHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         std::pair<double, double> calculateCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
@@ -81,7 +81,7 @@ namespace analysis
     };
 
     ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet& pset) {
-        configure(pset);
+        this->configure(pset);
     }
 
     void ImageAnalysis::configure(const fhicl::ParameterSet& p) {
@@ -116,7 +116,7 @@ namespace analysis
         _image_tree->Branch("raw_images", &raw_images);
         _image_tree->Branch("nugraph_images", &nugraph_images);
         _image_tree->Branch("truth_images", &truth_images);
-        _image_tree->Branch("vertex_in_image", &vertex_in_image, "vertex_in_image/O");
+        _image_tree->Branch("is_vertex_image", &is_vertex_image, "is_vertex_image/O");
 
         raw_images.resize(3);
         nugraph_images.resize(3);
@@ -124,10 +124,10 @@ namespace analysis
     }
 
     void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) {
-        std::vector<art::Ptr<recob::Hit>> neutrino_hits = collectNeutrinoHits(e, slice_pfp_v);
-        auto [centroid_wire_u, centroid_drift_u] = calculateCentroid(e, common::TPC_VIEW_U, neutrino_hits);
-        auto [centroid_wire_v, centroid_drift_v] = calculateCentroid(e, common::TPC_VIEW_V, neutrino_hits);
-        auto [centroid_wire_w, centroid_drift_w] = calculateCentroid(e, common::TPC_VIEW_W, neutrino_hits);
+        std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectNeutrinoHits(e, slice_pfp_v);
+        auto [centroid_wire_u, centroid_drift_u] = this->calculateCentroid(e, common::TPC_VIEW_U, neutrino_hits);
+        auto [centroid_wire_v, centroid_drift_v] = this->calculateCentroid(e, common::TPC_VIEW_V, neutrino_hits);
+        auto [centroid_wire_w, centroid_drift_w] = this->calculateCentroid(e, common::TPC_VIEW_W, neutrino_hits);
         std::vector<image::ImageProperties> properties;
         properties.emplace_back(centroid_wire_u, centroid_drift_u, _image_height, _image_width, _wire_pitch_u, _drift_step, geo::kU);
         properties.emplace_back(centroid_wire_v, centroid_drift_v, _image_height, _image_width, _wire_pitch_v, _drift_step, geo::kV);
@@ -146,9 +146,9 @@ namespace analysis
             }
         }
         if (!has_neutrino) {
-            vertex_in_image = false;
+            is_vertex_image = false;
         } else {
-            vertex_in_image = true;
+            is_vertex_image = true;
             for (size_t view_id = 0; view_id < 3; ++view_id) {
                 geo::View_t view = properties[view_id].view();
                 double wire_coord;
@@ -165,7 +165,7 @@ namespace analysis
                 size_t row = properties[view_id].row(x);
                 size_t col = properties[view_id].col(wire_coord);
                 if (row >= properties[view_id].height() || col >= properties[view_id].width()) {
-                    vertex_in_image = false;
+                    is_vertex_image = false;
                     break;
                 }
             }
@@ -174,7 +174,7 @@ namespace analysis
         std::vector<image::Image<float>> raw_img_vec;
         std::vector<image::Image<int>> nugraph_img_vec;
         std::vector<image::Image<int>> truth_img_vec;
-        constructImages(e, properties, raw_img_vec, nugraph_img_vec, truth_img_vec);
+        this->constructImages(e, properties, raw_img_vec, nugraph_img_vec, truth_img_vec);
 
         nrows = properties[0].height();
         ncols = properties[0].width();
@@ -354,6 +354,5 @@ namespace analysis
         }
     }
 
+    DEFINE_ART_CLASS_TOOL(ImageAnalysis)
 }
-
-DEFINE_ART_CLASS_TOOL(analysis::ImageAnalysis)

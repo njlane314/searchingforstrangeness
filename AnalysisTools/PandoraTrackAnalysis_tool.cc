@@ -27,22 +27,38 @@
 
 namespace analysis
 {
-    class TrackAnalysis : public AnalysisToolBase
-    {
+    class PandoraTrackAnalysis : public AnalysisToolBase {
     public:
-        TrackAnalysis(const fhicl::ParameterSet &pset);
-        ~TrackAnalysis(){};
+        explicit PandoraTrackAnalysis(fhicl::ParameterSet const& pset);
+        virtual ~PandoraTrackAnalysis() = default;
+
         void configure(fhicl::ParameterSet const &pset);
+
         void analyseEvent(art::Event const &e, bool fData) override;
+
         void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+        
         void SaveTruth(art::Event const &e);
+
         void fillDefault();
+
         void setBranches(TTree *_tree) override;
+
         void resetTTree(TTree *_tree) override;
+
     private:
-        float CalculateTrackTrunkdEdxByHits(const std::vector<float> &dedxPerHit);
-        float CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit);
-        void CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v);
+        art::InputTag fCALOproducer;
+        art::InputTag fPIDproducer;
+        art::InputTag fTRKproducer;
+        art::InputTag fBacktrackTag;
+        art::InputTag fHproducer;
+        art::InputTag fCLSproducer;
+        art::InputTag fMCRproducer;
+        bool fRecalibrateHits;
+        float fEnergyThresholdForMCHits;
+        std::vector<float> fADCtoE;
+        float fEndSpacepointDistance;
+
         const trkf::TrackMomentumCalculator _trkmom;
         const trkf::TrajectoryMCSFitter _mcsfitter;
         TParticlePDG *proton = TDatabasePDG::Instance()->GetParticle(2212);
@@ -50,16 +66,7 @@ namespace analysis
         common::LLRPID llr_pid_calculator;
         common::ProtonMuonLookUpParameters protonmuon_parameters;
         common::CorrectionLookUpParameters correction_parameters;
-        art::InputTag fCALOproducer;
-        art::InputTag fPIDproducer;
-        art::InputTag fTRKproducer;
-        art::InputTag fBacktrackTag;
-        art::InputTag fHproducer;
-        art::InputTag fCLSproducer;
-        bool fRecalibrateHits;
-        float fEnergyThresholdForMCHits;
-        std::vector<float> fADCtoE;
-        float fEndSpacepointDistance;
+
         int _run, _sub, _evt;
         std::vector<size_t> _trk_pfp_id_v;
         std::vector<float> _trk_start_x_v;
@@ -151,20 +158,26 @@ namespace analysis
         std::vector<float> _trk_avg_deflection_stdev_v;
         std::vector<float> _trk_avg_deflection_separation_mean_v;
         std::vector<int> _trk_end_spacepoints_v;
+        std::vector<int> _trk_bt_pdg_v;
+
+        float CalculateTrackTrunkdEdxByHits(const std::vector<float> &dedxPerHit);
+        float CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit);
+        void CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v);
     };
 
-    TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet &p) : _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::ParameterSet>("mcsfitmu")))
-    {
+    PandoraTrackAnalysis::PandoraTrackAnalysis(const fhicl::ParameterSet &p) : _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::ParameterSet>("mcsfitmu"))) {
         fCALOproducer = p.get<art::InputTag>("CALOproducer");
         fPIDproducer = p.get<art::InputTag>("PIDproducer");
         fTRKproducer = p.get<art::InputTag>("TRKproducer");
         fBacktrackTag = p.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch");
         fHproducer = p.get<art::InputTag>("Hproducer", "gaushit");
         fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
+        fMCRproducer = p.get<art::InputTag>("MCRproducer", "largeant");
         fEnergyThresholdForMCHits = p.get<float>("EnergyThresholdForMCHits", 0.1);
         fRecalibrateHits = p.get<bool>("RecalibrateHits", false);
         fADCtoE = p.get<std::vector<float>>("ADCtoE");
         fEndSpacepointDistance = p.get<float>("EndSpacepointDistance", 5.0);
+
         llr_pid_calculator.set_dedx_binning(0, protonmuon_parameters.dedx_edges_pl_0);
         llr_pid_calculator.set_par_binning(0, protonmuon_parameters.parameters_edges_pl_0);
         llr_pid_calculator.set_lookup_tables(0, protonmuon_parameters.dedx_pdf_pl_0);
@@ -185,37 +198,29 @@ namespace analysis
         }
     }
 
-    void TrackAnalysis::configure(fhicl::ParameterSet const &p)
-    {
-    }
+    void PandoraTrackAnalysis::configure(fhicl::ParameterSet const &p) {}
 
-    void TrackAnalysis::analyseEvent(art::Event const &e, bool fData)
-    {
+    void PandoraTrackAnalysis::analyseEvent(art::Event const &e, bool fData) {
         _evt = e.event();
         _sub = e.subRun();
         _run = e.run();
-        std::cout << "[TrackAnalysis::analyseEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: " << _evt << std::endl;
+        std::cout << "[PandoraTrackAnalysis::analyseEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: " << _evt << std::endl;
     }
 
-    void TrackAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
-    {
+    void PandoraTrackAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
         common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer,
                                                                                                             proxy::withAssociated<anab::Calorimetry>(fCALOproducer));
         common::ProxyPIDColl_t const &pid_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer,
                                                                                                             proxy::withAssociated<anab::ParticleID>(fPIDproducer));
         TVector3 nuvtx;
-        for (auto pfp : slice_pfp_v)
-        {
-            if (pfp->IsPrimary())
-            {
+        for (auto pfp : slice_pfp_v) {
+            if (pfp->IsPrimary()) {
                 double xyz[3] = {};
                 auto vtx = pfp.get<recob::Vertex>();
-                if (vtx.size() != 1)
-                {
+                if (vtx.size() != 1) {
                     std::cout << "ERROR. Found neutrino PFP w/ != 1 associated vertices..." << std::endl;
                 }
-                else
-                {
+                else {
                     vtx.at(0)->XYZ(xyz);
                     nuvtx.SetXYZ(xyz[0], xyz[1], xyz[2]);
                 }
@@ -223,42 +228,41 @@ namespace analysis
             }
         }
         std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
-        if (!fData)
-        {
+        std::vector<common::BtPart> btparts_v;
+        if (!fData) {
             art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHproducer);
             assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBacktrackTag));
+            const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
+            const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
+            btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
         }
         auto spacePointHandle = e.getValidHandle<std::vector<recob::SpacePoint>>(fCLSproducer);
         std::vector< art::Ptr<recob::SpacePoint> > spacePointCollection;
         for (size_t i_sp = 0; i_sp < spacePointHandle->size(); i_sp++) {
             spacePointCollection.emplace_back(spacePointHandle, i_sp);
         }
-        for (size_t i_pfp = 0; i_pfp < slice_pfp_v.size(); i_pfp++)
-        {
+        for (size_t i_pfp = 0; i_pfp < slice_pfp_v.size(); i_pfp++) {
             auto pfp = slice_pfp_v[i_pfp];
             if (pfp->IsPrimary())
                 continue;
             auto trk_v = pfp.get<recob::Track>();
-            if (trk_v.size() == 1)
-            {
+            if (trk_v.size() == 1) {
                 auto trk = trk_v.at(0);
                 auto trkpxy2 = pid_proxy[trk.key()];
                 auto pidpxy_v = trkpxy2.get<anab::ParticleID>();
-                auto GetMaxPID = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
+                auto GetMaxPID = [&pidpxy_v](const int &pdg, const unsigned int plane) {
                     return std::max(common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane),
                                     common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane));
                 };
-                auto GetMinPID = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
+                auto GetMinPID = [&pidpxy_v](const int &pdg, const unsigned int plane) {
                     return std::min(common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane),
                                     common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane));
                 };
-                auto IsFwdPIDPreferred = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
+                auto IsFwdPIDPreferred = [&pidpxy_v](const int &pdg, const unsigned int plane) {
                     return common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane)>
                            common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane);
                 };
+
                 float bragg_p = GetMaxPID(2212, 2);
                 float bragg_mu = GetMaxPID(13, 2);
                 float bragg_pion = GetMaxPID(211, 2);
@@ -274,6 +278,7 @@ namespace analysis
                 float pidchipi = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 2);
                 float pidchika = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 2);
                 float pida_mean = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 2);
+
                 _trk_bragg_p_v.push_back(bragg_p);
                 _trk_bragg_mu_v.push_back(bragg_mu);
                 _trk_bragg_pion_v.push_back(bragg_pion);
@@ -289,6 +294,7 @@ namespace analysis
                 _trk_pid_chipi_v.push_back(pidchipi);
                 _trk_pid_chika_v.push_back(pidchika);
                 _trk_pida_v.push_back(pida_mean);
+
                 float bragg_p_u = GetMaxPID(2212, 0);
                 float bragg_mu_u = GetMaxPID(13, 0);
                 float bragg_pion_u = GetMaxPID(211, 0);
@@ -304,6 +310,7 @@ namespace analysis
                 float pidchipi_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 0);
                 float pidchika_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 0);
                 float pida_mean_u = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 0);
+
                 _trk_bragg_p_u_v.push_back(bragg_p_u);
                 _trk_bragg_mu_u_v.push_back(bragg_mu_u);
                 _trk_bragg_pion_u_v.push_back(bragg_pion_u);
@@ -319,6 +326,7 @@ namespace analysis
                 _trk_pid_chipi_u_v.push_back(pidchipi_u);
                 _trk_pid_chika_u_v.push_back(pidchika_u);
                 _trk_pida_u_v.push_back(pida_mean_u);
+
                 float bragg_p_v = GetMaxPID(2212, 1);
                 float bragg_mu_v = GetMaxPID(13, 1);
                 float bragg_pion_v = GetMaxPID(211, 1);
@@ -334,6 +342,7 @@ namespace analysis
                 float pidchipi_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 1);
                 float pidchika_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 1);
                 float pida_mean_v = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 1);
+
                 _trk_bragg_p_v_v.push_back(bragg_p_v);
                 _trk_bragg_mu_v_v.push_back(bragg_mu_v);
                 _trk_bragg_pion_v_v.push_back(bragg_pion_v);
@@ -349,10 +358,12 @@ namespace analysis
                 _trk_pid_chipi_v_v.push_back(pidchipi_v);
                 _trk_pid_chika_v_v.push_back(pidchika_v);
                 _trk_pida_v_v.push_back(pida_mean_v);
+
                 float mcs_momentum_muon = _mcsfitter.fitMcs(trk->Trajectory(), 13).bestMomentum();
                 float range_momentum_muon = _trkmom.GetTrackMomentum(common::GetSCECorrTrackLength(trk), 13);
                 float energy_proton = std::sqrt(std::pow(_trkmom.GetTrackMomentum(common::GetSCECorrTrackLength(trk), 2212), 2) + std::pow(proton->Mass(), 2)) - proton->Mass();
                 float energy_muon = std::sqrt(std::pow(mcs_momentum_muon, 2) + std::pow(muon->Mass(), 2)) - muon->Mass();
+                
                 _trk_mcs_muon_mom_v.push_back(mcs_momentum_muon);
                 _trk_range_muon_mom_v.push_back(range_momentum_muon);
                 _trk_energy_proton_v.push_back(energy_proton);
@@ -366,6 +377,7 @@ namespace analysis
                 _trk_start_x_v.push_back(trk->Start().X());
                 _trk_start_y_v.push_back(trk->Start().Y());
                 _trk_start_z_v.push_back(trk->Start().Z());
+                
                 float _trk_start_sce[3];
                 common::ApplySCECorrectionXYZ(trk->Start().X(), trk->Start().Y(), trk->Start().Z(), _trk_start_sce);
                 _trk_sce_start_x_v.push_back(_trk_start_sce[0]);
@@ -374,6 +386,7 @@ namespace analysis
                 _trk_end_x_v.push_back(trk->End().X());
                 _trk_end_y_v.push_back(trk->End().Y());
                 _trk_end_z_v.push_back(trk->End().Z());
+                
                 float _trk_end_sce[3];
                 common::ApplySCECorrectionXYZ(trk->End().X(), trk->End().Y(), trk->End().Z(), _trk_end_sce);
                 _trk_sce_end_x_v.push_back(_trk_end_sce[0]);
@@ -382,10 +395,12 @@ namespace analysis
                 _trk_theta_v.push_back(trk->Theta());
                 _trk_phi_v.push_back(trk->Phi());
                 _trk_len_v.push_back(common::GetSCECorrTrackLength(trk));
+                
                 TVector3 trk_vtx_v;
                 trk_vtx_v.SetXYZ(trk->Start().X(), trk->Start().Y(), trk->Start().Z());
                 trk_vtx_v -= nuvtx;
                 _trk_distance_v.push_back(trk_vtx_v.Mag());
+
                 _trk_pfp_id_v.push_back(i_pfp);
                 _trk_llr_pid_u_v.push_back(0);
                 _trk_llr_pid_v_v.push_back(0);
@@ -401,9 +416,9 @@ namespace analysis
                 _trk_trunk_rr_dEdx_u_v.push_back(std::numeric_limits<float>::lowest());
                 _trk_trunk_rr_dEdx_v_v.push_back(std::numeric_limits<float>::lowest());
                 _trk_trunk_rr_dEdx_y_v.push_back(std::numeric_limits<float>::lowest());
+                
                 auto calo_v = calo_proxy[trk.key()].get<anab::Calorimetry>();
-                for (auto const &calo : calo_v)
-                {
+                for (auto const &calo : calo_v) {
                     auto const &plane = calo->PlaneID().Plane;
                     auto const &dqdx_values = calo->dQdx();
                     auto const &dedx_values = calo->dEdx();
@@ -415,43 +430,41 @@ namespace analysis
                     par_values.push_back(pitch);
                     float calo_energy = 0;
                     std::vector<float> dqdx_values_corrected, dedx_values_corrected;
-                    if (fData || !fRecalibrateHits)
-                    {
+                    
+                    if (fData || !fRecalibrateHits) {
                         dqdx_values_corrected = dqdx_values;
                     }
-                    else
-                    {
+                    else {
                         dqdx_values_corrected = llr_pid_calculator.correct_many_hits_one_plane(calo, trk.value(), assocMCPart, fRecalibrateHits, fEnergyThresholdForMCHits, false);
                     }
-                    for (size_t i = 0; i < dqdx_values_corrected.size(); i++)
-                    {
+
+                    for (size_t i = 0; i < dqdx_values_corrected.size(); i++) {
                         float aux_dedx;
                         aux_dedx = common::ModBoxCorrection(dqdx_values_corrected[i]*fADCtoE[plane], xyz_v[i].X(), xyz_v[i].Y(), xyz_v[i].Z());
                         dedx_values_corrected.push_back(aux_dedx);
                         calo_energy += aux_dedx * pitch[i];
                     }
+
                     float trk_nhits = dedx_values.size();
                     float trk_trunk_dEdx = CalculateTrackTrunkdEdxByHits(dedx_values);
                     float trk_trunk_rr_dEdx = CalculateTrackTrunkdEdxByRange(dedx_values, rr);
                     float llr_pid = llr_pid_calculator.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
-                    if (plane == 0)
-                    {
+                    
+                    if (plane == 0) {
                         _trk_llr_pid_u_v.back() = llr_pid;
                         _trk_calo_energy_u_v.back() = calo_energy;
                         _trk_nhits_u_v.back() = trk_nhits;
                         _trk_trunk_dEdx_u_v.back() = trk_trunk_dEdx;
                         _trk_trunk_rr_dEdx_u_v.back() = trk_trunk_rr_dEdx;
                     }
-                    else if (plane == 1)
-                    {
+                    else if (plane == 1) {
                         _trk_llr_pid_v_v.back() = llr_pid;
                         _trk_calo_energy_v_v.back() = calo_energy;
                         _trk_nhits_v_v.back() = trk_nhits;
                         _trk_trunk_dEdx_v_v.back() = trk_trunk_dEdx;
                         _trk_trunk_rr_dEdx_v_v.back() = trk_trunk_rr_dEdx;
                     }
-                    else if (plane == 2)
-                    {
+                    else if (plane == 2) {
                         _trk_llr_pid_y_v.back() = llr_pid;
                         _trk_calo_energy_y_v.back() = calo_energy;
                         _trk_nhits_y_v.back() = trk_nhits;
@@ -460,10 +473,12 @@ namespace analysis
                     }
                     _trk_llr_pid_v.back() += llr_pid;
                 }
+
                 _trk_llr_pid_score_v.back() = atan(_trk_llr_pid_v.back() / 100.) * 2 / 3.14159266;
-                CalculateTrackDeflections(trk, _trk_avg_deflection_mean_v, _trk_avg_deflection_stdev_v, _trk_avg_deflection_separation_mean_v);
+                this->CalculateTrackDeflections(trk, _trk_avg_deflection_mean_v, _trk_avg_deflection_stdev_v, _trk_avg_deflection_separation_mean_v);
                 int nPoints = 0;
                 float distSquared = fEndSpacepointDistance*fEndSpacepointDistance;
+                
                 TVector3 trkEnd(_trk_end_sce[0], _trk_end_sce[1], _trk_end_sce[2]);
                 for (auto &sp : spacePointCollection) {
                     float _sp_sce[3];
@@ -473,15 +488,13 @@ namespace analysis
                 }
                 _trk_end_spacepoints_v.push_back(nPoints);
             }
-            else
-            {
-                fillDefault();
+            else {
+                this->fillDefault();
             }
         }
     }
 
-    void TrackAnalysis::fillDefault()
-    {
+    void PandoraTrackAnalysis::fillDefault() {
         _trk_pfp_id_v.push_back(std::numeric_limits<int>::lowest());
         _trk_distance_v.push_back(std::numeric_limits<float>::lowest());
         _trk_theta_v.push_back(std::numeric_limits<float>::lowest());
@@ -572,10 +585,10 @@ namespace analysis
         _trk_avg_deflection_stdev_v.push_back(std::numeric_limits<float>::lowest());
         _trk_avg_deflection_separation_mean_v.push_back(std::numeric_limits<float>::lowest());
         _trk_end_spacepoints_v.push_back(std::numeric_limits<int>::lowest());
+        _trk_bt_pdg_v.push_back(std::numeric_limits<int>::lowest());
     }
 
-    void TrackAnalysis::setBranches(TTree *_tree)
-    {
+    void PandoraTrackAnalysis::setBranches(TTree *_tree) {
         _tree->Branch("trk_bragg_p_v", "std::vector< float >", &_trk_bragg_p_v);
         _tree->Branch("trk_bragg_mu_v", "std::vector< float >", &_trk_bragg_mu_v);
         _tree->Branch("trk_bragg_pion_v", "std::vector< float >", &_trk_bragg_pion_v);
@@ -666,10 +679,10 @@ namespace analysis
         _tree->Branch("trk_avg_deflection_stdev_v", "std::vector<float>", &_trk_avg_deflection_stdev_v);
         _tree->Branch("trk_avg_deflection_separation_mean_v", "std::vector<float>", &_trk_avg_deflection_separation_mean_v);
         _tree->Branch("trk_end_spacepoints_v", "std::vector<int>", &_trk_end_spacepoints_v);
+        _tree->Branch("trk_bt_pdg_v", "std::vector<int>", &_trk_bt_pdg_v);
     }
 
-    void TrackAnalysis::resetTTree(TTree *_tree)
-    {
+    void PandoraTrackAnalysis::resetTTree(TTree *_tree) {
         _trk_bragg_p_v.clear();
         _trk_bragg_mu_v.clear();
         _trk_bragg_pion_v.clear();
@@ -760,10 +773,10 @@ namespace analysis
         _trk_avg_deflection_stdev_v.clear();
         _trk_avg_deflection_separation_mean_v.clear();
         _trk_end_spacepoints_v.clear();
+        _trk_bt_pdg_v.clear();
     }
 
-    float TrackAnalysis::CalculateTrackTrunkdEdxByHits(const std::vector<float> &dEdx_values) 
-    {
+    float PandoraTrackAnalysis::CalculateTrackTrunkdEdxByHits(const std::vector<float> &dEdx_values) {
         unsigned int trk_nhits = dEdx_values.size();
         int firstHitIdx = trk_nhits - 3 - 1;
         int lastHitIdx = trk_nhits - (int)(trk_nhits/3) - 1; 
@@ -798,27 +811,27 @@ namespace analysis
         }
     }
 
-    float TrackAnalysis::CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit)
-    {
+    float PandoraTrackAnalysis::CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit) {
         const auto nHitsToSkip = 3u;
         const auto lengthFraction = 1.f/3;
         if (residualRangePerHit.size() <= nHitsToSkip)
             return -std::numeric_limits<float>::max();
+
         std::vector<std::pair<float, unsigned int> > residualRangeIndices;
         float maxResidualRange = -std::numeric_limits<float>::max();
-        for (unsigned int i = 0; i < residualRangePerHit.size(); ++i)
-        {
+        for (unsigned int i = 0; i < residualRangePerHit.size(); ++i) {
             const auto residualRange = residualRangePerHit.at(i);
             maxResidualRange = std::max(maxResidualRange, residualRange);
             residualRangeIndices.emplace_back(residualRange, i);
         }
+
         const auto residualRangeCutoff = maxResidualRange * lengthFraction;
         std::sort(residualRangeIndices.begin(), residualRangeIndices.end(), [](auto &a, auto &b) {
             return a.first > b.first;
         });
+
         std::vector<float> dedxPerHitAtStart;
-        for (unsigned int i = nHitsToSkip; i < residualRangeIndices.size(); ++i)
-        {
+        for (unsigned int i = nHitsToSkip; i < residualRangeIndices.size(); ++i) {
             const auto entry = residualRangeIndices.at(i);
             const auto residualRange = entry.first;
             const auto hitIndex = entry.second;
@@ -826,6 +839,7 @@ namespace analysis
                 continue;
             dedxPerHitAtStart.push_back(dedxPerHit.at(hitIndex));
         }
+
         const auto nHits = dedxPerHitAtStart.size();
         if (nHits == 0)
             return -std::numeric_limits<float>::max();
@@ -841,8 +855,7 @@ namespace analysis
         const auto variance = squareSum / static_cast<float>(nHits);
         float truncatedTotal = 0.f;
         unsigned int nTruncatedHits = 0;
-        for (const auto &dEdx : dedxPerHitAtStart)
-        {
+        for (const auto &dEdx : dedxPerHitAtStart) {
             if (std::pow(dEdx - median, 2) > variance)
                 continue;
             truncatedTotal += dEdx;
@@ -853,25 +866,22 @@ namespace analysis
         return truncatedTotal / static_cast<float>(nTruncatedHits);
     }
 
-    void TrackAnalysis::CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v)
-    {
+    void PandoraTrackAnalysis::CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v) {
         std::vector<size_t> validPoints;
         auto firstValidPoint = trk->FirstValidPoint();
         validPoints.push_back(firstValidPoint);
         auto nextValidPoint = trk->NextValidPoint(firstValidPoint + 1);
-        while (nextValidPoint != recob::TrackTrajectory::InvalidIndex)
-        {
+        while (nextValidPoint != recob::TrackTrajectory::InvalidIndex) {
             validPoints.push_back(nextValidPoint);
             nextValidPoint = trk->NextValidPoint(nextValidPoint + 1);
         }
-        if (validPoints.size() < 3) 
-        {
+
+        if (validPoints.size() < 3) {
             mean_v.push_back(0);
             stdev_v.push_back(0);
             separation_mean_v.push_back(0);
         }
-        else 
-        {
+        else {
             std::vector<float> thetaVector;
             float thetaSum = 0.f;
             float separationSum = 0.f;
@@ -890,8 +900,7 @@ namespace analysis
             float thetaMean = thetaSum / static_cast<float>(thetaVector.size());
             float separationMean = separationSum / static_cast<float>(thetaVector.size());
             float thetaDiffSum = 0.f;
-            for (const auto &theta : thetaVector) 
-            {
+            for (const auto &theta : thetaVector) {
                 thetaDiffSum += std::pow(theta - thetaMean, 2);
             }
             const auto variance = thetaDiffSum / static_cast<float>(thetaVector.size() - 1);
@@ -901,6 +910,6 @@ namespace analysis
         }
     }
 
-    DEFINE_ART_CLASS_TOOL(TrackAnalysis)
+    DEFINE_ART_CLASS_TOOL(PandoraTrackAnalysis)
 } 
 #endif

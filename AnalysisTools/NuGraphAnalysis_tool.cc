@@ -11,8 +11,8 @@ namespace analysis
 {
     class NuGraphAnalysis : public AnalysisToolBase {
     public:
-        NuGraphAnalysis(const fhicl::ParameterSet &pset);
-        ~NuGraphAnalysis(){};
+        explicit NuGraphAnalysis(const fhicl::ParameterSet &pset);
+        virtual ~NuGraphAnalysis(){};
 
         void configure(fhicl::ParameterSet const &pset);
 
@@ -62,12 +62,14 @@ namespace analysis
     };
 
     NuGraphAnalysis::NuGraphAnalysis(const fhicl::ParameterSet &p) {
+        this->configure(p);
+    }
+
+    void NuGraphAnalysis::configure(fhicl::ParameterSet const &p) {
         fCLSproducer = p.get<art::InputTag>("CLSproducer");
         fSLCproducer = p.get<art::InputTag>("SLCproducer");
         fNG2producer = p.get<art::InputTag>("NG2producer");
     }
-
-    void NuGraphAnalysis::configure(fhicl::ParameterSet const &p) {}
 
     void NuGraphAnalysis::analyseEvent(art::Event const &e, bool fData) {}
 
@@ -161,7 +163,6 @@ namespace analysis
     }
 
     void NuGraphAnalysis::setBranches(TTree *_tree) {
-        
         _tree->Branch("slcng2mip", &slcng2mip, "slcng2mip/I");
         _tree->Branch("slcng2hip", &slcng2hip, "slcng2hip/I");
         _tree->Branch("slcng2shr", &slcng2shr, "slcng2shr/I");
@@ -187,8 +188,7 @@ namespace analysis
         _tree->Branch("pfng2dfsavrg", &pfng2dfsavrg);
     }
 
-    void NuGraphAnalysis::resetTTree(TTree *_tree)
-    {
+    void NuGraphAnalysis::resetTTree(TTree *_tree) {
         slcng2mip = std::numeric_limits<int>::min();
         slcng2hip = std::numeric_limits<int>::min();
         slcng2shr = std::numeric_limits<int>::min();

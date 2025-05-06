@@ -1,9 +1,9 @@
 #include "selectionconfig.fcl"
 
-process_name: EventSelectionFilterProcess
+process_name: TrainingSampleGeneration
 
 services: {
-    TFileService: { fileName: "output.root" }
+    TFileService: { fileName: "training_samples.root" }
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
@@ -29,8 +29,8 @@ source: {
 
 physics: {
     filters: {
-        fiducialFilter: @local::FiducialFilter
+        preselectionFilter: @local::PreSelectionFilter
     }
-    path1: [ fiducialFilter ]
+    path1: [ preselectionFilter ]
     trigger_paths: [ path1 ]
 }

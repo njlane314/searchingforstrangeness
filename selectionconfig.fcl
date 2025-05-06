@@ -20,7 +20,7 @@ FiducialVolume: {
     Zend:   50.
 }
 
-BaseEventSelectionFilter: {
+EventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: "pandora"
     CLSproducer: "pandora"
@@ -47,24 +47,6 @@ BaseEventSelectionFilter: {
     CaloAlg: @local::microboone_calo_mcc9_data
 }
 
-TruthAnalysis: {
-    tool_type: TruthAnalysis
-    MCTproducer: "generator"    
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
-}
-
-NuGraphAnalysis: {
-    tool_type: NuGraphAnalysis
-    CLSproducer: "pandora"      
-    SLCproducer: "pandora"      
-    NG2producer: "nugraph2"     
-}
-
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
     PFPproducer: "pandora"
@@ -80,7 +62,30 @@ ImageAnalysis: {
     ADCthreshold: 4.0
 }
 
-TrackAnalysisTool: {
+NeutrinoAnalysis: {
+    tool_type: "NeutrinoAnalysis"
+    MCTproducer: "generator"
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
+}
+
+NuGraphAnalysis: {
+    tool_type: NuGraphAnalysis
+    CLSproducer: "pandora"      
+    SLCproducer: "pandora"      
+    NG2producer: "nugraph2"     
+}
+
+SliceAnalysis: {
+    tool_type: "SliceAnalysis"
+    PFPproducer: "pandora"
+}
+
+TrackAnalysis: {
     tool_type: "TrackAnalysis"
     TRKproducer: "pandoraTrack"
     CALOproducer: "pandoraTrackcali"    
@@ -90,8 +95,19 @@ TrackAnalysisTool: {
     RecalibrateHits: true
 }
 
-NuMuSelection: {
-    tool_type: "NuMuSelection"
+TruthAnalysis: {
+    tool_type: TruthAnalysis
+    MCTproducer: "generator"    
+    fidvolXstart: @local::FiducialVolume.Xstart
+    fidvolXend: @local::FiducialVolume.Xend
+    fidvolYstart: @local::FiducialVolume.Ystart
+    fidvolYend: @local::FiducialVolume.Yend
+    fidvolZstart: @local::FiducialVolume.Zstart
+    fidvolZend: @local::FiducialVolume.Zend
+}
+
+PreSelection: {
+    tool_type: "PreSelection"
     TRKproducer: "pandoraTrack"
     PIDproducer: "pandoraTrackcalipid"
     CALOproducer: "pandoraTrackcali"
@@ -112,8 +128,14 @@ NuMuSelection: {
     fidvolZend: @local::FiducialVolume.Zend
 }
 
-StrangenessSelection: {
-    tool_type: StrangenessSelection
-    
-    CLSproducer: "pandora"
+PreSelectionFilter: {
+    @table::EventSelectionFilter
+    SelectionTool: @local::PreSelection
+    AnalysisTools: {
+        truth: @local::TruthAnalysis
+        track: @local::TrackAnalysis
+        slice: @local::SliceAnalysis
+        neutrino: @local::NeutrinoAnalysis
+        image: @local::ImageAnalysis
+    }
 }
