@@ -1,0 +1,5 @@
+mkdir build && cd build
+cmake ..
+make
+
+Add R__LOAD_LIBRARY(libMyAnalysisFramework.so) to macro
