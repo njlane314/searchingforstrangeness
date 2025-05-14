@@ -50,7 +50,7 @@ namespace analysis
         fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
         fHproducer = p.get<art::InputTag>("Hproducer", "gaushit");
         fBacktrackTag = p.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch");
-        fMCRproducer = p.get<art::InputTag>("MCRproducer", "largeant");
+        fMCRproducer = p.get<art::InputTag>("MCRproducer", "mcreco");
     }
 
     void PandoraSliceAnalysis::analyseEvent(art::Event const& e, bool _is_data) {}

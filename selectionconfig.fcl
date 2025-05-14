@@ -62,17 +62,6 @@ ImageAnalysis: {
     ADCthreshold: 4.0
 }
 
-NeutrinoAnalysis: {
-    tool_type: "NeutrinoAnalysis"
-    MCTproducer: "generator"
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
-}
-
 NuGraphAnalysis: {
     tool_type: NuGraphAnalysis
     CLSproducer: "pandora"      
@@ -80,16 +69,16 @@ NuGraphAnalysis: {
     NG2producer: "nugraph2"     
 }
 
-SliceAnalysis: {
-    tool_type: "SliceAnalysis"
+PandoraSliceAnalysis: {
+    tool_type: "PandoraSliceAnalysis"
     PFPproducer: "pandora"
 }
 
-TrackAnalysis: {
-    tool_type: "TrackAnalysis"
-    TRKproducer: "pandoraTrack"
-    CALOproducer: "pandoraTrackcali"    
-    PIDproducer: "pandoraTrackcalipid" 
+PandoraTrackAnalysis: {
+    tool_type: "PandoraTrackAnalysis"
+    TRKproducer: "pandora"
+    CALOproducer: "pandoracali"    
+    PIDproducer: "pandorapid" 
     mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
     ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
     RecalibrateHits: true
@@ -108,9 +97,9 @@ TruthAnalysis: {
 
 PreSelection: {
     tool_type: "PreSelection"
-    TRKproducer: "pandoraTrack"
-    PIDproducer: "pandoraTrackcalipid"
-    CALOproducer: "pandoraTrackcali"
+    TRKproducer: "pandora"
+    PIDproducer: "pandorapid"
+    CALOproducer: "pandoracali"
     Hproducer: "gaushit"
     BacktrackTag: "gaushitTruthMatch"
     TrkScoreCut: 0.5
@@ -133,9 +122,8 @@ PreSelectionFilter: {
     SelectionTool: @local::PreSelection
     AnalysisTools: {
         truth: @local::TruthAnalysis
-        track: @local::TrackAnalysis
-        slice: @local::SliceAnalysis
-        neutrino: @local::NeutrinoAnalysis
+        track: @local::PandoraTrackAnalysis
+        slice: @local::PandoraSliceAnalysis
         image: @local::ImageAnalysis
     }
 }
