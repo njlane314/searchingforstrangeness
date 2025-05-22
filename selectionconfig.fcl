@@ -11,15 +11,6 @@ microboone_calo_mcc9_data: {
     CaloUseModBox: true
 }
 
-FiducialVolume: {
-    Xstart: 10.
-    Xend:   10.
-    Ystart: 15.
-    Yend:   15.
-    Zstart: 10.
-    Zend:   50.
-}
-
 EventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: "pandora"
@@ -32,19 +23,13 @@ EventSelectionFilter: {
     PCAproducer: "pandora"
     MCPproducer: "largeant"
     WIREproducer: "butcher"
+    MCTproducer: "generator"
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
     BackTrackerLabel: "gaushitTruthMatch"
-    GammaThreshold: 0.1
-    HadronThreshold: 0.1
     Verbose: false
     IsData: false
     IsFakeData: false
     Filter: true
-    ADCthreshold: 4.0
-    ImageWidth: 512
-    ImageHeight: 512
-    UseHits: true
-    CaloAlg: @local::microboone_calo_mcc9_data
 }
 
 ImageAnalysis: {
@@ -57,6 +42,7 @@ ImageAnalysis: {
     BackTrackerLabel: "gaushitTruthMatch"
     GammaThreshold: 0.1
     HadronThreshold: 0.1
+    LeptonThreshold: 0.1
     ImageWidth: 512
     ImageHeight: 512
     ADCthreshold: 4.0
@@ -69,14 +55,10 @@ NuGraphAnalysis: {
     NG2producer: "nugraph2"     
 }
 
-PandoraSliceAnalysis: {
-    tool_type: "PandoraSliceAnalysis"
-    PFPproducer: "pandora"
-}
-
-PandoraTrackAnalysis: {
-    tool_type: "PandoraTrackAnalysis"
+ReconstructionAnalysis: {
+    tool_type: "ReconstructionAnalysis"
     TRKproducer: "pandora"
+    PFPproducer: "pandora"
     CALOproducer: "pandoracali"    
     PIDproducer: "pandorapid" 
     mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
@@ -87,43 +69,31 @@ PandoraTrackAnalysis: {
 TruthAnalysis: {
     tool_type: TruthAnalysis
     MCTproducer: "generator"    
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
 }
 
-PreSelection: {
-    tool_type: "PreSelection"
-    TRKproducer: "pandora"
-    PIDproducer: "pandorapid"
-    CALOproducer: "pandoracali"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
-    TrkScoreCut: 0.5
-    VertexDistanceCut: 4.0
-    TrackLengthCut: 10.0
-    LLRPIDScoreCut: 0.2
-    RecalibrateHits: false
-    EnergyThresholdForMCHits: 0.1
-    ADCtoE: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
-    fidvolXstart: @local::FiducialVolume.Xstart
-    fidvolXend: @local::FiducialVolume.Xend
-    fidvolYstart: @local::FiducialVolume.Ystart
-    fidvolYend: @local::FiducialVolume.Yend
-    fidvolZstart: @local::FiducialVolume.Zstart
-    fidvolZend: @local::FiducialVolume.Zend
+EventWeightAnalysis: {
+    tool_type: "EventWeightAnalysis"
+    createDedicatedTree: false
+    createMapBranch: true 
+    createFluxBranch: true
+    createGenieBranch: true
+    createReintBranch: true
+    createSplineBranch: true
+    createTuneBranch: true
+    createSplineTimesTuneBranch: true
 }
 
-PreSelectionFilter: {
+NeutrinoSelection: {
+    tool_type: "NeutrinoSelection"
+}
+
+NeutrinoSelectionFilter: {
     @table::EventSelectionFilter
-    SelectionTool: @local::PreSelection
+    SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         truth: @local::TruthAnalysis
-        track: @local::PandoraTrackAnalysis
-        slice: @local::PandoraSliceAnalysis
+        reco: @local::ReconstructionAnalysis
         image: @local::ImageAnalysis
+        weight: @local::EventWeightAnalysis
     }
 }

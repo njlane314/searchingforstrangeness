@@ -16,6 +16,7 @@
 #include "../CommonDefs/BacktrackingFuncs.h" 
 #include "../CommonDefs/Geometry.h"         
 #include "../CommonDefs/SCECorrections.h"   
+#include "../CommonDefs/Pandora.h"
 
 namespace analysis 
 {

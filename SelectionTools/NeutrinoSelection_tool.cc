@@ -6,10 +6,10 @@
 
 namespace selection
 {    
-    class EmptySelection : public SelectionToolBase {
+    class NeutrinoSelection : public SelectionToolBase {
     public:
-        EmptySelection(const fhicl::ParameterSet& pset);
-        ~EmptySelection(){};
+        NeutrinoSelection(const fhicl::ParameterSet& pset);
+        ~NeutrinoSelection(){};
         
         void configure(fhicl::ParameterSet const & pset);
 
@@ -20,16 +20,16 @@ namespace selection
         void resetTTree(TTree* _tree){};   
     };
    
-    EmptySelection::EmptySelection(const fhicl::ParameterSet& pset){}
+    NeutrinoSelection::NeutrinoSelection(const fhicl::ParameterSet& pset){}
     
-    void EmptySelection::configure(fhicl::ParameterSet const & pset) {}
+    void NeutrinoSelection::configure(fhicl::ParameterSet const & pset) {}
     
-    bool EmptySelection::selectEvent(art::Event const& e, 
+    bool NeutrinoSelection::selectEvent(art::Event const& e, 
                                 const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) { 
         return true;
     }
     
-    DEFINE_ART_CLASS_TOOL(EmptySelection)
+    DEFINE_ART_CLASS_TOOL(NeutrinoSelection)
 } 
 
 #endif
