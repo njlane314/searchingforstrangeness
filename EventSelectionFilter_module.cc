@@ -52,6 +52,7 @@ private:
     art::InputTag fPCAproducer;
     art::InputTag fMCPproducer;
     art::InputTag fWIREproducer;
+    art::InputTag fMCTproducer;
     art::InputTag fDeadChannelTag;
     std::string fBackTrackerLabel;  
 
@@ -96,6 +97,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fPCAproducer = p.get<art::InputTag>("PCAproducer");
     fTRKproducer = p.get<art::InputTag>("TRKproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
+    fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fDeadChannelTag = p.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
     fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
@@ -119,8 +121,9 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _subrun_tree->Branch("run", &_run_sr, "run/I");
     _subrun_tree->Branch("subRun", &_sub_sr, "subRun/I");
 
-    if ((!_data) || (_fake_data))
+    if ((!_data) || (_fake_data)) {
         _subrun_tree->Branch("pot", &_pot, "pot/F");
+    }
 
     const fhicl::ParameterSet &selection_pset = p.get<fhicl::ParameterSet>("SelectionTool");
     _selectionTool = art::make_tool<::selection::SelectionToolBase>(selection_pset);
@@ -238,7 +241,7 @@ void EventSelectionFilter::ResetTTree() {
 bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
     if ((!_data) || (_fake_data)) {
         art::Handle<sumdata::POTSummary> potSummaryHandle;
-        _pot = subrun.getByLabel(fMCPproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
+        _pot = subrun.getByLabel(fMCTproducer, potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
     }
     _run_sr = subrun.run();
     _sub_sr = subrun.subRun();

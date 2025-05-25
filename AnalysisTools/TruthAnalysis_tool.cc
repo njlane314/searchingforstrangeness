@@ -5,16 +5,17 @@
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "TTree.h"
-#include "larcore/Geometry/Geometry.h"
 #include <limits>
+#include <vector>
+#include <string>
 #include "TVector3.h"
-#include "../CommonDefs/BacktrackingFuncs.h"
-#include "../CommonDefs/Geometry.h"
-#include "../CommonDefs/SCECorrections.h"
+
+#include "../CommonDefs/BacktrackingFuncs.h" 
+#include "../CommonDefs/Geometry.h"         
+#include "../CommonDefs/SCECorrections.h"   
 #include "../CommonDefs/Pandora.h"
 
 namespace analysis 
@@ -25,13 +26,9 @@ namespace analysis
         virtual ~TruthAnalysis() = default;
 
         void configure(const fhicl::ParameterSet& pset) override;  
-
         void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override;
-
         void analyseEvent(const art::Event& event, bool is_data) override;
-
         void setBranches(TTree* tree) override;
-        
         void resetTTree(TTree* tree) override;
 
     private:
@@ -59,7 +56,6 @@ namespace analysis
         float _vtx_u;
         float _vtx_v;
         float _vtx_w;
-        bool _in_fidvol;
 
         int _mcf_nmm;
         int _mcf_nmp;
@@ -80,15 +76,6 @@ namespace analysis
         int _mcf_nxi_0;
         int _mcf_nxi_m;
         int _mcf_nomega;
-
-        float _fidvol_x_start;
-        float _fidvol_x_end;
-        float _fidvol_y_start;
-        float _fidvol_y_end;
-        float _fidvol_z_start;
-        float _fidvol_z_end;
-
-        bool isFiducial(const double x[3]) const;
     };
 
     TruthAnalysis::TruthAnalysis(fhicl::ParameterSet const& p) {
@@ -97,12 +84,6 @@ namespace analysis
 
     void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
         fMCTproducer = p.get<std::string>("MCTproducer", "generator");
-        _fidvol_x_start = p.get<float>("fidvolXstart", 10.0);
-        _fidvol_x_end = p.get<float>("fidvolXend", 10.0);
-        _fidvol_y_start = p.get<float>("fidvolYstart", 10.0);
-        _fidvol_y_end = p.get<float>("fidvolYend", 10.0);
-        _fidvol_z_start = p.get<float>("fidvolZstart", 10.0);
-        _fidvol_z_end = p.get<float>("fidvolZend", 50.0);
     }
 
     void TruthAnalysis::setBranches(TTree* _tree) {
@@ -128,7 +109,6 @@ namespace analysis
         _tree->Branch("nu_vtx_u", &_vtx_u, "nu_vtx_u/F");
         _tree->Branch("nu_vtx_v", &_vtx_v, "nu_vtx_v/F");
         _tree->Branch("nu_vtx_w", &_vtx_w, "nu_vtx_w/F");
-        _tree->Branch("nu_in_fidvol", &_in_fidvol, "nu_in_fidvol/O");
 
         _tree->Branch("mcf_nmm", &_mcf_nmm, "mcf_nmm/I");
         _tree->Branch("mcf_nmp", &_mcf_nmp, "mcf_nmp/I");
@@ -174,7 +154,6 @@ namespace analysis
         _vtx_u = std::numeric_limits<float>::lowest();
         _vtx_v = std::numeric_limits<float>::lowest();
         _vtx_w = std::numeric_limits<float>::lowest();
-        _in_fidvol = false;
 
         _mcf_nmm = 0;
         _mcf_nmp = 0;
@@ -198,25 +177,49 @@ namespace analysis
     }
 
     void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, 
-                                    bool selected) {}
+                                    bool selected) {
+    }
 
     void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
-        if (is_data) 
+        std::cout << "TruthAnalysis analysing event" << std::endl;
+        if (is_data) {
+            _nu_pdg = -1; _ccnc = -1; _mode = -1; _interaction = -1;
+            _nu_e = std::numeric_limits<float>::lowest(); _nu_theta = std::numeric_limits<float>::lowest(); _nu_pt = std::numeric_limits<float>::lowest();
+            _target_nucleus = -1; _hit_nucleon = -1;
+            _W = std::numeric_limits<float>::lowest(); _X = std::numeric_limits<float>::lowest(); _Y = std::numeric_limits<float>::lowest(); _QSqr = std::numeric_limits<float>::lowest();
+            _px = std::numeric_limits<float>::lowest(); _py = std::numeric_limits<float>::lowest(); _pz = std::numeric_limits<float>::lowest();
+            _vtx_x = std::numeric_limits<float>::lowest(); _vtx_y = std::numeric_limits<float>::lowest(); _vtx_z = std::numeric_limits<float>::lowest();
+            _vtx_u = std::numeric_limits<float>::lowest(); _vtx_v = std::numeric_limits<float>::lowest(); _vtx_w = std::numeric_limits<float>::lowest();
+            _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0; _mcf_npp = 0; _mcf_npm = 0;
+            _mcf_nkp = 0; _mcf_nkm = 0; _mcf_nk0 = 0; _mcf_npr = 0; _mcf_nne = 0; _mcf_nlambda = 0;
+            _mcf_nsigma_p = 0; _mcf_nsigma_0 = 0; _mcf_nsigma_m = 0; _mcf_nxi_0 = 0; _mcf_nxi_m = 0; _mcf_nomega = 0;
             return;
+        }
 
         art::Handle<std::vector<simb::MCTruth>> mct_h;
-        if (!e.getByLabel(fMCTproducer, mct_h) || mct_h->empty()) 
+        if (!e.getByLabel(fMCTproducer, mct_h) || mct_h->empty()) {
+            _nu_pdg = -1; _ccnc = -1; _mode = -1; _interaction = -1;
+            _nu_e = std::numeric_limits<float>::lowest(); _nu_theta = std::numeric_limits<float>::lowest(); _nu_pt = std::numeric_limits<float>::lowest();
+            _target_nucleus = -1; _hit_nucleon = -1;
+            _W = std::numeric_limits<float>::lowest(); _X = std::numeric_limits<float>::lowest(); _Y = std::numeric_limits<float>::lowest(); _QSqr = std::numeric_limits<float>::lowest();
+            _px = std::numeric_limits<float>::lowest(); _py = std::numeric_limits<float>::lowest(); _pz = std::numeric_limits<float>::lowest();
+            _vtx_x = std::numeric_limits<float>::lowest(); _vtx_y = std::numeric_limits<float>::lowest(); _vtx_z = std::numeric_limits<float>::lowest();
+            _vtx_u = std::numeric_limits<float>::lowest(); _vtx_v = std::numeric_limits<float>::lowest(); _vtx_w = std::numeric_limits<float>::lowest();
+            _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0; _mcf_npp = 0; _mcf_npm = 0;
+            _mcf_nkp = 0; _mcf_nkm = 0; _mcf_nk0 = 0; _mcf_npr = 0; _mcf_nne = 0; _mcf_nlambda = 0;
+            _mcf_nsigma_p = 0; _mcf_nsigma_0 = 0; _mcf_nsigma_m = 0; _mcf_nxi_0 = 0; _mcf_nxi_m = 0; _mcf_nomega = 0;
             return;
+        }
 
-        auto mct = mct_h->at(0);
+        const simb::MCTruth& mct = mct_h->at(0);
         
         if (mct.NeutrinoSet()) {
-            const auto& neutrino = mct.GetNeutrino();
-            const auto& neutrino_particle = neutrino.Nu();
+            const simb::MCNeutrino& neutrino = mct.GetNeutrino();
+            const simb::MCParticle& neutrino_particle = neutrino.Nu();
             _nu_pdg = neutrino_particle.PdgCode();
-            _nu_e = neutrino_particle.Trajectory().E(0);
-            _nu_theta = neutrino.Theta();
-            _nu_pt = neutrino.Pt();
+            _nu_e = neutrino_particle.E(); 
+            _nu_theta = neutrino_particle.Momentum().Theta();
+            _nu_pt = neutrino_particle.Pt();
             _ccnc = neutrino.CCNC();
             _mode = neutrino.Mode();
             _interaction = neutrino.InteractionType();
@@ -229,16 +232,17 @@ namespace analysis
             _px = neutrino_particle.Px();
             _py = neutrino_particle.Py();
             _pz = neutrino_particle.Pz();
+            
             float corrected_vertex[3];
             common::True2RecoMappingXYZ(neutrino_particle.T(), neutrino_particle.Vx(), neutrino_particle.Vy(), neutrino_particle.Vz(), corrected_vertex);
             _vtx_x = corrected_vertex[0];
             _vtx_y = corrected_vertex[1];
             _vtx_z = corrected_vertex[2];
+
             _vtx_u = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_U).Z();
             _vtx_v = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_V).Z();
             _vtx_w = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_W).Z();
-            double vtx[3] = {_vtx_x, _vtx_y, _vtx_z};
-            _in_fidvol = this->isFiducial(vtx);
+
         } else {
             _nu_pdg = -1;
             _ccnc = -1;
@@ -262,45 +266,40 @@ namespace analysis
             _vtx_u = std::numeric_limits<float>::lowest();
             _vtx_v = std::numeric_limits<float>::lowest();
             _vtx_w = std::numeric_limits<float>::lowest();
-            _in_fidvol = false;
         }
 
-        size_t npart = mct.NParticles();
+        _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0;
+        _mcf_npp = 0; _mcf_npm = 0; _mcf_nkp = 0; _mcf_nkm = 0; _mcf_nk0 = 0;
+        _mcf_npr = 0; _mcf_nne = 0; _mcf_nlambda = 0; _mcf_nsigma_p = 0;
+        _mcf_nsigma_0 = 0; _mcf_nsigma_m = 0; _mcf_nxi_0 = 0; _mcf_nxi_m = 0; _mcf_nomega = 0;
 
-        for (size_t i = 0; i < npart; i++) {
-            auto const& part = mct.GetParticle(i);
-            if (part.StatusCode() != 1) continue;
+        for (int i = 0; i < mct.NParticles(); ++i) {
+            const simb::MCParticle& part = mct.GetParticle(i);
+            if (part.StatusCode() != 1) continue; 
+            
             int pdg = part.PdgCode();
             int abs_pdg = std::abs(pdg);
-            if (pdg == 13) _mcf_nmm += 1;        // mu-
-            else if (pdg == -13) _mcf_nmp += 1;  // mu+
-            else if (pdg == 11) _mcf_nem += 1;   // e-
-            else if (pdg == -11) _mcf_nep += 1;  // e+
-            else if (abs_pdg == 111) _mcf_np0 += 1; // pi0
-            else if (pdg == 211) _mcf_npp += 1;  // pi+
-            else if (pdg == -211) _mcf_npm += 1; // pi-
-            else if (pdg == 321) _mcf_nkp += 1;  // K+
-            else if (pdg == -321) _mcf_nkm += 1; // K-
-            else if (abs_pdg == 311) _mcf_nk0 += 1; // K0
-            else if (pdg == 2212) _mcf_npr += 1; // proton
-            else if (pdg == 2112) _mcf_nne += 1; // neutron
-            else if (abs_pdg == 3122) _mcf_nlambda += 1; // Lambda
-            else if (abs_pdg == 3222) _mcf_nsigma_p += 1; // Sigma+
-            else if (abs_pdg == 3212) _mcf_nsigma_0 += 1; // Sigma0
-            else if (abs_pdg == 3112) _mcf_nsigma_m += 1; // Sigma-
-            else if (abs_pdg == 3322) _mcf_nxi_0 += 1; // Xi0
-            else if (abs_pdg == 3312) _mcf_nxi_m += 1; // Xi-
-            else if (abs_pdg == 3334) _mcf_nomega += 1; // Omega-
-        }
-    }
 
-    bool TruthAnalysis::isFiducial(const double x[3]) const {
-        auto const& tpc = art::ServiceHandle<geo::Geometry>{}->TPC();
-        std::vector<double> bnd = {0., 2. * tpc.HalfWidth(), -tpc.HalfHeight(), tpc.HalfHeight(), 0., tpc.Length()};
-        bool is_x = x[0] > (bnd[0] + _fidvol_x_start) && x[0] < (bnd[1] - _fidvol_x_end);
-        bool is_y = x[1] > (bnd[2] + _fidvol_y_start) && x[1] < (bnd[3] - _fidvol_y_end);
-        bool is_z = x[2] > (bnd[4] + _fidvol_z_start) && x[2] < (bnd[5] - _fidvol_z_end);
-        return is_x && is_y && is_z;
+            if (pdg == 13) _mcf_nmm++;        
+            else if (pdg == -13) _mcf_nmp++;  
+            else if (pdg == 11) _mcf_nem++;   
+            else if (pdg == -11) _mcf_nep++;  
+            else if (pdg == 111) _mcf_np0++; 
+            else if (pdg == 211) _mcf_npp++;  
+            else if (pdg == -211) _mcf_npm++; 
+            else if (pdg == 321) _mcf_nkp++;  
+            else if (pdg == -321) _mcf_nkm++; 
+            else if (pdg == 130 || pdg == 310 || pdg == 311) _mcf_nk0++; 
+            else if (pdg == 2212) _mcf_npr++; 
+            else if (pdg == 2112) _mcf_nne++; 
+            else if (abs_pdg == 3122) _mcf_nlambda++; 
+            else if (pdg == 3222) _mcf_nsigma_p++; 
+            else if (pdg == 3212) _mcf_nsigma_0++; 
+            else if (pdg == 3112) _mcf_nsigma_m++; 
+            else if (abs_pdg == 3322) _mcf_nxi_0++; 
+            else if (abs_pdg == 3312) _mcf_nxi_m++; 
+            else if (abs_pdg == 3334) _mcf_nomega++;
+        }
     }
 
     DEFINE_ART_CLASS_TOOL(TruthAnalysis)

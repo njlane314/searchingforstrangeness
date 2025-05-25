@@ -17,9 +17,9 @@ fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
 #samdef=nl_numi_fhc_beam_run1_reco2_training_250
 
 #samdef=nl_numi_fhc_ext_run1_reco2_6000
-samdef=nl_numi_fhc_beam_run1_reco2_1000
+#samdef=nl_numi_fhc_beam_run1_reco2_1000
 
-#samdef=nl_prodgeni_numi_uboone_overlay_rhc_training_1600
+samdef=nl_prodgeni_numi_uboone_overlay_rhc_training_1600
 #samdef=nl_numi_fhc_beam_run1_reco2_validation_250
 #samdef=nl_lambda_nohadrons_reco2_validation_2000
 #samdef=make_k0signal_overlay_testing_nohadrons_reco2_reco2

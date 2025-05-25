@@ -1,14 +1,15 @@
 #include "selectionconfig.fcl"
 
-process_name: TrainingSampleGeneration
+process_name: NeutrinoSelection
 
 services: {
-    TFileService: { fileName: "training_samples.root" }
+    TFileService: { fileName: "nu_selection.root" }
     TimeTracker: {}
     MemoryTracker: {}
     RandomNumberGenerator: {}
     Geometry: @local::microboone_geo
     DetectorPropertiesService: @local::microboone_detproperties
+    ParticleInventoryService: @local::standard_particleinventoryservice
     LArProperties: @local::microboone_properties
     DetectorClocksService: @local::microboone_detectorclocks
     @table::microboone_services_reco
@@ -29,8 +30,8 @@ source: {
 
 physics: {
     filters: {
-        preselectionFilter: @local::PreSelectionFilter
+        nuselection: @local::NeutrinoSelectionFilter
     }
-    path1: [ preselectionFilter ]
+    path1: [ nuselection ]
     trigger_paths: [ path1 ]
 }
