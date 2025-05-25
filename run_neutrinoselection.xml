@@ -1,64 +1,93 @@
 <?xml version="1.0"?>
 
-<!-- Production Project -->
 <!DOCTYPE project [
-<!ENTITY release "v08_00_00_82">
-<!ENTITY file_type "mc">
-<!ENTITY run_type "physics">
-<!ENTITY user "nlane">
-<!ENTITY name "nl_numi_fhc_run1_eventselectionfilter">
+    <!ENTITY release "v08_00_00_82">
+    <!ENTITY file_type "mc">
+    <!ENTITY run_type "physics">
+    <!ENTITY user "nlane">
+    <!ENTITY name "nl_numi_fhc_eventselectionfilter">
+    <!ENTITY input_def_run1 "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2">
+    <!ENTITY input_def_run2 "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
+    <!ENTITY fcl_eventweight "run_eventweight_microboone.fcl">
+    <!ENTITY fcl_selection "run_neutrinoselection.fcl">
 ]>
 
 <job>
-
 <project name="&name;">
 
-  <!-- Project size -->
-  <numevents>-1</numevents>
+    <numevents>-1</numevents>
+    <os>SL7</os>
+    <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
 
-  <!-- Operating System -->
-  <os>SL7</os>
+    <larsoft>
+        <tag>&release;</tag>
+        <qual>e17:prof</qual>
+        <local>/pnfs/uboone/resilient/users/nlane/tarballs/strangeness.tar</local>
+    </larsoft>
 
-  <!-- Batch resources -->
-  <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+    <check>1</check>
+    <copy>0</copy>
+    <version>prod_&release;</version>
 
-  <!-- Larsoft information -->
-  <larsoft>
-    <tag>&release;</tag>
-    <qual>e17:prof</qual>
-    <local>/pnfs/uboone/resilient/users/nlane/tarballs/strangeness.tar</local>
-  </larsoft>
-  
-  <check>1</check>
-  <copy>0</copy>
-  <version>prod_&release;</version>
+    <stage name="eventweight_numi_fhc_run1_beam">
+        <inputdef>&input_def_run1;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_eventweight;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/weights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/weights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam/weights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
 
-  <!-- Project stages -->
-  <stage name="analyse">
-  <inputdef>New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2</inputdef>
-  <!--<inputdef>nl_lambda_nohadrons_reco2_training_2000</inputdef>-->
-  <!--<inputdef>nl_strange_numi_fhc_run2_reco2_validation_982</inputdef>-->
-  <!--<inputdef>nl_strange_numi_fhc_run2_reco2_training_982</inputdef>-->
-  <!--<inputdef>nl_strange_numi_test_10</inputdef>-->
-  <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-  <fcl>run_neutrinoselection.fcl</fcl>
-  <dirlevels>1</dirlevels>
-  <dirsize>100</dirsize>
-  <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;/out</outdir>
-  <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;/log</logdir>
-  <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;</workdir>
-  <datatier>generated</datatier>
-  <datafiletypes>root</datafiletypes>
-  <prestart>1</prestart>
-  <filelistdef>1</filelistdef>
-  <maxfilesperjob>1</maxfilesperjob>
-  <numjobs>1000</numjobs>
-  <memory>4000</memory>
-  <disk>20GB</disk>
-  <schema>https</schema>
-  </stage>
+    <stage name="selection_numi_fhc_run1_beam">
+        <inputstage>eventweight_numi_fhc_run1_beam</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="eventweight_numi_fhc_run1_strangeness">
+        <inputdef>&input_def_run2;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_eventweight;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/weights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/weights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness/weights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1500</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_numi_fhc_run1_strangeness">
+        <inputstage>eventweight_numi_fhc_run1_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1500</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
 
 </project>
-
-
 </job>

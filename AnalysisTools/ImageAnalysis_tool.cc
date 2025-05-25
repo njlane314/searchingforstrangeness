@@ -52,330 +52,11 @@
 #include "../CommonDefs/Pandora.h"
 #include "../CommonDefs/Types.h"
 
+#include "../Image.h"
+#include "../ImageClassifiers.h"
+
 namespace analysis 
 {
-    class ImageProperties {
-    public:
-        ImageProperties() = default;
-        ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
-        : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
-            origin_x_ = center_x - (width * pixel_w) / 2.0;
-            origin_y_ = center_y - (height * pixel_h) / 2.0;
-        }
-        size_t index(size_t row, size_t col) const {
-            if (row >= height_ || col >= width_) return static_cast<size_t>(-1);
-            return col * height_ + row;
-        }
-        size_t col(double x) const {
-            if (x < origin_x_ || x >= origin_x_ + width_ * pixel_w_) return static_cast<size_t>(-1);
-            return static_cast<size_t>((x - origin_x_) / pixel_w_);
-        }
-        size_t row(double y) const {
-            if (y < origin_y_ || y >= origin_y_ + height_ * pixel_h_) return static_cast<size_t>(-1);
-            return static_cast<size_t>((y - origin_y_) / pixel_h_);
-        }
-        size_t height() const { return height_; }
-        size_t width() const { return width_; }
-        double pixel_w() const { return pixel_w_; }
-        double pixel_h() const { return pixel_h_; }
-        geo::View_t view() const { return view_; }
-        double origin_x() const { return origin_x_; }
-        double origin_y() const { return origin_y_; }
-        double max_x() const { return origin_x_ + width_ * pixel_w_; }
-        double max_y() const { return origin_y_ + height_ * pixel_h_; }
-    private:
-        double center_x_, center_y_;
-        double origin_x_, origin_y_;
-        size_t height_, width_;
-        double pixel_w_, pixel_h_;
-        geo::View_t view_ {geo::kUnknown};
-    };
-
-    template <typename T>
-    class Image {
-    public:
-        Image() = default;
-        Image(const ImageProperties& prop)
-        : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
-        void set(size_t row, size_t col, T value, bool accumulate = true) {
-            size_t idx = prop_.index(row, col);
-            if (idx != static_cast<size_t>(-1)) {
-                if (accumulate)
-                    pixels_[idx] += value;
-                else
-                    pixels_[idx] = value;
-            }
-        }
-        T get(size_t row, size_t col) const {
-            size_t idx = prop_.index(row, col);
-            return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : T(0);
-        }
-        void clear(T value = T(0)) {
-            std::fill(pixels_.begin(), pixels_.end(), value);
-        }
-        std::vector<T> data() const {
-            return pixels_;
-        }
-        geo::View_t view() const { return prop_.view(); }
-        size_t height() const { return prop_.height(); }
-        size_t width() const { return prop_.width(); }
-    private:
-        ImageProperties prop_;
-        std::vector<T> pixels_;
-    };
-
-    class TruthLabelClassifier {
-    public:
-        enum class TruthPrimaryLabel {
-            Empty = 0,
-            Cosmic,
-            Electron,
-            Muon,
-            ChargedPion,
-            NeutralPion,
-            Proton,
-            ChargedKaon,
-            NeutralKaon,
-            Lambda,
-            ChargedSigma,
-            Other
-        };
-
-        static inline const std::array<std::string, 12> truth_primary_label_names = {
-            "Empty", "Cosmic", "Electron", "Muon", "ChargedPion", "NeutralPion", "Proton", "ChargedKaon",
-            "NeutralKaon", "Lambda", "ChargedSigma", "Other"
-        };
-
-        explicit TruthLabelClassifier(const art::InputTag& MCPproducer)
-        : fMCPproducer(MCPproducer) {}
-
-        TruthPrimaryLabel getTruthPrimaryLabelFromPDG(int pdg) const {
-            pdg = std::abs(pdg);
-            if (pdg == 11) return TruthPrimaryLabel::Electron;
-            if (pdg == 13) return TruthPrimaryLabel::Muon;
-            if (pdg == 211) return TruthPrimaryLabel::ChargedPion;
-            if (pdg == 111) return TruthPrimaryLabel::NeutralPion;
-            if (pdg == 2212) return TruthPrimaryLabel::Proton;
-            if (pdg == 321) return TruthPrimaryLabel::ChargedKaon;
-            if (pdg == 311 || pdg == 130 || pdg == 310) return TruthPrimaryLabel::NeutralKaon;
-            if (pdg == 3122) return TruthPrimaryLabel::Lambda;
-            if (pdg == 3222 || pdg == 3112 || pdg == 3212) return TruthPrimaryLabel::ChargedSigma;
-            return TruthPrimaryLabel::Other;
-        }
-
-        void assignLabelToProgenyRecursively(
-            size_t particle_index,
-            const std::vector<simb::MCParticle>& particles,
-            std::vector<TruthPrimaryLabel>& particle_labels,
-            const std::unordered_map<int, size_t>& track_id_to_index,
-            TruthPrimaryLabel primary_label_to_assign
-        ) const {
-            if (particle_index >= particles.size() || particle_index >= particle_labels.size()) {
-                return;
-            }
-            particle_labels[particle_index] = primary_label_to_assign;
-            const auto& particle = particles[particle_index];
-
-            for (int daughter_idx = 0; daughter_idx < particle.NumberDaughters(); ++daughter_idx) {
-                int daughter_track_id = particle.Daughter(daughter_idx);
-                auto it = track_id_to_index.find(daughter_track_id);
-                if (it != track_id_to_index.end()) {
-                    if (it->second < particles.size()) {
-                        assignLabelToProgenyRecursively(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
-                    }
-                }
-            }
-        }
-
-        std::vector<TruthPrimaryLabel> classifyParticles(
-            const art::Event& event
-        ) const {
-            const auto particle_collection_handle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
-            const auto& particles = *particle_collection_handle;
-
-            std::unordered_map<int, size_t> track_id_to_vector_index;
-            for (size_t i = 0; i < particles.size(); ++i) {
-                track_id_to_vector_index[particles[i].TrackId()] = i;
-            }
-
-            std::vector<TruthPrimaryLabel> classified_particle_labels(particles.size(), TruthPrimaryLabel::Empty);
-
-            for (size_t i = 0; i < particles.size(); ++i) {
-                if (particles[i].Mother() == 0) {
-                    if (auto it = track_id_to_vector_index.find(particles[i].TrackId()); it != track_id_to_vector_index.end()) {
-                        TruthPrimaryLabel initial_label = getTruthPrimaryLabelFromPDG(particles[i].PdgCode());
-                        assignLabelToProgenyRecursively(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
-                    }
-                }
-            }
-            return classified_particle_labels;
-        }
-
-    private:
-        art::InputTag fMCPproducer;
-    };
-
-    class RecoLabelClassifier {
-    public:
-        enum class ReconstructionLabel {
-            Empty,
-            Cosmic,
-            MIP,
-            HIP,
-            Shower,
-            Michel,
-            Diffuse,
-            Invisible
-        };
-
-        static inline const std::array<std::string, 8> reco_label_names = {
-            "Empty", "Cosmic", "MIP", "HIP", "Shower", "Michel", "Diffuse", "Invisible"
-        };
-
-        explicit RecoLabelClassifier(
-            const art::InputTag& mc_producer_tag,
-            double gamma_threshold,
-            double hadron_threshold,
-            bool use_cheat)
-        : fMCPproducer(mc_producer_tag),
-        fGammaThreshold(gamma_threshold),
-        fHadronThreshold(hadron_threshold),
-        fUseCheat(use_cheat) {}
-
-        std::pair<ReconstructionLabel, ReconstructionLabel> getReconstructionLabelAndPropagation(
-            const std::vector<simb::MCParticle>& particles,
-            const simb::MCParticle& particle_to_label,
-            ReconstructionLabel label_from_parent,
-            const std::map<int, size_t>& track_id_to_index
-        ) const {
-            if (label_from_parent != ReconstructionLabel::Empty) {
-                return {label_from_parent, label_from_parent};
-            }
-
-            ReconstructionLabel determined_label = ReconstructionLabel::Invisible;
-            ReconstructionLabel propagated_label_for_children = ReconstructionLabel::Empty;
-
-            int pdg_code = particle_to_label.PdgCode();
-            double momentum = particle_to_label.P();
-            const std::string& start_process = particle_to_label.Process();
-            const std::string& end_process = particle_to_label.EndProcess();
-            int parent_track_id = particle_to_label.Mother();
-            int parent_pdg_code = 0;
-
-            if (parent_track_id != 0) {
-                auto it = track_id_to_index.find(parent_track_id);
-                if (it != track_id_to_index.end()) {
-                    if (it->second < particles.size()) {
-                        parent_pdg_code = particles[it->second].PdgCode();
-                    }
-                }
-            }
-
-            if (std::abs(pdg_code) == 211 || std::abs(pdg_code) == 13) {
-                determined_label = ReconstructionLabel::MIP;
-            } else if (std::abs(pdg_code) == 321 || (std::abs(pdg_code) == 2212 && momentum >= fHadronThreshold)) {
-                determined_label = ReconstructionLabel::HIP;
-            } else if (std::abs(pdg_code) == 11) {
-                if (start_process == "primary") {
-                    determined_label = ReconstructionLabel::Shower;
-                    propagated_label_for_children = ReconstructionLabel::Shower;
-                } else if (std::abs(parent_pdg_code) == 13 &&
-                        (start_process == "muMinusCaptureAtRest" ||
-                            start_process == "muPlusCaptureAtRest" ||
-                            start_process == "Decay")) {
-                    determined_label = ReconstructionLabel::Michel;
-                    propagated_label_for_children = ReconstructionLabel::Michel;
-                } else if (start_process == "conv" || end_process == "conv" ||
-                        start_process == "compt" || end_process == "compt") {
-                    if (momentum >= fGammaThreshold) {
-                        determined_label = ReconstructionLabel::Shower;
-                        propagated_label_for_children = ReconstructionLabel::Shower;
-                    } else {
-                        determined_label = ReconstructionLabel::Diffuse;
-                    }
-                } else {
-                    determined_label = ReconstructionLabel::Diffuse;
-                }
-            } else if (pdg_code == 22) {
-                if (start_process == "conv" || end_process == "conv" ||
-                    start_process == "compt" || end_process == "compt" ||
-                    start_process == "primary") {
-                    if (momentum >= fGammaThreshold) {
-                        determined_label = ReconstructionLabel::Shower;
-                        propagated_label_for_children = ReconstructionLabel::Shower;
-                    } else {
-                        determined_label = ReconstructionLabel::Diffuse;
-                    }
-                } else {
-                    determined_label = ReconstructionLabel::Diffuse;
-                }
-            } else if (std::abs(pdg_code) == 2212 && momentum < fHadronThreshold) {
-                determined_label = ReconstructionLabel::Diffuse;
-            }
-            return {determined_label, propagated_label_for_children};
-        }
-
-        void assignLabelToProgenyRecursively(
-            size_t particle_index,
-            const std::vector<simb::MCParticle>& particles,
-            ReconstructionLabel label_from_parent,
-            std::vector<ReconstructionLabel>& particle_labels,
-            const std::map<int, size_t>& track_id_to_index
-        ) const {
-            if (particle_index >= particles.size() || particle_index >= particle_labels.size()) {
-                return;
-            }
-            const auto& current_particle = particles[particle_index];
-            auto [label_for_current, label_for_children] = getReconstructionLabelAndPropagation(
-                particles, current_particle, label_from_parent, track_id_to_index
-            );
-            particle_labels[particle_index] = label_for_current;
-
-            for (int i = 0; i < current_particle.NumberDaughters(); ++i) {
-                int daughter_track_id = current_particle.Daughter(i);
-                auto it = track_id_to_index.find(daughter_track_id);
-                if (it != track_id_to_index.end()) {
-                    if (it->second < particles.size()) {
-                        assignLabelToProgenyRecursively(it->second, particles, label_for_children, particle_labels, track_id_to_index);
-                    }
-                }
-            }
-        }
-
-        std::vector<ReconstructionLabel> classifyParticlesFromReco(const art::Event& event) const {
-            return {};
-        }
-
-        std::vector<ReconstructionLabel> classifyParticles(const art::Event& event) const {
-            if (fUseCheat) {
-                const auto particle_collection_handle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
-                const auto& particles = *particle_collection_handle;
-
-                std::map<int, size_t> track_id_to_vector_index;
-                for (size_t i = 0; i < particles.size(); ++i) {
-                    track_id_to_vector_index[particles[i].TrackId()] = i;
-                }
-
-                std::vector<ReconstructionLabel> classified_particle_labels(particles.size(), ReconstructionLabel::Empty);
-
-                for (size_t i = 0; i < particles.size(); ++i) {
-                    if (particles[i].Mother() == 0) {
-                        assignLabelToProgenyRecursively(i, particles, ReconstructionLabel::Empty, classified_particle_labels, track_id_to_vector_index);
-                    }
-                }
-                return classified_particle_labels;
-            } else {
-                return classifyParticlesFromReco(event);
-            }
-        }
-
-        art::InputTag fMCPproducer;
-        double fGammaThreshold;
-        double fHadronThreshold;
-        bool fUseCheat;
-    };
-
-
     class ImageAnalysis : public AnalysisToolBase {
     public:
         explicit ImageAnalysis(fhicl::ParameterSet const& p);
@@ -458,7 +139,7 @@ namespace analysis
 
         _image_width = p.get<int>("ImageWidth", 512);
         _image_height = p.get<int>("ImageHeight", 512);
-        _adc_image_threshold = p.get<float>("ADCthreshold", 4.0);
+        _adc_image_threshold = p.get<float>("ADCthreshold", 1.0);
 
         _geo = art::ServiceHandle<geo::Geometry>()->provider();
         _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
@@ -503,6 +184,7 @@ namespace analysis
     }
 
     void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) {
+        std::cout << "image slice" << std::endl;
         std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectSliceHits(e, slice_pfp_v);
         auto [centroid_wire_u, centroid_drift_u] = this->calculateChargeCentroid(e, common::TPC_VIEW_U, neutrino_hits);
         auto [centroid_wire_v, centroid_drift_v] = this->calculateChargeCentroid(e, common::TPC_VIEW_V, neutrino_hits);
@@ -538,6 +220,8 @@ namespace analysis
         _true_image_w = out_true_images[2].data();
 
         if (_tree) _tree->Fill();
+
+        std::cout << "finished image slice" << std::endl;
     }
 
     std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
@@ -616,6 +300,9 @@ namespace analysis
             }
         }
 
+        // Calibration factors for U, V, W planes
+        std::vector<double> calibration_factors = {232.0, 249.0, 243.7};
+
         for (size_t wire_idx = 0; wire_idx < wireHandle->size(); ++wire_idx) {
             const auto& wire = wireHandle->at(wire_idx);
             auto ch_id = wire.Channel();
@@ -633,7 +320,6 @@ namespace analysis
 
             auto hits_for_wire = wire_hit_assoc.at(wire_idx);
             std::vector<art::Ptr<recob::Hit>> sorted_hits = hits_for_wire;
-
 
             std::sort(sorted_hits.begin(), sorted_hits.end(), [](const art::Ptr<recob::Hit>& a, const art::Ptr<recob::Hit>& b) {
                 return a->StartTick() < b->StartTick();
@@ -671,7 +357,6 @@ namespace analysis
                             std::vector<anab::BackTrackerHitMatchingData const*> bkth_data_ass_to_hit;
                             mcp_bkth_assoc.get(matched_hit.key(), mcp_particles_ass_to_hit, bkth_data_ass_to_hit);
 
-
                             if (!bkth_data_ass_to_hit.empty()) {
                                 for (size_t i_bkth = 0; i_bkth < bkth_data_ass_to_hit.size(); ++i_bkth) {
                                     if (bkth_data_ass_to_hit[i_bkth] && bkth_data_ass_to_hit[i_bkth]->isMaxIDE) {
@@ -700,7 +385,10 @@ namespace analysis
                     }
 
                     if (adcs[idx_in_adc_range] > _adc_image_threshold) {
-                        out_raw_images[view_idx].set(row, col, adcs[idx_in_adc_range]);
+                        float adc = adcs[idx_in_adc_range];
+                        double energy = static_cast<double>(adc) * calibration_factors[view_idx];
+                        double log_energy = std::log10(energy);
+                        out_raw_images[view_idx].set(row, col, static_cast<float>(log_energy));
                         out_reco_images[view_idx].set(row, col, static_cast<int>(current_reco_label_for_pixel), false);
                         out_true_images[view_idx].set(row, col, static_cast<int>(current_true_label_for_pixel), false);
                     }

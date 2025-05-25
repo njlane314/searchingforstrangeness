@@ -1,7 +1,8 @@
 #include "reco_uboone_data_mcc9_8.fcl"
 #include "mcreco.fcl"
 #include "proximityclustering.fcl"
-#include "eventweight_microboone_genie_knobs.fcl"
+#include "particleinventoryservice.fcl"
+#include "blipreco_configs.fcl"
 
 microboone_calo_mcc9_data: {
     CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
@@ -9,6 +10,91 @@ microboone_calo_mcc9_data: {
     CaloDoLifeTimeCorrection: false
     CaloLifeTimeForm: 0
     CaloUseModBox: true
+}
+
+FidVol: {
+    Xstart: 10.
+    Xend:   10.
+    Ystart: 15.
+    Yend:   15.
+    Zstart: 10.
+    Zend:   50.
+}
+
+CalorimetryAnalysis: {
+    tool_type: "CalorimetryAnalysis"
+    TRKproducer: "pandora"
+    CALOproducer: "pandoracali"
+    PIDproducer: "pandoracalipid"
+
+    CLSproducer: "pandora"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+    MCRproducer: "mcreco"
+    MCPproducer: "largeant"
+    MCTproducer: "generator"
+    GetCaloID: false
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
+}
+
+ShowerAnalysis: {
+    tool_type: "ShowerAnalysis"
+    TRKproducer: "shrreco3dKalmanShower"     # "pandoraKalmanShower"     #remove or leave empty of there are no track fits of the shower
+    CALproducer: "shrreco3dKalmanShowercali" # "pandoraKalmanShowercalo" #remove or leave empty of there are no track fits of the shower
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    RecalibrateHits: true
+}
+
+NeutrinoEnergyAnalysis: {
+    tool_type: "NeutrinoEnergyAnalysis"
+    TRKproducer: "pandora"
+    CALOproducer: "pandoracali"
+    PDRproducer: "pandora"
+    TrkShrScore: 0.5
+    ShrEnergyBias: 0.8
+    ADCtoMeVMIP: 0.002876 # MCC9.2 collection plane values
+}
+
+DefaultAnalysis: {
+    tool_type: "DefaultAnalysis"
+    CRTVetoproducer: ""
+    CLSproducer: "pandora"
+    MCTproducer: "generator"
+    MCFluxproducer: "generator"
+    Hproducer: "gaushit"
+    BacktrackTag: "gaushitTruthMatch"
+    MCRproducer: "mcreco"
+    SLCproducer: "pandora"
+    MCPproducer: "largeant"
+    PFPproducer: "pandora"
+
+    ProtonThreshold: 0.04 # GeV
+    fidvolXstart: @local::FidVol.Xstart
+    fidvolXend:   @local::FidVol.Xend
+    fidvolYstart: @local::FidVol.Ystart
+    fidvolYend:   @local::FidVol.Yend
+    fidvolZstart: @local::FidVol.Zstart
+    fidvolZend:   @local::FidVol.Zend
+    makeNuMINtuple: false
+    ignoreMCFlux: false
+    NuMIOpFiltProcName:    "DataStage1Optical"
+    NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
+}
+
+TrackAnalysis: {
+    tool_type: "TrackAnalysis"
+    TRKproducer: "pandora"
+    CALOproducer: "pandoracali"     # "pandoraKalmanShower"     #remove or leave empty of there are no track fits of the shower
+    PIDproducer: "pandorapid" # "pandoraKalmanShowercalo" #remove or leave empty of there are no track fits of the shower
+    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    RecalibrateHits: true
+}
+
+BlipAnalysis: {
+    tool_type: "BlipAnalysis"
+    BlipAlg: @local::microboone_blipalg
 }
 
 EventSelectionFilter: {
@@ -55,17 +141,6 @@ NuGraphAnalysis: {
     NG2producer: "nugraph2"     
 }
 
-ReconstructionAnalysis: {
-    tool_type: "ReconstructionAnalysis"
-    TRKproducer: "pandora"
-    PFPproducer: "pandora"
-    CALOproducer: "pandoracali"    
-    PIDproducer: "pandorapid" 
-    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    RecalibrateHits: true
-}
-
 TruthAnalysis: {
     tool_type: TruthAnalysis
     MCTproducer: "generator"    
@@ -92,8 +167,13 @@ NeutrinoSelectionFilter: {
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         truth: @local::TruthAnalysis
-        reco: @local::ReconstructionAnalysis
+        default: @local::DefaultAnalysis 
         image: @local::ImageAnalysis
         weight: @local::EventWeightAnalysis
+        blips: @local::BlipAnalysis
+        tracks: @local::TrackAnalysis
+        showers: @local::ShowerAnalysis
+        calo: @local::CalorimetryAnalysis
+        energy: @local::NeutrinoEnergyAnalysis
     }
 }

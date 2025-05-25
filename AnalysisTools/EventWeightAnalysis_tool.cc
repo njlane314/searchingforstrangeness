@@ -134,6 +134,7 @@ namespace analysis
     void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
 
     void EventWeightAnalysis::analyseEvent(art::Event const& evt, bool is_data) {
+        std::cout << "EventWeight analysing event" << std::endl;
         _run = evt.run();
         _subRun = evt.subRun();
         _evt = evt.event();
@@ -172,11 +173,14 @@ namespace analysis
         int GenieCounter = 0;
         int PPFXCounter = 0;
 
+        std::cout << "starting event weight loop" << std::endl;
         for(auto& thisTag : vecTag){
+            std::cout << "looping" << std::endl;
             art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
             evt.getByLabel(thisTag, eventweights_handle);
 
             if(eventweights_handle.isValid()) {
+                std::cout << "handle is valid" << std::endl;
                 std::vector<art::Ptr<evwgh::MCEventWeight>> eventweights;
                 art::fill_ptr_vector(eventweights, eventweights_handle);
 
@@ -229,7 +233,12 @@ namespace analysis
                 }
 
                 std::map<std::string, std::vector<double>> evtwgt_map = eventweights.at(0)->fWeight;
-          
+
+                std::cout << "--- Weights from art::Event label: " << thisTag.label() << " ---" << std::endl;
+                for (const auto& pair : evtwgt_map) {
+                    std::cout << "    Found weight name: " << pair.first << std::endl;
+                }
+
                 if (evtwgt_map.count("RPA_CCQE_UBGenie")) { 
                     _knobRPAup = evtwgt_map.at("RPA_CCQE_UBGenie")[0]; 
                     _knobRPAdn = evtwgt_map.at("RPA_CCQE_UBGenie")[1]; 

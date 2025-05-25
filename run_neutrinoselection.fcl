@@ -9,6 +9,7 @@ services: {
     RandomNumberGenerator: {}
     Geometry: @local::microboone_geo
     DetectorPropertiesService: @local::microboone_detproperties
+    ParticleInventoryService: @local::standard_particleinventoryservice
     LArProperties: @local::microboone_properties
     DetectorClocksService: @local::microboone_detectorclocks
     @table::microboone_services_reco

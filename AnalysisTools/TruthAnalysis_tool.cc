@@ -181,6 +181,7 @@ namespace analysis
     }
 
     void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
+        std::cout << "TruthAnalysis analysing event" << std::endl;
         if (is_data) {
             _nu_pdg = -1; _ccnc = -1; _mode = -1; _interaction = -1;
             _nu_e = std::numeric_limits<float>::lowest(); _nu_theta = std::numeric_limits<float>::lowest(); _nu_pt = std::numeric_limits<float>::lowest();
