@@ -6,7 +6,7 @@
     <!ENTITY run_type "physics">
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_eventselectionfilter">
-    <!ENTITY input_def_run1 "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2">
+    <!ENTITY input_def_run1 "nl_numi_fhc_beam_run1_reco2_1000">
     <!ENTITY input_def_run2 "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
     <!ENTITY fcl_eventweight "run_eventweight_microboone.fcl">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
