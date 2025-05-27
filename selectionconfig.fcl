@@ -40,8 +40,8 @@ CalorimetryAnalysis: {
 
 ShowerAnalysis: {
     tool_type: "ShowerAnalysis"
-    TRKproducer: "pandoraKalmanShower"     
-    CALproducer: "pandoraKalmanShowercalo" 
+    TRKproducer: "pandora"     
+    CALproducer: "pandoracali" 
     ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
     RecalibrateHits: true
 }

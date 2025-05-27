@@ -236,20 +236,39 @@ private:
                         int true_label = static_cast<int>(TruthPrimaryLabel::Cosmic);
 
                         if (hasMCInfo) {
-                            while (current_hit_idx < sorted_hits.size() && sorted_hits[current_hit_idx]->EndTick() <= tick) {
-                                ++current_hit_idx;
-                            }
-                            if (current_hit_idx < sorted_hits.size() &&
-                                sorted_hits[current_hit_idx]->StartTick() <= tick &&
-                                tick < sorted_hits[current_hit_idx]->EndTick()) {
-                                const auto& hit = sorted_hits[current_hit_idx];
-                                int temp_reco = this->getRecoLabel(e, hit);
-                                int temp_true = this->getTrueLabel(e, hit);
-                                if (temp_reco != static_cast<int>(ReconstructionLabel::Empty)) {
-                                    reco_label = temp_reco;
+                            auto it = std::upper_bound(
+                                sorted_hits.begin() + current_hit_idx, sorted_hits.end(), tick,
+                                [](int t, const art::Ptr<recob::Hit>& hit) { return t < hit->StartTick(); }
+                            );
+
+                            current_hit_idx = std::distance(sorted_hits.begin(), it);
+                            if (current_hit_idx > 0) {
+                                size_t prev_idx = current_hit_idx - 1;
+                                const auto& prev_hit = sorted_hits[prev_idx];
+                                if (prev_hit->StartTick() <= tick && tick < prev_hit->EndTick()) {
+                                    int temp_reco = this->getRecoLabel(e, prev_hit);
+                                    int temp_true = this->getTrueLabel(e, prev_hit);
+                                    if (temp_reco != static_cast<int>(ReconstructionLabel::Empty)) {
+                                        reco_label = temp_reco;
+                                    }
+                                    if (temp_true != static_cast<int>(TruthPrimaryLabel::Empty)) {
+                                        true_label = temp_true;
+                                    }
+                                    return; 
                                 }
-                                if (temp_true != static_cast<int>(TruthPrimaryLabel::Empty)) {
-                                    true_label = temp_true;
+                            }
+
+                            if (current_hit_idx < sorted_hits.size()) {
+                                const auto& hit = sorted_hits[current_hit_idx];
+                                if (hit->StartTick() <= tick && tick < hit->EndTick()) {
+                                    int temp_reco = this->getRecoLabel(e, hit);
+                                    int temp_true = this->getTrueLabel(e, hit);
+                                    if (temp_reco != static_cast<int>(ReconstructionLabel::Empty)) {
+                                        reco_label = temp_reco;
+                                    }
+                                    if (temp_true != static_cast<int>(TruthPrimaryLabel::Empty)) {
+                                        true_label = temp_true;
+                                    }
                                 }
                             }
                         }
@@ -285,6 +304,7 @@ private:
         const std::unordered_map<int, size_t>& track_id_to_index,
         TruthPrimaryLabel label_to_assign
     ) const {
+        std::cout << "truth loop" << std::endl;
         if (particle_index >= particles.size() || particle_index >= particle_labels.size()) return;
         particle_labels[particle_index] = label_to_assign;
         const auto& particle = particles[particle_index];
@@ -383,6 +403,7 @@ private:
         std::vector<ReconstructionLabel>& labels,
         const std::map<int, size_t>& track_id_to_index
     ) const {
+        std::cout << "reco loop" << std::endl;
         if (particle_index >= particles.size() || particle_index >= labels.size()) return;
         const auto& particle = particles[particle_index];
         auto [label, child_label] = this->getReconstructionLabelAndPropagation(particles, particle, parent_label, track_id_to_index);
