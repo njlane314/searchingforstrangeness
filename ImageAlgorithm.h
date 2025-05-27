@@ -452,7 +452,7 @@ private:
                     int track_id = mcParts[i]->TrackId();
                     auto it_trackid = trackid_to_index.find(track_id);
                     if (it_trackid != trackid_to_index.end() && it_trackid->second < classified_reco_labels.size()) {
-                        return static_cast<int>(classified_true_labels[it_trackid->second]);
+                        return static_cast<int>(classified_reco_labels[it_trackid->second]);
                     }
                     break; 
                 }

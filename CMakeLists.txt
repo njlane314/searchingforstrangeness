@@ -60,8 +60,8 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            ${ROOT_BASIC_LIB_LIST}
                            ${ROOT_EG}
                            ${ROOT_MINUIT}
-            		           ${PANDORASDK}	
-			                     larpandora_LArPandoraInterface
+            		   ${PANDORASDK}	
+			   larpandora_LArPandoraInterface
                            ${TORCH_LIBRARIES}
                            ${LIBTORCH_LIBRARIES}
                            ${PYTHON_LIBRARY}

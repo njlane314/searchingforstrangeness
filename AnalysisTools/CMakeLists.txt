@@ -43,11 +43,11 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ubreco_SelectionTool_OpT0FinderBase
                          ubreco_SelectionTool_OpT0FinderAlgorithms
                          ubevt_Utilities
-			                   larevt_CalibrationDBI_IOVData
+			 larevt_CalibrationDBI_IOVData
                          lardataobj_RawData
                          ubobj_Trigger
                          ubreco_BlipRecoAlg
-           LIB_LIBRARIES ubreco_BlipRecoAlg
+                         ${LIBTORCH_LIBRARIES}
         )
 
 install_headers()
