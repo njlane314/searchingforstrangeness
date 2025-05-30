@@ -109,12 +109,12 @@ namespace analysis
         _createSplineBranch = p.get<bool>("createSplineBranch");
         _createTuneBranch = p.get<bool>("createTuneBranch");
         _createSplineTimesTuneBranch = p.get<bool>("createSplineTimesTuneBranch");
-        _createPPFXBranch = p.get<bool>("createPPFXBranch",false);
-        _SaveAllFlux = p.get<bool>("SaveAllFlux",false);
-        _createGenieUpDnVecs = p.get<bool>("createGenieUpDnVecs", false);
-        _GenieAllUniverses = p.get<int>("GenieAllUniverses",500);
-        _makeNuMItuple = p.get<bool>("makeNuMINtuple", false);
-        _useReweightedFlux = p.get<bool>("useReweightedFlux", false);
+        _createPPFXBranch = p.get<bool>("createPPFXBranch", true);
+        _SaveAllFlux = p.get<bool>("SaveAllFlux", true);
+        _createGenieUpDnVecs = p.get<bool>("createGenieUpDnVecs", true);
+        _GenieAllUniverses = p.get<int>("GenieAllUniverses", 500);
+        _makeNuMItuple = p.get<bool>("makeNuMINtuple", true);
+        _useReweightedFlux = p.get<bool>("useReweightedFlux", true);
 
         _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24");
         _event_weight_process_name_01 = p.get<std::string>("eventWeightProcessName01", "EventWeightSep24ExtraGENIE1");
@@ -134,7 +134,6 @@ namespace analysis
     void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
 
     void EventWeightAnalysis::analyseEvent(art::Event const& evt, bool is_data) {
-        std::cout << "EventWeight analysing event" << std::endl;
         _run = evt.run();
         _subRun = evt.subRun();
         _evt = evt.event();
@@ -173,14 +172,11 @@ namespace analysis
         int GenieCounter = 0;
         int PPFXCounter = 0;
 
-        std::cout << "starting event weight loop" << std::endl;
         for(auto& thisTag : vecTag){
-            std::cout << "looping" << std::endl;
             art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
             evt.getByLabel(thisTag, eventweights_handle);
 
             if(eventweights_handle.isValid()) {
-                std::cout << "handle is valid" << std::endl;
                 std::vector<art::Ptr<evwgh::MCEventWeight>> eventweights;
                 art::fill_ptr_vector(eventweights, eventweights_handle);
 

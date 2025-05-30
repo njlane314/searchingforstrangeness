@@ -71,9 +71,7 @@ namespace analysis
         fNG2producer = p.get<art::InputTag>("NG2producer");
     }
 
-    void NuGraphAnalysis::analyseEvent(art::Event const &e, bool fData) {
-        std::cout << "Nugraph analyssing event" << std::endl;
-    }
+    void NuGraphAnalysis::analyseEvent(art::Event const &e, bool fData) {}
 
     void NuGraphAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
         common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));

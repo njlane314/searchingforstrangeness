@@ -156,6 +156,17 @@ EventWeightAnalysis: {
     createSplineBranch: true
     createTuneBranch: true
     createSplineTimesTuneBranch: true
+    createPPFXBranch: true
+    makeNuMINtuple: true
+    GenieAllUniverses: 600
+
+    useReweightedFlux: true
+    eventWeightProcessName00: "EventWeightSep24"
+    eventWeightProcessName01: "EventWeightSep24ExtraGENIE1"
+    eventWeightProcessName02: "EventWeightSep24ExtraGENIE2"
+    eventWeightProcessName03: "EventWeightSep24ExtraGENIE3"
+    eventWeightProcessName04: "EventWeightSep24ExtraGENIE4"
+    eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
 NeutrinoSelection: {

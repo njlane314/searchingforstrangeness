@@ -304,7 +304,6 @@ private:
         const std::unordered_map<int, size_t>& track_id_to_index,
         TruthPrimaryLabel label_to_assign
     ) const {
-        std::cout << "truth loop" << std::endl;
         if (particle_index >= particles.size() || particle_index >= particle_labels.size()) return;
         particle_labels[particle_index] = label_to_assign;
         const auto& particle = particles[particle_index];
@@ -403,7 +402,6 @@ private:
         std::vector<ReconstructionLabel>& labels,
         const std::map<int, size_t>& track_id_to_index
     ) const {
-        std::cout << "reco loop" << std::endl;
         if (particle_index >= particles.size() || particle_index >= labels.size()) return;
         const auto& particle = particles[particle_index];
         auto [label, child_label] = this->getReconstructionLabelAndPropagation(particles, particle, parent_label, track_id_to_index);

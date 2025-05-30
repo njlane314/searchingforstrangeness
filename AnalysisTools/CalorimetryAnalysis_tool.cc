@@ -347,7 +347,6 @@ namespace analysis
 
     void CalorimetryAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
     {
-        std::cout << "Calo analysing slice" << std::endl;
         if (fT0producer != "")
             return;
 
@@ -488,8 +487,6 @@ namespace analysis
                 btparts_v,
                 assocMCPart);
         }
-
-        std::cout << "finished calo slice" << std::endl;
     }
 
     void CalorimetryAnalysis::fillDefault()

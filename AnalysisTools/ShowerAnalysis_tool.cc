@@ -188,7 +188,6 @@ void ShowerAnalysis::analyseEvent(art::Event const &e, bool fData)
 
 void ShowerAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
 {
-    std::cout << "shower slice" << std::endl;
     art::InputTag clusproducer("pandora");
 
     common::ProxyCaloColl_t const *tkcalo_proxy = NULL;
@@ -466,8 +465,6 @@ void ShowerAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
             }
         }
     }
-
-    std::cout << "finished shower slice" << std::endl;
 }
 
 void ShowerAnalysis::setBranches(TTree *_tree)

@@ -239,7 +239,6 @@ namespace analysis
 
     void TrackAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
     {
-        std::cout << "track slice" << std::endl;
         common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer,
                                                                                                             proxy::withAssociated<anab::Calorimetry>(fCALOproducer));
 
@@ -571,8 +570,6 @@ namespace analysis
                 fillDefault();
             }
         }
-
-        std::cout << "finish track slice" << std::endl;
     }
 
     void TrackAnalysis::fillDefault()

@@ -181,7 +181,6 @@ namespace analysis
     }
 
     void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
-        std::cout << "TruthAnalysis analysing event" << std::endl;
         if (is_data) {
             _nu_pdg = -1; _ccnc = -1; _mode = -1; _interaction = -1;
             _nu_e = std::numeric_limits<float>::lowest(); _nu_theta = std::numeric_limits<float>::lowest(); _nu_pt = std::numeric_limits<float>::lowest();
@@ -221,8 +220,10 @@ namespace analysis
             _nu_theta = neutrino_particle.Momentum().Theta();
             _nu_pt = neutrino_particle.Pt();
             _ccnc = neutrino.CCNC();
+            std::cout << _mode << std::endl;
             _mode = neutrino.Mode();
             _interaction = neutrino.InteractionType();
+            std::cout << _interaction << std::endl;
             _target_nucleus = neutrino.Target();
             _hit_nucleon = neutrino.HitNuc();
             _W = neutrino.W();
