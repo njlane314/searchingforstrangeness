@@ -9,6 +9,15 @@
     <!ENTITY input_def_numi_fhc_run1_beam "nl_numi_fhc_beam_run1_reco2_1000">
     <!ENTITY input_def_numi_fhc_run1_strangeness "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
+    <!ENTITY input_def_detvar_cv_strange "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_LY_Rayleigh_strange "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_LY_Down_strange "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2_1000">
+    <!ENTITY input_def_detvar_wiremodX_sce_strange "detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_wiremodYZ_sce_strange "detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_WireMod_YZ_strange "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_wiremod_thetaYZ_strange "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_sce_strange "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2_1000">
+    <!ENTITY input_def_detvar_recomb2_strange "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2_1000">
 ]>
 
 <job>
@@ -42,7 +51,7 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam/reweights</workdir>
         <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>100</numjobs>
+        <numjobs>1000</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
@@ -57,7 +66,7 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>100</numjobs>
+        <numjobs>1000</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
@@ -77,7 +86,7 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness/reweights</workdir>
         <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>100</numjobs>
+        <numjobs>1000</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
@@ -92,7 +101,144 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>100</numjobs>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <!-- Selection stages for detector variations -->
+
+    <stage name="selection_detvar_cv_strangeness">
+        <inputdef>&input_def_detvar_cv_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_cv_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_LY_Rayleigh_strangeness">
+        <inputdef>&input_def_detvar_LY_Rayleigh_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_LY_Down_strangeness">
+        <inputdef>&input_def_detvar_LY_Down_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Down_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Down_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_LY_Down_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodX_sce_strangeness">
+        <inputdef>&input_def_detvar_wiremodX_sce_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodYZ_sce_strangeness">
+        <inputdef>&input_def_detvar_wiremodYZ_sce_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_WireMod_YZ_strangeness">
+        <inputdef>&input_def_detvar_WireMod_YZ_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremod_thetaYZ_strangeness">
+        <inputdef>&input_def_detvar_wiremod_thetaYZ_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_sce_strangeness">
+        <inputdef>&input_def_detvar_sce_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_sce_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_recomb2_strangeness">
+        <inputdef>&input_def_detvar_recomb2_strange;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_recomb2_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>1000</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>

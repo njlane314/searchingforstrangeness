@@ -452,3 +452,7 @@ nl_numi_fhc_ext_run1_reco2_6000
    Event count:    72822
    [SL7][nlane@uboonegpvm03 searchingforstrangeness]$ 
    ```
+
+
+
+samweb list-definitions | grep -i "numi" | grep -i "run1" | grep -i "reco2" | grep -i "fhc"

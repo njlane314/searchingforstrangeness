@@ -54,7 +54,6 @@
 #include "lardata/Utilities/FindManyInChainP.h"
 
 #include "AnalysisToolBase.h"
-#include "../CommonDefs/Pandora.h"
 #include "../CommonDefs/Types.h"
 #include "../ImageAlgorithm.h"
 
@@ -97,15 +96,13 @@ namespace analysis
         std::shared_ptr<torch::jit::script::Module> fTorchModelV;
         std::shared_ptr<torch::jit::script::Module> fTorchModelW;
 
-        std::vector<float> _raw_image_u_data;
-        std::vector<float> _raw_image_v_data;
-        std::vector<float> _raw_image_w_data;
-        std::vector<int> _reco_image_u_data;
-        std::vector<int> _reco_image_v_data;
-        std::vector<int> _reco_image_w_data;
-        std::vector<int> _true_image_u_data;
-        std::vector<int> _true_image_v_data;
-        std::vector<int> _true_image_w_data;
+        std::vector<float> _detector_plane_image_u;
+        std::vector<float> _detector_plane_image_v;
+        std::vector<float> _detector_plane_image_w;
+
+        std::vector<int> _semantic_plane_image_u;
+        std::vector<int> _semantic_plane_image_v;
+        std::vector<int> _semantic_plane_image_w;
 
         float _inference_score_u;
         float _inference_score_v;
@@ -213,50 +210,44 @@ namespace analysis
     }
 
     void ImageAnalysis::setBranches(TTree* _tree) {
-        _tree->Branch("raw_image_u", &_raw_image_u_data);
-        _tree->Branch("raw_image_v", &_raw_image_v_data);
-        _tree->Branch("raw_image_w", &_raw_image_w_data);
-        _tree->Branch("reco_image_u", &_reco_image_u_data);
-        _tree->Branch("reco_image_v", &_reco_image_v_data);
-        _tree->Branch("reco_image_w", &_reco_image_w_data);
-        _tree->Branch("true_image_u", &_true_image_u_data);
-        _tree->Branch("true_image_v", &_true_image_v_data);
-        _tree->Branch("true_image_w", &_true_image_w_data);
+        _tree->Branch("detector_image_u", &_detector_plane_image_u);
+        _tree->Branch("detector_image_v", &_detector_plane_image_v);
+        _tree->Branch("detector_image_w", &_detector_plane_image_w);
+        _tree->Branch("semantic_image_u", &_semantic_plane_image_u);
+        _tree->Branch("semantic_image_v", &_semantic_plane_image_v);
+        _tree->Branch("semantic_image_w", &_semantic_plane_image_w);
 
-        if (fEnableInference) {
+        /*if (fEnableInference) {
             if (fProcessUView) _tree->Branch("inference_score_u", &_inference_score_u, "inference_score_u/F");
             if (fProcessVView) _tree->Branch("inference_score_v", &_inference_score_v, "inference_score_v/F");
             if (fProcessWView) _tree->Branch("inference_score_w", &_inference_score_w, "inference_score_w/F");
-        }
+        }*/
     }
 
     void ImageAnalysis::resetTTree(TTree* ) {
-        _raw_image_u_data.clear();
-        _raw_image_v_data.clear();
-        _raw_image_w_data.clear();
-        _reco_image_u_data.clear();
-        _reco_image_v_data.clear();
-        _reco_image_w_data.clear();
-        _true_image_u_data.clear();
-        _true_image_v_data.clear();
-        _true_image_w_data.clear();
+        _detector_plane_image_u.clear();
+        _detector_plane_image_v.clear();
+        _detector_plane_image_w.clear();
+        _semantic_plane_image_u.clear();
+        _semantic_plane_image_v.clear();
+        _semantic_plane_image_w.clear();
 
-        if (fEnableInference) {
+        /*if (fEnableInference) {
             _inference_score_u = std::numeric_limits<float>::signaling_NaN();
             _inference_score_v = std::numeric_limits<float>::signaling_NaN();
             _inference_score_w = std::numeric_limits<float>::signaling_NaN();
-        }
+        }*/
     }
 
     void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool , bool selected) {
+        mf::LogWarning("ImageAnalysis") << "Processing slice with " << slice_pfp_v.size() << " PFPs.";
         this->resetTTree(nullptr);
 
         if (!selected && !slice_pfp_v.empty()) {
-            mf::LogDebug("ImageAnalysis") << "Slice not selected and not empty, skipping.";
+            mf::LogWarning("ImageAnalysis") << "Slice not selected and not empty, skipping.";
         }
 
-        std::vector<art::Ptr<recob::Hit>> neutrino_hits;
-
+        std::vector<art::Ptr<recob::Hit>> slice_hits;
         if (fCLSproducer.label().empty()) {
             mf::LogError("ImageAnalysis") << "CLSproducer InputTag is not configured. Cannot extract hits for slice.";
             return;
@@ -264,23 +255,23 @@ namespace analysis
 
         try {
             auto clus_handle = e.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
-            art::FindManyP<recob::Hit> fmHits(clus_handle, e, fCLSproducer.label());
+            art::FindManyP<recob::Hit> cluster_hits(clus_handle, e, fCLSproducer.label());
 
             for (const auto& pfp_proxy : slice_pfp_v) {
                 if (pfp_proxy->IsPrimary()) continue;
 
                 for (const art::Ptr<recob::Cluster>& clus_ptr : pfp_proxy.get<recob::Cluster>()) {
-                    if (clus_ptr.key() < fmHits.size()) {
-                        const auto& clus_hit_v = fmHits.at(clus_ptr.key());
-                        neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
+                    if (clus_ptr.key() < cluster_hits.size()) {
+                        const auto& clus_hit_v = cluster_hits.at(clus_ptr.key());
+                        slice_hits.insert(slice_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
                     } else {
                         mf::LogWarning("ImageAnalysis") << "Cluster key " << clus_ptr.key()
-                                                        << " out of bounds for FindManyP<recob::Hit> (size " << fmHits.size() << ").";
+                                                        << " out of bounds for FindManyP<recob::Hit> (size " << cluster_hits.size() << ").";
                     }
                 }
             }
-            std::sort(neutrino_hits.begin(), neutrino_hits.end());
-            neutrino_hits.erase(std::unique(neutrino_hits.begin(), neutrino_hits.end()), neutrino_hits.end());
+            std::sort(slice_hits.begin(), slice_hits.end());
+            slice_hits.erase(std::unique(slice_hits.begin(), slice_hits.end()), slice_hits.end());
 
         } catch (const art::Exception& ex) {
             if (ex.categoryCode() == art::errors::ProductNotFound) {
@@ -292,95 +283,58 @@ namespace analysis
             return;
         }
 
-        if (neutrino_hits.empty()) {
+        if (slice_hits.empty()) {
             if (!slice_pfp_v.empty()) {
-                mf::LogDebug("ImageAnalysis") << "No unique neutrino_hits extracted for the slice, though PFP list was not empty. Skipping image generation.";
+                mf::LogWarning("ImageAnalysis") << "No unique slice_hits extracted for the slice, though PFP list was not empty. Skipping image generation.";
             } else {
-                mf::LogDebug("ImageAnalysis") << "Slice is empty (no PFPs, no hits). Skipping.";
+                mf::LogWarning("ImageAnalysis") << "Slice is empty (no PFPs, no hits). Skipping.";
             }
             return;
         }
 
-        std::vector<Image<float>> out_raw_images;
-        std::vector<Image<int>> out_reco_images;
-        std::vector<Image<int>> out_true_images;
-        image_algo_->generateSliceImages(e, neutrino_hits, out_raw_images, out_reco_images, out_true_images);
-
-        if (out_raw_images.size() >= 3) {
-            _raw_image_u_data = out_raw_images[geo::kU].data();
-            _raw_image_v_data = out_raw_images[geo::kV].data();
-            _raw_image_w_data = out_raw_images[geo::kW].data();
-        } else {
-            mf::LogWarning("ImageAnalysis") << "generateSliceImages produced " << out_raw_images.size() << " raw images, expected at least 3.";
+        std::vector<Image<float>> detector_plane_tensor;
+        std::vector<Image<int>> semantic_plane_tensor;
+        try {
+            image_algo_->generateDetectorPlaneImages(e, slice_hits, detector_plane_tensor, semantic_plane_tensor);
+        } catch (const std::exception& ex) {
+            mf::LogError("ImageAnalysis") << "Error generating detector plane images: " << ex.what();
+            return;
         }
 
-        if (out_reco_images.size() >= 3) {
-            _reco_image_u_data = out_reco_images[geo::kU].data();
-            _reco_image_v_data = out_reco_images[geo::kV].data();
-            _reco_image_w_data = out_reco_images[geo::kW].data();
+    
+        for (size_t i = 0; i < detector_plane_tensor.size(); ++i) {
+            mf::LogWarning log("ImageAnalysis");
+            log << "Raw Image " << i << " (" << geo::PlaneGeo::ViewName(static_cast<geo::View_t>(i)) << ") non-zero ADC values:";
+            const auto& pixels = detector_plane_tensor[i].data();
+            size_t count = 0;
+            for (size_t j = 0; j < pixels.size(); ++j) {
+                if (pixels[j] > 0.0f) { 
+                    log << " " << pixels[j];
+                    count++;
+                }
+                if (count >= 10) break; 
+            }
+            if (count == 0) {
+                log << " (none found)";
+            } else {
+                log << " (total non-zero count: " << count << ")";
+            }
+        }   
+
+        if (detector_plane_tensor.size() >= 3) {
+            _detector_plane_image_u = detector_plane_tensor[geo::kU].data();
+            _detector_plane_image_v = detector_plane_tensor[geo::kV].data();
+            _detector_plane_image_w = detector_plane_tensor[geo::kW].data();
         } else {
-            mf::LogWarning("ImageAnalysis") << "generateSliceImages produced " << out_reco_images.size() << " reco images, expected at least 3.";
+            mf::LogWarning("ImageAnalysis") << "generateSliceImages produced " << detector_plane_tensor.size() << " raw images, expected at least 3.";
         }
 
-        if (out_true_images.size() >= 3) {
-            _true_image_u_data = out_true_images[geo::kU].data();
-            _true_image_v_data = out_true_images[geo::kV].data();
-            _true_image_w_data = out_true_images[geo::kW].data();
+        if (semantic_plane_tensor.size() >= 3) {
+            _semantic_plane_image_u = semantic_plane_tensor[geo::kU].data();
+            _semantic_plane_image_v = semantic_plane_tensor[geo::kV].data();
+            _semantic_plane_image_w = semantic_plane_tensor[geo::kW].data();
         } else {
-            mf::LogWarning("ImageAnalysis") << "generateSliceImages produced " << out_true_images.size() << " true images, expected at least 3.";
-        }
-
-        if (fEnableInference) {
-            // U-View Inference
-            if (fProcessUView && fTorchModelU && out_raw_images.size() > geo::kU) {
-                torch::Tensor input_tensor_u = imageToTorchTensor(out_raw_images[geo::kU], geo::kU);
-                if (input_tensor_u.numel() > 0) {
-                    std::vector<torch::jit::IValue> inputs_u;
-                    inputs_u.push_back(input_tensor_u.to(torch::kCPU));
-                    try {
-                        // Set the U model to evaluation mode
-                        at::Tensor output_u = fTorchModelU->forward(inputs_u).toTensor();
-                        if (output_u.numel() == 1) _inference_score_u = output_u.item<float>();
-                        else mf::LogWarning("ImageAnalysis") << "U-View model output has " << output_u.numel() << " elements, expected 1 for score.";
-                    } catch (const c10::Error& err) {
-                        mf::LogError("ImageAnalysis") << "Torch U-View Inference Error: " << err.what();
-                    }
-                }
-            }
-
-            // V-View Inference
-            if (fProcessVView && fTorchModelV && out_raw_images.size() > geo::kV) {
-                torch::Tensor input_tensor_v = imageToTorchTensor(out_raw_images[geo::kV], geo::kV);
-                if (input_tensor_v.numel() > 0) {
-                    std::vector<torch::jit::IValue> inputs_v;
-                    inputs_v.push_back(input_tensor_v.to(torch::kCPU));
-                    try {
-                        // Set the V model to evaluation mode
-                        at::Tensor output_v = fTorchModelV->forward(inputs_v).toTensor();
-                        if (output_v.numel() == 1) _inference_score_v = output_v.item<float>();
-                        else mf::LogWarning("ImageAnalysis") << "V-View model output has " << output_v.numel() << " elements, expected 1 for score.";
-                    } catch (const c10::Error& err) {
-                        mf::LogError("ImageAnalysis") << "Torch V-View Inference Error: " << err.what();
-                    }
-                }
-            }
-
-            // W-View Inference
-            if (fProcessWView && fTorchModelW && out_raw_images.size() > geo::kW) {
-                torch::Tensor input_tensor_w = imageToTorchTensor(out_raw_images[geo::kW], geo::kW);
-                if (input_tensor_w.numel() > 0) {
-                    std::vector<torch::jit::IValue> inputs_w;
-                    inputs_w.push_back(input_tensor_w.to(torch::kCPU));
-                    try {
-                        // Set the W model to evaluation mode
-                        at::Tensor output_w = fTorchModelW->forward(inputs_w).toTensor();
-                        if (output_w.numel() == 1) _inference_score_w = output_w.item<float>();
-                        else mf::LogWarning("ImageAnalysis") << "W-View model output has " << output_w.numel() << " elements, expected 1 for score.";
-                    } catch (const c10::Error& err) {
-                        mf::LogError("ImageAnalysis") << "Torch W-View Inference Error: " << err.what();
-                    }
-                }
-            }
+            mf::LogWarning("ImageAnalysis") << "generateSliceImages produced " << semantic_plane_tensor.size() << " reco images, expected at least 3.";
         }
     }
 

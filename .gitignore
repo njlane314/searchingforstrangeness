@@ -40,7 +40,8 @@ build_log.txt
 Sandbox/*
 !Sandbox/.keep
 
-@jobs/*.xml
+.tmp/*
 
 *.log
 *.tar
+

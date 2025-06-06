@@ -2,61 +2,34 @@
 #define IMAGE_H
 
 #include <vector>
-#include <string>
-#include <map>
-#include <array>
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <unordered_map>
-#include <utility>
-#include <cmath>
-#include <limits>
-#include <optional>
-
 #include <TFile.h>
 #include <TTree.h>
-#include <TDirectoryFile.h>
-#include <TVector3.h>
-
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "canvas/Utilities/InputTag.h"
-#include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindManyP.h"
-
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
-#include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
-#include "lardataobj/AnalysisBase/MVAOutput.h"
-
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcore/Geometry/Geometry.h"
+#include "lardata/Utilities/GeometryUtilities.h"
+#include "canvas/Utilities/InputTag.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/RecoBaseProxy/ProxyBase.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "lardata/Utilities/FindManyInChainP.h"
+#include "TDirectoryFile.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "larcorealg/Geometry/geo_vectors_utils.h"
 
-#include "CommonDefs/Pandora.h"
-
-namespace analysis 
+namespace analysis
 {
     class ImageProperties {
     public:
         ImageProperties() = default;
         ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
-        : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
+            : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
             origin_x_ = center_x - (width * pixel_w) / 2.0;
             origin_y_ = center_y - (height * pixel_h) / 2.0;
         }
@@ -86,7 +59,7 @@ namespace analysis
         double origin_x_, origin_y_;
         size_t height_, width_;
         double pixel_w_, pixel_h_;
-        geo::View_t view_ {geo::kUnknown};
+        geo::View_t view_;
     };
 
     template <typename T>
@@ -94,7 +67,7 @@ namespace analysis
     public:
         Image() = default;
         Image(const ImageProperties& prop)
-        : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
+            : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
         void set(size_t row, size_t col, T value, bool accumulate = true) {
             size_t idx = prop_.index(row, col);
             if (idx != static_cast<size_t>(-1)) {
@@ -121,7 +94,6 @@ namespace analysis
         ImageProperties prop_;
         std::vector<T> pixels_;
     };
-
-}
+} 
 
 #endif

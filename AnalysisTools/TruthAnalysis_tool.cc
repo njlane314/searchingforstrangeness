@@ -16,7 +16,6 @@
 #include "../CommonDefs/BacktrackingFuncs.h" 
 #include "../CommonDefs/Geometry.h"         
 #include "../CommonDefs/SCECorrections.h"   
-#include "../CommonDefs/Pandora.h"
 
 namespace analysis 
 {
@@ -103,12 +102,6 @@ namespace analysis
         _tree->Branch("nu_px", &_px, "nu_px/F");
         _tree->Branch("nu_py", &_py, "nu_py/F");
         _tree->Branch("nu_pz", &_pz, "nu_pz/F");
-        _tree->Branch("nu_vtx_x", &_vtx_x, "nu_vtx_x/F");
-        _tree->Branch("nu_vtx_y", &_vtx_y, "nu_vtx_y/F");
-        _tree->Branch("nu_vtx_z", &_vtx_z, "nu_vtx_z/F");
-        _tree->Branch("nu_vtx_u", &_vtx_u, "nu_vtx_u/F");
-        _tree->Branch("nu_vtx_v", &_vtx_v, "nu_vtx_v/F");
-        _tree->Branch("nu_vtx_w", &_vtx_w, "nu_vtx_w/F");
 
         _tree->Branch("mcf_nmm", &_mcf_nmm, "mcf_nmm/I");
         _tree->Branch("mcf_nmp", &_mcf_nmp, "mcf_nmp/I");
@@ -148,13 +141,7 @@ namespace analysis
         _px = std::numeric_limits<float>::lowest();
         _py = std::numeric_limits<float>::lowest();
         _pz = std::numeric_limits<float>::lowest();
-        _vtx_x = std::numeric_limits<float>::lowest();
-        _vtx_y = std::numeric_limits<float>::lowest();
-        _vtx_z = std::numeric_limits<float>::lowest();
-        _vtx_u = std::numeric_limits<float>::lowest();
-        _vtx_v = std::numeric_limits<float>::lowest();
-        _vtx_w = std::numeric_limits<float>::lowest();
-
+     
         _mcf_nmm = 0;
         _mcf_nmp = 0;
         _mcf_nem = 0;
@@ -187,8 +174,6 @@ namespace analysis
             _target_nucleus = -1; _hit_nucleon = -1;
             _W = std::numeric_limits<float>::lowest(); _X = std::numeric_limits<float>::lowest(); _Y = std::numeric_limits<float>::lowest(); _QSqr = std::numeric_limits<float>::lowest();
             _px = std::numeric_limits<float>::lowest(); _py = std::numeric_limits<float>::lowest(); _pz = std::numeric_limits<float>::lowest();
-            _vtx_x = std::numeric_limits<float>::lowest(); _vtx_y = std::numeric_limits<float>::lowest(); _vtx_z = std::numeric_limits<float>::lowest();
-            _vtx_u = std::numeric_limits<float>::lowest(); _vtx_v = std::numeric_limits<float>::lowest(); _vtx_w = std::numeric_limits<float>::lowest();
             _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0; _mcf_npp = 0; _mcf_npm = 0;
             _mcf_nkp = 0; _mcf_nkm = 0; _mcf_nk0 = 0; _mcf_npr = 0; _mcf_nne = 0; _mcf_nlambda = 0;
             _mcf_nsigma_p = 0; _mcf_nsigma_0 = 0; _mcf_nsigma_m = 0; _mcf_nxi_0 = 0; _mcf_nxi_m = 0; _mcf_nomega = 0;
@@ -202,8 +187,6 @@ namespace analysis
             _target_nucleus = -1; _hit_nucleon = -1;
             _W = std::numeric_limits<float>::lowest(); _X = std::numeric_limits<float>::lowest(); _Y = std::numeric_limits<float>::lowest(); _QSqr = std::numeric_limits<float>::lowest();
             _px = std::numeric_limits<float>::lowest(); _py = std::numeric_limits<float>::lowest(); _pz = std::numeric_limits<float>::lowest();
-            _vtx_x = std::numeric_limits<float>::lowest(); _vtx_y = std::numeric_limits<float>::lowest(); _vtx_z = std::numeric_limits<float>::lowest();
-            _vtx_u = std::numeric_limits<float>::lowest(); _vtx_v = std::numeric_limits<float>::lowest(); _vtx_w = std::numeric_limits<float>::lowest();
             _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0; _mcf_npp = 0; _mcf_npm = 0;
             _mcf_nkp = 0; _mcf_nkm = 0; _mcf_nk0 = 0; _mcf_npr = 0; _mcf_nne = 0; _mcf_nlambda = 0;
             _mcf_nsigma_p = 0; _mcf_nsigma_0 = 0; _mcf_nsigma_m = 0; _mcf_nxi_0 = 0; _mcf_nxi_m = 0; _mcf_nomega = 0;
@@ -233,17 +216,6 @@ namespace analysis
             _px = neutrino_particle.Px();
             _py = neutrino_particle.Py();
             _pz = neutrino_particle.Pz();
-            
-            float corrected_vertex[3];
-            common::True2RecoMappingXYZ(neutrino_particle.T(), neutrino_particle.Vx(), neutrino_particle.Vy(), neutrino_particle.Vz(), corrected_vertex);
-            _vtx_x = corrected_vertex[0];
-            _vtx_y = corrected_vertex[1];
-            _vtx_z = corrected_vertex[2];
-
-            _vtx_u = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_U).Z();
-            _vtx_v = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_V).Z();
-            _vtx_w = common::ProjectToWireView(corrected_vertex[0], corrected_vertex[1], corrected_vertex[2], common::TPC_VIEW_W).Z();
-
         } else {
             _nu_pdg = -1;
             _ccnc = -1;
@@ -261,12 +233,6 @@ namespace analysis
             _px = std::numeric_limits<float>::lowest();
             _py = std::numeric_limits<float>::lowest();
             _pz = std::numeric_limits<float>::lowest();
-            _vtx_x = std::numeric_limits<float>::lowest();
-            _vtx_y = std::numeric_limits<float>::lowest();
-            _vtx_z = std::numeric_limits<float>::lowest();
-            _vtx_u = std::numeric_limits<float>::lowest();
-            _vtx_v = std::numeric_limits<float>::lowest();
-            _vtx_w = std::numeric_limits<float>::lowest();
         }
 
         _mcf_nmm = 0; _mcf_nmp = 0; _mcf_nem = 0; _mcf_nep = 0; _mcf_np0 = 0;
