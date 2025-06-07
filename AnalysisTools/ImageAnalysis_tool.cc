@@ -55,7 +55,7 @@
 
 #include "AnalysisToolBase.h"
 #include "../CommonDefs/Types.h"
-#include "../CommonDefs/HitGeometry.h"
+#include "../CommonDefs/Pandora.h"
 #include "../ImageAlgorithm.h"
 
 #ifdef ClassDef
@@ -148,7 +148,7 @@ namespace analysis
             for (const auto& hit : hits) {
                 if (hit->View() != view) continue;
                 const double charge = hit->Integral();
-                auto pos = common::GetTPCHitPosition(event, hit, view);
+                auto pos = common::GetPandoraHitPosition(event, hit, common::GetPandoraView(hit));
                 double drift = pos.X();
                 double wire = pos.Z();
                 weighted_sum_drift += drift * charge;
@@ -159,6 +159,8 @@ namespace analysis
             if (sum_charge > 0.0) {
                 double centroid_drift = weighted_sum_drift / sum_charge;
                 double centroid_wire = weighted_sum_wire / sum_charge;
+                std::cout << "Centroid for view " << view << ": Drift = " << centroid_drift
+                          << ", Wire = " << centroid_wire << std::endl;
                 return std::make_pair(centroid_drift, centroid_wire);
             } else {
                 return std::make_pair(0.0, 0.0);

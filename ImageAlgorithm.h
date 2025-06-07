@@ -41,7 +41,7 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 
 #include "Image.h"
-#include "CommonDefs/HitGeometry.h"
+#include "CommonDefs/Pandora.h"
 
 namespace analysis 
 {
@@ -141,8 +141,9 @@ namespace analysis
                             size_t row = prop.row(drift_coord);
                             size_t col = prop.col(wire_coord);
                             if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
-
-                            detector_image.set(row, col, std::log10(adcs[idx]), true);
+                            
+                            // std::log10(adcs[idx]) 
+                            detector_image.set(row, col, adcs[idx], true);
                             SemanticLabel label = getSemanticLabelForWire(wire, tick, sorted_hits[w], hit_to_label);
                             semantic_image.set(row, col, static_cast<int>(label), false);
                         }
