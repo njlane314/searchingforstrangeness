@@ -10,7 +10,6 @@
 #include "art/Framework/Principal/Event.h"
 
 #include "../CommonDefs/Types.h"
-#include "../CommonDefs/Image.h"
 
 #include "TTree.h"
 #include <limits>

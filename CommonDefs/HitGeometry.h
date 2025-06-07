@@ -1,76 +1,53 @@
-#ifndef PANDORAFUNCS_H
-#define PANDORAFUNCS_H
+#ifndef HITGEOMETRY_H
+#define HITGEOMETRY_H
 
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
-#include "TVector3.h"
+#include <array>
 #include <cmath>
+#include "TVector3.h"
 
+#include "art/Framework/Principal/Event.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
 
 namespace common
 {
-    enum PandoraView {TPC_VIEW_U, TPC_VIEW_V, TPC_VIEW_W};
-
-    constexpr size_t N_VIEWS = 3;
-
-    PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit)
-    {
-        const geo::WireID hit_wire(hit->WireID());
-        const geo::View_t hit_view(hit->View());
-        const geo::View_t pandora_view(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_wire.Cryostat, hit_wire.TPC, hit_view));
-
-        if (pandora_view == geo::kW || pandora_view == geo::kY)
-            return TPC_VIEW_W;
-        else if (pandora_view == geo::kU)
-            return TPC_VIEW_U;
-        else if (pandora_view == geo::kV)
-            return TPC_VIEW_V;
-        else
-            throw cet::exception("PandoraFuncs") << "wire view not recognised";
+    geo::View_t GetTPCView(const art::Ptr<recob::Hit>& hit) {
+        geo::View_t view = hit->View();
+        if (view == geo::kU || view == geo::kV || view == geo::kW || view == geo::kY) {
+            return view;
+        } else {
+            throw cet::exception("TPCFuncs") << "Wire view not recognized";
+        }
     }
 
-    float YZtoU(const float y_coord, const float z_coord)
-    {
-        const float m_uWireAngle = 1.04719758034;
-        return (z_coord * std::cos(m_uWireAngle)) - (y_coord * std::sin(m_uWireAngle));
+    float ProjectYZToWire(float y, float z, geo::View_t view) {
+        static constexpr std::array<float, 3> angles = {1.04719758034f, -1.04719758034f, 0.0f};
+        size_t index;
+        switch (view) {
+            case geo::kU: index = 0; break;
+            case geo::kV: index = 1; break;
+            case geo::kW: case geo::kY: index = 2; break;
+            default: throw cet::exception("TPCFuncs") << "Invalid view for projection";
+        }
+        float angle = angles[index];
+        return z * std::cos(angle) - y * std::sin(angle);
     }
 
-    float YZtoV(const float y_coord, const float z_coord)
-    {
-        const float m_vWireAngle = -1.04719758034;
-        return (z_coord * std::cos(m_vWireAngle)) - (y_coord * std::sin(m_vWireAngle));
+    TVector3 ProjectToWireView(float x, float y, float z, geo::View_t view) {
+        return TVector3(x, 0.f, ProjectYZToWire(y, z, view));
     }
 
-    float YZtoW(const float y_coord, const float z_coord)
-    {
-        const float m_wWireAngle = 0.0;
-        return (z_coord * std::cos(m_wWireAngle)) - (y_coord * std::sin(m_wWireAngle));
-    }
-
-    TVector3 ProjectToWireView(const float input_x, const float input_y, const float input_z, const PandoraView pandora_view)
-    {
-        const float x_coord = input_x;
-        const float y_coord = input_y;
-        const float z_coord = input_z;
-
-        return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(y_coord, z_coord) : pandora_view == TPC_VIEW_V ? YZtoV(y_coord, z_coord) : YZtoW(y_coord, z_coord));
-    }
-
-    TVector3 GetPandoraHitPosition(const art::Event &e, const art::Ptr<recob::Hit> hit, const PandoraView pandora_view)
-    {
+    TVector3 GetTPCHitPosition(const art::Event& e, const art::Ptr<recob::Hit>& hit, geo::View_t view) {
         art::ServiceHandle<geo::Geometry> geo;
         auto const* det = lar::providerFrom<detinfo::DetectorPropertiesService>();
-
-        const geo::WireID hit_wire(hit->WireID());
-        const double hit_time(hit->PeakTime()+0.5);
-
-        const double x_coord = det->ConvertTicksToX(hit_time, hit_wire.Plane, hit_wire.TPC, hit_wire.Cryostat);
-        TVector3 xyz = geo->Cryostat(hit_wire.Cryostat).TPC(hit_wire.TPC).Plane(hit_wire.Plane).Wire(hit_wire.Wire).GetCenter();
-
-        return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(xyz.Y(), xyz.Z()) : pandora_view == TPC_VIEW_V ? YZtoV(xyz.Y(), xyz.Z()) : YZtoW(xyz.Y(), xyz.Z()));
+        
+        geo::WireID wire = hit->WireID();
+        double x = det->ConvertTicksToX(hit->PeakTime() + 0.5, wire.Plane, wire.TPC, wire.Cryostat);
+        TVector3 center = geo->Cryostat(wire.Cryostat).TPC(wire.TPC).Plane(wire.Plane).Wire(wire.Wire).GetCenter();
+        
+        return ProjectToWireView(x, center.Y(), center.Z(), view);
     }
-} 
+}
 
 #endif

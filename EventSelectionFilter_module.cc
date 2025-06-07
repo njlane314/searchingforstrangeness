@@ -23,8 +23,6 @@
 #include "CommonDefs/Types.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
-#include "CommonDefs/ReconstructionLabels.h"
-#include "CommonDefs/PrimaryLabels.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
