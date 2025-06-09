@@ -71,17 +71,6 @@ namespace common
 
         return TVector3(x_coord, 0.f, pandora_view == TPC_VIEW_U ? YZtoU(xyz.Y(), xyz.Z()) : pandora_view == TPC_VIEW_V ? YZtoV(xyz.Y(), xyz.Z()) : YZtoW(xyz.Y(), xyz.Z()));
     }
-
-    double ProjectYZToWire(double y, double z, geo::View_t view)
-    {
-        if (view == geo::kU) {
-            return YZtoU(y, z);
-        } else if (view == geo::kV) {
-            return YZtoV(y, z);
-        } else {
-            return YZtoW(y, z);
-        } 
-    }
 } 
 
 #endif

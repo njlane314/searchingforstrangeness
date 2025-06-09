@@ -1163,10 +1163,6 @@ namespace analysis
             _true_nu_vtx_x = nu.Vx();
             _true_nu_vtx_y = nu.Vy();
             _true_nu_vtx_z = nu.Vz();
-            // print the true neutrino vertex projected to each of the three planes
-            std::cout << "True neutrino vertex projected to U plane: " << common::ProjectYZToWire(_true_nu_vtx_y, _true_nu_vtx_z, geo::kU) << std::endl;
-            std::cout << "True neutrino vertex projected to V plane: " << common::ProjectYZToWire(_true_nu_vtx_y, _true_nu_vtx_z, geo::kV) << std::endl;
-            std::cout << "True neutrino vertex projected to W plane: " << common::ProjectYZToWire(_true_nu_vtx_y, _true_nu_vtx_z, geo::kW) << std::endl;
             if(fMakeNuMINtuple)
             {
                 _true_nu_px = nu.Px();

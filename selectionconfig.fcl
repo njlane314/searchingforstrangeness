@@ -126,12 +126,12 @@ ImageAnalysis: {
     WIREproducer: "butcher"
     MCPproducer: "largeant"
     BackTrackerLabel: "gaushitTruthMatch"
-    GammaThreshold: 0.1
-    HadronThreshold: 0.1
-    LeptonThreshold: 0.1
+    GammaThreshold: 0.01
+    HadronThreshold: 0.01
+    LeptonThreshold: 0.01
     ImageWidth: 512
     ImageHeight: 512
-    ADCthreshold: 4.0
+    ADCthreshold: 1.0
 }
 
 NuGraphAnalysis: {
