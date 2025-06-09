@@ -54,6 +54,12 @@
 #include "../Image.h"
 #include "../ImageAlgorithm.h"
 
+#ifdef ClassDef
+#undef ClassDef
+#endif
+#include "torch/torch.h"
+#include "torch/script.h"
+
 namespace analysis 
 {
     class ImageAnalysis : public AnalysisToolBase {
@@ -74,6 +80,7 @@ namespace analysis
         art::InputTag fWIREproducer;
         art::InputTag fMCPproducer;
         std::string fBackTrackerLabel;
+        bool fRunInference;
 
         int _image_width;
         int _image_height;
@@ -101,11 +108,15 @@ namespace analysis
 
         std::unique_ptr<TruthLabelClassifier> _semantic_classifier;
 
+        std::shared_ptr<torch::jit::script::Module> _classifier_model;
+        std::string _classifier_model_path;
+
+        std::vector<float> _resnet_probabilities;
+
         std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         std::pair<double, double> calculateChargeCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
-        void constructPixelImages(const art::Event& e, const std::vector<ImageProperties>& properties,
-                                std::vector<Image<float>>& detector_images,
-                                std::vector<Image<int>>& semantic_images);
+        void constructPixelImages(const art::Event& e, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images);
+        std::vector<float> runInference(const std::vector<float>& image_data);
     };
 
     ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet& pset) {
@@ -119,10 +130,11 @@ namespace analysis
         fWIREproducer = p.get<art::InputTag>("WIREproducer");
         fMCPproducer = p.get<art::InputTag>("MCPproducer");
         fBackTrackerLabel = p.get<std::string>("BackTrackerLabel");
+        fRunInference = p.get<bool>("RunInference", false);
 
         _image_width = 512;
         _image_height = 512;
-        _adc_image_threshold = 1.0;
+        _adc_image_threshold = 4.0;
 
         _geo = art::ServiceHandle<geo::Geometry>()->provider();
         _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
@@ -136,6 +148,18 @@ namespace analysis
         _wire_pitch_w = _geo->WirePitch(geo::kW);
 
         _semantic_classifier = std::make_unique<TruthLabelClassifier>(fMCPproducer);
+
+        _classifier_model_path = p.get<std::string>("ClassifierModelPath");
+        if (!fRunInference) 
+            return;
+
+        try {
+            _classifier_model = torch::jit::load(_classifier_model_path);
+            _classifier_model->to(torch::kCPU);
+            std::cout << "Successfully loaded classifier model from: " << _classifier_model_path << std::endl;
+        } catch (const c10::Error& e) {
+            throw std::runtime_error("Error loading the TorchScript model: " + std::string(e.what()));
+        }
     }
 
     void ImageAnalysis::setBranches(TTree* _tree_ptr) {
@@ -146,6 +170,8 @@ namespace analysis
         _tree->Branch("semantic_image_u", &_semantic_image_u);
         _tree->Branch("semantic_image_v", &_semantic_image_v);
         _tree->Branch("semantic_image_w", &_semantic_image_w);
+
+        _tree->Branch("resnet_probabilities", &_resnet_probabilities);
     }
 
     void ImageAnalysis::resetTTree(TTree* _tree_ptr) {
@@ -155,6 +181,8 @@ namespace analysis
         _semantic_image_u.clear();
         _semantic_image_v.clear();
         _semantic_image_w.clear();
+
+        _resnet_probabilities.clear();
     }
 
     void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) {
@@ -185,7 +213,45 @@ namespace analysis
         _semantic_image_v = semantic_images[1].data();
         _semantic_image_w = semantic_images[2].data();
 
+        if (fRunInference)
+            _resnet_probabilities = this->runInference(_detector_image_w);
+
         if (_tree) _tree->Fill();
+    }
+
+    std::vector<float> ImageAnalysis::runInference(const std::vector<float>& image_data) {
+        if (!_classifier_model || image_data.empty()) {
+            return {}; 
+        }
+
+        torch::NoGradGuard no_grad;
+
+        torch::Tensor image_tensor = torch::from_blob(
+            const_cast<float*>(image_data.data()),
+            {_image_height, _image_width}, 
+            torch::kFloat32
+        ).clone();
+
+        image_tensor.masked_fill_(image_tensor < _adc_image_threshold, 0.0);
+        image_tensor = torch::log1p(image_tensor);
+        image_tensor = image_tensor.reshape({1, 1, _image_height, _image_width});
+
+        std::vector<torch::jit::IValue> inputs;
+        inputs.push_back(image_tensor.to(torch::kCPU));
+        
+        at::Tensor output_logits = _classifier_model->forward(inputs).toTensor();
+
+        at::Tensor probabilities_tensor = torch::softmax(output_logits, /*dim=*/1);
+        const float* prob_data_ptr = static_cast<const float*>(probabilities_tensor.data_ptr());
+        std::vector<float> probabilities(prob_data_ptr, prob_data_ptr + probabilities_tensor.numel());
+
+        std::cout << "Probabilities: ";
+        for (const auto& prob : probabilities) {
+            std::cout << prob << " ";
+        }
+        std::cout << std::endl;
+
+        return probabilities;
     }
 
     std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
@@ -289,7 +355,7 @@ namespace analysis
                     if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
                     TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label;
-                    if (has_mcps && mcp_vector.isValid() && _semantic_classifier && fRecoClassifier) {
+                    if (has_mcps && mcp_vector.isValid() && _semantic_classifier) {
                         semantic_pixel_label = TruthLabelClassifier::TruthPrimaryLabel::Other;
 
                         while (hit_index < sorted_hits.size() && sorted_hits[hit_index]->EndTick() <= tick) {
