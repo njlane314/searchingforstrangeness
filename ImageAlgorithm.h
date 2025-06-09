@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <set>
 #include <array>
 #include <algorithm>
 #include <memory>
@@ -13,14 +12,15 @@
 #include <cmath>
 #include <limits>
 #include <optional>
-#include <fstream>
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TDirectoryFile.h>
 #include <TVector3.h>
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "canvas/Utilities/InputTag.h"
 #include "canvas/Persistency/Common/Ptr.h"
@@ -30,214 +30,273 @@
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/Simulation/SimChannel.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
+#include "lardataobj/AnalysisBase/MVAOutput.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/RecoBaseProxy/ProxyBase.h"
+#include "lardata/Utilities/GeometryUtilities.h"
+#include "lardata/Utilities/FindManyInChainP.h"
 
 #include "Image.h"
 #include "CommonDefs/Pandora.h"
 
 namespace analysis 
 {
-    enum class SemanticLabel {
-        kEmpty = 0,
-        kCosmic,
-        kNeutrino,
-        kMuon,
-        kProton,
-        kPion,
-        kChargedKaon, 
-        kNeutralKaon,
-        kLambda,
-        kChargedSigma
-    };
-
-    class ImageAlgorithm {
+    class TruthLabelClassifier {
     public:
-        ImageAlgorithm(const fhicl::ParameterSet& pset) {
-            this->configure(pset);
+        enum class TruthPrimaryLabel {
+            Empty = 0,
+            Cosmic,
+            Muon,
+            Proton,
+            Pion,
+            ChargedKaon,
+            NeutralKaon,
+            Lambda, 
+            ChargedSigma,
+            Other
+        };
+
+        static inline const std::array<std::string, 10> truth_primary_label_names = {
+            "Empty", "Cosmic", "Muon", "Proton", "Pion", "ChargedKaon", "NeutralKaon", "Lambda", "ChargedSigma", "Other"
+        };
+
+        explicit TruthLabelClassifier(const art::InputTag& MCPproducer)
+        : fMCPproducer(MCPproducer) {}
+
+        TruthPrimaryLabel getTruthPrimaryLabelFromPDG(int pdg) const {
+            pdg = std::abs(pdg);
+            if (pdg == 13) return TruthPrimaryLabel::Muon;
+            if (pdg == 2212) return TruthPrimaryLabel::Proton;
+            if (pdg == 211) return TruthPrimaryLabel::Pion;
+            if (pdg == 321) return TruthPrimaryLabel::ChargedKaon;
+            if (pdg == 311 || pdg == 130 || pdg == 310) return TruthPrimaryLabel::NeutralKaon;
+            if (pdg == 3122) return TruthPrimaryLabel::Lambda;
+            if (pdg == 3222 || pdg == 3112 || pdg == 3212) return TruthPrimaryLabel::ChargedSigma;
+            return TruthPrimaryLabel::Other;
         }
 
-        void configure(const fhicl::ParameterSet& pset) {
-            _image_height = pset.get<size_t>("ImageHeight", 512);
-            _image_width = pset.get<size_t>("ImageWidth", 512);
-            fWIREproducer = pset.get<art::InputTag>("WireProducer", "butcher");
-            fHITproducer = pset.get<art::InputTag>("HitProducer", "gaushit");
-            fBKTproducer = pset.get<art::InputTag>("BackTrackerProducer", "gaushitTruthMatch");
-        }
-
-        void generateViewImages(
-            const art::Event& event,            
-            const std::vector<ImageProperties>& image_props,     
-            const std::vector<art::Ptr<recob::Wire>>& wires,           
-            const std::vector<art::Ptr<simb::MCParticle>>& mcps) {
-            auto geo = art::ServiceHandle<geo::Geometry>()->provider();
-            auto detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-            auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
-            double time_tick = clock->TPCClock().TickPeriod();
-            double drift_velocity = detp->DriftVelocity();
-            _drift_step = time_tick * drift_velocity * 1e1;
-            _wire_pitch_u = geo->WirePitch(geo::kU);
-            _wire_pitch_v = geo->WirePitch(geo::kV);
-            _wire_pitch_w = geo->WirePitch(geo::kW);
-            
-            std::unordered_map<int, SemanticLabel> track_id_to_label = classifyParticles(mcps);
-            
-            art::FindManyP<recob::Hit> wire_to_hits(wires, event, fHITproducer);
-            std::vector<std::vector<art::Ptr<recob::Hit>>> sorted_hits(wires.size());
-            std::vector<art::Ptr<recob::Hit>> all_hits;
-            for (size_t i = 0; i < wires.size(); ++i) {
-                sorted_hits[i] = wire_to_hits.at(i);
-                std::sort(sorted_hits[i].begin(), sorted_hits[i].end(),
-                    [](const auto& a, const auto& b) { return a->StartTick() < b->StartTick(); });
-                all_hits.insert(all_hits.end(), sorted_hits[i].begin(), sorted_hits[i].end());
+        void assignLabelToProgenyRecursively(
+            size_t particle_index,
+            const std::vector<simb::MCParticle>& particles,
+            std::vector<TruthPrimaryLabel>& particle_labels,
+            const std::unordered_map<int, size_t>& track_id_to_index,
+            TruthPrimaryLabel primary_label_to_assign
+        ) const {
+            if (particle_index >= particles.size() || particle_index >= particle_labels.size()) {
+                return;
             }
-            art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> hit_to_mcparticles(all_hits, event, fBKTproducer);
-            std::unordered_map<art::Ptr<recob::Hit>, SemanticLabel> hit_to_label;
-            for (size_t i = 0; i < all_hits.size(); ++i) {
-                const auto& mcparticles = hit_to_mcparticles.at(i);
-                const auto& matching_data = hit_to_mcparticles.data(i);
-                if (!mcparticles.empty()) {
-                    auto max_it = std::max_element(matching_data.begin(), matching_data.end(),
-                        [](const auto* a, const auto* b) { return a->ideFraction < b->ideFraction; });
-                    size_t idx = std::distance(matching_data.begin(), max_it);
-                    int track_id = mcparticles[idx]->TrackId();
-                    auto it = track_id_to_label.find(track_id);
-                    hit_to_label[all_hits[i]] = (it != track_id_to_label.end()) ? it->second : SemanticLabel::kEmpty;
-                } else {
-                    hit_to_label[all_hits[i]] = SemanticLabel::kEmpty;
-                }
-            }
+            particle_labels[particle_index] = primary_label_to_assign;
+            const auto& particle = particles[particle_index];
 
-            detector_images_.clear();
-            semantic_images_.clear();
-            for (const auto& prop : image_props) {
-                geo::View_t view = prop.view();
-                Image<float> detector_image(prop);
-                Image<int> semantic_image(prop);
-
-                for (size_t w = 0; w < wires.size(); ++w) {
-                    const auto& wire = wires[w];
-                    raw::ChannelID_t channel = wire->Channel();
-                    std::vector<geo::WireID> wire_ids = geo->ChannelToWire(channel);
-                    if (wire_ids.empty() || geo->View(wire_ids.front()) != view) continue;
-
-                    TVector3 wire_center = geo->WireIDToWireGeo(wire_ids.front()).GetCenter();
-                    double wire_coord = common::ProjectYZToWire(wire_center.Y(), wire_center.Z(), view);
-
-                    for (const auto& range : wire->SignalROI().get_ranges()) {
-                        const auto& adcs = range.data();
-                        int start_tick = range.begin_index();
-                        for (size_t idx = 0; idx < adcs.size(); ++idx) {
-                            if (adcs[idx] <= 1) continue;
-                            int tick = start_tick + idx;
-                            double drift_coord = detp->ConvertTicksToX(tick, wire_ids.front());
-                            size_t row = prop.row(drift_coord);
-                            size_t col = prop.col(wire_coord);
-                            if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
-                            
-                            // std::log10(adcs[idx]) 
-                            detector_image.set(row, col, adcs[idx], true);
-                            SemanticLabel label = getSemanticLabelForWire(wire, tick, sorted_hits[w], hit_to_label);
-                            semantic_image.set(row, col, static_cast<int>(label), false);
-                        }
+            for (int daughter_idx = 0; daughter_idx < particle.NumberDaughters(); ++daughter_idx) {
+                int daughter_track_id = particle.Daughter(daughter_idx);
+                auto it = track_id_to_index.find(daughter_track_id);
+                if (it != track_id_to_index.end()) {
+                    if (it->second < particles.size()) {
+                        assignLabelToProgenyRecursively(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
                     }
                 }
-
-                detector_images_.push_back(std::move(detector_image));
-                semantic_images_.push_back(std::move(semantic_image));
             }
         }
 
-        const std::vector<Image<float>>& getDetectorImages() const {
-            return detector_images_;
-        }
+        std::vector<TruthPrimaryLabel> classifyParticles(
+            const art::Event& event
+        ) const {
+            const auto particle_collection_handle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
+            const auto& particles = *particle_collection_handle;
 
-        const std::vector<Image<int>>& getSemanticImages() const {
-            return semantic_images_;
-        }
-
-        double getDriftStep() const {
-            return _drift_step;
-        }
-
-        double getWirePitch(geo::View_t view) const {
-            switch (view) {
-                case geo::kU: return _wire_pitch_u;
-                case geo::kV: return _wire_pitch_v;
-                case geo::kW: case geo::kY: return _wire_pitch_w;
-                default: return 0.0;
+            std::unordered_map<int, size_t> track_id_to_vector_index;
+            for (size_t i = 0; i < particles.size(); ++i) {
+                track_id_to_vector_index[particles[i].TrackId()] = i;
             }
-        }
 
-        size_t getImageWidth() const { 
-            return _image_width; 
-        }
-        
-        size_t getImageHeight() const { 
-            return _image_height; 
+            std::vector<TruthPrimaryLabel> classified_particle_labels(particles.size(), TruthPrimaryLabel::Empty);
+
+            for (size_t i = 0; i < particles.size(); ++i) {
+                if (particles[i].Mother() == 0) {
+                    if (auto it = track_id_to_vector_index.find(particles[i].TrackId()); it != track_id_to_vector_index.end()) {
+                        TruthPrimaryLabel initial_label = getTruthPrimaryLabelFromPDG(particles[i].PdgCode());
+                        assignLabelToProgenyRecursively(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
+                    }
+                }
+            }
+            return classified_particle_labels;
         }
 
     private:
-        size_t _image_height;
-        size_t _image_width;
-        double _drift_step;
-        double _wire_pitch_u;
-        double _wire_pitch_v;
-        double _wire_pitch_w;
-        std::vector<Image<float>> detector_images_;
-        std::vector<Image<int>> semantic_images_;
-        art::InputTag fWIREproducer;
-        art::InputTag fHITproducer;
-        art::InputTag fBKTproducer;
+        art::InputTag fMCPproducer;
+    };
 
-        static SemanticLabel getSemanticLabel(int pdg) {
-            pdg = std::abs(pdg);
-            if (pdg == 13) return SemanticLabel::kMuon;
-            if (pdg == 2212) return SemanticLabel::kProton;
-            if (pdg == 211) return SemanticLabel::kPion;
-            if (pdg == 321) return SemanticLabel::kChargedKaon;
-            if (pdg == 311) return SemanticLabel::kNeutralKaon;
-            if (pdg == 3122) return SemanticLabel::kLambda;
-            if (pdg == 3222 || pdg == 3112) return SemanticLabel::kChargedSigma;
-            return SemanticLabel::kNeutrino;
-        }
+    class RecoLabelClassifier {
+    public:
+        enum class ReconstructionLabel {
+            Empty,
+            Cosmic,
+            MIP,
+            HIP,
+            Shower,
+            Michel,
+            Diffuse,
+            Invisible
+        };
 
-        std::unordered_map<int, SemanticLabel> classifyParticles(
-            const std::vector<art::Ptr<simb::MCParticle>>& mcps) {
-            std::unordered_map<int, SemanticLabel> track_id_to_label;
-            for (const auto& mcp : mcps) {
-                if (mcp->Mother() == 0) {
-                    SemanticLabel label = getSemanticLabel(mcp->PdgCode());
-                    track_id_to_label[mcp->TrackId()] = label;
-                    for (int d = 0; d < mcp->NumberDaughters(); ++d) {
-                        int daughter_id = mcp->Daughter(d);
-                        track_id_to_label[daughter_id] = label;
+        static inline const std::array<std::string, 8> reco_label_names = {
+            "Empty", "Cosmic", "MIP", "HIP", "Shower", "Michel", "Diffuse", "Invisible"
+        };
+
+        explicit RecoLabelClassifier(
+            const art::InputTag& mc_producer_tag,
+            double gamma_threshold,
+            double hadron_threshold,
+            bool use_cheat)
+        : fMCPproducer(mc_producer_tag),
+        fGammaThreshold(gamma_threshold),
+        fHadronThreshold(hadron_threshold),
+        fUseCheat(use_cheat) {}
+
+        std::pair<ReconstructionLabel, ReconstructionLabel> getReconstructionLabelAndPropagation(
+            const std::vector<simb::MCParticle>& particles,
+            const simb::MCParticle& particle_to_label,
+            ReconstructionLabel label_from_parent,
+            const std::map<int, size_t>& track_id_to_index
+        ) const {
+            if (label_from_parent != ReconstructionLabel::Empty) {
+                return {label_from_parent, label_from_parent};
+            }
+
+            ReconstructionLabel determined_label = ReconstructionLabel::Invisible;
+            ReconstructionLabel propagated_label_for_children = ReconstructionLabel::Empty;
+
+            int pdg_code = particle_to_label.PdgCode();
+            double momentum = particle_to_label.P();
+            const std::string& start_process = particle_to_label.Process();
+            const std::string& end_process = particle_to_label.EndProcess();
+            int parent_track_id = particle_to_label.Mother();
+            int parent_pdg_code = 0;
+
+            if (parent_track_id != 0) {
+                auto it = track_id_to_index.find(parent_track_id);
+                if (it != track_id_to_index.end()) {
+                    if (it->second < particles.size()) {
+                        parent_pdg_code = particles[it->second].PdgCode();
                     }
                 }
             }
-            return track_id_to_label;
+
+            if (std::abs(pdg_code) == 211 || std::abs(pdg_code) == 13) {
+                determined_label = ReconstructionLabel::MIP;
+            } else if (std::abs(pdg_code) == 321 || (std::abs(pdg_code) == 2212 && momentum >= fHadronThreshold)) {
+                determined_label = ReconstructionLabel::HIP;
+            } else if (std::abs(pdg_code) == 11) {
+                if (start_process == "primary") {
+                    determined_label = ReconstructionLabel::Shower;
+                    propagated_label_for_children = ReconstructionLabel::Shower;
+                } else if (std::abs(parent_pdg_code) == 13 &&
+                        (start_process == "muMinusCaptureAtRest" ||
+                            start_process == "muPlusCaptureAtRest" ||
+                            start_process == "Decay")) {
+                    determined_label = ReconstructionLabel::Michel;
+                    propagated_label_for_children = ReconstructionLabel::Michel;
+                } else if (start_process == "conv" || end_process == "conv" ||
+                        start_process == "compt" || end_process == "compt") {
+                    if (momentum >= fGammaThreshold) {
+                        determined_label = ReconstructionLabel::Shower;
+                        propagated_label_for_children = ReconstructionLabel::Shower;
+                    } else {
+                        determined_label = ReconstructionLabel::Diffuse;
+                    }
+                } else {
+                    determined_label = ReconstructionLabel::Diffuse;
+                }
+            } else if (pdg_code == 22) {
+                if (start_process == "conv" || end_process == "conv" ||
+                    start_process == "compt" || end_process == "compt" ||
+                    start_process == "primary") {
+                    if (momentum >= fGammaThreshold) {
+                        determined_label = ReconstructionLabel::Shower;
+                        propagated_label_for_children = ReconstructionLabel::Shower;
+                    } else {
+                        determined_label = ReconstructionLabel::Diffuse;
+                    }
+                } else {
+                    determined_label = ReconstructionLabel::Diffuse;
+                }
+            } else if (std::abs(pdg_code) == 2212 && momentum < fHadronThreshold) {
+                determined_label = ReconstructionLabel::Diffuse;
+            }
+            return {determined_label, propagated_label_for_children};
         }
 
-        SemanticLabel getSemanticLabelForWire(
-            const art::Ptr<recob::Wire>& wire,
-            int tick,
-            const std::vector<art::Ptr<recob::Hit>>& hits,
-            const std::unordered_map<art::Ptr<recob::Hit>, SemanticLabel>& hit_to_label) {
-            auto it = std::lower_bound(hits.begin(), hits.end(), tick,
-                [](const art::Ptr<recob::Hit>& h, int t) { return h->EndTick() <= t; });
-            if (it != hits.end() && (*it)->StartTick() <= tick && tick < (*it)->EndTick()) {
-                auto label_it = hit_to_label.find(*it);
-                return (label_it != hit_to_label.end()) ? label_it->second : SemanticLabel::kEmpty;
+        void assignLabelToProgenyRecursively(
+            size_t particle_index,
+            const std::vector<simb::MCParticle>& particles,
+            ReconstructionLabel label_from_parent,
+            std::vector<ReconstructionLabel>& particle_labels,
+            const std::map<int, size_t>& track_id_to_index
+        ) const {
+            if (particle_index >= particles.size() || particle_index >= particle_labels.size()) {
+                return;
             }
-            return SemanticLabel::kEmpty;
+            const auto& current_particle = particles[particle_index];
+            auto [label_for_current, label_for_children] = getReconstructionLabelAndPropagation(
+                particles, current_particle, label_from_parent, track_id_to_index
+            );
+            particle_labels[particle_index] = label_for_current;
+
+            for (int i = 0; i < current_particle.NumberDaughters(); ++i) {
+                int daughter_track_id = current_particle.Daughter(i);
+                auto it = track_id_to_index.find(daughter_track_id);
+                if (it != track_id_to_index.end()) {
+                    if (it->second < particles.size()) {
+                        assignLabelToProgenyRecursively(it->second, particles, label_for_children, particle_labels, track_id_to_index);
+                    }
+                }
+            }
         }
+
+        std::vector<ReconstructionLabel> classifyParticlesFromReco(const art::Event& event) const {
+            return {};
+        }
+
+        std::vector<ReconstructionLabel> classifyParticles(const art::Event& event) const {
+            if (fUseCheat) {
+                const auto particle_collection_handle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
+                const auto& particles = *particle_collection_handle;
+
+                std::map<int, size_t> track_id_to_vector_index;
+                for (size_t i = 0; i < particles.size(); ++i) {
+                    track_id_to_vector_index[particles[i].TrackId()] = i;
+                }
+
+                std::vector<ReconstructionLabel> classified_particle_labels(particles.size(), ReconstructionLabel::Empty);
+
+                for (size_t i = 0; i < particles.size(); ++i) {
+                    if (particles[i].Mother() == 0) {
+                        assignLabelToProgenyRecursively(i, particles, ReconstructionLabel::Empty, classified_particle_labels, track_id_to_vector_index);
+                    }
+                }
+                return classified_particle_labels;
+            } else {
+                return classifyParticlesFromReco(event);
+            }
+        }
+
+        art::InputTag fMCPproducer;
+        double fGammaThreshold;
+        double fHadronThreshold;
+        bool fUseCheat;
     };
 }
 
