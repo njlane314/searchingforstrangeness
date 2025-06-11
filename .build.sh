@@ -8,4 +8,4 @@ mrb i -j8
 
 cd $WRK_DIR
 
-# mrb z # for clean build
+# mrb z

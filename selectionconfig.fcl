@@ -132,7 +132,7 @@ ImageAnalysis: {
     ImageWidth: 512
     ImageHeight: 512
     ADCthreshold: 1.0
-    ClassifierModelPath: "resnet_classifier_epoch_20.pt"
+    ClassifierModelPath: "background_classifier.pt"
     RunInference: true
 }
 

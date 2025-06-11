@@ -1,110 +1,95 @@
 #!/bin/sh
-# run_fhicl_analysis.sh
 
 set -e
 
+fetch_files_from_sam() {
+    local files_list=$(samweb list-files defname:"${SAM_DEF}" | head -n "${NUM_FILES}")
+
+    if [ -z "${files_list}" ]; then
+        echo "Error: No files found in SAM definition '${SAM_DEF}'. Exiting..."
+        exit 1
+    fi
+    echo "Files fetched successfully."
+    echo "${files_list}"
+}
+
+process_files_with_lar() {
+    local files="$1"
+    mkdir -p "${TEMP_DIR}"
+
+    local counter=0
+    for file in ${files}; do
+        echo "Processing file: ${file}..."
+
+        local filedir=$(samweb locate-file "${file}" | grep -o '/pnfs/.*' | sed 's/(\([0-9]*@[a-z0-9]*\))//g' | head -n 1)
+        if [ -z "${filedir}" ]; then
+            echo "Error: Could not locate directory for file: ${file}. Skipping..."
+            continue
+        fi
+
+        local filepath="${filedir}/${file}"
+        if [ ! -f "${filepath}" ]; then
+            echo "Error: File not found at: ${filepath}. Skipping..."
+            continue
+        fi
+
+        local outputfile="${TEMP_DIR}/output_${counter}.root"
+        echo "Running: lar -c ${FHICL_FILE} -s ${filepath} -T ${outputfile}"
+        lar -c "${FHICL_FILE}" -s "${filepath}" -T "${outputfile}" || {
+            echo "Error: FHiCL processing failed for file: ${file}."
+            continue
+        }
+        echo "FHiCL processing successful. Output: ${outputfile}"
+        counter=$((counter + 1))
+    done
+}
+
+combine_output_files() {
+    echo "Combining all the output ROOT files..."
+    local outputfiles=$(find "${TEMP_DIR}" -maxdepth 1 -name "*.root")
+
+    if [ -z "${outputfiles}" ]; then
+        echo "Error: No output ROOT files found to combine! Exiting..."
+        exit 1
+    fi
+
+    echo "Combining files into: ${COMBINED_OUTPUT}"
+    hadd -f "${COMBINED_OUTPUT}" ${outputfiles} || {
+        echo "Error: Combining ROOT files failed!"
+        exit 1
+    }
+    echo "Successfully combined ROOT files into: ${COMBINED_OUTPUT}"
+}
+
+cleanup_temp_dir() {
+    echo "Cleaning up temporary files in ${TEMP_DIR}..."
+    rm -rf "${TEMP_DIR}" || {
+        echo "Warning: Failed to remove temporary directory '${TEMP_DIR}'. Manual cleanup might be needed."
+    }
+    echo "Temporary files cleaned."
+}
+
+FHICL_FILE="$1"
+NUM_FILES="$2"
+SAM_DEF="nl_prodgeni_numi_uboone_overlay_rhc_training_1600"
+OUTPUT_BASE_DIR="/exp/uboone/data/users/$USER/analysis"
+FHICL_BASE=$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')
+COMBINED_OUTPUT="${OUTPUT_BASE_DIR}/${SAM_DEF}_${FHICL_BASE}_${NUM_FILES}_new_analysis.root"
+TEMP_DIR="${OUTPUT_BASE_DIR}/temp_root_files"
+
 if [ "$#" -ne 2 ]; then
-    echo "Usage: source run_fhicl_analysis.sh <fhiclfile> <num_files>"
-    return 1
+    echo "Usage: $(basename "$0") <fhicl_file> <num_files>"
+    exit 1
 fi
 
-fhiclfile=$1
-num_files=$2
+echo "Starting process for SAM definition: ${SAM_DEF}"
 
-fhicl_base=$(basename "$fhiclfile" .fcl | sed 's/^run_//')
+FETCHED_FILES=$(fetch_files_from_sam)
 
-#samdef=nl_ext_numi_fhc_beamoff_run1_reco2_training_2500
-#samdef=nl_numi_fhc_beam_run1_reco2_training_250
+process_files_with_lar "${FETCHED_FILES}"
 
-#samdef=nl_numi_fhc_ext_run1_reco2_6000
-#samdef=nl_numi_fhc_beam_run1_reco2_1000
+combine_output_files
 
-#samdef=nl_prodgeni_numi_uboone_overlay_rhc_training_1600
-#samdef=nl_numi_fhc_beam_run1_reco2_validation_250
-#samdef=nl_lambda_nohadrons_reco2_validation_2000
-#samdef=make_k0signal_overlay_testing_nohadrons_reco2_reco2
-samdef=nl_strange_numi_fhc_run2_reco2_validation_982
-output_directory="/exp/uboone/data/users/$USER/analysis"
-combined_output="${output_directory}/${samdef}_${fhicl_base}_${num_files}_new_analysis.root"
-tempdir="${output_directory}/temp_root_files"
+cleanup_temp_dir
 
-mkdir -p $tempdir
-
-BLUE="\033[1;34m"
-RED="\033[1;31m"
-YELLOW="\033[1;33m"
-DEFAULT="\033[0m"
-
-echo -e "${BLUE}Starting process for SAM definition: $samdef${DEFAULT}"
-
-echo -e "${BLUE}Fetching the first $num_files files from SAM definition: $samdef${DEFAULT}"
-
-files=$(samweb list-files defname:$samdef | head -n $num_files)
-
-if [ -z "$files" ]; then
-    echo -e "${RED}No files found in the SAM definition! Exiting...${DEFAULT}"
-    return 1
-fi
-
-echo -e "${YELLOW}Files fetched:${DEFAULT}"
-echo "$files"
-
-echo -e "${BLUE}Running the FHiCL file on the selected files...${DEFAULT}"
-
-counter=0
-for file in $files; do
-    echo -e "${BLUE}Processing file: $file${DEFAULT}"
-
-    filedir=$(samweb locate-file $file | grep -o '/pnfs/.*' | sed 's/(\([0-9]*@[a-z0-9]*\))//g' | head -n 1)
-
-    if [ -z "$filedir" ]; then
-        echo -e "${RED}Could not locate directory for file: $file. Skipping...${DEFAULT}"
-        continue
-    fi
-
-    filepath="${filedir}/${file}"
-
-    if [ ! -f "$filepath" ]; then
-        echo -e "${RED}File not found at: $filepath. Skipping...${DEFAULT}"
-        continue
-    fi
-
-    outputfile="$tempdir/output_${counter}.root"
-
-    echo -e "${BLUE}Running: lar -c $fhiclfile -s $filepath -T $outputfile${DEFAULT}"
-    lar -c $fhiclfile -s $filepath -T $outputfile
-
-    if [ ! -f $outputfile ]; then
-        echo -e "${RED}FHiCL processing failed for file: $file${DEFAULT}"
-        continue
-    fi
-
-    echo -e "${YELLOW}FHiCL processing successful. Output: $outputfile${DEFAULT}"
-
-    counter=$((counter + 1))
-done
-
-
-echo -e "${BLUE}Combining all the output ROOT files...${DEFAULT}"
-
-outputfiles=$(ls $tempdir/*.root)
-
-if [ -z "$outputfiles" ]; then
-    echo -e "${RED}No output ROOT files found to combine! Exiting...${DEFAULT}"
-    return 1
-fi
-
-echo -e "${YELLOW}Combining files into: $combined_output${DEFAULT}"
-hadd -f $combined_output $outputfiles
-
-if [ -f $combined_output ]; then
-    echo -e "${GREEN}Successfully combined ROOT files into: $combined_output${DEFAULT}"
-else
-    echo -e "${RED}Combining ROOT files failed!${DEFAULT}"
-fi
-
-
-echo -e "${BLUE}Cleaning up temporary files...${DEFAULT}"
-rm -r $tempdir
-
-echo -e "${GREEN}Process complete!${DEFAULT}"
+echo "Process complete!"

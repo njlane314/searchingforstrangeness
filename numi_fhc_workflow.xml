@@ -5,19 +5,31 @@
     <!ENTITY file_type "mc">
     <!ENTITY run_type "physics">
     <!ENTITY user "nlane">
-    <!ENTITY name "nl_numi_fhc_eventselectionfilter">
-    <!ENTITY input_def_numi_fhc_run1_beam "nl_numi_fhc_beam_run1_reco2_1000">
-    <!ENTITY input_def_numi_fhc_run1_strangeness "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
+    <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
-    <!ENTITY input_def_detvar_cv_strange "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_LY_Rayleigh_strange "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_LY_Down_strange "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2_1000">
-    <!ENTITY input_def_detvar_wiremodX_sce_strange "detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_wiremodYZ_sce_strange "detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_WireMod_YZ_strange "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_wiremod_thetaYZ_strange "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_sce_strange "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2_1000">
-    <!ENTITY input_def_detvar_recomb2_strange "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2_1000">
+    
+    <!ENTITY input_def_strangeness_numi_fhc_run1 "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_cv "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_ly_rayleigh "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_ly_down "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2">
+    <!ENTITY input_def_strangeness_detvar_wiremodx_sce "detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_wiremodyz_sce "detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_wiremod_yz "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_wiremod_thetayz "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_sce "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2">
+    <!ENTITY input_def_strangeness_detvar_recomb2 "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2">
+
+    <!ENTITY input_def_beam_numi_fhc_run1 "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2">
+    <!ENTITY input_def_detvar_cv "prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_ly_suppression75attenuation8m "prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_ly_rayleigh "prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_lydown "prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_sce "prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_recomb2 "prodgenie_numi_nu_overlay_detvar_Recomb2_run1_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_wiremodx "prodgenie_numi_nu_overlay_detvar_WireModX_run1_reco2_fixed_run1_reco2">
+    <!ENTITY input_def_detvar_wiremodyz "prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_wiremodthetaxz "prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2">
+    <!ENTITY input_def_detvar_wiremodthetayz_withsplines "prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2">
 ]>
 
 <job>
@@ -38,8 +50,8 @@
     <version>prod_&release;</version>
 
     <stage name="reweight_numi_fhc_run1_beam">
-        <inputdef>&input_def_numi_fhc_run1_beam;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
         <fcl>run_eventweight_microboone_sep24.fcl</fcl>
         <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
         <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
@@ -51,7 +63,7 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam/reweights</workdir>
         <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
@@ -59,22 +71,23 @@
 
     <stage name="selection_numi_fhc_run1_beam">
         <inputstage>reweight_numi_fhc_run1_beam</inputstage>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_beam/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_beam</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
     <stage name="reweight_numi_fhc_run1_strangeness">
-        <inputdef>&input_def_numi_fhc_run1_strangeness;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <inputdef>&input_def_strangeness_numi_fhc_run1;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
         <fcl>run_eventweight_microboone_sep24.fcl</fcl>
         <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
         <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
@@ -86,7 +99,7 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness/reweights</workdir>
         <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
@@ -94,151 +107,699 @@
 
     <stage name="selection_numi_fhc_run1_strangeness">
         <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_numi_fhc_run1_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_numi_fhc_run1_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <!-- Selection stages for detector variations -->
+    <stage name="reweight_detvar_cv_strangeness">
+        <inputdef>&input_def_strangeness_detvar_cv;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_cv_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
 
     <stage name="selection_detvar_cv_strangeness">
-        <inputdef>&input_def_detvar_cv_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <inputstage>reweight_detvar_cv_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_cv_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_LY_Rayleigh_strangeness">
-        <inputdef>&input_def_detvar_LY_Rayleigh_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_LY_Rayleigh_strangeness</workdir>
-        <datatier>selected</datatier>
+    <stage name="reweight_detvar_ly_rayleigh_strangeness">
+        <inputdef>&input_def_strangeness_detvar_ly_rayleigh;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_LY_Down_strangeness">
-        <inputdef>&input_def_detvar_LY_Down_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+    <stage name="selection_detvar_ly_rayleigh_strangeness">
+        <inputstage>reweight_detvar_ly_rayleigh_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Down_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_LY_Down_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_LY_Down_strangeness</workdir>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_rayleigh_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_wiremodX_sce_strangeness">
-        <inputdef>&input_def_detvar_wiremodX_sce_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodX_sce_strangeness</workdir>
-        <datatier>selected</datatier>
+    <stage name="reweight_detvar_ly_down_strangeness">
+        <inputdef>&input_def_strangeness_detvar_ly_down;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_down_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_down_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_down_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_wiremodYZ_sce_strangeness">
-        <inputdef>&input_def_detvar_wiremodYZ_sce_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+    <stage name="selection_detvar_ly_down_strangeness">
+        <inputstage>reweight_detvar_ly_down_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodYZ_sce_strangeness</workdir>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_down_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_down_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_down_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_WireMod_YZ_strangeness">
-        <inputdef>&input_def_detvar_WireMod_YZ_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_WireMod_YZ_strangeness</workdir>
-        <datatier>selected</datatier>
+    <stage name="reweight_detvar_wiremodx_sce_strangeness">
+        <inputdef>&input_def_strangeness_detvar_wiremodx_sce;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
-    <stage name="selection_detvar_wiremod_thetaYZ_strangeness">
-        <inputdef>&input_def_detvar_wiremod_thetaYZ_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+    <stage name="selection_detvar_wiremodx_sce_strangeness">
+        <inputstage>reweight_detvar_wiremodx_sce_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_thetaYZ_strangeness</workdir>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodx_sce_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremodyz_sce_strangeness">
+        <inputdef>&input_def_strangeness_detvar_wiremodyz_sce;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodyz_sce_strangeness">
+        <inputstage>reweight_detvar_wiremodyz_sce_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodyz_sce_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremod_yz_strangeness">
+        <inputdef>&input_def_strangeness_detvar_wiremod_yz;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremod_yz_strangeness">
+        <inputstage>reweight_detvar_wiremod_yz_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_yz_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremod_thetayz_strangeness">
+        <inputdef>&input_def_strangeness_detvar_wiremod_thetayz;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremod_thetayz_strangeness">
+        <inputstage>reweight_detvar_wiremod_thetayz_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremod_thetayz_strangeness</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_sce_strangeness">
+        <inputdef>&input_def_strangeness_detvar_sce;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_sce_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
     <stage name="selection_detvar_sce_strangeness">
-        <inputdef>&input_def_detvar_sce_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <inputstage>reweight_detvar_sce_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_sce_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_recomb2_strangeness">
+        <inputdef>&input_def_strangeness_detvar_recomb2;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_recomb2_strangeness/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
     </stage>
 
     <stage name="selection_detvar_recomb2_strangeness">
-        <inputdef>&input_def_detvar_recomb2_strange;</inputdef>
-        <initsource>/pnfs/uboone/resilient/users/cthorpe/HyperonCode/scripts/setup_torch.sh</initsource>
+        <inputstage>reweight_detvar_recomb2_strangeness</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
         <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_recomb2_strangeness</workdir>
         <datatier>selected</datatier>
         <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>1000</numjobs>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_cv">
+        <inputdef>&input_def_detvar_cv;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_cv/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_cv">
+        <inputstage>reweight_detvar_cv</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_cv/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_cv</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_ly_suppression75attenuation8m">
+        <inputdef>&input_def_detvar_ly_suppression75attenuation8m;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_ly_suppression75attenuation8m">
+        <inputstage>reweight_detvar_ly_suppression75attenuation8m</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_suppression75attenuation8m</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_ly_rayleigh">
+        <inputdef>&input_def_detvar_ly_rayleigh;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_rayleigh/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_ly_rayleigh">
+        <inputstage>reweight_detvar_ly_rayleigh</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_ly_rayleigh/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_ly_rayleigh</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_lydown">
+        <inputdef>&input_def_detvar_lydown;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_lydown/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_lydown/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_lydown/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_lydown">
+        <inputstage>reweight_detvar_lydown</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_lydown/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_lydown/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_lydown</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_sce">
+        <inputdef>&input_def_detvar_sce;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_sce/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_sce">
+        <inputstage>reweight_detvar_sce</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_sce/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_sce</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_recomb2">
+        <inputdef>&input_def_detvar_recomb2;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_recomb2/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_recomb2">
+        <inputstage>reweight_detvar_recomb2</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_recomb2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_recomb2</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremodx">
+        <inputdef>&input_def_detvar_wiremodx;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodx/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodx">
+        <inputstage>reweight_detvar_wiremodx</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodx/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodx</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremodyz">
+        <inputdef>&input_def_detvar_wiremodyz;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodyz/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodyz">
+        <inputstage>reweight_detvar_wiremodyz</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodyz/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodyz</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremodthetaxz">
+        <inputdef>&input_def_detvar_wiremodthetaxz;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetaxz/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetaxz/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodthetaxz/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodthetaxz">
+        <inputstage>reweight_detvar_wiremodthetaxz</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetaxz/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetaxz/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodthetaxz</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="reweight_detvar_wiremodthetayz_withsplines">
+        <inputdef>&input_def_detvar_wiremodthetayz_withsplines;</inputdef>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines/reweights/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines/reweights/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines/reweights</workdir>
+        <datatier>eventweight</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
+        <memory>4000</memory>
+        <disk>20GB</disk>
+        <schema>https</schema>
+    </stage>
+
+    <stage name="selection_detvar_wiremodthetayz_withsplines">
+        <inputstage>reweight_detvar_wiremodthetayz_withsplines</inputstage>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <fcl>&fcl_selection;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/strangeness/&release;/&name;_detvar_wiremodthetayz_withsplines</workdir>
+        <datatier>selected</datatier>
+        <maxfilesperjob>1</maxfilesperjob>
+        <numjobs>10</numjobs>
         <memory>4000</memory>
         <disk>20GB</disk>
         <schema>https</schema>
