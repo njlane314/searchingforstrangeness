@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_DIR="./prestage_logs"
+LOG_DIR="./tmp"
 mkdir -p "${LOG_DIR}"
 
 prestage_dataset_def() {

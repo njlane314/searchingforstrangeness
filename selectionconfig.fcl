@@ -82,6 +82,11 @@ DefaultAnalysis: {
     NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
 }
 
+TopologyAnalysis: {
+    tool_type: "TopologyAnalysis"
+    CLSproducer: "pandora"
+}
+
 TrackAnalysis: {
     tool_type: "TrackAnalysis"
     TRKproducer: "pandora"
@@ -180,6 +185,7 @@ NeutrinoSelectionFilter: {
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         truth: @local::TruthAnalysis
+        topology: @local::TopologyAnalysis
         default: @local::DefaultAnalysis 
         image: @local::ImageAnalysis
         weight: @local::EventWeightAnalysis
