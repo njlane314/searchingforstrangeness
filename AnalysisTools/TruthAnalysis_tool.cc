@@ -247,6 +247,26 @@ namespace analysis
             int pdg = part.PdgCode();
             int abs_pdg = std::abs(pdg);
 
+            // if (pdg == 13) _mcf_nmm++;        // Counts negative muons
+            // else if (pdg == -13) _mcf_nmp++;  // Counts positive muons
+            // else if (pdg == 11) _mcf_nem++;   // Counts electrons
+            // else if (pdg == -11) _mcf_nep++;  // Counts positrons
+            // else if (pdg == 111) _mcf_np0++;  // Counts neutral pions
+            // else if (pdg == 211) _mcf_npp++;  // Counts positive pions
+            // else if (pdg == -211) _mcf_npm++; // Counts negative pions
+            // else if (pdg == 321) _mcf_nkp++;  // Counts positive kaons
+            // else if (pdg == -321) _mcf_nkm++; // Counts negative kaons
+            // else if (pdg == 130 || pdg == 310 || pdg == 311) _mcf_nk0++; // Counts neutral kaons (long-lived, short-lived, K0)
+            // else if (pdg == 2212) _mcf_npr++; // Counts protons
+            // else if (pdg == 2112) _mcf_nne++; // Counts neutrons
+            // else if (std::abs(pdg) == 3122) _mcf_nlambda++; // Counts lambda and anti-lambda
+            // else if (pdg == 3222) _mcf_nsigma_p++; // Counts sigma plus
+            // else if (pdg == 3212) _mcf_nsigma_0++; // Counts sigma zero
+            // else if (pdg == 3112) _mcf_nsigma_m++; // Counts sigma minus
+            // else if (std::abs(pdg) == 3322) _mcf_nxi_0++; // Counts xi zero and anti-xi zero
+            // else if (std::abs(pdg) == 3312) _mcf_nxi_m++; // Counts xi minus and xi plus
+            // else if (std::abs(pdg) == 3334) _mcf_nomega++; // Counts omega minus and omega plus
+
             if (pdg == 13) _mcf_nmm++;        
             else if (pdg == -13) _mcf_nmp++;  
             else if (pdg == 11) _mcf_nem++;   

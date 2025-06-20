@@ -1,0 +1,69 @@
+#include "selectionconfig.fcl"
+
+process_name: NeutrinoSelection
+
+services: {
+    TFileService: { fileName: "nu_selection.root" }
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    ParticleInventoryService: @local::standard_particleinventoryservice
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+    module_type: RootInput
+    maxEvents: -1
+}
+
+physics: {
+    filters: {
+        nuselection: {
+            module_type: "EventSelectionFilter"
+            PFPproducer: "pandora"
+            CLSproducer: "pandora"
+            SLCproducer: "pandora"
+            HITproducer: "gaushit"
+            SHRproducer: "pandora"
+            VTXproducer: "pandora"
+            TRKproducer: "pandora"
+            PCAproducer: "pandora"
+            MCPproducer: "largeant"
+            WIREproducer: "butcher"
+            MCTproducer: "generator"
+            DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
+            BackTrackerLabel: "gaushitTruthMatch"
+            Verbose: false
+            IsData: true
+            IsFakeData: false
+            Filter: true
+            SelectionTool: @local::NeutrinoSelection
+            AnalysisTools: {
+                truth: @local::TruthAnalysis
+                topology: @local::TopologyAnalysis
+                default: @local::DefaultAnalysis
+                image: @local::ImageAnalysis
+                weight: @local::EventWeightAnalysis
+                blips: @local::BlipAnalysis
+                tracks: @local::TrackAnalysis
+                showers: @local::ShowerAnalysis
+                calo: @local::CalorimetryAnalysis
+                energy: @local::NeutrinoEnergyAnalysis
+            }
+        }
+    }
+    path1: [ nuselection ]
+    trigger_paths: [ path1 ]
+}

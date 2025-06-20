@@ -90,8 +90,8 @@ TopologyAnalysis: {
 TrackAnalysis: {
     tool_type: "TrackAnalysis"
     TRKproducer: "pandora"
-    CALOproducer: "pandoracali"     # "pandoraKalmanShower"     #remove or leave empty of there are no track fits of the shower
-    PIDproducer: "pandorapid" # "pandoraKalmanShowercalo" #remove or leave empty of there are no track fits of the shower
+    CALOproducer: "pandoracali"   
+    PIDproducer: "pandorapid" 
     mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
     ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
     RecalibrateHits: true
@@ -138,7 +138,7 @@ ImageAnalysis: {
     ImageHeight: 512
     ADCthreshold: 1.0
     ClassifierModelPath: "background_classifier.pt"
-    RunInference: true
+    RunInference: false
 }
 
 NuGraphAnalysis: {

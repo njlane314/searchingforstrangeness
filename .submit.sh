@@ -35,7 +35,7 @@ check_previous_stage() {
 }
 
 REWEIGHT_BEAM_STAGES=(
-    #"reweight_numi_fhc_run1_beam"
+    "reweight_numi_fhc_run1_beam"
 )
 
 REWEIGHT_STRANGE_STAGES=(
@@ -43,8 +43,8 @@ REWEIGHT_STRANGE_STAGES=(
 )
 
 SELECTION_BEAM_STAGES=(
-    #"selection_numi_fhc_run1_beam"
-    "selection_detvar_cv"
+    "selection_numi_fhc_run1_beam"
+    #"selection_detvar_cv"
     #"selection_detvar_ly_suppression75attenuation8m"
     #"selection_detvar_ly_rayleigh"
     #"selection_detvar_lydown"
@@ -57,8 +57,8 @@ SELECTION_BEAM_STAGES=(
 )
 
 SELECTION_STRANGE_STAGES=(
-    #"selection_numi_fhc_run1_strangeness"
-    "selection_detvar_cv_strangeness"
+    "selection_numi_fhc_run1_strangeness"
+    #"selection_detvar_cv_strangeness"
     #"selection_detvar_sce_strangeness"
     #"selection_detvar_recomb2_strangeness"
     #"selection_detvar_ly_down_strangeness"

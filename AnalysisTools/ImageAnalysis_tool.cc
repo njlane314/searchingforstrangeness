@@ -69,13 +69,14 @@ namespace analysis
 
         void configure(const fhicl::ParameterSet& p) override;
         void analyseEvent(art::Event const& e, bool _is_data) override {}
-        void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) override;
+        void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, bool _is_data, bool selected) override;
         void setBranches(TTree* _tree) override;
         void resetTTree(TTree* _tree) override;
 
     private:
         art::InputTag fPFPproducer;
         art::InputTag fCLSproducer;
+        art::InputTag fSLCEproducer;
         art::InputTag fHITproducer;
         art::InputTag fWIREproducer;
         art::InputTag fMCPproducer;
@@ -99,9 +100,6 @@ namespace analysis
         std::vector<float> _detector_image_u;
         std::vector<float> _detector_image_v;
         std::vector<float> _detector_image_w;
-        std::vector<int> _reco_image_u;
-        std::vector<int> _reco_image_v;
-        std::vector<int> _reco_image_w;
         std::vector<int> _semantic_image_u;
         std::vector<int> _semantic_image_v;
         std::vector<int> _semantic_image_w;
@@ -115,7 +113,7 @@ namespace analysis
 
         std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         std::pair<double, double> calculateChargeCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
-        void constructPixelImages(const art::Event& e, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images);
+        void constructPixelImages(const art::Event& e, const std::vector<art::Ptr<recob::Hit>>& neutrino_hits, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images);
         std::vector<float> runInference(const std::vector<float>& image_data);
     };
 
@@ -124,8 +122,9 @@ namespace analysis
     }
 
     void ImageAnalysis::configure(const fhicl::ParameterSet& p) {
-        fPFPproducer = p.get<art::InputTag>("PFPproducer");
-        fCLSproducer = p.get<art::InputTag>("CLSproducer");
+        fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
+        fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
+        fSLCEproducer = p.get<art::InputTag>("SLICEproducer", "pandora");
         fHITproducer = p.get<art::InputTag>("HITproducer");
         fWIREproducer = p.get<art::InputTag>("WIREproducer");
         fMCPproducer = p.get<art::InputTag>("MCPproducer");
@@ -185,8 +184,8 @@ namespace analysis
         _resnet_probabilities.clear();
     }
 
-    void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) {
-        std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectSliceHits(e, slice_pfp_v);
+    void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, bool _is_data, bool selected) {
+        std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectSliceHits(e, pfp_pxy_v);
         auto [centroid_wire_u, centroid_drift_u] = this->calculateChargeCentroid(e, common::TPC_VIEW_U, neutrino_hits);
         auto [centroid_wire_v, centroid_drift_v] = this->calculateChargeCentroid(e, common::TPC_VIEW_V, neutrino_hits);
         auto [centroid_wire_w, centroid_drift_w] = this->calculateChargeCentroid(e, common::TPC_VIEW_W, neutrino_hits);
@@ -197,7 +196,7 @@ namespace analysis
 
         std::vector<Image<float>> detector_images;
         std::vector<Image<int>> semantic_images;
-        this->constructPixelImages(e, properties, detector_images, semantic_images);
+        this->constructPixelImages(e, neutrino_hits, properties, detector_images, semantic_images);
 
         _detector_image_u.clear();
         _detector_image_v.clear();
@@ -256,14 +255,25 @@ namespace analysis
 
     std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
         std::vector<art::Ptr<recob::Hit>> neutrino_hits;
-        auto clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
-        for (const auto& pfp : pfp_pxy_v) {
-            if (pfp->IsPrimary()) continue;
-            for (auto ass_clus : pfp.get<recob::Cluster>()) {
-                auto clus_hit_v = clus_proxy[ass_clus.key()].get<recob::Hit>();
-                neutrino_hits.insert(neutrino_hits.end(), clus_hit_v.begin(), clus_hit_v.end());
-            }
+        
+        auto pfpHandle = e.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+
+        art::FindManyP<recob::Slice> sliceAssoc(pfpHandle, e, fPFPproducer);
+        size_t pfpIndex = pfp_pxy_v[0].index();
+
+        const auto& slices = sliceAssoc.at(pfpIndex);
+        if (slices.empty()) return {};
+
+        const art::Ptr<recob::Slice>& slice = slices[0];
+        auto sliceHandle = e.getValidHandle<std::vector<recob::Slice>>(fSLCEproducer);
+        art::FindManyP<recob::Hit> hitAssoc(sliceHandle, e, fSLCEproducer);
+        const std::vector<art::Ptr<recob::Hit>>& sliceHits = hitAssoc.at(slice.key());
+        
+        neutrino_hits.reserve(sliceHits.size());
+        for (const auto& hit : sliceHits) {
+            neutrino_hits.push_back(hit);
         }
+
         return neutrino_hits;
     }
 
@@ -284,9 +294,10 @@ namespace analysis
     }
 
     void ImageAnalysis::constructPixelImages(const art::Event& e,
-                                            const std::vector<ImageProperties>& properties,
-                                            std::vector<Image<float>>& detector_images,
-                                            std::vector<Image<int>>& semantic_images) {
+                                         const std::vector<art::Ptr<recob::Hit>>& neutrino_hits,
+                                         const std::vector<ImageProperties>& properties,
+                                         std::vector<Image<float>>& detector_images,
+                                         std::vector<Image<int>>& semantic_images) {
         detector_images.clear();
         semantic_images.clear();
 
@@ -321,6 +332,8 @@ namespace analysis
             }
         }
 
+        std::set<art::Ptr<recob::Hit>> neutrino_hit_set(neutrino_hits.begin(), neutrino_hits.end());
+
         for (size_t wire_idx = 0; wire_idx < wire_vector->size(); ++wire_idx) {
             const auto& wire = wire_vector->at(wire_idx);
             auto ch_id = wire.Channel();
@@ -337,9 +350,13 @@ namespace analysis
                                 (wire_center.Z() * std::cos(-1.04719758034) - wire_center.Y() * std::sin(-1.04719758034));
 
             auto hits_for_wire = wire_hit_assoc.at(wire_idx);
-            std::vector<art::Ptr<recob::Hit>> sorted_hits = hits_for_wire;
-
-            std::sort(sorted_hits.begin(), sorted_hits.end(), [](const art::Ptr<recob::Hit>& a, const art::Ptr<recob::Hit>& b) {
+            std::vector<art::Ptr<recob::Hit>> filtered_hits;
+            for (const auto& hit : hits_for_wire) {
+                if (neutrino_hit_set.count(hit)) {
+                    filtered_hits.push_back(hit);
+                }
+            }
+            std::sort(filtered_hits.begin(), filtered_hits.end(), [](const art::Ptr<recob::Hit>& a, const art::Ptr<recob::Hit>& b) {
                 return a->StartTick() < b->StartTick();
             });
 
@@ -354,19 +371,16 @@ namespace analysis
                     size_t col = properties[view_idx].col(wire_coord);
                     if (row == static_cast<size_t>(-1) || col == static_cast<size_t>(-1)) continue;
 
-                    TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label;
-                    if (has_mcps && mcp_vector.isValid() && _semantic_classifier) {
-                        semantic_pixel_label = TruthLabelClassifier::TruthPrimaryLabel::Other;
+                    while (hit_index < filtered_hits.size() && filtered_hits[hit_index]->EndTick() <= tick) {
+                        ++hit_index;
+                    }
+                    if (hit_index < filtered_hits.size() &&
+                        filtered_hits[hit_index]->StartTick() <= tick &&
+                        tick < filtered_hits[hit_index]->EndTick()) {
+                        const art::Ptr<recob::Hit>& matched_hit = filtered_hits[hit_index];
+                        TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label = TruthLabelClassifier::TruthPrimaryLabel::Other;
 
-                        while (hit_index < sorted_hits.size() && sorted_hits[hit_index]->EndTick() <= tick) {
-                            ++hit_index;
-                        }
-
-                        if (hit_index < sorted_hits.size() &&
-                            sorted_hits[hit_index]->StartTick() <= tick &&
-                            tick < sorted_hits[hit_index]->EndTick()) {
-                            const art::Ptr<recob::Hit>& matched_hit = sorted_hits[hit_index];
-                            
+                        if (has_mcps && mcp_vector.isValid() && _semantic_classifier) {
                             std::vector<art::Ptr<simb::MCParticle>> mcp_particles_ass_to_hit;
                             std::vector<anab::BackTrackerHitMatchingData const*> bkth_data_ass_to_hit;
                             mcp_bkth_assoc.get(matched_hit.key(), mcp_particles_ass_to_hit, bkth_data_ass_to_hit);
@@ -382,20 +396,16 @@ namespace analysis
                                                 semantic_pixel_label = semantic_label_vector[particle_mcp_idx];
                                             }
                                         }
-                                        break; 
+                                        break;
                                     }
                                 }
-                            } else {
-                                semantic_pixel_label = TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
                             }
                         }
-                    } else {
-                        semantic_pixel_label = TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
-                    }
 
-                    if (adcs[adc_index] > _adc_image_threshold) {
-                        detector_images[view_idx].set(row, col, adcs[adc_index]);
-                        semantic_images[view_idx].set(row, col, static_cast<int>(semantic_pixel_label), false);
+                        if (adcs[adc_index] > _adc_image_threshold) {
+                            detector_images[view_idx].set(row, col, adcs[adc_index]);
+                            semantic_images[view_idx].set(row, col, static_cast<int>(semantic_pixel_label), false);
+                        }
                     }
                 }
             }
