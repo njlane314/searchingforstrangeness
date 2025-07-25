@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_BLIPANALYSIS_CXX
-#define ANALYSIS_BLIPANALYSIS_CXX
+#ifndef BLIP_ANALYSIS_CXX
+#define BLIP_ANALYSIS_CXX
 
 #include <iostream>
 #include "AnalysisToolBase.h"
@@ -76,30 +76,31 @@ BlipAnalysis::BlipAnalysis(const fhicl::ParameterSet &pset) {
     fBlipAlg = new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg"));
 }
 
-void BlipAnalysis::configure(fhicl::ParameterSet const &pset) {
-}
+void BlipAnalysis::configure(fhicl::ParameterSet const &pset) {}
 
 void BlipAnalysis::analyseEvent(art::Event const &e, bool fData) {
     _evt = e.event();
     _sub = e.subRun();
     _run = e.run();
-    std::cout << "[BlipAnalysis::analyseEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: " << _evt << std::endl;
 }
 
 void BlipAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
     fBlipAlg->RunBlipReco(e);
     std::vector<blip::Blip> blipVec = fBlipAlg->blips;
-    std::cout << "number of blips = " << blipVec.size() << std::endl;
+
     art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
     art::Handle< std::vector<simb::MCParticle> > mcparticleHandle;
     std::vector<art::Ptr<simb::MCTruth> > mclist;
     std::vector<art::Ptr<simb::MCParticle> > mcparticle;
+
     if (e.getByLabel("generator", mctruthListHandle)) {
         art::fill_ptr_vector(mclist, mctruthListHandle);
     }
+
     if (e.getByLabel("largeant", mcparticleHandle)) {
         art::fill_ptr_vector(mcparticle, mcparticleHandle);
     }
+
     for (size_t i = 0; i < blipVec.size(); i++) {
         _blip_ID.push_back(blipVec[i].ID);
         _blip_isValid.push_back(blipVec[i].isValid);
@@ -128,6 +129,7 @@ void BlipAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPf
         float b_E = -999;
         float b_mass = -999;
         int b_tid = -999;
+
         if (!fData) {
             b_pdg = blipVec[i].truth.LeadG4PDG;
             int blip_to_mcpar = -1;
@@ -137,6 +139,7 @@ void BlipAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPf
                     blip_to_mcpar = i_mcp;
                 }
             }
+
             if (blip_to_mcpar > -1) {
                 for (int i_n = 0; i_n < (int)_neutron_trkid.size(); i_n++) {
                 }
@@ -149,6 +152,7 @@ void BlipAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPf
                 b_tid = mcparticle[blip_to_mcpar]->TrackId();
             }
         }
+
         _blip_pdg.push_back(b_pdg);
         _blip_process.push_back(b_pro);
         _blip_vx.push_back(b_vx);
@@ -158,7 +162,6 @@ void BlipAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPf
         _blip_mass.push_back(b_mass);
         _blip_trkid.push_back(b_tid);
     }
-    std::cout << "finished analysing blip slice" << std::endl;
 }
 
 void BlipAnalysis::fillDefault() {
@@ -251,6 +254,7 @@ void BlipAnalysis::resetTTree(TTree *_tree) {
 }
 
 DEFINE_ART_CLASS_TOOL(BlipAnalysis)
+
 }
 
 #endif

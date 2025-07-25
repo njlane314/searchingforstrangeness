@@ -50,8 +50,6 @@ private:
     art::InputTag fMCPproducer;
     art::InputTag fWIREproducer;
     art::InputTag fMCTproducer;
-    art::InputTag fDeadChannelTag;
-    std::string fBackTrackerLabel;  
 
     bool _verbose;
     bool _data;
@@ -79,8 +77,6 @@ private:
     void printPFParticleMetadata(const common::ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList);
     void AddDaughters(const common::ProxyPfpElem_t &pfp_pxy, const common::ProxyPfpColl_t &pfp_pxy_col, std::vector<common::ProxyPfpElem_t> &slice_v);
     void ResetTTree();
-
-    std::vector<common::ProxyPfpElem_t> collectNeutrinoSlice(const common::ProxyPfpColl_t& pfp_proxy);
 };
 
 EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
@@ -96,12 +92,10 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
-    fDeadChannelTag = p.get<art::InputTag>("DeadChannelTag", "nfbadchannel:badchannels:OverlayDetsim");
-    fBackTrackerLabel = p.get<std::string>("BackTrackerLabel", "gaushit");
 
     _verbose = p.get<bool>("Verbose");
-    _data = p.get<bool>("IsData");
-    _fake_data = p.get<bool>("IsFakeData", false);
+    _data = p.get<bool>("isData");
+    _fake_data = p.get<bool>("isFakeData", false);
     _filter = p.get<bool>("Filter", false);
 
     art::ServiceHandle<art::TFileService> tfs;
@@ -163,20 +157,29 @@ bool EventSelectionFilter::filter(art::Event &e) {
     }
 
     bool keepEvent = false;
-    auto neutrino_slice = this->collectNeutrinoSlice(pfp_proxy);
-    if (!neutrino_slice.empty()) {
-        bool selected = _selectionTool->selectEvent(e, neutrino_slice);
-        if (selected) {
-            keepEvent = true;
-            _selected = 1;
+    for (const common::ProxyPfpElem_t &pfp_pxy : pfp_proxy) {
+        if (!pfp_pxy->IsPrimary() || (fabs(pfp_pxy->PdgCode()) != 12 && fabs(pfp_pxy->PdgCode()) != 14)) {
+            continue;
         }
 
-        for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
-            _analysisToolsVec[i]->analyseSlice(e, neutrino_slice, _data, selected);
+        std::vector<common::ProxyPfpElem_t> neutrino_slice;
+        this->AddDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
+
+        if (!neutrino_slice.empty()) {
+            bool selected = _selectionTool->selectEvent(e, neutrino_slice);
+            if (selected) {
+                keepEvent = true;
+                _selected++;
+            }
+
+            for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+                _analysisToolsVec[i]->analyseSlice(e, neutrino_slice, _data, selected);
+            }
         }
     }
 
     _tree->Fill();
+
     if (_filter)
         return keepEvent;
 
@@ -244,16 +247,6 @@ bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
     _sub_sr = subrun.subRun();
     _subrun_tree->Fill();
     return true;
-}
-
-std::vector<common::ProxyPfpElem_t> EventSelectionFilter::collectNeutrinoSlice(const common::ProxyPfpColl_t& pfp_proxy) {
-    std::vector<common::ProxyPfpElem_t> neutrino_slice;
-    for (const common::ProxyPfpElem_t& pfp_pxy : pfp_proxy) {
-        if (pfp_pxy->IsPrimary() && (fabs(pfp_pxy->PdgCode()) == 12 || fabs(pfp_pxy->PdgCode()) == 14)) {
-            this->AddDaughters(pfp_pxy, pfp_proxy, neutrino_slice);
-        }
-    }
-    return neutrino_slice;
 }
 
 DEFINE_ART_MODULE(EventSelectionFilter)

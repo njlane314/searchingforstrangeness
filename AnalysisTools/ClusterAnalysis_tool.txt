@@ -1,0 +1,313 @@
+#ifndef CLUSTER_ANALYSIS_H
+#define CLUSTER_ANALYSIS_H
+
+#include "AnalysisToolBase.h"
+#include "../EventGraph.h"
+
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Slice.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "TVector2.h"
+#include <cmath>
+#include <algorithm>
+
+namespace analysis {
+
+class ClusterAnalysis : public AnalysisToolBase {
+public:
+    explicit ClusterAnalysis(fhicl::ParameterSet const& p);
+    virtual ~ClusterAnalysis();
+    void configure(const fhicl::ParameterSet& pset) override;
+    void analyseEvent(const art::Event& event, bool is_data) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override;
+    void setBranches(TTree* tree) override;
+    void resetTTree(TTree* tree) override;
+    
+private:
+    Plane convertPlane(geo::View_t view);
+    void buildHierarchy(std::map<int, std::vector<int>>& hierarchy, const std::vector<ClusterFeature>& features, float max_link_distance);
+    art::InputTag fCLSproducer, fPFPproducer, fVTXproducer, fBKTproducer, fHITproducer, fSLCproducer;
+    EventGraph* m_event_graph = nullptr;
+};
+
+ClusterAnalysis::ClusterAnalysis(fhicl::ParameterSet const& p) {
+    this->configure(p);
+}
+
+ClusterAnalysis::~ClusterAnalysis() {
+    if (m_event_graph) delete m_event_graph;
+}
+
+void ClusterAnalysis::configure(fhicl::ParameterSet const& p) {
+    fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
+    fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
+    fVTXproducer = p.get<art::InputTag>("VTXproducer", "pandora");
+    fSLCproducer = p.get<art::InputTag>("SLCproducer", "pandora");
+    fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
+    fBKTproducer = p.get<art::InputTag>("BKTproducer", "gaushit");
+}
+
+void ClusterAnalysis::setBranches(TTree* _tree) {
+    _tree->Branch("EventGraph", &m_event_graph);
+}
+
+void ClusterAnalysis::resetTTree(TTree* tree) {
+    if (m_event_graph) {
+        m_event_graph->features_u.clear();
+        m_event_graph->features_v.clear();
+        m_event_graph->features_w.clear();
+        m_event_graph->hierarchy_u.clear();
+        m_event_graph->hierarchy_v.clear();
+        m_event_graph->hierarchy_w.clear();
+    } else {
+        m_event_graph = new EventGraph();
+    }
+}
+
+void ClusterAnalysis::analyseEvent(const art::Event& event, bool is_data) {}
+
+void ClusterAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {
+    if (!selected) return;
+    this->resetTTree(nullptr);
+
+    art::ServiceHandle<geo::Geometry const> geom;
+    auto const* detp = lar::providerFrom<detinfo::DetectorPropertiesService>();
+
+    double sampling_rate = detp->SamplingRate(); // ns/tick
+    double drift_velocity = detp->DriftVelocity(); // cm/μs
+    double tick_scale = drift_velocity * (sampling_rate * 1e-3); // cm/tick
+
+    TVector3 primary_vertex_3d(0, 0, 0);
+    bool has_reco_vertex = false;
+    for (auto const& pfp : slice_pfp_v) {
+        if (pfp->IsPrimary()) {
+            auto const& pfp_vtx_assn = pfp.get<recob::Vertex>();
+            if (pfp_vtx_assn.size() == 1) {
+                double xyz[3] = {};
+                pfp_vtx_assn.at(0)->XYZ(xyz);
+                primary_vertex_3d.SetXYZ(xyz[0], xyz[1], xyz[2]);
+                has_reco_vertex = true;
+                break;
+            }
+        }
+    }
+
+    if (!has_reco_vertex) return;
+
+    try {
+        double vtx_3d_arr[3] = {primary_vertex_3d.X(), primary_vertex_3d.Y(), primary_vertex_3d.Z()};
+        double vtx_2d_u[2], vtx_2d_v[2], vtx_2d_w[2];
+        geo::Point_t point(vtx_3d_arr[0], vtx_3d_arr[1], vtx_3d_arr[2]);
+        auto plane0 = geom->Plane(0);
+        auto plane1 = geom->Plane(1);
+        auto plane2 = geom->Plane(2);
+        vtx_2d_u[0] = plane0.WireCoordinate(point);
+        vtx_2d_u[1] = detp->ConvertXToTicks(point.X(), plane0.ID());
+        vtx_2d_v[0] = plane1.WireCoordinate(point);
+        vtx_2d_v[1] = detp->ConvertXToTicks(point.X(), plane1.ID());
+        vtx_2d_w[0] = plane2.WireCoordinate(point);
+        vtx_2d_w[1] = detp->ConvertXToTicks(point.X(), plane2.ID());
+        m_event_graph->primary_vertex_u.Set(vtx_2d_u[0], vtx_2d_u[1]);
+        m_event_graph->primary_vertex_v.Set(vtx_2d_v[0], vtx_2d_v[1]);
+        m_event_graph->primary_vertex_w.Set(vtx_2d_w[0], vtx_2d_w[1]);
+    } catch (...) {
+        return;
+    }
+
+    art::Handle<std::vector<recob::Slice>> sliceHandle;
+    art::Handle<std::vector<recob::Hit>> hitHandle;
+    art::Handle<std::vector<recob::Cluster>> clusterHandle;
+    event.getByLabel(fSLCproducer, sliceHandle);
+    event.getByLabel(fHITproducer, hitHandle);
+    event.getByLabel(fCLSproducer, clusterHandle);
+
+    art::FindManyP<recob::Hit> fmh_slice_to_hit(sliceHandle, event, fSLCproducer);
+    art::FindManyP<recob::Cluster> fmc_hit_to_cluster(hitHandle, event, fCLSproducer);
+    art::FindManyP<recob::Hit> fm_cluster_to_hit(clusterHandle, event, fCLSproducer);
+
+    std::set<art::Ptr<recob::Cluster>> slice_clusters_set;
+    for (auto const& pfp : slice_pfp_v) {
+        if (!pfp->IsPrimary()) continue;
+        auto const& slice_vector = pfp.get<recob::Slice>();
+        if (slice_vector.size() != 1) continue;
+        auto const& slice_hits = fmh_slice_to_hit.at(slice_vector[0].key());
+        for (size_t i_hit = 0; i_hit < slice_hits.size(); ++i_hit) {
+            auto const& hit = slice_hits[i_hit];
+            auto const& clusters = fmc_hit_to_cluster.at(hit.key());
+            for (size_t i_clu = 0; i_clu < clusters.size(); ++i_clu) {
+                slice_clusters_set.insert(clusters[i_clu]);
+            }
+        }
+    }
+
+    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> fmp(hitHandle, event, fBKTproducer);
+
+    for (auto const& pCluster : slice_clusters_set) {
+        const std::vector<art::Ptr<recob::Hit>>& hits_ptrs = fm_cluster_to_hit.at(pCluster.key());
+        if (hits_ptrs.empty()) continue;
+
+        ClusterFeature feature;
+        feature.id = pCluster->ID();
+        feature.view = this->convertPlane(pCluster->View());
+        feature.n_hits = pCluster->NHits();
+        feature.start_wire = pCluster->StartWire();
+        feature.start_tick = pCluster->StartTick();
+        feature.end_wire = pCluster->EndWire();
+        feature.end_tick = pCluster->EndTick();
+        feature.width = pCluster->Width();
+        feature.start_angle = pCluster->StartAngle();
+        feature.end_angle = pCluster->EndAngle();
+        feature.start_opening_angle = pCluster->StartOpeningAngle();
+        feature.end_opening_angle = pCluster->EndOpeningAngle();
+        feature.energy = pCluster->Integral();
+        feature.start_charge = pCluster->StartCharge();
+        feature.end_charge = pCluster->EndCharge();
+        feature.charge_average = pCluster->IntegralAverage();
+        feature.multiple_hit_density = pCluster->MultipleHitDensity();
+
+        TVector2 start_2d(pCluster->StartWire(), pCluster->StartTick());
+        if (feature.view == Plane::kU) feature.impact_parameter_2d_score = (start_2d - m_event_graph->primary_vertex_u).Mod();
+        if (feature.view == Plane::kV) feature.impact_parameter_2d_score = (start_2d - m_event_graph->primary_vertex_v).Mod();
+        if (feature.view == Plane::kY) feature.impact_parameter_2d_score = (start_2d - m_event_graph->primary_vertex_w).Mod();
+
+        std::vector<const recob::Hit*> hits_const_ptrs;
+        for (const auto& hit_ptr : hits_ptrs) {
+            hits_const_ptrs.push_back(hit_ptr.get());
+        }
+
+        geo::PlaneID plane_cluster = pCluster->Plane();
+        double wire_pitch = geom->WirePitch(plane_cluster);
+
+        double delta_wire = pCluster->EndWire() - pCluster->StartWire();
+        double delta_tick = pCluster->EndTick() - pCluster->StartTick();
+        double delta_wire_cm = delta_wire * wire_pitch;
+        double delta_tick_cm = delta_tick * tick_scale;
+        double cluster_length = std::sqrt(delta_wire_cm * delta_wire_cm + delta_tick_cm * delta_tick_cm);
+
+        if (!hits_const_ptrs.empty()) {
+            double sum_charge = 0.0;
+            double sum_wire = 0.0;
+            double sum_tick = 0.0;
+            for (const auto* hit : hits_const_ptrs) {
+                double charge = hit->Integral();
+                sum_charge += charge;
+                sum_wire += charge * hit->WireID().Wire;
+                sum_tick += charge * hit->PeakTime();
+            }
+            double mean_wire = (sum_charge > 0) ? sum_wire / sum_charge : 0.0;
+            double mean_tick = (sum_charge > 0) ? sum_tick / sum_charge : 0.0;
+
+            double cov_ww = 0.0, cov_wt = 0.0, cov_tt = 0.0;
+            for (const auto* hit : hits_const_ptrs) {
+                double charge = hit->Integral();
+                double dw = hit->WireID().Wire - mean_wire;
+                double dt = hit->PeakTime() - mean_tick;
+                cov_ww += charge * dw * dw;
+                cov_wt += charge * dw * dt;
+                cov_tt += charge * dt * dt;
+            }
+            if (sum_charge > 0) {
+                cov_ww /= sum_charge;
+                cov_wt /= sum_charge;
+                cov_tt /= sum_charge;
+            }
+
+            double trace = cov_ww + cov_tt;
+            double det = cov_ww * cov_tt - cov_wt * cov_wt;
+            double discriminant = trace * trace - 4 * det;
+            if (discriminant < 0) discriminant = 0;
+            double sqrt_disc = std::sqrt(discriminant);
+            double lambda1 = (trace + sqrt_disc) / 2.0; 
+            double lambda2 = (trace - sqrt_disc) / 2.0; 
+            if (lambda1 < lambda2) std::swap(lambda1, lambda2);
+            feature.linearity_score = (lambda1 > 0) ? 1.0 - (lambda2 / lambda1) : -1.0;
+        } else {
+            feature.linearity_score = -1.0;
+        }
+
+        if (cluster_length > 0) {
+            feature.dEdx_score = feature.energy / cluster_length;
+        } else {
+            feature.dEdx_score = 0.0;
+        }
+
+        if (!is_data) {
+            std::map<int, double> track_to_energy_map;
+            std::map<int, art::Ptr<simb::MCParticle>> track_to_mcp_map;
+            double total_energy_cluster = 0.0;
+            for (const auto& hit : hits_ptrs) {
+                auto const& mcps = fmp.at(hit.key());
+                auto const& match_data = fmp.data(hit.key());
+                for (size_t i_mcp = 0; i_mcp < mcps.size(); ++i_mcp) {
+                    track_to_energy_map[mcps[i_mcp]->TrackId()] += match_data[i_mcp]->energy;
+                    track_to_mcp_map.try_emplace(mcps[i_mcp]->TrackId(), mcps[i_mcp]);
+                }
+            }
+            int matched_track = -1;
+            double max_energy = -1.0;
+            for (auto const& [track_id, energy] : track_to_energy_map) {
+                total_energy_cluster += energy;
+                if (energy > max_energy) {
+                    max_energy = energy;
+                    matched_track = track_id;
+                }
+            }
+            if (matched_track != -1) {
+                art::Ptr<simb::MCParticle> main_mcp = track_to_mcp_map.at(matched_track);
+                feature.truth_pdg_code = main_mcp->PdgCode();
+                if (total_energy_cluster > 0) {
+                    feature.truth_purity = max_energy / total_energy_cluster;
+                }
+            }
+        }
+
+        switch (feature.view) {
+            case Plane::kU: m_event_graph->features_u.push_back(feature); break;
+            case Plane::kV: m_event_graph->features_v.push_back(feature); break;
+            case Plane::kY: m_event_graph->features_w.push_back(feature); break;
+            default: break;
+        }
+    }
+
+    this->buildHierarchy(m_event_graph->hierarchy_u, m_event_graph->features_u, 5.0);
+    this->buildHierarchy(m_event_graph->hierarchy_v, m_event_graph->features_v, 5.0);
+    this->buildHierarchy(m_event_graph->hierarchy_w, m_event_graph->features_w, 5.0);
+}
+
+void ClusterAnalysis::buildHierarchy(std::map<int, std::vector<int>>& hierarchy, const std::vector<ClusterFeature>& features, float max_link_distance) {
+    for (const auto& parent : features) {
+        for (const auto& daughter : features) {
+            if (parent.id == daughter.id) continue;
+            TVector2 parent_end(parent.end_wire, parent.end_tick);
+            TVector2 daughter_start(daughter.start_wire, daughter.start_tick);
+            if ((parent_end - daughter_start).Mod() < max_link_distance) {
+                hierarchy[parent.id].push_back(daughter.id);
+            }
+        }
+    }
+}
+
+analysis::Plane ClusterAnalysis::convertPlane(geo::View_t view) {
+    switch (view) {
+        case geo::kU: return Plane::kU;
+        case geo::kV: return Plane::kV;
+        case geo::kZ: return Plane::kY;
+        default: return Plane::kUnknown;
+    }
+}
+
+DEFINE_ART_CLASS_TOOL(ClusterAnalysis)
+} 
+
+#endif

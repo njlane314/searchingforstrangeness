@@ -1,0 +1,60 @@
+#ifndef EVENTGRAPH_H
+#define EVENTGRAPH_H
+
+#include "TVector2.h"
+#include "TVector3.h"
+#include <vector>
+#include <map>
+
+namespace analysis {
+
+enum class Plane { kUnknown, kU, kV, kY };
+
+struct ClusterFeature {
+    int id = -1;
+    float energy = -1.f;
+    int n_hits = 0;
+    Plane view = Plane::kUnknown;
+
+    float start_wire = -1.f;
+    float start_tick = -1.f;
+    float end_wire = -1.f;
+    float end_tick = -1.f;
+
+    float width = -1.f;
+    float start_angle = -999.f;
+    float end_angle = -999.f;
+    float start_opening_angle = -1.f;
+    float end_opening_angle = -1.f;
+    float start_charge = -1.f;
+    float end_charge = -1.f;
+    float charge_average = -1.f;
+    float multiple_hit_density = -1.f;
+
+    float linearity_score = -1.f;
+    float dEdx_score = -1.f;
+    float impact_parameter_2d_score = -1.f;
+
+    float truth_purity = -1.f;
+    int truth_pdg_code = 0;
+};
+
+struct EventGraph {
+    std::vector<ClusterFeature> features_u;
+    std::vector<ClusterFeature> features_v;
+    std::vector<ClusterFeature> features_w;
+
+    TVector2 primary_vertex_u;
+    TVector2 primary_vertex_v;
+    TVector2 primary_vertex_w;
+
+    std::map<int, std::vector<int>> hierarchy_u;
+    std::map<int, std::vector<int>> hierarchy_v;
+    std::map<int, std::vector<int>> hierarchy_w;
+
+    EventGraph() {}
+};
+
+}
+
+#endif

@@ -35,7 +35,7 @@ class ImageProperties {
         }
         size_t index(size_t row, size_t col) const {
             if (row >= height_ || col >= width_) return static_cast<size_t>(-1);
-            return col * height_ + row;
+            return row * width_ + col;
         }
         size_t col(double x) const {
             if (x < origin_x_ || x >= origin_x_ + width_ * pixel_w_) return static_cast<size_t>(-1);

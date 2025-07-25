@@ -48,6 +48,7 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ubobj_Trigger
                          ubreco_BlipRecoAlg
                          ${LIBTORCH_LIBRARIES}
+                         ${ROOT_GEOM}
         )
 
 install_headers()

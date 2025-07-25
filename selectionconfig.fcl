@@ -21,136 +21,42 @@ FidVol: {
     Zend:   50.
 }
 
-CalorimetryAnalysis: {
-    tool_type: "CalorimetryAnalysis"
-    TRKproducer: "pandora"
-    CALOproducer: "pandoracali"
-    PIDproducer: "pandoracalipid"
+BlipAnalysis: {
+    tool_type: "BlipAnalysis"
+    BlipAlg: @local::microboone_blipalg
+}
 
+ClusterAnalysis: {
+    tool_type: "ClusterAnalysis"
     CLSproducer: "pandora"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
-    MCRproducer: "mcreco"
-    MCPproducer: "largeant"
-    MCTproducer: "generator"
-    GetCaloID: false
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-}
-
-ShowerAnalysis: {
-    tool_type: "ShowerAnalysis"
-    TRKproducer: "pandora"     
-    CALproducer: "pandoracali" 
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    RecalibrateHits: true
-}
-
-NeutrinoEnergyAnalysis: {
-    tool_type: "NeutrinoEnergyAnalysis"
-    TRKproducer: "pandora"
-    CALOproducer: "pandoracali"
-    PDRproducer: "pandora"
-    TrkShrScore: 0.5
-    ShrEnergyBias: 0.8
-    ADCtoMeVMIP: 0.002876 
+    PFPproducer: "pandora"
+    VTXproducer: "pandora"
+    SLCproducer: "pandora"
+    HITproducer: "gaushit"
+    BKTproducer: "gaushitTruthMatch"
 }
 
 DefaultAnalysis: {
     tool_type: "DefaultAnalysis"
-    CRTVetoproducer: ""
     CLSproducer: "pandora"
     MCTproducer: "generator"
-    MCFluxproducer: "generator"
-    Hproducer: "gaushit"
-    BacktrackTag: "gaushitTruthMatch"
+    MCFproducer: "generator"
+    HITproducer: "gaushit"
+    BKTproducer: "gaushitTruthMatch"
     MCRproducer: "mcreco"
     SLCproducer: "pandora"
     MCPproducer: "largeant"
     PFPproducer: "pandora"
 
-    ProtonThreshold: 0.04 # GeV
     fidvolXstart: @local::FidVol.Xstart
     fidvolXend:   @local::FidVol.Xend
     fidvolYstart: @local::FidVol.Ystart
     fidvolYend:   @local::FidVol.Yend
     fidvolZstart: @local::FidVol.Zstart
     fidvolZend:   @local::FidVol.Zend
+
     makeNuMINtuple: false
     ignoreMCFlux: false
-    NuMIOpFiltProcName:    "DataStage1Optical"
-    NuMISWTriggerProcName: "DataOverlayOpticalNuMI"
-}
-
-TopologyAnalysis: {
-    tool_type: "TopologyAnalysis"
-    CLSproducer: "pandora"
-}
-
-TrackAnalysis: {
-    tool_type: "TrackAnalysis"
-    TRKproducer: "pandora"
-    CALOproducer: "pandoracali"   
-    PIDproducer: "pandorapid" 
-    mcsfitmu: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    RecalibrateHits: true
-}
-
-BlipAnalysis: {
-    tool_type: "BlipAnalysis"
-    BlipAlg: @local::microboone_blipalg
-}
-
-EventSelectionFilter: {
-    module_type: "EventSelectionFilter"
-    PFPproducer: "pandora"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    HITproducer: "gaushit"
-    SHRproducer: "pandora"
-    VTXproducer: "pandora"
-    TRKproducer: "pandora"
-    PCAproducer: "pandora"
-    MCPproducer: "largeant"
-    WIREproducer: "butcher"
-    MCTproducer: "generator"
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
-    BackTrackerLabel: "gaushitTruthMatch"
-    Verbose: false
-    IsData: false
-    IsFakeData: false
-    Filter: true
-}
-
-ImageAnalysis: {
-    tool_type: "ImageAnalysis"
-    PFPproducer: "pandora"
-    CLSproducer: "pandora"
-    HITproducer: "gaushit"
-    WIREproducer: "butcher"
-    MCPproducer: "largeant"
-    BackTrackerLabel: "gaushitTruthMatch"
-    GammaThreshold: 0.01
-    HadronThreshold: 0.01
-    LeptonThreshold: 0.01
-    ImageWidth: 512
-    ImageHeight: 512
-    ADCthreshold: 1.0
-    ClassifierModelPath: "background_classifier.pt"
-    RunInference: false
-}
-
-NuGraphAnalysis: {
-    tool_type: NuGraphAnalysis
-    CLSproducer: "pandora"      
-    SLCproducer: "pandora"      
-    NG2producer: "nugraph2"     
-}
-
-TruthAnalysis: {
-    tool_type: TruthAnalysis
-    MCTproducer: "generator"    
 }
 
 EventWeightAnalysis: {
@@ -165,7 +71,7 @@ EventWeightAnalysis: {
     createSplineTimesTuneBranch: true
     createPPFXBranch: true
     makeNuMINtuple: true
-    GenieAllUniverses: 600
+    genieAllUniverses: 500
 
     useReweightedFlux: true
     eventWeightProcessName00: "EventWeightSep24"
@@ -176,6 +82,74 @@ EventWeightAnalysis: {
     eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
+ImageAnalysis: {
+    tool_type: "ImageAnalysis"
+    PFPproducer: "pandora"
+    CLSproducer: "pandora"
+    HITproducer: "gaushit"
+    WREproducer: "butcher"
+    MCPproducer: "largeant"
+    BKTproducer: "gaushitTruthMatch"
+
+    imageWidth: 512
+    imageHeight: 512
+}
+
+SliceAnalysis: {
+    tool_type: "SliceAnalysis"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    MCTproducer: "generator"
+    MCPproducer: "largeant"
+    HITproducer: "gaushit"
+
+    origHproducer: "gaushit::OverlayStage1a"
+    origHTproducer: "gaushitTruthMatch::OverlayRecoStage1b"
+}
+
+TopologyAnalysis: {
+    tool_type: "TopologyAnalysis"
+    CLSproducer: "pandora"
+}
+
+TrackAnalysis: {
+    tool_type: "TrackAnalysis"
+    TRKproducer: "pandoraTrack"
+    CALproducer: "pandoraTrackcali"   
+    PIDproducer: "pandoraTrackcalipid"
+
+    MCSfit: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
+    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+    recalibrateHits: true
+}
+
+TruthAnalysis: {
+    tool_type: TruthAnalysis
+    MCTproducer: "generator"    
+}
+
+EventSelectionFilter: {
+    module_type: "EventSelectionFilter"
+    PFPproducer: "pandora"
+    CLSproducer: "pandora"
+    SLCproducer: "pandora"
+    HITproducer: "gaushit"
+    SHRproducer: "pandora"
+    VTXproducer: "pandora"
+    TRKproducer: "pandora"
+    PCAproducer: "pandora"
+    MCPproducer: "largeant"
+    WREproducer: "butcher"
+    MCTproducer: "generator"
+    BKTproducer: "gaushitTruthMatch"
+    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
+    
+    verbose: false
+    filter: true
+    isData: false
+    isFakeData: false
+}
+
 NeutrinoSelection: {
     tool_type: "NeutrinoSelection"
 }
@@ -184,15 +158,14 @@ NeutrinoSelectionFilter: {
     @table::EventSelectionFilter
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
-        truth: @local::TruthAnalysis
-        topology: @local::TopologyAnalysis
+        blip: @local::BlipAnalysis
+        cluster: @local::ClusterAnalysis
         default: @local::DefaultAnalysis 
-        image: @local::ImageAnalysis
         weight: @local::EventWeightAnalysis
-        blips: @local::BlipAnalysis
-        tracks: @local::TrackAnalysis
-        showers: @local::ShowerAnalysis
-        calo: @local::CalorimetryAnalysis
-        energy: @local::NeutrinoEnergyAnalysis
+        image: @local::ImageAnalysis
+        slice: @local::SliceAnalysis
+        topology: @local::TopologyAnalysis
+        track: @local::TrackAnalysis
+        truth: @local::TruthAnalysis  
     }
 }

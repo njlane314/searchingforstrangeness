@@ -2,1081 +2,501 @@
 #define ANALYSIS_TRACKANALYSIS_CXX
 
 #include <iostream>
+#include <limits>
 #include "AnalysisToolBase.h"
-
-#include "TDatabasePDG.h"
-#include "TParticlePDG.h"
-
 #include "../CommonDefs/Types.h"
-
 #include "../CommonDefs/BacktrackingFuncs.h"
 #include "../CommonDefs/TrackShowerScoreFuncs.h"
-#include "../CommonDefs/PIDFuncs.h"
 #include "../CommonDefs/SCECorrections.h"
 #include "../CommonDefs/Geometry.h"
-
-#include "../CommonDefs/LLR_PID.h"
-#include "../CommonDefs/LLRPID_proton_muon_lookup.h"
-#include "../CommonDefs/LLRPID_correction_lookup.h"
 #include "../CommonDefs/CalibrationFuncs.h"
-
-#include "larreco/RecoAlg/TrajectoryMCSFitter.h"
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
-namespace analysis
-{
-    class TrackAnalysis : public AnalysisToolBase
-    {
-    public:
-        TrackAnalysis(const fhicl::ParameterSet &pset);
-        ~TrackAnalysis(){};
+namespace analysis {
 
-        void configure(fhicl::ParameterSet const &pset);
+class TrackAnalysis : public AnalysisToolBase {
+public:
+    TrackAnalysis(const fhicl::ParameterSet& parameter_set);
+    ~TrackAnalysis() {}
+    void configure(const fhicl::ParameterSet& parameter_set) override;
+    void analyseEvent(const art::Event& event, bool is_data) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vector, bool is_data, bool is_selected) override;
+    void setBranches(TTree* tree) override;
+    void resetTTree(TTree* tree) override;
 
-        void analyseEvent(art::Event const &e, bool fData) override;
+private:
+    void fill_default();
+    float calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values);
+    float calculate_track_trunk_dedx_by_range(const std::vector<float>& dedx_values, const std::vector<float>& residual_range_values);
+    void calculate_track_deflections(const art::Ptr<recob::Track>& track, std::vector<float>& mean_deflections, 
+                                   std::vector<float>& stdev_deflections, std::vector<float>& mean_separation);
 
-        void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+    art::InputTag fCALproducer;
+    art::InputTag fTRKproducer;
+    art::InputTag fHITproducer;
+    art::InputTag fCLSproducer;
+    art::InputTag fBKTproducer;
 
-        void SaveTruth(art::Event const &e);
+    std::vector<float> fADCtoE;
+    float fEndSpacepointDistance;
 
-        void fillDefault();
+    int _run;
+    int _sbr;
+    int _evt;
 
-        void setBranches(TTree *_tree) override;
+    std::vector<size_t> _track_pfp_ids;
+    std::vector<float> _track_start_x;
+    std::vector<float> _track_start_y;
+    std::vector<float> _track_start_z;
+    std::vector<float> _track_sce_start_x;
+    std::vector<float> _track_sce_start_y;
+    std::vector<float> _track_sce_start_z;
+    std::vector<float> _track_end_x;
+    std::vector<float> _track_end_y;
+    std::vector<float> _track_end_z;
+    std::vector<float> _track_sce_end_x;
+    std::vector<float> _track_sce_end_y;
+    std::vector<float> _track_sce_end_z;
+    std::vector<float> _track_direction_x;
+    std::vector<float> _track_direction_y;
+    std::vector<float> _track_direction_z;
+    std::vector<float> _track_distance_to_vertex;
+    std::vector<float> _track_theta;
+    std::vector<float> _track_phi;
+    std::vector<float> _track_length;
+    std::vector<float> _track_calo_energy_u;
+    std::vector<float> _track_calo_energy_v;
+    std::vector<float> _track_calo_energy_y;
+    std::vector<float> _track_trunk_dedx_u;
+    std::vector<float> _track_trunk_dedx_v;
+    std::vector<float> _track_trunk_dedx_y;
+    std::vector<float> _track_trunk_rr_dedx_u;
+    std::vector<float> _track_trunk_rr_dedx_v;
+    std::vector<float> _track_trunk_rr_dedx_y;
+    std::vector<int> _track_nhits_u;
+    std::vector<int> _track_nhits_v;
+    std::vector<int> _track_nhits_y;
+    std::vector<float> _track_avg_deflection_mean;
+    std::vector<float> _track_avg_deflection_stdev;
+    std::vector<float> _track_avg_deflection_separation_mean;
+    std::vector<int> _track_end_spacepoints;
+};
 
-        void resetTTree(TTree *_tree) override;
+TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet& parameter_set) {
+    fHITproducer = parameter_set.get<art::InputTag>("HITproducer", "gaushit");
+    fCLSproducer = parameter_set.get<art::InputTag>("CLSproducer", "pandora");
+    fTRKproducer = parameter_set.get<art::InputTag>("TRKproducer", "pandoraTrack");
+    fCALproducer = parameter_set.get<art::InputTag>("CALproducer", "pandoraTrackcali");
+    fBKTproducer = parameter_set.get<art::InputTag>("BKTproducer", "gaushitTruthMatch");
 
-    private:
-        float CalculateTrackTrunkdEdxByHits(const std::vector<float> &dedxPerHit);
-        float CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit);
-        void CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v);
+    fADCtoE = parameter_set.get<std::vector<float>>("ADCtoE");
+    fEndSpacepointDistance = parameter_set.get<float>("EndSpacepointDistance", 5.0);
+}
 
-        const trkf::TrackMomentumCalculator _trkmom;
-        const trkf::TrajectoryMCSFitter _mcsfitter;
+void TrackAnalysis::configure(const fhicl::ParameterSet& parameter_set) {}
 
-        TParticlePDG *proton = TDatabasePDG::Instance()->GetParticle(2212);
-        TParticlePDG *muon = TDatabasePDG::Instance()->GetParticle(13);
+void TrackAnalysis::analyseEvent(const art::Event& event, bool is_data) {
+    _evt = event.event();
+    _sbr = event.subRun();
+    _run = event.run();
+}
 
-        common::LLRPID llr_pid_calculator;
-        common::ProtonMuonLookUpParameters protonmuon_parameters;
-        common::CorrectionLookUpParameters correction_parameters;
+void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vector, 
+                                 bool is_data, bool is_selected) {
+    const auto& calorimetry_proxy = proxy::getCollection<std::vector<recob::Track>>(
+        event, fTRKproducer, proxy::withAssociated<anab::Calorimetry>(fCALproducer));
 
-        art::InputTag fCALOproducer;
-        art::InputTag fPIDproducer;
-        art::InputTag fTRKproducer;
-        art::InputTag fBacktrackTag;
-        art::InputTag fHproducer;
-        art::InputTag fCLSproducer;
-
-        bool fRecalibrateHits;
-        float fEnergyThresholdForMCHits;
-        std::vector<float> fADCtoE;
-        float fEndSpacepointDistance;
-
-        int _run, _sub, _evt;
-
-        std::vector<size_t> _trk_pfp_id_v;
-
-        std::vector<float> _trk_start_x_v;
-        std::vector<float> _trk_start_y_v;
-        std::vector<float> _trk_start_z_v;
-
-        std::vector<float> _trk_sce_start_x_v;
-        std::vector<float> _trk_sce_start_y_v;
-        std::vector<float> _trk_sce_start_z_v;
-
-        std::vector<float> _trk_distance_v;
-
-        std::vector<float> _trk_theta_v;
-        std::vector<float> _trk_phi_v;
-
-        std::vector<float> _trk_dir_x_v;
-        std::vector<float> _trk_dir_y_v;
-        std::vector<float> _trk_dir_z_v;
-
-        std::vector<float> _trk_end_x_v;
-        std::vector<float> _trk_end_y_v;
-        std::vector<float> _trk_end_z_v;
-
-        std::vector<float> _trk_sce_end_x_v;
-        std::vector<float> _trk_sce_end_y_v;
-        std::vector<float> _trk_sce_end_z_v;
-
-        std::vector<float> _trk_len_v;
-
-        std::vector<float> _trk_bragg_p_v;
-        std::vector<float> _trk_bragg_mu_v;
-        std::vector<float> _trk_bragg_pion_v;
-        std::vector<float> _trk_bragg_mip_v;
-        std::vector<float> _trk_bragg_p_alt_dir_v;
-        std::vector<float> _trk_bragg_mu_alt_dir_v;
-        std::vector<float> _trk_bragg_pion_alt_dir_v;
-        std::vector<bool> _trk_bragg_p_fwd_preferred_v;
-        std::vector<bool> _trk_bragg_mu_fwd_preferred_v;
-        std::vector<bool> _trk_bragg_pion_fwd_preferred_v;
-        std::vector<float> _trk_pid_chipr_v;
-        std::vector<float> _trk_pid_chika_v;
-        std::vector<float> _trk_pid_chipi_v;
-        std::vector<float> _trk_pid_chimu_v;
-        std::vector<float> _trk_pida_v;
-
-        std::vector<float> _trk_bragg_p_u_v;
-        std::vector<float> _trk_bragg_mu_u_v;
-        std::vector<float> _trk_bragg_pion_u_v;
-        std::vector<float> _trk_bragg_mip_u_v;
-        std::vector<float> _trk_bragg_p_alt_dir_u_v;
-        std::vector<float> _trk_bragg_mu_alt_dir_u_v;
-        std::vector<float> _trk_bragg_pion_alt_dir_u_v;
-        std::vector<bool> _trk_bragg_p_fwd_preferred_u_v;
-        std::vector<bool> _trk_bragg_mu_fwd_preferred_u_v;
-        std::vector<bool> _trk_bragg_pion_fwd_preferred_u_v;
-        std::vector<float> _trk_pid_chipr_u_v;
-        std::vector<float> _trk_pid_chika_u_v;
-        std::vector<float> _trk_pid_chipi_u_v;
-        std::vector<float> _trk_pid_chimu_u_v;
-        std::vector<float> _trk_pida_u_v;
-
-        std::vector<float> _trk_bragg_p_v_v;
-        std::vector<float> _trk_bragg_mu_v_v;
-        std::vector<float> _trk_bragg_pion_v_v;
-        std::vector<float> _trk_bragg_mip_v_v;
-        std::vector<float> _trk_bragg_p_alt_dir_v_v;
-        std::vector<float> _trk_bragg_mu_alt_dir_v_v;
-        std::vector<float> _trk_bragg_pion_alt_dir_v_v;
-        std::vector<bool> _trk_bragg_p_fwd_preferred_v_v;
-        std::vector<bool> _trk_bragg_mu_fwd_preferred_v_v;
-        std::vector<bool> _trk_bragg_pion_fwd_preferred_v_v;
-        std::vector<float> _trk_pid_chipr_v_v;
-        std::vector<float> _trk_pid_chika_v_v;
-        std::vector<float> _trk_pid_chipi_v_v;
-        std::vector<float> _trk_pid_chimu_v_v;
-        std::vector<float> _trk_pida_v_v;
-
-        std::vector<float> _trk_llr_pid_u_v;
-        std::vector<float> _trk_llr_pid_v_v;
-        std::vector<float> _trk_llr_pid_y_v;
-        std::vector<float> _trk_llr_pid_v;
-
-        std::vector<float> _trk_llr_pid_score_v;
-
-        std::vector<float> _trk_mcs_muon_mom_v;
-        std::vector<float> _trk_range_muon_mom_v;
-        std::vector<float> _trk_energy_proton_v;
-        std::vector<float> _trk_energy_muon_v;
-        std::vector<float> _trk_calo_energy_u_v;
-        std::vector<float> _trk_calo_energy_v_v;
-        std::vector<float> _trk_calo_energy_y_v;
-
-        std::vector<float> _trk_trunk_dEdx_u_v;
-        std::vector<float> _trk_trunk_dEdx_v_v;
-        std::vector<float> _trk_trunk_dEdx_y_v;
-
-        std::vector<float> _trk_trunk_rr_dEdx_u_v;
-        std::vector<float> _trk_trunk_rr_dEdx_v_v;
-        std::vector<float> _trk_trunk_rr_dEdx_y_v;
-
-        std::vector<int> _trk_nhits_u_v;
-        std::vector<int> _trk_nhits_v_v;
-        std::vector<int> _trk_nhits_y_v;
-
-        std::vector<float> _trk_avg_deflection_mean_v;
-        std::vector<float> _trk_avg_deflection_stdev_v;
-        std::vector<float> _trk_avg_deflection_separation_mean_v;
-
-        std::vector<int> _trk_end_spacepoints_v;
-    };
-
-    TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet &p) : _mcsfitter(fhicl::Table<trkf::TrajectoryMCSFitter::Config>(p.get<fhicl::ParameterSet>("mcsfitmu")))
-    {
-        fCALOproducer = p.get<art::InputTag>("CALOproducer");
-        fPIDproducer = p.get<art::InputTag>("PIDproducer");
-        fTRKproducer = p.get<art::InputTag>("TRKproducer");
-        fBacktrackTag = p.get<art::InputTag>("BacktrackTag", "gaushitTruthMatch");
-        fHproducer = p.get<art::InputTag>("Hproducer", "gaushit");
-        fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
-        fEnergyThresholdForMCHits = p.get<float>("EnergyThresholdForMCHits", 0.1);
-        fRecalibrateHits = p.get<bool>("RecalibrateHits", false);
-        fADCtoE = p.get<std::vector<float>>("ADCtoE");
-        fEndSpacepointDistance = p.get<float>("EndSpacepointDistance", 5.0);
-
-        llr_pid_calculator.set_dedx_binning(0, protonmuon_parameters.dedx_edges_pl_0);
-        llr_pid_calculator.set_par_binning(0, protonmuon_parameters.parameters_edges_pl_0);
-        llr_pid_calculator.set_lookup_tables(0, protonmuon_parameters.dedx_pdf_pl_0);
-
-        llr_pid_calculator.set_dedx_binning(1, protonmuon_parameters.dedx_edges_pl_1);
-        llr_pid_calculator.set_par_binning(1, protonmuon_parameters.parameters_edges_pl_1);
-        llr_pid_calculator.set_lookup_tables(1, protonmuon_parameters.dedx_pdf_pl_1);
-
-        llr_pid_calculator.set_dedx_binning(2, protonmuon_parameters.dedx_edges_pl_2);
-        llr_pid_calculator.set_par_binning(2, protonmuon_parameters.parameters_edges_pl_2);
-        llr_pid_calculator.set_lookup_tables(2, protonmuon_parameters.dedx_pdf_pl_2);
-
-        if (fRecalibrateHits)
-        {
-            llr_pid_calculator.set_corr_par_binning(0, correction_parameters.parameter_correction_edges_pl_0);
-            llr_pid_calculator.set_correction_tables(0, correction_parameters.correction_table_pl_0);
-
-            llr_pid_calculator.set_corr_par_binning(1, correction_parameters.parameter_correction_edges_pl_1);
-            llr_pid_calculator.set_correction_tables(1, correction_parameters.correction_table_pl_1);
-
-            llr_pid_calculator.set_corr_par_binning(2, correction_parameters.parameter_correction_edges_pl_2);
-            llr_pid_calculator.set_correction_tables(2, correction_parameters.correction_table_pl_2);
-        }
-    }
-
-    void TrackAnalysis::configure(fhicl::ParameterSet const &p)
-    {
-    }
-
-    void TrackAnalysis::analyseEvent(art::Event const &e, bool fData)
-    {
-        _evt = e.event();
-        _sub = e.subRun();
-        _run = e.run();
-        std::cout << "[TrackAnalysis::analyseEvent] Run: " << _run << ", SubRun: " << _sub << ", Event: " << _evt << std::endl;
-    }
-
-    void TrackAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected)
-    {
-        common::ProxyCaloColl_t const &calo_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer,
-                                                                                                            proxy::withAssociated<anab::Calorimetry>(fCALOproducer));
-
-        common::ProxyPIDColl_t const &pid_proxy = proxy::getCollection<std::vector<recob::Track>>(e, fTRKproducer,
-                                                                                                            proxy::withAssociated<anab::ParticleID>(fPIDproducer));
-
-        TVector3 nuvtx;
-        for (auto pfp : slice_pfp_v)
-        {
-            if (pfp->IsPrimary())
-            {
-                double xyz[3] = {};
-                auto vtx = pfp.get<recob::Vertex>();
-                if (vtx.size() != 1)
-                {
-                    std::cout << "ERROR. Found neutrino PFP w/ != 1 associated vertices..." << std::endl;
-                }
-                else
-                {
-                    vtx.at(0)->XYZ(xyz);
-                    nuvtx.SetXYZ(xyz[0], xyz[1], xyz[2]);
-                }
-                break;
-            }
-        }
-
-        std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
-
-        if (!fData)
-        {
-            art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHproducer);
-            assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBacktrackTag));
-        }
-
-        auto spacePointHandle = e.getValidHandle<std::vector<recob::SpacePoint>>(fCLSproducer);
-        std::vector< art::Ptr<recob::SpacePoint> > spacePointCollection;
-        for (size_t i_sp = 0; i_sp < spacePointHandle->size(); i_sp++) {
-            spacePointCollection.emplace_back(spacePointHandle, i_sp);
-        }
-
-        for (size_t i_pfp = 0; i_pfp < slice_pfp_v.size(); i_pfp++)
-        {
-            auto pfp = slice_pfp_v[i_pfp];
-            if (pfp->IsPrimary())
+    TVector3 neutrino_vertex;
+    for (const auto& pfp : slice_pfp_vector) {
+        if (pfp->IsPrimary()) {
+            double xyz[3] = {};
+            auto vertices = pfp.get<recob::Vertex>();
+            if (vertices.size() != 1) {
                 continue;
+            } else {
+                vertices.at(0)->XYZ(xyz);
+                neutrino_vertex.SetXYZ(xyz[0], xyz[1], xyz[2]);
+            }
+            break;
+        }
+    }
 
-            auto trk_v = pfp.get<recob::Track>();
+    auto space_point_handle = event.getValidHandle<std::vector<recob::SpacePoint>>(fCLSproducer);
+    std::vector<art::Ptr<recob::SpacePoint>> space_point_collection;
+    for (size_t i = 0; i < space_point_handle->size(); ++i) {
+        space_point_collection.emplace_back(space_point_handle, i);
+    }
 
-            if (trk_v.size() == 1)
-            {
-                auto trk = trk_v.at(0);
+    for (size_t pfp_index = 0; pfp_index < slice_pfp_vector.size(); ++pfp_index) {
+        const auto& pfp = slice_pfp_vector[pfp_index];
+        if (pfp->IsPrimary()) continue;
 
-                auto trkpxy2 = pid_proxy[trk.key()];
-                auto pidpxy_v = trkpxy2.get<anab::ParticleID>();
+        auto tracks = pfp.get<recob::Track>();
+        if (tracks.size() == 1) {
+            const auto& track = tracks.at(0);
 
-                auto GetMaxPID = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
-                    return std::max(common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane),
-                                    common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane));
-                };
-                auto GetMinPID = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
-                    return std::min(common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane),
-                                    common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane));
-                };
-                auto IsFwdPIDPreferred = [&pidpxy_v](const int &pdg, const unsigned int plane) 
-                {
-                    return common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, pdg, plane)>
-                        common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kBackward, pdg, plane);
-                };
+            _track_pfp_ids.push_back(pfp_index);
+            _track_start_x.push_back(track->Start().X());
+            _track_start_y.push_back(track->Start().Y());
+            _track_start_z.push_back(track->Start().Z());
 
-                float bragg_p = GetMaxPID(2212, 2);
-                float bragg_mu = GetMaxPID(13, 2);
-                float bragg_pion = GetMaxPID(211, 2);
-                float bragg_mip = common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, 0, 2);
-                float bragg_p_alt_dir = GetMinPID(2212, 2);
-                float bragg_mu_alt_dir = GetMinPID(13, 2);
-                float bragg_pion_alt_dir = GetMinPID(211, 2);
-                bool bragg_p_fwd_preferred = IsFwdPIDPreferred(2212, 2);
-                bool bragg_mu_fwd_preferred = IsFwdPIDPreferred(13, 2);
-                bool bragg_pion_fwd_preferred = IsFwdPIDPreferred(211, 2);
+            float sce_start[3];
+            common::ApplySCECorrectionXYZ(track->Start().X(), track->Start().Y(), track->Start().Z(), sce_start);
+            _track_sce_start_x.push_back(sce_start[0]);
+            _track_sce_start_y.push_back(sce_start[1]);
+            _track_sce_start_z.push_back(sce_start[2]);
 
-                float pidchipr = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 2212, 2);
-                float pidchimu = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 13, 2);
-                float pidchipi = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 2);
-                float pidchika = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 2);
+            _track_end_x.push_back(track->End().X());
+            _track_end_y.push_back(track->End().Y());
+            _track_end_z.push_back(track->End().Z());
 
-                float pida_mean = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 2);
+            float sce_end[3];
+            common::ApplySCECorrectionXYZ(track->End().X(), track->End().Y(), track->End().Z(), sce_end);
+            _track_sce_end_x.push_back(sce_end[0]);
+            _track_sce_end_y.push_back(sce_end[1]);
+            _track_sce_end_z.push_back(sce_end[2]);
 
-                _trk_bragg_p_v.push_back(bragg_p);
-                _trk_bragg_mu_v.push_back(bragg_mu);
-                _trk_bragg_pion_v.push_back(bragg_pion);
-                _trk_bragg_mip_v.push_back(bragg_mip);
-                _trk_bragg_p_alt_dir_v.push_back(bragg_p_alt_dir);
-                _trk_bragg_mu_alt_dir_v.push_back(bragg_mu_alt_dir);
-                _trk_bragg_pion_alt_dir_v.push_back(bragg_pion_alt_dir);
-                _trk_bragg_p_fwd_preferred_v.push_back(bragg_p_fwd_preferred);
-                _trk_bragg_mu_fwd_preferred_v.push_back(bragg_mu_fwd_preferred);
-                _trk_bragg_pion_fwd_preferred_v.push_back(bragg_pion_fwd_preferred);
+            _track_direction_x.push_back(track->StartDirection().X());
+            _track_direction_y.push_back(track->StartDirection().Y());
+            _track_direction_z.push_back(track->StartDirection().Z());
 
-                _trk_pid_chipr_v.push_back(pidchipr);
-                _trk_pid_chimu_v.push_back(pidchimu);
-                _trk_pid_chipi_v.push_back(pidchipi);
-                _trk_pid_chika_v.push_back(pidchika);
-                _trk_pida_v.push_back(pida_mean);
+            _track_theta.push_back(track->Theta());
+            _track_phi.push_back(track->Phi());
+            _track_length.push_back(common::GetSCECorrTrackLength(track));
 
-                float bragg_p_u = GetMaxPID(2212, 0);
-                float bragg_mu_u = GetMaxPID(13, 0);
-                float bragg_pion_u = GetMaxPID(211, 0);
-                float bragg_mip_u = common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, 0, 0);
-                float bragg_p_alt_dir_u = GetMinPID(2212, 0);
-                float bragg_mu_alt_dir_u = GetMinPID(13, 0);
-                float bragg_pion_alt_dir_u = GetMinPID(211, 0);
-                bool bragg_p_fwd_preferred_u = IsFwdPIDPreferred(2212, 0);
-                bool bragg_mu_fwd_preferred_u = IsFwdPIDPreferred(13, 0);
-                bool bragg_pion_fwd_preferred_u = IsFwdPIDPreferred(211, 0);
+            TVector3 track_vertex(track->Start().X(), track->Start().Y(), track->Start().Z());
+            track_vertex -= neutrino_vertex;
+            _track_distance_to_vertex.push_back(track_vertex.Mag());
 
-                float pidchipr_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 2212, 0);
-                float pidchimu_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 13, 0);
-                float pidchipi_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 0);
-                float pidchika_u = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 0);
+            auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
+            for (const auto& calo : calorimetry_objects) {
+                int plane = calo->PlaneID().Plane;
+                if (plane < 0 || plane > 2) continue;
 
-                float pida_mean_u = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 0);
+                const auto& dqdx_values = calo->dQdx();
+                const auto& residual_range = calo->ResidualRange();
+                const auto& pitch_values = calo->TrkPitchVec();
+                const auto& xyz_values = calo->XYZ();
 
-                _trk_bragg_p_u_v.push_back(bragg_p_u);
-                _trk_bragg_mu_u_v.push_back(bragg_mu_u);
-                _trk_bragg_pion_u_v.push_back(bragg_pion_u);
-                _trk_bragg_mip_u_v.push_back(bragg_mip_u);
-                _trk_bragg_p_alt_dir_u_v.push_back(bragg_p_alt_dir_u);
-                _trk_bragg_mu_alt_dir_u_v.push_back(bragg_mu_alt_dir_u);
-                _trk_bragg_pion_alt_dir_u_v.push_back(bragg_pion_alt_dir_u);
-                _trk_bragg_p_fwd_preferred_u_v.push_back(bragg_p_fwd_preferred_u);
-                _trk_bragg_mu_fwd_preferred_u_v.push_back(bragg_mu_fwd_preferred_u);
-                _trk_bragg_pion_fwd_preferred_u_v.push_back(bragg_pion_fwd_preferred_u);
-
-                _trk_pid_chipr_u_v.push_back(pidchipr_u);
-                _trk_pid_chimu_u_v.push_back(pidchimu_u);
-                _trk_pid_chipi_u_v.push_back(pidchipi_u);
-                _trk_pid_chika_u_v.push_back(pidchika_u);
-                _trk_pida_u_v.push_back(pida_mean_u);
-
-                float bragg_p_v = GetMaxPID(2212, 1);
-                float bragg_mu_v = GetMaxPID(13, 1);
-                float bragg_pion_v = GetMaxPID(211, 1);
-                float bragg_mip_v = common::PID(pidpxy_v[0], "BraggPeakLLH", anab::kLikelihood, anab::kForward, 0, 1);
-                float bragg_p_alt_dir_v = GetMinPID(2212, 1);
-                float bragg_mu_alt_dir_v = GetMinPID(13, 1);
-                float bragg_pion_alt_dir_v = GetMinPID(211, 1);
-                bool bragg_p_fwd_preferred_v = IsFwdPIDPreferred(2212, 1);
-                bool bragg_mu_fwd_preferred_v = IsFwdPIDPreferred(13, 1);
-                bool bragg_pion_fwd_preferred_v = IsFwdPIDPreferred(211, 1);
-
-                float pidchipr_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 2212, 1);
-                float pidchimu_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 13, 1);
-                float pidchipi_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 211, 1);
-                float pidchika_v = common::PID(pidpxy_v[0], "Chi2", anab::kGOF, anab::kForward, 321, 1);
-
-                float pida_mean_v = common::PID(pidpxy_v[0], "PIDA_mean", anab::kPIDA, anab::kForward, 0, 1);
-
-                _trk_bragg_p_v_v.push_back(bragg_p_v);
-                _trk_bragg_mu_v_v.push_back(bragg_mu_v);
-                _trk_bragg_pion_v_v.push_back(bragg_pion_v);
-                _trk_bragg_mip_v_v.push_back(bragg_mip_v);
-                _trk_bragg_p_alt_dir_v_v.push_back(bragg_p_alt_dir_v);
-                _trk_bragg_mu_alt_dir_v_v.push_back(bragg_mu_alt_dir_v);
-                _trk_bragg_pion_alt_dir_v_v.push_back(bragg_pion_alt_dir_v);
-                _trk_bragg_p_fwd_preferred_v_v.push_back(bragg_p_fwd_preferred_v);
-                _trk_bragg_mu_fwd_preferred_v_v.push_back(bragg_mu_fwd_preferred_v);
-                _trk_bragg_pion_fwd_preferred_v_v.push_back(bragg_pion_fwd_preferred_v);
-
-                _trk_pid_chipr_v_v.push_back(pidchipr_v);
-                _trk_pid_chimu_v_v.push_back(pidchimu_v);
-                _trk_pid_chipi_v_v.push_back(pidchipi_v);
-                _trk_pid_chika_v_v.push_back(pidchika_v);
-                _trk_pida_v_v.push_back(pida_mean_v);
-
-                float mcs_momentum_muon = _mcsfitter.fitMcs(trk->Trajectory(), 13).bestMomentum();
-                float range_momentum_muon = _trkmom.GetTrackMomentum(common::GetSCECorrTrackLength(trk), 13);
-                float energy_proton = std::sqrt(std::pow(_trkmom.GetTrackMomentum(common::GetSCECorrTrackLength(trk), 2212), 2) + std::pow(proton->Mass(), 2)) - proton->Mass();
-                float energy_muon = std::sqrt(std::pow(mcs_momentum_muon, 2) + std::pow(muon->Mass(), 2)) - muon->Mass();
-
-                _trk_mcs_muon_mom_v.push_back(mcs_momentum_muon);
-                _trk_range_muon_mom_v.push_back(range_momentum_muon);
-                _trk_energy_proton_v.push_back(energy_proton);
-                _trk_energy_muon_v.push_back(energy_muon);
-                _trk_calo_energy_u_v.push_back(-1);
-                _trk_calo_energy_v_v.push_back(-1);
-                _trk_calo_energy_y_v.push_back(-1);
-
-                _trk_dir_x_v.push_back(trk->StartDirection().X());
-                _trk_dir_y_v.push_back(trk->StartDirection().Y());
-                _trk_dir_z_v.push_back(trk->StartDirection().Z());
-
-                _trk_start_x_v.push_back(trk->Start().X());
-                _trk_start_y_v.push_back(trk->Start().Y());
-                _trk_start_z_v.push_back(trk->Start().Z());
-
-                float _trk_start_sce[3];
-                common::ApplySCECorrectionXYZ(trk->Start().X(), trk->Start().Y(), trk->Start().Z(), _trk_start_sce);
-                _trk_sce_start_x_v.push_back(_trk_start_sce[0]);
-                _trk_sce_start_y_v.push_back(_trk_start_sce[1]);
-                _trk_sce_start_z_v.push_back(_trk_start_sce[2]);
-
-                _trk_end_x_v.push_back(trk->End().X());
-                _trk_end_y_v.push_back(trk->End().Y());
-                _trk_end_z_v.push_back(trk->End().Z());
-
-                float _trk_end_sce[3];
-                common::ApplySCECorrectionXYZ(trk->End().X(), trk->End().Y(), trk->End().Z(), _trk_end_sce);
-                _trk_sce_end_x_v.push_back(_trk_end_sce[0]);
-                _trk_sce_end_y_v.push_back(_trk_end_sce[1]);
-                _trk_sce_end_z_v.push_back(_trk_end_sce[2]);
-
-                _trk_theta_v.push_back(trk->Theta());
-                _trk_phi_v.push_back(trk->Phi());
-
-                _trk_len_v.push_back(common::GetSCECorrTrackLength(trk));
-
-                TVector3 trk_vtx_v;
-                trk_vtx_v.SetXYZ(trk->Start().X(), trk->Start().Y(), trk->Start().Z());
-                trk_vtx_v -= nuvtx;
-                _trk_distance_v.push_back(trk_vtx_v.Mag());
-
-                _trk_pfp_id_v.push_back(i_pfp);
-
-                _trk_llr_pid_u_v.push_back(0);
-                _trk_llr_pid_v_v.push_back(0);
-                _trk_llr_pid_y_v.push_back(0);
-                _trk_llr_pid_v.push_back(0);
-                _trk_llr_pid_score_v.push_back(0);
-
-                _trk_nhits_u_v.push_back(0);
-                _trk_nhits_v_v.push_back(0);
-                _trk_nhits_y_v.push_back(0);
-                _trk_trunk_dEdx_u_v.push_back(std::numeric_limits<float>::lowest());
-                _trk_trunk_dEdx_v_v.push_back(std::numeric_limits<float>::lowest());
-                _trk_trunk_dEdx_y_v.push_back(std::numeric_limits<float>::lowest());
-
-                _trk_trunk_rr_dEdx_u_v.push_back(std::numeric_limits<float>::lowest());
-                _trk_trunk_rr_dEdx_v_v.push_back(std::numeric_limits<float>::lowest());
-                _trk_trunk_rr_dEdx_y_v.push_back(std::numeric_limits<float>::lowest());
-
-                auto calo_v = calo_proxy[trk.key()].get<anab::Calorimetry>();
-                for (auto const &calo : calo_v)
-                {
-                    auto const &plane = calo->PlaneID().Plane;
-                    if (plane < 0 || plane > 2) {
-                        std::cerr << "Skipping calorimetry data with invalid plane ID: " << plane << std::endl;
-                        continue; 
-                    }
-                    auto const &dqdx_values = calo->dQdx();
-                    auto const &dedx_values = calo->dEdx();
-                    auto const &rr = calo->ResidualRange();
-                    auto const &pitch = calo->TrkPitchVec();
-                    auto const& xyz_v = calo->XYZ();
-                    std::vector<std::vector<float>> par_values;
-                    par_values.push_back(rr);
-                    par_values.push_back(pitch);
-
-                    float calo_energy = 0;
-                    std::vector<float> dqdx_values_corrected, dedx_values_corrected;
-
-                    if (fData || !fRecalibrateHits)
-                    {
-                        dqdx_values_corrected = dqdx_values;
-                    }
-                    else
-                    {
-                        dqdx_values_corrected = llr_pid_calculator.correct_many_hits_one_plane(calo, trk.value(), assocMCPart, fRecalibrateHits, fEnergyThresholdForMCHits, false);
-                    }
-
-                    for (size_t i = 0; i < dqdx_values_corrected.size(); i++)
-                    {
-                        float aux_dedx;
-                        aux_dedx = common::ModBoxCorrection(dqdx_values_corrected[i]*fADCtoE[plane], xyz_v[i].X(), xyz_v[i].Y(), xyz_v[i].Z());
-                        dedx_values_corrected.push_back(aux_dedx);
-                        calo_energy += aux_dedx * pitch[i];
-                    }
-
-                    float trk_nhits = dedx_values.size();
-                    float trk_trunk_dEdx = CalculateTrackTrunkdEdxByHits(dedx_values);
-                    float trk_trunk_rr_dEdx = CalculateTrackTrunkdEdxByRange(dedx_values, rr);
-
-                    float llr_pid = llr_pid_calculator.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
-
-                    if (plane == 0)
-                    {
-                        _trk_llr_pid_u_v.back() = llr_pid;
-                        _trk_calo_energy_u_v.back() = calo_energy;
-                        _trk_nhits_u_v.back() = trk_nhits;
-                        _trk_trunk_dEdx_u_v.back() = trk_trunk_dEdx;
-                        _trk_trunk_rr_dEdx_u_v.back() = trk_trunk_rr_dEdx;
-                    }
-                    else if (plane == 1)
-                    {
-                        _trk_llr_pid_v_v.back() = llr_pid;
-                        _trk_calo_energy_v_v.back() = calo_energy;
-                        _trk_nhits_v_v.back() = trk_nhits;
-                        _trk_trunk_dEdx_v_v.back() = trk_trunk_dEdx;
-                        _trk_trunk_rr_dEdx_v_v.back() = trk_trunk_rr_dEdx;
-                    }
-                    else if (plane == 2)
-                    {
-                        _trk_llr_pid_y_v.back() = llr_pid;
-                        _trk_calo_energy_y_v.back() = calo_energy;
-                        _trk_nhits_y_v.back() = trk_nhits;
-                        _trk_trunk_dEdx_y_v.back() = trk_trunk_dEdx;
-                        _trk_trunk_rr_dEdx_y_v.back() = trk_trunk_rr_dEdx;
-                    }
-                    _trk_llr_pid_v.back() += llr_pid;
+                float calo_energy = 0.0f;
+                std::vector<float> corrected_dedx_values;
+                for (size_t i = 0; i < dqdx_values.size(); ++i) {
+                    float dedx = common::ModBoxCorrection(dqdx_values[i] * fADCtoE[plane], 
+                                                         xyz_values[i].X(), xyz_values[i].Y(), xyz_values[i].Z());
+                    corrected_dedx_values.push_back(dedx);
+                    calo_energy += dedx * pitch_values[i];
                 }
-                _trk_llr_pid_score_v.back() = atan(_trk_llr_pid_v.back() / 100.) * 2 / 3.14159266;
 
-                CalculateTrackDeflections(trk, _trk_avg_deflection_mean_v, _trk_avg_deflection_stdev_v, _trk_avg_deflection_separation_mean_v);
+                int hit_count = dqdx_values.size();
+                float trunk_dedx = calculate_track_trunk_dedx_by_hits(corrected_dedx_values);
+                float trunk_rr_dedx = calculate_track_trunk_dedx_by_range(corrected_dedx_values, residual_range);
 
-                int nPoints = 0;
-                float distSquared = fEndSpacepointDistance*fEndSpacepointDistance;
-                TVector3 trkEnd(_trk_end_sce[0], _trk_end_sce[1], _trk_end_sce[2]);
-                for (auto &sp : spacePointCollection) {
-                    float _sp_sce[3];
-                    common::ApplySCECorrectionXYZ(sp->XYZ()[0], sp->XYZ()[1], sp->XYZ()[2], _sp_sce);
-                    TVector3 spacePoint(_sp_sce[0], _sp_sce[1], _sp_sce[2]);
-                    if ((trkEnd - spacePoint).Mag2() < distSquared) nPoints++;
+                if (plane == 0) {
+                    _track_calo_energy_u.push_back(calo_energy);
+                    _track_nhits_u.push_back(hit_count);
+                    _track_trunk_dedx_u.push_back(trunk_dedx);
+                    _track_trunk_rr_dedx_u.push_back(trunk_rr_dedx);
+                } else if (plane == 1) {
+                    _track_calo_energy_v.push_back(calo_energy);
+                    _track_nhits_v.push_back(hit_count);
+                    _track_trunk_dedx_v.push_back(trunk_dedx);
+                    _track_trunk_rr_dedx_v.push_back(trunk_rr_dedx);
+                } else if (plane == 2) {
+                    _track_calo_energy_y.push_back(calo_energy);
+                    _track_nhits_y.push_back(hit_count);
+                    _track_trunk_dedx_y.push_back(trunk_dedx);
+                    _track_trunk_rr_dedx_y.push_back(trunk_rr_dedx);
                 }
-                _trk_end_spacepoints_v.push_back(nPoints);
-            }
-            else
-            {
-                fillDefault();
-            }
-        }
-    }
-
-    void TrackAnalysis::fillDefault()
-    {
-        _trk_pfp_id_v.push_back(std::numeric_limits<int>::lowest());
-
-        _trk_distance_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_theta_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_phi_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_dir_x_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_dir_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_dir_z_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_start_x_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_start_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_start_z_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_sce_start_x_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_sce_start_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_sce_start_z_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_end_x_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_end_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_end_z_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_sce_end_x_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_sce_end_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_sce_end_z_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_len_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_bragg_p_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mip_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_alt_dir_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_alt_dir_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_alt_dir_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_fwd_preferred_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_fwd_preferred_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_fwd_preferred_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipr_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chika_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipi_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chimu_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pida_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_bragg_p_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mip_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_alt_dir_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_alt_dir_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_alt_dir_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_fwd_preferred_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_fwd_preferred_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_fwd_preferred_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipr_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chika_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipi_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chimu_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pida_u_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_bragg_p_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mip_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_alt_dir_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_alt_dir_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_alt_dir_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_p_fwd_preferred_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_mu_fwd_preferred_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_bragg_pion_fwd_preferred_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipr_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chika_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chipi_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pid_chimu_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_pida_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_mcs_muon_mom_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_range_muon_mom_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_energy_proton_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_energy_muon_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_calo_energy_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_calo_energy_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_calo_energy_y_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_llr_pid_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_trunk_dEdx_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_trunk_dEdx_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_trunk_dEdx_y_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_trunk_rr_dEdx_u_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_trunk_rr_dEdx_v_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_trunk_rr_dEdx_y_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_nhits_u_v.push_back(std::numeric_limits<int>::lowest());
-        _trk_nhits_v_v.push_back(std::numeric_limits<int>::lowest());
-        _trk_nhits_y_v.push_back(std::numeric_limits<int>::lowest());
-
-        _trk_avg_deflection_mean_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_avg_deflection_stdev_v.push_back(std::numeric_limits<float>::lowest());
-        _trk_avg_deflection_separation_mean_v.push_back(std::numeric_limits<float>::lowest());
-
-        _trk_end_spacepoints_v.push_back(std::numeric_limits<int>::lowest());
-    }
-
-    void TrackAnalysis::setBranches(TTree *_tree)
-    {
-        _tree->Branch("trk_bragg_p_v", "std::vector< float >", &_trk_bragg_p_v);
-        _tree->Branch("trk_bragg_mu_v", "std::vector< float >", &_trk_bragg_mu_v);
-        _tree->Branch("trk_bragg_pion_v", "std::vector< float >", &_trk_bragg_pion_v);
-        _tree->Branch("trk_bragg_mip_v", "std::vector< float >", &_trk_bragg_mip_v);
-        _tree->Branch("trk_bragg_p_alt_dir_v", "std::vector< float >", &_trk_bragg_p_alt_dir_v);
-        _tree->Branch("trk_bragg_mu_alt_dir_v", "std::vector< float >", &_trk_bragg_mu_alt_dir_v);
-        _tree->Branch("trk_bragg_pion_alt_dir_v", "std::vector< float >", &_trk_bragg_pion_alt_dir_v);
-        _tree->Branch("trk_bragg_p_fwd_preferred_v", "std::vector< bool >", &_trk_bragg_p_fwd_preferred_v);
-        _tree->Branch("trk_bragg_mu_fwd_preferred_v", "std::vector< bool >", &_trk_bragg_mu_fwd_preferred_v);
-        _tree->Branch("trk_bragg_pion_fwd_preferred_v", "std::vector< bool >", &_trk_bragg_pion_fwd_preferred_v);
-        _tree->Branch("trk_pida_v", "std::vector< float >", &_trk_pida_v);
-        _tree->Branch("trk_pid_chipr_v", "std::vector< float >", &_trk_pid_chipr_v);
-        _tree->Branch("trk_pid_chipi_v", "std::vector< float >", &_trk_pid_chipi_v);
-        _tree->Branch("trk_pid_chika_v", "std::vector< float >", &_trk_pid_chika_v);
-        _tree->Branch("trk_pid_chimu_v", "std::vector< float >", &_trk_pid_chimu_v);
-
-        _tree->Branch("trk_bragg_p_u_v", "std::vector< float >", &_trk_bragg_p_u_v);
-        _tree->Branch("trk_bragg_mu_u_v", "std::vector< float >", &_trk_bragg_mu_u_v);
-        _tree->Branch("trk_bragg_pion_u_v", "std::vector< float >", &_trk_bragg_pion_u_v);
-        _tree->Branch("trk_bragg_mip_u_v", "std::vector< float >", &_trk_bragg_mip_u_v);
-        _tree->Branch("trk_bragg_p_alt_dir_u_v", "std::vector< float >", &_trk_bragg_p_alt_dir_u_v);
-        _tree->Branch("trk_bragg_mu_alt_dir_u_v", "std::vector< float >", &_trk_bragg_mu_alt_dir_u_v);
-        _tree->Branch("trk_bragg_pion_alt_dir_u_v", "std::vector< float >", &_trk_bragg_pion_alt_dir_u_v);
-        _tree->Branch("trk_bragg_p_fwd_preferred_u_v", "std::vector< bool >", &_trk_bragg_p_fwd_preferred_u_v);
-        _tree->Branch("trk_bragg_mu_fwd_preferred_u_v", "std::vector< bool >", &_trk_bragg_mu_fwd_preferred_u_v);
-        _tree->Branch("trk_bragg_pion_fwd_preferred_u_v", "std::vector< bool >", &_trk_bragg_pion_fwd_preferred_u_v);
-        _tree->Branch("trk_pida_u_v", "std::vector< float >", &_trk_pida_u_v);
-        _tree->Branch("trk_pid_chipr_u_v", "std::vector< float >", &_trk_pid_chipr_u_v);
-        _tree->Branch("trk_pid_chipi_u_v", "std::vector< float >", &_trk_pid_chipi_u_v);
-        _tree->Branch("trk_pid_chika_u_v", "std::vector< float >", &_trk_pid_chika_u_v);
-        _tree->Branch("trk_pid_chimu_u_v", "std::vector< float >", &_trk_pid_chimu_u_v);
-
-        _tree->Branch("trk_bragg_p_v_v", "std::vector< float >", &_trk_bragg_p_v_v);
-        _tree->Branch("trk_bragg_mu_v_v", "std::vector< float >", &_trk_bragg_mu_v_v);
-        _tree->Branch("trk_bragg_pion_v_v", "std::vector< float >", &_trk_bragg_pion_v_v);
-        _tree->Branch("trk_bragg_mip_v_v", "std::vector< float >", &_trk_bragg_mip_v_v);
-        _tree->Branch("trk_bragg_p_alt_dir_v_v", "std::vector< float >", &_trk_bragg_p_alt_dir_v_v);
-        _tree->Branch("trk_bragg_mu_alt_dir_v_v", "std::vector< float >", &_trk_bragg_mu_alt_dir_v_v);
-        _tree->Branch("trk_bragg_pion_alt_dir_v_v", "std::vector< float >", &_trk_bragg_pion_alt_dir_v_v);
-        _tree->Branch("trk_bragg_p_fwd_preferred_v_v", "std::vector< bool >", &_trk_bragg_p_fwd_preferred_v_v);
-        _tree->Branch("trk_bragg_mu_fwd_preferred_v_v", "std::vector< bool >", &_trk_bragg_mu_fwd_preferred_v_v);
-        _tree->Branch("trk_bragg_pion_fwd_preferred_v_v", "std::vector< bool >", &_trk_bragg_pion_fwd_preferred_v_v);
-        _tree->Branch("trk_pida_v_v", "std::vector< float >", &_trk_pida_v_v);
-        _tree->Branch("trk_pid_chipr_v_v", "std::vector< float >", &_trk_pid_chipr_v_v);
-        _tree->Branch("trk_pid_chipi_v_v", "std::vector< float >", &_trk_pid_chipi_v_v);
-        _tree->Branch("trk_pid_chika_v_v", "std::vector< float >", &_trk_pid_chika_v_v);
-        _tree->Branch("trk_pid_chimu_v_v", "std::vector< float >", &_trk_pid_chimu_v_v);
-
-        _tree->Branch("trk_pfp_id_v", "std::vector< size_t >", &_trk_pfp_id_v);
-        _tree->Branch("trk_dir_x_v", "std::vector< float >", &_trk_dir_x_v);
-        _tree->Branch("trk_dir_y_v", "std::vector< float >", &_trk_dir_y_v);
-        _tree->Branch("trk_dir_z_v", "std::vector< float >", &_trk_dir_z_v);
-
-        _tree->Branch("trk_start_x_v", "std::vector< float >", &_trk_start_x_v);
-        _tree->Branch("trk_start_y_v", "std::vector< float >", &_trk_start_y_v);
-        _tree->Branch("trk_start_z_v", "std::vector< float >", &_trk_start_z_v);
-
-        _tree->Branch("trk_sce_start_x_v", "std::vector< float >", &_trk_sce_start_x_v);
-        _tree->Branch("trk_sce_start_y_v", "std::vector< float >", &_trk_sce_start_y_v);
-        _tree->Branch("trk_sce_start_z_v", "std::vector< float >", &_trk_sce_start_z_v);
-
-        _tree->Branch("trk_end_x_v", "std::vector< float >", &_trk_end_x_v);
-        _tree->Branch("trk_end_y_v", "std::vector< float >", &_trk_end_y_v);
-        _tree->Branch("trk_end_z_v", "std::vector< float >", &_trk_end_z_v);
-
-        _tree->Branch("trk_sce_end_x_v", "std::vector< float >", &_trk_sce_end_x_v);
-        _tree->Branch("trk_sce_end_y_v", "std::vector< float >", &_trk_sce_end_y_v);
-        _tree->Branch("trk_sce_end_z_v", "std::vector< float >", &_trk_sce_end_z_v);
-
-        _tree->Branch("trk_distance_v", "std::vector< float >", &_trk_distance_v);
-        _tree->Branch("trk_theta_v", "std::vector< float >", &_trk_theta_v);
-        _tree->Branch("trk_phi_v", "std::vector< float >", &_trk_phi_v);
-
-        _tree->Branch("trk_len_v", "std::vector< float >", &_trk_len_v);
-        _tree->Branch("trk_mcs_muon_mom_v", "std::vector< float >", &_trk_mcs_muon_mom_v);
-        _tree->Branch("trk_range_muon_mom_v", "std::vector< float >", &_trk_range_muon_mom_v);
-        _tree->Branch("trk_energy_proton_v", "std::vector< float >", &_trk_energy_proton_v);
-        _tree->Branch("trk_energy_muon_v", "std::vector< float >", &_trk_energy_muon_v);
-        _tree->Branch("trk_calo_energy_u_v", "std::vector< float >", &_trk_calo_energy_u_v);
-        _tree->Branch("trk_calo_energy_v_v", "std::vector< float >", &_trk_calo_energy_v_v);
-        _tree->Branch("trk_calo_energy_y_v", "std::vector< float >", &_trk_calo_energy_y_v);
-
-        _tree->Branch("trk_llr_pid_u_v", "std::vector<float>", &_trk_llr_pid_u_v);
-        _tree->Branch("trk_llr_pid_v_v", "std::vector<float>", &_trk_llr_pid_v_v);
-        _tree->Branch("trk_llr_pid_y_v", "std::vector<float>", &_trk_llr_pid_y_v);
-        _tree->Branch("trk_llr_pid_v", "std::vector<float>", &_trk_llr_pid_v);
-        _tree->Branch("trk_llr_pid_score_v", "std::vector<float>", &_trk_llr_pid_score_v);
-
-        _tree->Branch("trk_trunk_dEdx_u_v", "std::vector<float>", &_trk_trunk_dEdx_u_v);
-        _tree->Branch("trk_trunk_dEdx_v_v", "std::vector<float>", &_trk_trunk_dEdx_v_v);
-        _tree->Branch("trk_trunk_dEdx_y_v", "std::vector<float>", &_trk_trunk_dEdx_y_v);
-
-        _tree->Branch("trk_trunk_rr_dEdx_u_v", "std::vector<float>", &_trk_trunk_rr_dEdx_u_v);
-        _tree->Branch("trk_trunk_rr_dEdx_v_v", "std::vector<float>", &_trk_trunk_rr_dEdx_v_v);
-        _tree->Branch("trk_trunk_rr_dEdx_y_v", "std::vector<float>", &_trk_trunk_rr_dEdx_y_v);
-
-        _tree->Branch("trk_nhits_u_v", "std::vector<int>", &_trk_nhits_u_v);
-        _tree->Branch("trk_nhits_v_v", "std::vector<int>", &_trk_nhits_v_v);
-        _tree->Branch("trk_nhits_y_v", "std::vector<int>", &_trk_nhits_y_v);
-
-        _tree->Branch("trk_avg_deflection_mean_v", "std::vector<float>", &_trk_avg_deflection_mean_v);
-        _tree->Branch("trk_avg_deflection_stdev_v", "std::vector<float>", &_trk_avg_deflection_stdev_v);
-        _tree->Branch("trk_avg_deflection_separation_mean_v", "std::vector<float>", &_trk_avg_deflection_separation_mean_v);
-
-        _tree->Branch("trk_end_spacepoints_v", "std::vector<int>", &_trk_end_spacepoints_v);
-    }
-
-    void TrackAnalysis::resetTTree(TTree *_tree)
-    {
-        _trk_bragg_p_v.clear();
-        _trk_bragg_mu_v.clear();
-        _trk_bragg_pion_v.clear();
-        _trk_bragg_mip_v.clear();
-        _trk_bragg_p_alt_dir_v.clear();
-        _trk_bragg_mu_alt_dir_v.clear();
-        _trk_bragg_pion_alt_dir_v.clear();
-        _trk_bragg_p_fwd_preferred_v.clear();
-        _trk_bragg_mu_fwd_preferred_v.clear();
-        _trk_bragg_pion_fwd_preferred_v.clear();
-        _trk_pida_v.clear();
-        _trk_pid_chipr_v.clear();
-        _trk_pid_chika_v.clear();
-        _trk_pid_chipi_v.clear();
-        _trk_pid_chimu_v.clear();
-
-        _trk_bragg_p_u_v.clear();
-        _trk_bragg_mu_u_v.clear();
-        _trk_bragg_pion_u_v.clear();
-        _trk_bragg_mip_u_v.clear();
-        _trk_bragg_p_alt_dir_u_v.clear();
-        _trk_bragg_mu_alt_dir_u_v.clear();
-        _trk_bragg_pion_alt_dir_u_v.clear();
-        _trk_bragg_p_fwd_preferred_u_v.clear();
-        _trk_bragg_mu_fwd_preferred_u_v.clear();
-        _trk_bragg_pion_fwd_preferred_u_v.clear();
-        _trk_pida_u_v.clear();
-        _trk_pid_chipr_u_v.clear();
-        _trk_pid_chika_u_v.clear();
-        _trk_pid_chipi_u_v.clear();
-        _trk_pid_chimu_u_v.clear();
-
-        _trk_bragg_p_v_v.clear();
-        _trk_bragg_mu_v_v.clear();
-        _trk_bragg_pion_v_v.clear();
-        _trk_bragg_mip_v_v.clear();
-        _trk_bragg_p_alt_dir_v_v.clear();
-        _trk_bragg_mu_alt_dir_v_v.clear();
-        _trk_bragg_pion_alt_dir_v_v.clear();
-        _trk_bragg_p_fwd_preferred_v_v.clear();
-        _trk_bragg_mu_fwd_preferred_v_v.clear();
-        _trk_bragg_pion_fwd_preferred_v_v.clear();
-        _trk_pida_v_v.clear();
-        _trk_pid_chipr_v_v.clear();
-        _trk_pid_chika_v_v.clear();
-        _trk_pid_chipi_v_v.clear();
-        _trk_pid_chimu_v_v.clear();
-
-        _trk_pfp_id_v.clear();
-
-        _trk_start_x_v.clear();
-        _trk_start_y_v.clear();
-        _trk_start_z_v.clear();
-
-        _trk_sce_start_x_v.clear();
-        _trk_sce_start_y_v.clear();
-        _trk_sce_start_z_v.clear();
-
-        _trk_end_x_v.clear();
-        _trk_end_y_v.clear();
-        _trk_end_z_v.clear();
-
-        _trk_sce_end_x_v.clear();
-        _trk_sce_end_y_v.clear();
-        _trk_sce_end_z_v.clear();
-
-        _trk_dir_x_v.clear();
-        _trk_dir_y_v.clear();
-        _trk_dir_z_v.clear();
-        _trk_distance_v.clear();
-
-        _trk_theta_v.clear();
-        _trk_phi_v.clear();
-
-        _trk_len_v.clear();
-
-        _trk_mcs_muon_mom_v.clear();
-        _trk_range_muon_mom_v.clear();
-        _trk_energy_muon_v.clear();
-        _trk_energy_proton_v.clear();
-        _trk_calo_energy_u_v.clear();
-        _trk_calo_energy_v_v.clear();
-        _trk_calo_energy_y_v.clear();
-
-        _trk_llr_pid_u_v.clear();
-        _trk_llr_pid_v_v.clear();
-        _trk_llr_pid_y_v.clear();
-        _trk_llr_pid_v.clear();
-        _trk_llr_pid_score_v.clear();
-
-        _trk_trunk_dEdx_u_v.clear();
-        _trk_trunk_dEdx_v_v.clear();
-        _trk_trunk_dEdx_y_v.clear();
-
-        _trk_trunk_rr_dEdx_u_v.clear();
-        _trk_trunk_rr_dEdx_v_v.clear();
-        _trk_trunk_rr_dEdx_y_v.clear();
-
-        _trk_nhits_u_v.clear();
-        _trk_nhits_v_v.clear();
-        _trk_nhits_y_v.clear();
-
-        _trk_avg_deflection_mean_v.clear();
-        _trk_avg_deflection_stdev_v.clear();
-        _trk_avg_deflection_separation_mean_v.clear();
-
-        _trk_end_spacepoints_v.clear();
-    }
-
-    float TrackAnalysis::CalculateTrackTrunkdEdxByHits(const std::vector<float> &dEdx_values) 
-    {
-        unsigned int trk_nhits = dEdx_values.size();
-
-        int firstHitIdx = trk_nhits - 3 - 1;
-
-        int lastHitIdx = trk_nhits - (int)(trk_nhits/3) - 1;
-
-        if (firstHitIdx - lastHitIdx < 5) {
-            return std::numeric_limits<float>::lowest();
-        }
-        else {
-            std::vector<float> trk_trunk_dEdx_values;
-            trk_trunk_dEdx_values.reserve(firstHitIdx - lastHitIdx);
-
-            for (int i = trk_nhits - 1; i >= 0; i--) {
-                if (i > firstHitIdx) continue;
-
-                trk_trunk_dEdx_values.push_back(dEdx_values[i]);
-
-                if (i < lastHitIdx) break;
             }
 
-            float median;
-            std::sort(trk_trunk_dEdx_values.begin(), trk_trunk_dEdx_values.end());
-            if (trk_trunk_dEdx_values.size() % 2 == 0) median = 0.5 * (trk_trunk_dEdx_values[trk_trunk_dEdx_values.size()/2 - 1] + trk_trunk_dEdx_values[trk_trunk_dEdx_values.size()/2]);
-            else median = trk_trunk_dEdx_values[trk_trunk_dEdx_values.size()/2];
+            calculate_track_deflections(track, _track_avg_deflection_mean, _track_avg_deflection_stdev, 
+                                       _track_avg_deflection_separation_mean);
 
-            double sum = std::accumulate(std::begin(trk_trunk_dEdx_values), std::end(trk_trunk_dEdx_values), 0.0);
-            double m = sum / trk_trunk_dEdx_values.size();
-
-            double accum = 0.0;
-            std::for_each(std::begin(trk_trunk_dEdx_values), std::end(trk_trunk_dEdx_values), [&](const double d) {accum += (d - m) * (d - m);});
-            double stdev = sqrt(accum / (trk_trunk_dEdx_values.size()-1));
-
-            std::vector<float> trk_trunk_dEdx_values_trimmed;
-            trk_trunk_dEdx_values_trimmed.reserve(firstHitIdx - lastHitIdx);
-            for (unsigned int i = 0; i < trk_trunk_dEdx_values.size(); i++) {
-                if (trk_trunk_dEdx_values[i] <= median + stdev) trk_trunk_dEdx_values_trimmed.push_back(trk_trunk_dEdx_values[i]);
+            int end_spacepoint_count = 0;
+            float distance_squared = fEndSpacepointDistance * fEndSpacepointDistance;
+            TVector3 track_end(_track_sce_end_x.back(), _track_sce_end_y.back(), _track_sce_end_z.back());
+            for (const auto& space_point : space_point_collection) {
+                float sce_space_point[3];
+                common::ApplySCECorrectionXYZ(space_point->XYZ()[0], space_point->XYZ()[1], space_point->XYZ()[2], sce_space_point);
+                TVector3 space_point_vector(sce_space_point[0], sce_space_point[1], sce_space_point[2]);
+                if ((track_end - space_point_vector).Mag2() < distance_squared) {
+                    ++end_spacepoint_count;
+                }
             }
+            _track_end_spacepoints.push_back(end_spacepoint_count);
+        } else {
+            fill_default();
+        }
+    }
+}
 
-            double sum_trimmed = std::accumulate(std::begin(trk_trunk_dEdx_values_trimmed), std::end(trk_trunk_dEdx_values_trimmed), 0.0);
-            double trk_dEdx_trunk = sum_trimmed / trk_trunk_dEdx_values_trimmed.size();
+void TrackAnalysis::fill_default() {
+    _track_pfp_ids.push_back(std::numeric_limits<size_t>::max());
+    _track_start_x.push_back(std::numeric_limits<float>::lowest());
+    _track_start_y.push_back(std::numeric_limits<float>::lowest());
+    _track_start_z.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_start_x.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_start_y.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_start_z.push_back(std::numeric_limits<float>::lowest());
+    _track_end_x.push_back(std::numeric_limits<float>::lowest());
+    _track_end_y.push_back(std::numeric_limits<float>::lowest());
+    _track_end_z.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_end_x.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_end_y.push_back(std::numeric_limits<float>::lowest());
+    _track_sce_end_z.push_back(std::numeric_limits<float>::lowest());
+    _track_direction_x.push_back(std::numeric_limits<float>::lowest());
+    _track_direction_y.push_back(std::numeric_limits<float>::lowest());
+    _track_direction_z.push_back(std::numeric_limits<float>::lowest());
+    _track_distance_to_vertex.push_back(std::numeric_limits<float>::lowest());
+    _track_theta.push_back(std::numeric_limits<float>::lowest());
+    _track_phi.push_back(std::numeric_limits<float>::lowest());
+    _track_length.push_back(std::numeric_limits<float>::lowest());
+    _track_calo_energy_u.push_back(std::numeric_limits<float>::lowest());
+    _track_calo_energy_v.push_back(std::numeric_limits<float>::lowest());
+    _track_calo_energy_y.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_dedx_u.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_dedx_v.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_dedx_y.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::lowest());
+    _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::lowest());
+    _track_nhits_u.push_back(std::numeric_limits<int>::lowest());
+    _track_nhits_v.push_back(std::numeric_limits<int>::lowest());
+    _track_nhits_y.push_back(std::numeric_limits<int>::lowest());
+    _track_avg_deflection_mean.push_back(std::numeric_limits<float>::lowest());
+    _track_avg_deflection_stdev.push_back(std::numeric_limits<float>::lowest());
+    _track_avg_deflection_separation_mean.push_back(std::numeric_limits<float>::lowest());
+    _track_end_spacepoints.push_back(std::numeric_limits<int>::lowest());
+}
 
-            return trk_dEdx_trunk;
+void TrackAnalysis::setBranches(TTree* tree) {
+    tree->Branch("track_pfp_ids", "std::vector<size_t>", &_track_pfp_ids);
+    tree->Branch("track_start_x", "std::vector<float>", &_track_start_x);
+    tree->Branch("track_start_y", "std::vector<float>", &_track_start_y);
+    tree->Branch("track_start_z", "std::vector<float>", &_track_start_z);
+    tree->Branch("track_sce_start_x", "std::vector<float>", &_track_sce_start_x);
+    tree->Branch("track_sce_start_y", "std::vector<float>", &_track_sce_start_y);
+    tree->Branch("track_sce_start_z", "std::vector<float>", &_track_sce_start_z);
+    tree->Branch("track_end_x", "std::vector<float>", &_track_end_x);
+    tree->Branch("track_end_y", "std::vector<float>", &_track_end_y);
+    tree->Branch("track_end_z", "std::vector<float>", &_track_end_z);
+    tree->Branch("track_sce_end_x", "std::vector<float>", &_track_sce_end_x);
+    tree->Branch("track_sce_end_y", "std::vector<float>", &_track_sce_end_y);
+    tree->Branch("track_sce_end_z", "std::vector<float>", &_track_sce_end_z);
+    tree->Branch("track_direction_x", "std::vector<float>", &_track_direction_x);
+    tree->Branch("track_direction_y", "std::vector<float>", &_track_direction_y);
+    tree->Branch("track_direction_z", "std::vector<float>", &_track_direction_z);
+    tree->Branch("track_distance_to_vertex", "std::vector<float>", &_track_distance_to_vertex);
+    tree->Branch("track_theta", "std::vector<float>", &_track_theta);
+    tree->Branch("track_phi", "std::vector<float>", &_track_phi);
+    tree->Branch("track_length", "std::vector<float>", &_track_length);
+    tree->Branch("track_calo_energy_u", "std::vector<float>", &_track_calo_energy_u);
+    tree->Branch("track_calo_energy_v", "std::vector<float>", &_track_calo_energy_v);
+    tree->Branch("track_calo_energy_y", "std::vector<float>", &_track_calo_energy_y);
+    tree->Branch("track_trunk_dedx_u", "std::vector<float>", &_track_trunk_dedx_u);
+    tree->Branch("track_trunk_dedx_v", "std::vector<float>", &_track_trunk_dedx_v);
+    tree->Branch("track_trunk_dedx_y", "std::vector<float>", &_track_trunk_dedx_y);
+    tree->Branch("track_trunk_rr_dedx_u", "std::vector<float>", &_track_trunk_rr_dedx_u);
+    tree->Branch("track_trunk_rr_dedx_v", "std::vector<float>", &_track_trunk_rr_dedx_v);
+    tree->Branch("track_trunk_rr_dedx_y", "std::vector<float>", &_track_trunk_rr_dedx_y);
+    tree->Branch("track_nhits_u", "std::vector<int>", &_track_nhits_u);
+    tree->Branch("track_nhits_v", "std::vector<int>", &_track_nhits_v);
+    tree->Branch("track_nhits_y", "std::vector<int>", &_track_nhits_y);
+    tree->Branch("track_avg_deflection_mean", "std::vector<float>", &_track_avg_deflection_mean);
+    tree->Branch("track_avg_deflection_stdev", "std::vector<float>", &_track_avg_deflection_stdev);
+    tree->Branch("track_avg_deflection_separation_mean", "std::vector<float>", &_track_avg_deflection_separation_mean);
+    tree->Branch("track_end_spacepoints", "std::vector<int>", &_track_end_spacepoints);
+}
+
+void TrackAnalysis::resetTTree(TTree* tree) {
+    _track_pfp_ids.clear();
+    _track_start_x.clear();
+    _track_start_y.clear();
+    _track_start_z.clear();
+    _track_sce_start_x.clear();
+    _track_sce_start_y.clear();
+    _track_sce_start_z.clear();
+    _track_end_x.clear();
+    _track_end_y.clear();
+    _track_end_z.clear();
+    _track_sce_end_x.clear();
+    _track_sce_end_y.clear();
+    _track_sce_end_z.clear();
+    _track_direction_x.clear();
+    _track_direction_y.clear();
+    _track_direction_z.clear();
+    _track_distance_to_vertex.clear();
+    _track_theta.clear();
+    _track_phi.clear();
+    _track_length.clear();
+    _track_calo_energy_u.clear();
+    _track_calo_energy_v.clear();
+    _track_calo_energy_y.clear();
+    _track_trunk_dedx_u.clear();
+    _track_trunk_dedx_v.clear();
+    _track_trunk_dedx_y.clear();
+    _track_trunk_rr_dedx_u.clear();
+    _track_trunk_rr_dedx_v.clear();
+    _track_trunk_rr_dedx_y.clear();
+    _track_nhits_u.clear();
+    _track_nhits_v.clear();
+    _track_nhits_y.clear();
+    _track_avg_deflection_mean.clear();
+    _track_avg_deflection_stdev.clear();
+    _track_avg_deflection_separation_mean.clear();
+    _track_end_spacepoints.clear();
+}
+
+float TrackAnalysis::calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values) {
+    size_t hit_count = dedx_values.size();
+    int first_hit_index = static_cast<int>(hit_count) - 4; 
+    int last_hit_index = static_cast<int>(hit_count - (hit_count / 3)) - 1;
+
+    if (first_hit_index - last_hit_index < 5) {
+        return std::numeric_limits<float>::lowest();
+    }
+
+    std::vector<float> trunk_dedx_values;
+    trunk_dedx_values.reserve(first_hit_index - last_hit_index + 1);
+    for (int i = hit_count - 1; i >= 0 && i >= last_hit_index; --i) {
+        if (i > first_hit_index) continue;
+        trunk_dedx_values.push_back(dedx_values[i]);
+    }
+
+    std::sort(trunk_dedx_values.begin(), trunk_dedx_values.end());
+    float median = (trunk_dedx_values.size() % 2 == 0) 
+        ? 0.5f * (trunk_dedx_values[trunk_dedx_values.size() / 2 - 1] + trunk_dedx_values[trunk_dedx_values.size() / 2])
+        : trunk_dedx_values[trunk_dedx_values.size() / 2];
+
+    double sum = std::accumulate(trunk_dedx_values.begin(), trunk_dedx_values.end(), 0.0);
+    double mean = sum / trunk_dedx_values.size();
+    double variance_accum = 0.0;
+    for (const auto& value : trunk_dedx_values) {
+        variance_accum += (value - mean) * (value - mean);
+    }
+    double stdev = std::sqrt(variance_accum / (trunk_dedx_values.size() - 1));
+
+    std::vector<float> trimmed_dedx_values;
+    trimmed_dedx_values.reserve(trunk_dedx_values.size());
+    for (const auto& value : trunk_dedx_values) {
+        if (value <= median + stdev) {
+            trimmed_dedx_values.push_back(value);
         }
     }
 
-    float TrackAnalysis::CalculateTrackTrunkdEdxByRange(const std::vector<float> &dedxPerHit, const std::vector<float> &residualRangePerHit)
-    {
-        const auto nHitsToSkip = 3u;
-        const auto lengthFraction = 1.f/3;
+    double trimmed_sum = std::accumulate(trimmed_dedx_values.begin(), trimmed_dedx_values.end(), 0.0);
+    return static_cast<float>(trimmed_sum / trimmed_dedx_values.size());
+}
 
-        if (residualRangePerHit.size() <= nHitsToSkip)
-            return -std::numeric_limits<float>::max();
+float TrackAnalysis::calculate_track_trunk_dedx_by_range(const std::vector<float>& dedx_values, 
+                                                   const std::vector<float>& residual_range_values) {
+    const unsigned int hits_to_skip = 3;
+    const float length_fraction = 1.0f / 3.0f;
 
-        std::vector<std::pair<float, unsigned int> > residualRangeIndices;
-        float maxResidualRange = -std::numeric_limits<float>::max();
-        for (unsigned int i = 0; i < residualRangePerHit.size(); ++i)
-        {
-            const auto residualRange = residualRangePerHit.at(i);
-            maxResidualRange = std::max(maxResidualRange, residualRange);
-            residualRangeIndices.emplace_back(residualRange, i);
-        }
-
-        const auto residualRangeCutoff = maxResidualRange * lengthFraction;
-
-        std::sort(residualRangeIndices.begin(), residualRangeIndices.end(), [](auto &a, auto &b) {
-            return a.first > b.first;
-        });
-
-        std::vector<float> dedxPerHitAtStart;
-        for (unsigned int i = nHitsToSkip; i < residualRangeIndices.size(); ++i)
-        {
-            const auto entry = residualRangeIndices.at(i);
-            const auto residualRange = entry.first;
-            const auto hitIndex = entry.second;
-
-            if (residualRange < residualRangeCutoff)
-                continue;
-
-            dedxPerHitAtStart.push_back(dedxPerHit.at(hitIndex));
-        }
-
-        const auto nHits = dedxPerHitAtStart.size();
-        if (nHits == 0)
-            return -std::numeric_limits<float>::max();
-
-        std::sort(dedxPerHitAtStart.begin(), dedxPerHitAtStart.end());
-        const auto median = dedxPerHitAtStart.at(nHits / 2);
-
-        float total = 0.f;
-        for (const auto &dEdx : dedxPerHitAtStart)
-            total += dEdx;
-        const auto mean = total / static_cast<float>(nHits);
-
-        float squareSum = 0.f;
-        for (const auto &dEdx : dedxPerHitAtStart)
-            squareSum += std::pow(dEdx - mean, 2);
-        const auto variance = squareSum / static_cast<float>(nHits);
-
-        float truncatedTotal = 0.f;
-        unsigned int nTruncatedHits = 0;
-        for (const auto &dEdx : dedxPerHitAtStart)
-        {
-            if (std::pow(dEdx - median, 2) > variance)
-                continue;
-
-            truncatedTotal += dEdx;
-            nTruncatedHits++;
-        }
-
-        if (nTruncatedHits == 0)
-            return -std::numeric_limits<float>::max();
-
-        return truncatedTotal / static_cast<float>(nTruncatedHits);
+    if (residual_range_values.size() <= hits_to_skip) {
+        return std::numeric_limits<float>::lowest();
     }
 
-    void TrackAnalysis::CalculateTrackDeflections(const art::Ptr<recob::Track> &trk, std::vector<float> &mean_v, std::vector<float> &stdev_v, std::vector<float> &separation_mean_v)
-    {
-        std::vector<size_t> validPoints;
-        auto firstValidPoint = trk->FirstValidPoint();
-        validPoints.push_back(firstValidPoint);
-        auto nextValidPoint = trk->NextValidPoint(firstValidPoint + 1);
-        while (nextValidPoint != recob::TrackTrajectory::InvalidIndex)
-        {
-            validPoints.push_back(nextValidPoint);
-            nextValidPoint = trk->NextValidPoint(nextValidPoint + 1);
-        }
-        if (validPoints.size() < 3)
-        {
-            mean_v.push_back(0);
-            stdev_v.push_back(0);
-            separation_mean_v.push_back(0);
-        }
-        else
-        {
-            std::vector<float> thetaVector;
-            float thetaSum = 0.f;
-            float separationSum = 0.f;
-            for (unsigned int i = 1; i < validPoints.size(); ++i) {
-                const auto dir = trk->DirectionAtPoint(validPoints.at(i));
-                const auto dirPrev = trk->DirectionAtPoint(validPoints.at(i - 1));
+    std::vector<std::pair<float, unsigned int>> residual_range_indices;
+    float max_residual_range = std::numeric_limits<float>::lowest();
+    for (unsigned int i = 0; i < residual_range_values.size(); ++i) {
+        max_residual_range = std::max(max_residual_range, residual_range_values[i]);
+        residual_range_indices.emplace_back(residual_range_values[i], i);
+    }
 
-                const auto cosTheta = std::min(1.f, std::max(-1.f, static_cast<float>(dir.Dot(dirPrev))));
-                const auto theta = std::acos(cosTheta);
+    const float residual_range_cutoff = max_residual_range * length_fraction;
+    std::sort(residual_range_indices.begin(), residual_range_indices.end(), 
+              [](const auto& a, const auto& b) { return a.first > b.first; });
 
-                thetaSum += theta;
-                thetaVector.push_back(theta);
+    std::vector<float> dedx_at_start;
+    for (unsigned int i = hits_to_skip; i < residual_range_indices.size(); ++i) {
+        if (residual_range_indices[i].first < residual_range_cutoff) continue;
+        dedx_at_start.push_back(dedx_values[residual_range_indices[i].second]);
+    }
 
-                const TVector3 point(trk->LocationAtPoint(validPoints.at(i)).X(), trk->LocationAtPoint(validPoints.at(i)).Y(), trk->LocationAtPoint(validPoints.at(i)).Z());
-                const TVector3 pointPrev(trk->LocationAtPoint(validPoints.at(i - 1)).X(), trk->LocationAtPoint(validPoints.at(i - 1)).Y(), trk->LocationAtPoint(validPoints.at(i - 1)).Z());
-                const TVector3 separation = point - pointPrev;
-                separationSum += separation.Mag();
-            }
+    if (dedx_at_start.empty()) {
+        return std::numeric_limits<float>::lowest();
+    }
 
-            float thetaMean = thetaSum / static_cast<float>(thetaVector.size());
-            float separationMean = separationSum / static_cast<float>(thetaVector.size());
+    std::sort(dedx_at_start.begin(), dedx_at_start.end());
+    float median = dedx_at_start[dedx_at_start.size() / 2];
+    float total = std::accumulate(dedx_at_start.begin(), dedx_at_start.end(), 0.0f);
+    float mean = total / dedx_at_start.size();
 
-            float thetaDiffSum = 0.f;
-            for (const auto &theta : thetaVector)
-            {
-                thetaDiffSum += std::pow(theta - thetaMean, 2);
-            }
+    float square_sum = 0.0f;
+    for (const auto& dedx : dedx_at_start) {
+        square_sum += (dedx - mean) * (dedx - mean);
+    }
+    float variance = square_sum / dedx_at_start.size();
 
-            const auto variance = thetaDiffSum / static_cast<float>(thetaVector.size() - 1);
-
-            mean_v.push_back(thetaMean);
-            stdev_v.push_back(std::sqrt(variance));
-            separation_mean_v.push_back(separationMean);
+    float truncated_total = 0.0f;
+    unsigned int truncated_hit_count = 0;
+    for (const auto& dedx : dedx_at_start) {
+        if ((dedx - median) * (dedx - median) <= variance) {
+            truncated_total += dedx;
+            ++truncated_hit_count;
         }
     }
 
-    DEFINE_ART_CLASS_TOOL(TrackAnalysis)
-} // namespace analysis
+    return (truncated_hit_count == 0) ? std::numeric_limits<float>::lowest() 
+                                   : truncated_total / static_cast<float>(truncated_hit_count);
+}
+
+void TrackAnalysis::calculate_track_deflections(const art::Ptr<recob::Track>& track, 
+                                              std::vector<float>& mean_deflections, 
+                                              std::vector<float>& stdev_deflections, 
+                                              std::vector<float>& mean_separation) {
+    std::vector<size_t> valid_points;
+    size_t first_valid_point = track->FirstValidPoint();
+    valid_points.push_back(first_valid_point);
+    size_t next_valid_point = track->NextValidPoint(first_valid_point + 1);
+    while (next_valid_point != recob::TrackTrajectory::InvalidIndex) {
+        valid_points.push_back(next_valid_point);
+        next_valid_point = track->NextValidPoint(next_valid_point + 1);
+    }
+
+    if (valid_points.size() < 3) {
+        mean_deflections.push_back(std::numeric_limits<float>::lowest());
+        stdev_deflections.push_back(std::numeric_limits<float>::lowest());
+        mean_separation.push_back(std::numeric_limits<float>::lowest());
+        return;
+    }
+
+    std::vector<float> deflection_angles;
+    float angle_sum = 0.0f;
+    float separation_sum = 0.0f;
+    for (size_t i = 1; i < valid_points.size(); ++i) {
+        const auto current_direction = track->DirectionAtPoint(valid_points[i]);
+        const auto previous_direction = track->DirectionAtPoint(valid_points[i - 1]);
+        float cos_theta = std::min(1.0f, std::max(-1.0f, static_cast<float>(current_direction.Dot(previous_direction))));
+        float theta = std::acos(cos_theta);
+        angle_sum += theta;
+        deflection_angles.push_back(theta);
+
+        TVector3 current_point(track->LocationAtPoint(valid_points[i]).X(), 
+                              track->LocationAtPoint(valid_points[i]).Y(), 
+                              track->LocationAtPoint(valid_points[i]).Z());
+        TVector3 previous_point(track->LocationAtPoint(valid_points[i - 1]).X(), 
+                               track->LocationAtPoint(valid_points[i - 1]).Y(), 
+                               track->LocationAtPoint(valid_points[i - 1]).Z());
+        separation_sum += (current_point - previous_point).Mag();
+    }
+
+    float mean_angle = angle_sum / deflection_angles.size();
+    float mean_sep = separation_sum / deflection_angles.size();
+    float variance_sum = 0.0f;
+    for (const auto& angle : deflection_angles) {
+        variance_sum += (angle - mean_angle) * (angle - mean_angle);
+    }
+    float variance = variance_sum / (deflection_angles.size() - 1);
+
+    mean_deflections.push_back(mean_angle);
+    stdev_deflections.push_back(std::sqrt(variance));
+    mean_separation.push_back(mean_sep);
+}
+
+DEFINE_ART_CLASS_TOOL(TrackAnalysis)
+
+}
 
 #endif

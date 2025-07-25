@@ -61,6 +61,7 @@ physics: {
                 showers: @local::ShowerAnalysis
                 calo: @local::CalorimetryAnalysis
                 energy: @local::NeutrinoEnergyAnalysis
+                slice: @local::SliceAnalysis
             }
         }
     }

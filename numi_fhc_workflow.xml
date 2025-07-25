@@ -55,7 +55,7 @@
     <stage name="selection_numi_fhc_run1_ext">
         <inputdef>&input_def_ext_numi_run1;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_data;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
@@ -91,7 +91,7 @@
     <stage name="selection_numi_fhc_run1_beam">
         <inputstage>reweight_numi_fhc_run1_beam</inputstage>
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
@@ -127,7 +127,7 @@
     <stage name="selection_numi_fhc_run1_strangeness">
         <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
@@ -143,7 +143,7 @@
     <stage name="selection_detvar_cv_strangeness">
         <inputdef>&input_def_strangeness_detvar_cv;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/log</logdir>
@@ -159,7 +159,7 @@
     <stage name="selection_detvar_ly_rayleigh_strangeness">
         <inputdef>&input_def_strangeness_detvar_ly_rayleigh;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/log</logdir>
@@ -175,7 +175,7 @@
     <stage name="selection_detvar_ly_down_strangeness">
         <inputdef>&input_def_strangeness_detvar_ly_down;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/log</logdir>
@@ -191,7 +191,7 @@
     <stage name="selection_detvar_wiremodx_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremodx_sce;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/log</logdir>
@@ -207,7 +207,7 @@
     <stage name="selection_detvar_wiremodyz_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremodyz_sce;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/log</logdir>
@@ -223,7 +223,7 @@
     <stage name="selection_detvar_wiremod_yz_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremod_yz;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/log</logdir>
@@ -239,7 +239,7 @@
     <stage name="selection_detvar_wiremod_thetayz_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremod_thetayz;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/log</logdir>
@@ -255,7 +255,7 @@
     <stage name="selection_detvar_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_sce;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
@@ -271,7 +271,7 @@
     <stage name="selection_detvar_recomb2_strangeness">
         <inputdef>&input_def_strangeness_detvar_recomb2;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
@@ -287,7 +287,7 @@
     <stage name="selection_detvar_cv">
         <inputdef>&input_def_detvar_cv;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/log</logdir>
@@ -303,7 +303,7 @@
     <stage name="selection_detvar_ly_suppression75attenuation8m">
         <inputdef>&input_def_detvar_ly_suppression75attenuation8m;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/log</logdir>
@@ -319,7 +319,7 @@
     <stage name="selection_detvar_ly_rayleigh">
         <inputdef>&input_def_detvar_ly_rayleigh;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/log</logdir>
@@ -335,7 +335,7 @@
     <stage name="selection_detvar_lydown">
         <inputdef>&input_def_detvar_lydown;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/log</logdir>
@@ -351,7 +351,7 @@
     <stage name="selection_detvar_sce">
         <inputdef>&input_def_detvar_sce;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/log</logdir>
@@ -367,7 +367,7 @@
     <stage name="selection_detvar_recomb2">
         <inputdef>&input_def_detvar_recomb2;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
@@ -383,7 +383,7 @@
     <stage name="selection_detvar_wiremodx">
         <inputdef>&input_def_detvar_wiremodx;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/log</logdir>
@@ -399,7 +399,7 @@
     <stage name="selection_detvar_wiremodyz">
         <inputdef>&input_def_detvar_wiremodyz;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/log</logdir>
@@ -415,7 +415,7 @@
     <stage name="selection_detvar_wiremodthetaxz">
         <inputdef>&input_def_detvar_wiremodthetaxz;</inputdef>
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/log</logdir>
@@ -431,7 +431,7 @@
     <stage name="selection_detvar_wiremodthetayz_withsplines">
         <inputdef>&input_def_detvar_wiremodthetayz_withsplines;</inputdef> 
         <initsource>/pnfs/uboone/resilient/users/nlane/initsource/setup_torch.sh</initsource>
-        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/background_classifier.pt</initsource>
+        <initsource>/pnfs/uboone/resilient/users/nlane/initsource/binary_classifier.pt</initsource>
         <fcl>&fcl_selection_mc;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/log</logdir>
