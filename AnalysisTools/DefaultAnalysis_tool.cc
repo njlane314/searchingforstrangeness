@@ -548,8 +548,6 @@ void DefaultAnalysis::analyseSlice(art::Event const &e, std::vector<common::Prox
     if (selected) {
         _selection_pass = 1;
     }
-
-    std::cout << "finished default slice analysis" << std::endl;
 }
 
 void DefaultAnalysis::setBranches(TTree *_tree) {

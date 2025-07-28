@@ -38,6 +38,7 @@ DefaultAnalysis: {
     MCRproducer: @local::standard_producers.MCRproducer
     SLCproducer: @local::standard_producers.SLCproducer
     MCPproducer: @local::standard_producers.MCPproducer
+    CRTproducer: @local::standard_producers.CRTproducer
 
     fidvolXstart: @local::FidVol.Xstart
     fidvolXend:   @local::FidVol.Xend
@@ -51,13 +52,13 @@ DefaultAnalysis: {
 }
 
 EnergyAnalysis: {
-    tool_type:           "EnergyAnalysis"
-    TRKproducer:        @local::standard_producers.TRKproducer
-    CALproducer:        @local::standard_producers.CALproducer
-    CLSproducer:        @local::standard_producers.CLSproducer
-    TrkShrScore:         0.5
-    ShrEnergyBias:       0.8
-    ADCtoMeVMIP:         0.002876
+    tool_type: "EnergyAnalysis"
+    TRKproducer: @local::standard_producers.TRKproducer
+    CALproducer: @local::standard_producers.CALproducer
+    CLSproducer: @local::standard_producers.CLSproducer
+    TrkShrScore: 0.5
+    ShrEnergyBias: 0.8
+    ADCtoMeVMIP: 0.002876
 }
 
 EventWeightAnalysis: {
@@ -85,9 +86,9 @@ EventWeightAnalysis: {
 
 FlashAnalysis: {
     tool_type: "FlashAnalysis"
-    SliceProducer:      @local::standard_producers.SLCproducer
-    FlashMatchProducer: "flashmatch"
-    PFPProducer:        @local::standard_producers.PFPproducer
+    PFPproducer: @local::standard_producers.PFPproducer
+    T0producer: "flashmatch"
+    OpFlashProducer: "opflashBeam"
 }
 
 ImageAnalysis: {

@@ -155,7 +155,8 @@ private:
     std::vector<float> _mc_purity;
     std::vector<std::vector<int>> _mc_daughter_pdg;
     std::vector<std::vector<float>> _mc_daughter_energy;
-    std::vector<std::vector<std::string>> _mc_daughter_process;
+    std::vector<std::string> _mc_daughter_process_flat;
+    std::vector<size_t>    _mc_daughter_process_idx;
     std::vector<std::vector<float>> _mc_daughter_mom_x;
     std::vector<std::vector<float>> _mc_daughter_mom_y;
     std::vector<std::vector<float>> _mc_daughter_mom_z;
@@ -324,7 +325,8 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("mc_purity", "std::vector<float>", &_mc_purity);
     _tree->Branch("mc_daughter_pdg", "std::vector<std::vector<int>>", &_mc_daughter_pdg);
     _tree->Branch("mc_daughter_energy", "std::vector<std::vector<float>>", &_mc_daughter_energy);
-    _tree->Branch("mc_daughter_process", "std::vector<std::vector<std::string>>", &_mc_daughter_process);
+    _tree->Branch("mc_daughter_process_flat", "std::vector<std::string>", &_mc_daughter_process_flat);
+    _tree->Branch("mc_daughter_process_idx", "std::vector<size_t>", &_mc_daughter_process_idx);
     _tree->Branch("mc_daughter_mom_x", "std::vector<std::vector<float>>", &_mc_daughter_mom_x);
     _tree->Branch("mc_daughter_mom_y", "std::vector<std::vector<float>>", &_mc_daughter_mom_y);
     _tree->Branch("mc_daughter_mom_z", "std::vector<std::vector<float>>", &_mc_daughter_mom_z);
@@ -442,7 +444,8 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _mc_purity.clear();
     _mc_daughter_pdg.clear();
     _mc_daughter_energy.clear();
-    _mc_daughter_process.clear();
+    _mc_daughter_process_flat.clear();
+    _mc_daughter_process_idx.clear();
     _mc_daughter_mom_x.clear();
     _mc_daughter_mom_y.clear();
     _mc_daughter_mom_z.clear();
@@ -734,12 +737,14 @@ void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
         std::vector<float> daughter_moms_x, daughter_moms_y, daughter_moms_z;
         std::vector<float> daughter_vtxs_x, daughter_vtxs_y, daughter_vtxs_z;
         
+        _mc_daughter_process_idx.push_back(_mc_daughter_process_flat.size());
         for (int i = 0; i < mcp.NumberDaughters(); ++i) {
             if (mcParticleMap.count(mcp.Daughter(i))) {
                 const auto& daughter = *(mcParticleMap.at(mcp.Daughter(i)));
                 daughter_pdgs.push_back(daughter.PdgCode());
                 daughter_energies.push_back(daughter.E());
                 daughter_processes.push_back(daughter.Process());
+                _mc_daughter_process_flat.push_back(daughter.Process());
                 daughter_moms_x.push_back(daughter.Px());
                 daughter_moms_y.push_back(daughter.Py());
                 daughter_moms_z.push_back(daughter.Pz());
@@ -750,7 +755,6 @@ void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
         }
         _mc_daughter_pdg.push_back(daughter_pdgs);
         _mc_daughter_energy.push_back(daughter_energies);
-        _mc_daughter_process.push_back(daughter_processes);
         _mc_daughter_mom_x.push_back(daughter_moms_x);
         _mc_daughter_mom_y.push_back(daughter_moms_y);
         _mc_daughter_mom_z.push_back(daughter_moms_z);
@@ -827,4 +831,4 @@ void TruthAnalysis::CollectDescendants(const art::ValidHandle<std::vector<simb::
 DEFINE_ART_CLASS_TOOL(TruthAnalysis)
 }
 
-#endif 
+#endif

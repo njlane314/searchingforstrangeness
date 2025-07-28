@@ -7,7 +7,7 @@ standard_producers: {
   HITproducer: "gaushit"
   SHRproducer: "pandora"
   VTXproducer: "pandora"
-  TRKproducer: "pandoraTrack"
+  TRKproducer: "pandora"
   PCAproducer: "pandora"
   MCPproducer: "largeant"
   WIREproducer: "butcher"
@@ -15,8 +15,10 @@ standard_producers: {
   MCFproducer: "generator"
   BKTproducer: "gaushitTruthMatch"
   MCRproducer: "mcreco"
-  CALproducer: "pandoraTrackcali"
-  PIDproducer: "pandoraTrackcalipid"
+  CALproducer: "pandoracali"
+  PIDproducer: "pandoracalipid"
+  FLSproducer: "flashmatch"
+  CRTproducer: "crtveto"
 }
 
 END_PROLOG

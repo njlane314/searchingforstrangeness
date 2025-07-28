@@ -159,7 +159,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet& p) {
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fWIREproducer = p.get<art::InputTag>("WIREproducer", "butcher");
     fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
-    fBKTproducer = p.get<std::InputTag>("BKTproducer", "gaushitTruthMatch");
+    fBKTproducer = p.get<art::InputTag>("BKTproducer", "gaushitTruthMatch");
     fBadChannelFile = p.get<std::string>("BadChannelFile", "badchannels.txt");
 
     _image_width = 512;
