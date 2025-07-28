@@ -3,7 +3,7 @@
 unsetup_all
 source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
 setup uboonecode v08_00_00_82 -q e17:prof
-setup libtorch v1_0_1 -q Linux64bit+3.10-2.17:e17:prof
+#setup libtorch v1_0_1 -q Linux64bit+3.10-2.17:e17:prof
 
 setup sam_web_client
 

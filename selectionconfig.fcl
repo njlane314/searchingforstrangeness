@@ -88,7 +88,7 @@ FlashAnalysis: {
     tool_type: "FlashAnalysis"
     PFPproducer: @local::standard_producers.PFPproducer
     T0producer: "flashmatch"
-    OpFlashProducer: "opflashBeam"
+    OpFlashProducer: "simpleFlashBeam"
 }
 
 ImageAnalysis: {

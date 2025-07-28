@@ -61,12 +61,6 @@
 #include "../Image.h"
 #include "../ImageAlgorithm.h"
 
-#ifdef ClassDef
-#undef ClassDef
-#endif
-#include "torch/torch.h"
-#include "torch/script.h"
-
 namespace analysis {
 
 class ImageAnalysis : public AnalysisToolBase {

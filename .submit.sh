@@ -43,7 +43,8 @@ REWEIGHT_STRANGE_STAGES=(
 )
 
 SELECTION_BEAM_STAGES=(
-    "selection_numi_fhc_run1_beam"
+    "selection_numi_fhc_run1_beam_TEST"
+    #"selection_numi_fhc_run1_beam"
     #"selection_detvar_cv"
     #"selection_detvar_ly_suppression75attenuation8m"
     #"selection_detvar_ly_rayleigh"

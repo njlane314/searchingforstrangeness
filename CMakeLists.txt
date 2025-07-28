@@ -2,14 +2,14 @@ include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
 include_directories( $ENV{SEARCH_TOP} )
 
-find_package(Torch REQUIRED)
-include_directories($ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/include/torch/csrc/api/include)
-include_directories($ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/include)
-message("TORCH_LIBRARIES: ${TORCH_LIBRARIES}")
+#find_package(Torch REQUIRED)
+#include_directories($ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/include/torch/csrc/api/include)
+#include_directories($ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/include)
+#message("TORCH_LIBRARIES: ${TORCH_LIBRARIES}")
 
-set(TORCH_LIBRARIES $ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/libtorch.so)
-set(LIBTORCH_LIB_DIR /cvmfs/uboone.opensciencegrid.org/products/libtorch/v1_0_1/Linux64bit+3.10-2.17-e17-prof/lib/python2.7/site-packages/torch/lib)
-file(GLOB LIBTORCH_LIBRARIES "${LIBTORCH_LIB_DIR}/*.so")
+#set(TORCH_LIBRARIES $ENV{LIBTORCH_FQ_DIR}/lib/python2.7/site-packages/torch/lib/libtorch.so)
+#set(LIBTORCH_LIB_DIR /cvmfs/uboone.opensciencegrid.org/products/libtorch/v1_0_1/Linux64bit+3.10-2.17-e17-prof/lib/python2.7/site-packages/torch/lib)
+#file(GLOB LIBTORCH_LIBRARIES "${LIBTORCH_LIB_DIR}/*.so")
 
 include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/include/python2.7)
 
@@ -62,8 +62,8 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            ${ROOT_MINUIT}
             		   ${PANDORASDK}	
 			   larpandora_LArPandoraInterface
-                           ${TORCH_LIBRARIES}
-                           ${LIBTORCH_LIBRARIES}
+                           #${TORCH_LIBRARIES}
+                           #${LIBTORCH_LIBRARIES}
                            ${PYTHON_LIBRARY}
                            larreco_Calorimetry
                            pthread
