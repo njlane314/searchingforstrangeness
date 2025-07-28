@@ -52,17 +52,12 @@ physics: {
             SelectionTool: @local::NeutrinoSelection
             AnalysisTools: {
                 truth: @local::TruthAnalysis
-                topology: @local::TopologyAnalysis
                 default: @local::DefaultAnalysis
                 image: @local::ImageAnalysis
                 weight: @local::EventWeightAnalysis
                 blips: @local::BlipAnalysis
                 tracks: @local::TrackAnalysis
-                showers: @local::ShowerAnalysis
-                calo: @local::CalorimetryAnalysis
-                energy: @local::NeutrinoEnergyAnalysis
                 slice: @local::SliceAnalysis
-                cluster: @local::ClusterAnalysis
             }
         }
     }

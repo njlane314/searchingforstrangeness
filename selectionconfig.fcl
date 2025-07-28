@@ -26,16 +26,6 @@ BlipAnalysis: {
     BlipAlg: @local::microboone_blipalg
 }
 
-ClusterAnalysis: {
-    tool_type: "ClusterAnalysis"
-    CLSproducer: "pandora"
-    PFPproducer: "pandora"
-    VTXproducer: "pandora"
-    SLCproducer: "pandora"
-    HITproducer: "gaushit"
-    BKTproducer: "gaushitTruthMatch"
-}
-
 DefaultAnalysis: {
     tool_type: "DefaultAnalysis"
     CLSproducer: "pandora"
@@ -102,14 +92,9 @@ SliceAnalysis: {
     MCTproducer: "generator"
     MCPproducer: "largeant"
     HITproducer: "gaushit"
-
-    origHproducer: "gaushit::OverlayStage1a"
-    origHTproducer: "gaushitTruthMatch::OverlayRecoStage1b"
-}
-
-TopologyAnalysis: {
-    tool_type: "TopologyAnalysis"
-    CLSproducer: "pandora"
+    BKTproducer: "gaushitTruthMatch"
+    OrigHITproducer: "gaushit::OverlayStage1a"
+    OrigBKTproducer: "gaushitTruthMatch::OverlayRecoStage1b"
 }
 
 TrackAnalysis: {
@@ -124,8 +109,14 @@ TrackAnalysis: {
 }
 
 TruthAnalysis: {
-    tool_type: TruthAnalysis
-    MCTproducer: "generator"    
+    tool_type: "TruthAnalysis"
+    MCTproducer: "generator"
+    MCFproducer: "generator"
+    MCPproducer: "largeant"
+    HITproducer: "gaushit"
+    BKTproducer: "gaushitTruthMatch"
+    MCRproducer: "mcreco"
+    CLSproducer: "pandora"
 }
 
 EventSelectionFilter: {
@@ -146,8 +137,8 @@ EventSelectionFilter: {
     
     verbose: false
     filter: true
-    isData: false
-    isFakeData: false
+    IsData: false
+    IsFakeData: false
 }
 
 NeutrinoSelection: {
@@ -159,12 +150,10 @@ NeutrinoSelectionFilter: {
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         blip: @local::BlipAnalysis
-        cluster: @local::ClusterAnalysis
         default: @local::DefaultAnalysis 
         weight: @local::EventWeightAnalysis
         image: @local::ImageAnalysis
         slice: @local::SliceAnalysis
-        topology: @local::TopologyAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis  
     }

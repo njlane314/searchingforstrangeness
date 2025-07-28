@@ -94,8 +94,8 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
 
     _verbose = p.get<bool>("Verbose");
-    _data = p.get<bool>("isData");
-    _fake_data = p.get<bool>("isFakeData", false);
+    _data = p.get<bool>("IsData");
+    _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
 
     art::ServiceHandle<art::TFileService> tfs;

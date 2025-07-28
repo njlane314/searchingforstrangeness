@@ -43,19 +43,20 @@ public:
 
 private:
     art::InputTag fMCTproducer;
-    art::InputTag fMCFLUXproducer;
+    art::InputTag fMCFproducer;
     art::InputTag fMCPproducer;
     art::InputTag fHITproducer;
-    art::InputTag fHITTASproducer;
-    art::InputTag fMCSHRproducer;
-    art::InputTag fMCTRKproducer;
+    art::InputTag fBKTproducer;
+    art::InputTag fMCRproducer;
     art::InputTag fCLSproducer;
+
     float fFidvolXstart;
     float fFidvolXend;
     float fFidvolYstart;
     float fFidvolYend;
     float fFidvolZstart;
     float fFidvolZend;
+
     float fProtonKEThreshold;
     float fPionKEThreshold;
     float fMuonKEThreshold;
@@ -187,6 +188,7 @@ private:
     float _true_total_momentum;
     float _true_visible_total_momentum;
     float _true_visible_energy;
+
     void CollectDescendants(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h, const std::map<int, art::Ptr<simb::MCParticle>>& mcParticleMap, const art::Ptr<simb::MCParticle>& part, int primary_index);
 };
 
@@ -196,19 +198,20 @@ TruthAnalysis::TruthAnalysis(fhicl::ParameterSet const& p) {
 
 void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
-    fMCFLUXproducer = p.get<art::InputTag>("MCFLUXproducer");
+    fMCFproducer = p.get<art::InputTag>("MCFproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
-    fHITTASproducer = p.get<art::InputTag>("HITTASproducer");
-    fMCSHRproducer = p.get<art::InputTag>("MCSHRproducer");
-    fMCTRKproducer = p.get<art::InputTag>("MCTRKproducer");
+    fBKTproducer = p.get<art::InputTag>("BKTproducer");
+    fMCRproducer = p.get<art::InputTag>("MCRproducer");
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
+
     fFidvolXstart = p.get<double>("fidvolXstart", 10);
     fFidvolXend = p.get<double>("fidvolXend", 10);
     fFidvolYstart = p.get<double>("fidvolYstart", 15);
     fFidvolYend = p.get<double>("fidvolYend", 15);
     fFidvolZstart = p.get<double>("fidvolZstart", 10);
     fFidvolZend = p.get<double>("fidvolZend", 50);
+
     fProtonKEThreshold = p.get<float>("ProtonKEThreshold", 0.035);
     fPionKEThreshold = p.get<float>("PionKEThreshold", 0.020);
     fMuonKEThreshold = p.get<float>("MuonKEThreshold", 0.015);
@@ -216,6 +219,7 @@ void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
     fGammaKEThreshold = p.get<float>("GammaKEThreshold", 0.030);
     fNeutralPionKEThreshold = p.get<float>("NeutralPionKEThreshold", 0.030);
     fHadronKEThreshold = p.get<float>("HadronKEThreshold", 0.035);
+
     particle_counters = {
         {{13}, false, fMuonKEThreshold, &_count_mu_minus},
         {{-13}, false, fMuonKEThreshold, &_count_mu_plus},
@@ -489,10 +493,10 @@ void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
     }
 
     auto const& hit_h = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-    auto assocMCPart = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_h, event, fHITTASproducer);
+    auto assocMCPart = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(hit_h, event, fBKTproducer);
 
-    auto const& mcshower_h = event.getValidHandle<std::vector<sim::MCShower>>(fMCSHRproducer);
-    auto const& mctrack_h = event.getValidHandle<std::vector<sim::MCTrack>>(fMCTRKproducer);
+    auto const& mcshower_h = event.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer);
+    auto const& mctrack_h = event.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer);
 
     std::vector<recob::Hit> inputHits_deref;
     inputHits_deref.reserve(inputHits.size());
@@ -561,7 +565,7 @@ void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
     auto const& mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
     auto mct = mct_h->at(0);
 
-    auto const& mcflux_h = e.getValidHandle<std::vector<simb::MCFlux>>(fMCFLUXproducer);
+    auto const& mcflux_h = e.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
     if (mcflux_h.isValid() && !mcflux_h->empty()) {
         auto flux = mcflux_h->at(0);
         
@@ -754,7 +758,7 @@ void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
         _mc_daughter_vtx_y.push_back(daughter_vtxs_y);
         _mc_daughter_vtx_z.push_back(daughter_vtxs_z);
 
-        CollectDescendants(mcp_h, mcParticleMap, mcp_ptr, p);
+        this->CollectDescendants(mcp_h, mcParticleMap, mcp_ptr, p);
     }
 }
 
@@ -816,7 +820,7 @@ void TruthAnalysis::CollectDescendants(const art::ValidHandle<std::vector<simb::
         _mc_allchain_completeness.push_back(std::numeric_limits<float>::lowest());
         _mc_allchain_purity.push_back(std::numeric_limits<float>::lowest());
 
-        CollectDescendants(mcp_h, mcParticleMap, dau, primary_index);
+        this->CollectDescendants(mcp_h, mcParticleMap, dau, primary_index);
     }
 }
 

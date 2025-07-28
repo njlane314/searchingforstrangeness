@@ -24,10 +24,10 @@ private:
     art::InputTag fSLCproducer;
     art::InputTag fMCTproducer;
     art::InputTag fMCPproducer;
-    art::InputTag fHproducer;
-    art::InputTag fHTproducer;
-    art::InputTag fOrigHproducer;
-    art::InputTag fOrigHTproducer;
+    art::InputTag fHITproducer;
+    art::InputTag fBKTproducer;
+    art::InputTag fOrigHITproducer;
+    art::InputTag fOrigBKTproducer;
 
     std::vector<size_t> muon_ids;
     std::vector<size_t> electron_ids;
@@ -145,10 +145,10 @@ SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet &p) {
     fSLCproducer = p.get<art::InputTag>("SLCproducer");
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
-    fHproducer = p.get<art::InputTag>("Hproducer");
-    fHTproducer = p.get<art::InputTag>("HTproducer");
-    fOrigHproducer = p.get<art::InputTag>("OrigHproducer");
-    fOrigHTproducer = p.get<art::InputTag>("OrigHTproducer");
+    fHITproducer = p.get<art::InputTag>("HITproducer");
+    fBKTproducer = p.get<art::InputTag>("BKTproducer");
+    fOrigHITproducer = p.get<art::InputTag>("OrigHITproducer");
+    fOrigBKTproducer = p.get<art::InputTag>("OrigBKTproducer");
 }
 
 void SliceAnalysis::configure(fhicl::ParameterSet const &p) {}
@@ -194,9 +194,9 @@ void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
             }
         }
     }
-    art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHproducer);
+    art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
     assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
-        new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fHTproducer));
+        new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBKTproducer));
     int muon_hits = 0, electron_hits = 0, proton_hits = 0, charged_pion_hits = 0;
     int neutral_pion_hits = 0, neutron_hits = 0, gamma_hits = 0, other_hits = 0;
     int charged_kaon_hits = 0, neutral_kaon_hits = 0, lambda_hits = 0;
@@ -231,10 +231,10 @@ void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
     event_charged_sigma_hits = charged_sigma_hits;
     event_sigma_zero_hits = sigma_zero_hits;
     event_cosmic_hits = cosmic_hits;
-    if (!fOrigHproducer.empty()) {
-        auto hitsOrig = e.getValidHandle<std::vector<recob::Hit>>(fOrigHproducer);
+    if (!fOrigHITproducer.empty()) {
+        auto hitsOrig = e.getValidHandle<std::vector<recob::Hit>>(fOrigHITproducer);
         auto assocMCPartOrig = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
-            new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitsOrig, e, fOrigHTproducer));
+            new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitsOrig, e, fOrigBKTproducer));
         int orig_nu_hits = 0;
         for (size_t ih = 0; ih < hitsOrig->size(); ih++) {
             const art::Ptr<recob::Hit> hit_ptr(hitsOrig, ih);
