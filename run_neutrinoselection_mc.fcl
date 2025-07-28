@@ -32,19 +32,19 @@ physics: {
     filters: {
         nuselection: {
             module_type: "EventSelectionFilter"
-            PFPproducer: "pandora"
-            CLSproducer: "pandora"
-            SLCproducer: "pandora"
-            HITproducer: "gaushit"
-            SHRproducer: "pandora"
-            VTXproducer: "pandora"
-            TRKproducer: "pandora"
-            PCAproducer: "pandora"
-            MCPproducer: "largeant"
-            WIREproducer: "butcher"
-            MCTproducer: "generator"
+            PFPproducer: @local::standard_producers.PFPproducer
+            CLSproducer: @local::standard_producers.CLSproducer
+            SLCproducer: @local::standard_producers.SLCproducer
+            HITproducer: @local::standard_producers.HITproducer
+            SHRproducer: @local::standard_producers.SHRproducer
+            VTXproducer: @local::standard_producers.VTXproducer
+            TRKproducer: @local::standard_producers.TRKproducer
+            PCAproducer: @local::standard_producers.PCAproducer
+            MCPproducer: @local::standard_producers.MCPproducer
+            WIREproducer: @local::standard_producers.WIREproducer
+            MCTproducer: @local::standard_producers.MCTproducer
+            BackTrackerLabel: @local::standard_producers.BKTproducer
             DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
-            BackTrackerLabel: "gaushitTruthMatch"
             Verbose: false
             IsData: false
             IsFakeData: false
@@ -53,7 +53,9 @@ physics: {
             AnalysisTools: {
                 truth: @local::TruthAnalysis
                 default: @local::DefaultAnalysis
+                energy: @local::EnergyAnalysis
                 image: @local::ImageAnalysis
+                flash: @local::FlashAnalysis
                 weight: @local::EventWeightAnalysis
                 blips: @local::BlipAnalysis
                 tracks: @local::TrackAnalysis

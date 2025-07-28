@@ -3,6 +3,7 @@
 #include "proximityclustering.fcl"
 #include "particleinventoryservice.fcl"
 #include "blipreco_configs.fcl"
+#include "producers.fcl"
 
 microboone_calo_mcc9_data: {
     CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
@@ -28,15 +29,15 @@ BlipAnalysis: {
 
 DefaultAnalysis: {
     tool_type: "DefaultAnalysis"
-    CLSproducer: "pandora"
-    MCTproducer: "generator"
-    MCFproducer: "generator"
-    HITproducer: "gaushit"
-    BKTproducer: "gaushitTruthMatch"
-    MCRproducer: "mcreco"
-    SLCproducer: "pandora"
-    MCPproducer: "largeant"
-    PFPproducer: "pandora"
+    PFPproducer: @local::standard_producers.PFPproducer
+    CLSproducer: @local::standard_producers.CLSproducer
+    MCTproducer: @local::standard_producers.MCTproducer
+    MCFproducer: @local::standard_producers.MCFproducer
+    HITproducer: @local::standard_producers.HITproducer
+    BKTproducer: @local::standard_producers.BKTproducer
+    MCRproducer: @local::standard_producers.MCRproducer
+    SLCproducer: @local::standard_producers.SLCproducer
+    MCPproducer: @local::standard_producers.MCPproducer
 
     fidvolXstart: @local::FidVol.Xstart
     fidvolXend:   @local::FidVol.Xend
@@ -49,10 +50,20 @@ DefaultAnalysis: {
     ignoreMCFlux: false
 }
 
+EnergyAnalysis: {
+    tool_type:           "EnergyAnalysis"
+    TRKproducer:        @local::standard_producers.TRKproducer
+    CALproducer:        @local::standard_producers.CALproducer
+    CLSproducer:        @local::standard_producers.CLSproducer
+    TrkShrScore:         0.5
+    ShrEnergyBias:       0.8
+    ADCtoMeVMIP:         0.002876
+}
+
 EventWeightAnalysis: {
     tool_type: "EventWeightAnalysis"
     createDedicatedTree: false
-    createMapBranch: true 
+    createMapBranch: true
     createFluxBranch: true
     createGenieBranch: true
     createReintBranch: true
@@ -72,14 +83,21 @@ EventWeightAnalysis: {
     eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
+FlashAnalysis: {
+    tool_type: "FlashAnalysis"
+    SliceProducer:      @local::standard_producers.SLCproducer
+    FlashMatchProducer: "flashmatch"
+    PFPProducer:        @local::standard_producers.PFPproducer
+}
+
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
-    PFPproducer: "pandora"
-    CLSproducer: "pandora"
-    HITproducer: "gaushit"
-    WREproducer: "butcher"
-    MCPproducer: "largeant"
-    BKTproducer: "gaushitTruthMatch"
+    PFPproducer: @local::standard_producers.PFPproducer
+    CLSproducer: @local::standard_producers.CLSproducer
+    HITproducer: @local::standard_producers.HITproducer
+    WIREproducer: @local::standard_producers.WIREproducer
+    MCPproducer: @local::standard_producers.MCPproducer
+    BKTproducer: @local::standard_producers.BKTproducer
 
     imageWidth: 512
     imageHeight: 512
@@ -87,21 +105,24 @@ ImageAnalysis: {
 
 SliceAnalysis: {
     tool_type: "SliceAnalysis"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    MCTproducer: "generator"
-    MCPproducer: "largeant"
-    HITproducer: "gaushit"
-    BKTproducer: "gaushitTruthMatch"
+    CLSproducer: @local::standard_producers.CLSproducer
+    SLCproducer: @local::standard_producers.SLCproducer
+    MCTproducer: @local::standard_producers.MCTproducer
+    MCPproducer: @local::standard_producers.MCPproducer
+    HITproducer: @local::standard_producers.HITproducer
+    BKTproducer: @local::standard_producers.BKTproducer
     OrigHITproducer: "gaushit::OverlayStage1a"
     OrigBKTproducer: "gaushitTruthMatch::OverlayRecoStage1b"
 }
 
 TrackAnalysis: {
     tool_type: "TrackAnalysis"
-    TRKproducer: "pandoraTrack"
-    CALproducer: "pandoraTrackcali"   
-    PIDproducer: "pandoraTrackcalipid"
+    TRKproducer: @local::standard_producers.TRKproducer
+    CALproducer: @local::standard_producers.CALproducer
+    PIDproducer: @local::standard_producers.PIDproducer
+    HITproducer: @local::standard_producers.HITproducer
+    CLSproducer: @local::standard_producers.CLSproducer
+    BKTproducer: @local::standard_producers.BKTproducer
 
     MCSfit: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
     ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
@@ -110,31 +131,31 @@ TrackAnalysis: {
 
 TruthAnalysis: {
     tool_type: "TruthAnalysis"
-    MCTproducer: "generator"
-    MCFproducer: "generator"
-    MCPproducer: "largeant"
-    HITproducer: "gaushit"
-    BKTproducer: "gaushitTruthMatch"
-    MCRproducer: "mcreco"
-    CLSproducer: "pandora"
+    MCTproducer: @local::standard_producers.MCTproducer
+    MCFproducer: @local::standard_producers.MCFproducer
+    MCPproducer: @local::standard_producers.MCPproducer
+    HITproducer: @local::standard_producers.HITproducer
+    BKTproducer: @local::standard_producers.BKTproducer
+    MCRproducer: @local::standard_producers.MCRproducer
+    CLSproducer: @local::standard_producers.CLSproducer
 }
 
 EventSelectionFilter: {
     module_type: "EventSelectionFilter"
-    PFPproducer: "pandora"
-    CLSproducer: "pandora"
-    SLCproducer: "pandora"
-    HITproducer: "gaushit"
-    SHRproducer: "pandora"
-    VTXproducer: "pandora"
-    TRKproducer: "pandora"
-    PCAproducer: "pandora"
-    MCPproducer: "largeant"
-    WREproducer: "butcher"
-    MCTproducer: "generator"
-    BKTproducer: "gaushitTruthMatch"
+    PFPproducer: @local::standard_producers.PFPproducer
+    CLSproducer: @local::standard_producers.CLSproducer
+    SLCproducer: @local::standard_producers.SLCproducer
+    HITproducer: @local::standard_producers.HITproducer
+    SHRproducer: @local::standard_producers.SHRproducer
+    VTXproducer: @local::standard_producers.VTXproducer
+    TRKproducer: @local::standard_producers.TRKproducer
+    PCAproducer: @local::standard_producers.PCAproducer
+    MCPproducer: @local::standard_producers.MCPproducer
+    WIREproducer: @local::standard_producers.WIREproducer
+    MCTproducer: @local::standard_producers.MCTproducer
+    BKTproducer: @local::standard_producers.BKTproducer
     DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
-    
+
     verbose: false
     filter: true
     IsData: false
@@ -150,11 +171,13 @@ NeutrinoSelectionFilter: {
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         blip: @local::BlipAnalysis
-        default: @local::DefaultAnalysis 
+        default: @local::DefaultAnalysis
+        energy: @local::EnergyAnalysis
         weight: @local::EventWeightAnalysis
+        flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
-        truth: @local::TruthAnalysis  
+        truth: @local::TruthAnalysis
     }
 }

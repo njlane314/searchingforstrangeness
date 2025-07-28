@@ -31,6 +31,7 @@
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "cetlib_except/exception.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+#include "canvas/Utilities/InputTag.h" 
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
@@ -82,7 +83,7 @@ public:
 private:
     art::InputTag fPFPproducer; 
     art::InputTag fCLSproducer;
-    art::InputTag fSLCEproducer;
+    art::InputTag fSLCprodcuer;
     art::InputTag fHITproducer;
     art::InputTag fWIREproducer;
     art::InputTag fMCPproducer;
@@ -154,11 +155,11 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet& pset) {
 void ImageAnalysis::configure(const fhicl::ParameterSet& p) {
     fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
-    fSLCEproducer = p.get<art::InputTag>("SLICEproducer", "pandora");
+    fSLCprodcuer = p.get<art::InputTag>("SLICproducer", "pandora");
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fWIREproducer = p.get<art::InputTag>("WIREproducer", "butcher");
     fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
-    fBKTproducer = p.get<std::string>("BKTproducer", "gaushitTruthMatch");
+    fBKTproducer = p.get<std::InputTag>("BKTproducer", "gaushitTruthMatch");
     fBadChannelFile = p.get<std::string>("BadChannelFile", "badchannels.txt");
 
     _image_width = 512;
@@ -363,8 +364,8 @@ std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Eve
     const auto& slices = sliceAssoc.at(pfpIndex);
     if (slices.empty()) return {};
     const art::Ptr<recob::Slice>& slice = slices[0];
-    auto sliceHandle = e.getValidHandle<std::vector<recob::Slice>>(fSLCEproducer);
-    art::FindManyP<recob::Hit> hitAssoc(sliceHandle, e, fSLCEproducer);
+    auto sliceHandle = e.getValidHandle<std::vector<recob::Slice>>(fSLCprodcuer);
+    art::FindManyP<recob::Hit> hitAssoc(sliceHandle, e, fSLCprodcuer);
     const std::vector<art::Ptr<recob::Hit>>& sliceHits = hitAssoc.at(slice.key());
     neutrino_hits.reserve(sliceHits.size());
     for (const auto& hit : sliceHits) {

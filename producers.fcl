@@ -1,0 +1,22 @@
+BEGIN_PROLOG
+
+standard_producers: {
+  PFPproducer: "pandora"
+  CLSproducer: "pandora"
+  SLCproducer: "pandora"
+  HITproducer: "gaushit"
+  SHRproducer: "pandora"
+  VTXproducer: "pandora"
+  TRKproducer: "pandoraTrack"
+  PCAproducer: "pandora"
+  MCPproducer: "largeant"
+  WIREproducer: "butcher"
+  MCTproducer: "generator"
+  MCFproducer: "generator"
+  BKTproducer: "gaushitTruthMatch"
+  MCRproducer: "mcreco"
+  CALproducer: "pandoraTrackcali"
+  PIDproducer: "pandoraTrackcalipid"
+}
+
+END_PROLOG

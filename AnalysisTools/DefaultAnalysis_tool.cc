@@ -149,7 +149,7 @@ private:
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
-    fCRTproducer = p.get<art::InputTag>("CRTproducer", "");
+    fCRTproducer = p.get<art::InputTag>("CRTproducer", "pandora");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fMCTproducer = p.get<art::InputTag>("MCTproducer", "generator");
     fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
