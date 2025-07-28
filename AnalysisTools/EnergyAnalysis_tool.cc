@@ -38,9 +38,9 @@ private:
     float _neutrino_energy_0;
     float _neutrino_energy_1; 
     float _neutrino_energy_2;
-    float _slice_calo_0;
-    float _slice_calo_1;
-    float _slice_calo_2;
+    float _slice_calo_energy_0;
+    float _slice_calo_energy_1;
+    float _slice_calo_energy_2;
 };
 
 EnergyAnalysis::EnergyAnalysis(const fhicl::ParameterSet& p) {
@@ -64,6 +64,7 @@ void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
         auto PDG = fabs(pfp_pxy->PdgCode());
         if ((PDG == 12) || (PDG == 14))
             continue;
+
         auto trkshrscore = common::GetTrackShowerScore(pfp_pxy);
         auto pxy_cls_v = pfp_pxy.get<recob::Cluster>();
         for (size_t c=0; c < pxy_cls_v.size(); c++) {
@@ -71,15 +72,15 @@ void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
             auto clus_hit_v = clus.get<recob::Hit>();
             if (clus->Plane().Plane == 0){
                 for (size_t h=0; h < clus_hit_v.size(); h++)
-                    _slice_calo_0 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
+                    _slice_calo_energy_0 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
             }
             if (clus->Plane().Plane == 1){
                 for (size_t h=0; h < clus_hit_v.size(); h++)
-                    _slice_calo_1 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
+                    _slice_calo_energy_1 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
             }
             if (clus->Plane().Plane == 2){
                 for (size_t h=0; h < clus_hit_v.size(); h++)
-                    _slice_calo_2 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
+                    _slice_calo_energy_2 += clus_hit_v[h]->Integral() * fADCtoMeVMIP;
             }
         }
         if (trkshrscore > fTrkShrScore) {
@@ -90,12 +91,12 @@ void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
             for (auto const& calo : calo_v) {
                 auto rr_v = calo->ResidualRange();
                 auto dedx = calo->dEdx();
-                if ( (rr_v.size() == 0) || (dedx.size() == 0) ) continue;
+                if ((rr_v.size() == 0) || (dedx.size() == 0)) continue;
                 size_t nmax = rr_v.size() - 1;
-                if ( (dedx.size() - 1) < nmax) { nmax = dedx.size() - 1; }
+                if ((dedx.size() - 1) < nmax){ nmax = dedx.size() - 1; }
                 float dE = 0;
                 for (size_t n=0; n < nmax; n++) {
-                    float energy = fabs(rr_v[n]-rr_v[n+1]) * dedx[n];
+                    float energy = fabs(rr_v[n] - rr_v[n+1]) * dedx[n];
                     if (energy < 100)
                         dE += energy;
                 }
@@ -127,21 +128,21 @@ void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
 void EnergyAnalysis::analyseEvent(art::Event const &e, bool fData) {}
 
 void EnergyAnalysis::setBranches(TTree* _tree) {
-    _tree->Branch("NeutrinoEnergy0",&_neutrino_energy_0,"NeutrinoEnergy0/F");
-    _tree->Branch("NeutrinoEnergy1",&_neutrino_energy_1,"NeutrinoEnergy1/F");
-    _tree->Branch("NeutrinoEnergy2",&_neutrino_energy_2,"NeutrinoEnergy2/F");
-    _tree->Branch("SliceCaloEnergy0",&_slice_calo_0,"SliceCaloEnergy0/F");
-    _tree->Branch("SliceCaloEnergy1",&_slice_calo_1,"SliceCaloEnergy1/F");
-    _tree->Branch("SliceCaloEnergy2",&_slice_calo_2,"SliceCaloEnergy2/F");
+    _tree->Branch("neutrino_energy_0",&_neutrino_energy_0,"neutrino_energy_0/F");
+    _tree->Branch("neutrino_energy_1",&_neutrino_energy_1,"neutrino_energy_1/F");
+    _tree->Branch("neutrino_energy_2",&_neutrino_energy_2,"neutrino_energy_2/F");
+    _tree->Branch("slice_calo_energy_0",&_slice_calo_energy_0,"slice_calo_energy_0/F");
+    _tree->Branch("slice_calo_energy_1",&_slice_calo_energy_1,"slice_calo_energy_1/F");
+    _tree->Branch("slice_calo_energy_2",&_slice_calo_energy_2,"slice_calo_energy_2/F");
 }
 
 void EnergyAnalysis::resetTTree(TTree* _tree) {
-    _neutrino_energy_0 = 0;
-    _neutrino_energy_1 = 0;
-    _neutrino_energy_2 = 0;
-    _slice_calo_0 = 0;
-    _slice_calo_1 = 0;
-    _slice_calo_2 = 0;
+    _neutrino_energy_0 = std::numeric_limits<float>::lowest();
+    _neutrino_energy_1 = std::numeric_limits<float>::lowest();
+    _neutrino_energy_2 = std::numeric_limits<float>::lowest();
+    _slice_calo_energy_0 = std::numeric_limits<float>::lowest();
+    _slice_calo_energy_1 = std::numeric_limits<float>::lowest();
+    _slice_calo_energy_2 = std::numeric_limits<float>::lowest();
 }
 
 DEFINE_ART_CLASS_TOOL(EnergyAnalysis)

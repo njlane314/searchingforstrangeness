@@ -2,12 +2,12 @@
 
 <!DOCTYPE project [
     <!ENTITY release "v08_00_00_82">
-    <!ENTITY file_type "mc">
-    <!ENTITY run_type "physics">
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection_mc "run_neutrinoselection_mc.fcl">
     <!ENTITY fcl_selection_data "run_neutrinoselection_data.fcl">
+
+    <!ENTITY jobsub_config "--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt">
 
     <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
     
@@ -41,16 +41,18 @@
     <numevents>-1</numevents>
     <os>SL7</os>
     <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
-
     <larsoft>
         <tag>&release;</tag>
         <qual>e17:prof</qual>
         <local>/pnfs/uboone/resilient/users/nlane/tarballs/strangeness.tar</local>
     </larsoft>
-
     <check>1</check>
     <copy>0</copy>
     <version>prod_&release;</version>
+    <memory>4000</memory>
+    <disk>20GB</disk>
+    <schema>https</schema>
+    <maxfilesperjob>1</maxfilesperjob>
 
     <stage name="selection_numi_fhc_run1_ext">
         <inputdef>&input_def_ext_numi_run1;</inputdef> 
@@ -59,12 +61,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>2000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="reweight_numi_fhc_run1_beam">
@@ -79,12 +77,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights</workdir>
         <datatier>eventweight</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>3500</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_numi_fhc_run1_beam_TEST">
@@ -94,12 +88,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
-        <numjobs>5</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <numjobs>20</numjobs>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_numi_fhc_run1_beam">
@@ -109,12 +99,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>3000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="reweight_numi_fhc_run1_strangeness">
@@ -129,12 +115,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights</workdir>
         <datatier>eventweight</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1500</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_numi_fhc_run1_strangeness">
@@ -144,12 +126,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_cv_strangeness">
@@ -159,12 +137,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>3000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_ly_rayleigh_strangeness">
@@ -174,12 +148,9 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
         <memory>1000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_ly_down_strangeness">
@@ -189,12 +160,9 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
         <memory>1000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodx_sce_strangeness">
@@ -204,12 +172,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodyz_sce_strangeness">
@@ -219,12 +183,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremod_yz_strangeness">
@@ -234,12 +194,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremod_thetayz_strangeness">
@@ -249,12 +205,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_sce_strangeness">
@@ -264,12 +216,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_recomb2_strangeness">
@@ -279,12 +227,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_cv">
@@ -294,12 +238,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>8000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_ly_suppression75attenuation8m">
@@ -309,12 +249,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_ly_rayleigh">
@@ -324,12 +260,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_lydown">
@@ -339,12 +271,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_lydown</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_sce">
@@ -354,12 +282,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_recomb2">
@@ -369,12 +293,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodx">
@@ -384,12 +304,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodyz">
@@ -399,12 +315,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodthetaxz">
@@ -414,12 +326,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetaxz</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodthetayz_withsplines">
@@ -429,12 +337,8 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines</workdir>
         <datatier>selected</datatier>
-        <maxfilesperjob>1</maxfilesperjob>
         <numjobs>1000</numjobs>
-        <memory>4000</memory>
-        <disk>20GB</disk>
-        <schema>https</schema>
-        <jobsub>--expected-lifetime=24h -f /pnfs/uboone/resilient/users/nlane/misc/badchannels.txt</jobsub>
+        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
 </project>
