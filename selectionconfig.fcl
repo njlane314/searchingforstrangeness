@@ -99,6 +99,7 @@ ImageAnalysis: {
     WIREproducer: @local::standard_producers.WIREproducer
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
+    BadChannelFile: badchannels.txt
 
     imageWidth: 512
     imageHeight: 512

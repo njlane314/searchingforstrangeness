@@ -147,14 +147,14 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet& pset) {
 }
 
 void ImageAnalysis::configure(const fhicl::ParameterSet& p) {
-    fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
-    fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
-    fSLCprodcuer = p.get<art::InputTag>("SLICproducer", "pandora");
-    fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
-    fWIREproducer = p.get<art::InputTag>("WIREproducer", "butcher");
-    fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
-    fBKTproducer = p.get<art::InputTag>("BKTproducer", "gaushitTruthMatch");
-    fBadChannelFile = p.get<std::string>("BadChannelFile", "badchannels.txt");
+    fPFPproducer = p.get<art::InputTag>("PFPproducer");
+    fCLSproducer = p.get<art::InputTag>("CLSproducer");
+    fSLCprodcuer = p.get<art::InputTag>("SLICproducer");
+    fHITproducer = p.get<art::InputTag>("HITproducer");
+    fWIREproducer = p.get<art::InputTag>("WIREproducer";
+    fMCPproducer = p.get<art::InputTag>("MCPproducer");
+    fBKTproducer = p.get<art::InputTag>("BKTproducer");
+    fBadChannelFile = p.get<std::string>("BadChannelFile");
 
     _image_width = 512;
     _image_height = 512;
