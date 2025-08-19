@@ -43,14 +43,14 @@ REWEIGHT_STRANGE_STAGES=(
 )
 
 SELECTION_BEAM_STAGES=(
-    #"selection_numi_fhc_run1_beam_TEST"
-    "selection_numi_fhc_run1_beam"
-    #"selection_detvar_cv"
+    #"selection_numi_fhc_run1_ext"
+    #"selection_numi_fhc_run1_beam"
+    "selection_detvar_cv"
+    "selection_detvar_sce"
+    "selection_detvar_recomb2"
     #"selection_detvar_ly_suppression75attenuation8m"
     #"selection_detvar_ly_rayleigh"
     #"selection_detvar_lydown"
-    #"selection_detvar_sce"
-    #"selection_detvar_recomb2"
     #"selection_detvar_wiremodx"
     #"selection_detvar_wiremodyz"
     #"selection_detvar_wiremodthetaxz"
@@ -58,10 +58,10 @@ SELECTION_BEAM_STAGES=(
 )
 
 SELECTION_STRANGE_STAGES=(
-    "selection_numi_fhc_run1_strangeness"
-    #"selection_detvar_cv_strangeness"
-    #"selection_detvar_sce_strangeness"
-    #"selection_detvar_recomb2_strangeness"
+    #"selection_numi_fhc_run1_strangeness"
+    "selection_detvar_cv_strangeness"
+    "selection_detvar_sce_strangeness"
+    "selection_detvar_recomb2_strangeness"
     #"selection_detvar_ly_down_strangeness"
     #"selection_detvar_ly_rayleigh_strangeness"
     #"selection_detvar_wiremodx_sce_strangeness"
@@ -140,7 +140,7 @@ for stage in "${STAGES_TO_SUBMIT[@]}"; do
         PREVIOUS_REWEIGHT_STAGE="${SELECTION_INPUT_STAGE_MAP[$stage]}"
         if [[ -n "$PREVIOUS_REWEIGHT_STAGE" ]]; then
             echo "Identified '$stage' as dependent on '$PREVIOUS_REWEIGHT_STAGE'."
-            check_previous_stage "$PREVIOUS_REWEIGHT_STAGE"
+            #check_previous_stage "$PREVIOUS_REWEIGHT_STAGE"
         else
             echo "Stage '$stage' is a selection stage but does not have a specific reweight input stage defined in the map (e.g., it might use inputdef)."
         fi

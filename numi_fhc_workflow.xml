@@ -81,17 +81,6 @@
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
-    <stage name="selection_numi_fhc_run1_beam_TEST">
-        <inputstage>reweight_numi_fhc_run1_beam</inputstage>
-        <fcl>&fcl_selection_mc;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
-        <datatier>selected</datatier>
-        <numjobs>20</numjobs>
-        <jobsub>&jobsub_config;</jobsub>
-    </stage>
-
     <stage name="selection_numi_fhc_run1_beam">
         <inputstage>reweight_numi_fhc_run1_beam</inputstage>
         <fcl>&fcl_selection_mc;</fcl>
@@ -99,7 +88,18 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
         <datatier>selected</datatier>
-        <numjobs>3000</numjobs>
+        <numjobs>3500</numjobs>
+        <jobsub>&jobsub_config;</jobsub>
+    </stage>
+
+    <stage name="selection_numi_fhc_run1_beam_test">
+        <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
+        <fcl>&fcl_selection_mc;</fcl>
+        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
+        <datatier>test</datatier>
+        <numjobs>1</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -126,7 +126,7 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
         <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
+        <numjobs>1500</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -149,7 +149,6 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
         <datatier>selected</datatier>
         <numjobs>1000</numjobs>
-        <memory>1000</memory>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -161,7 +160,6 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
         <datatier>selected</datatier>
         <numjobs>1000</numjobs>
-        <memory>1000</memory>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -216,7 +214,7 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
         <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
+        <numjobs>5000</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -227,7 +225,7 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
         <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
+        <numjobs>5000</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -282,7 +280,7 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce</workdir>
         <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
+        <numjobs>5000</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
@@ -293,7 +291,7 @@
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
         <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
+        <numjobs>5000</numjobs>
         <jobsub>&jobsub_config;</jobsub>
     </stage>
 
