@@ -538,7 +538,6 @@ namespace analysis {
         "--bind /cvmfs," + absolute_scratch_dir + " " +
             container + " " +
         "/bin/bash ./" + wrapper_script + " " + 
-        //"/bin/bash " + work_dir + "/" + wrapper_script + " " +    <----- old case
             temp_in + " " +
             temp_out + " " +
             work_dir + "/" + weights_file + " " +
