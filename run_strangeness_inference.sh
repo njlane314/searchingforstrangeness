@@ -6,6 +6,8 @@ OUTPUT_FILE="$2"
 WEIGHTS_FILE="$3"
 TREE_NAME="$4"
 BRANCH_NAME="$5"
+unset PYTHONHOME
+unset PYTHONPATH
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
   echo "Error: Input file '$INPUT_FILE' is missing or not provided."
   exit 1

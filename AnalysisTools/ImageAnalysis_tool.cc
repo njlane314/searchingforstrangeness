@@ -534,7 +534,8 @@ namespace analysis {
         std::string wrapper_script = "run_strangeness_inference.sh";
         std::string tree_name = "imagetree";
     
-        std::string command = "apptainer exec --no-home --cleanenv "
+        std::string command = "apptainer exec "
+        // std::string command = "apptainer exec --no-home --cleanenv " <--- old version, removing '--no-home' and '--cleanenv' flags
         "--bind /cvmfs," + absolute_scratch_dir + " " +
             container + " " +
         "/bin/bash ./" + wrapper_script + " " + 
