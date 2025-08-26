@@ -1,18 +1,13 @@
 #!/bin/bash
-# This script runs INSIDE the container and calls the python inference script.
-
-# Exit immediately if any command fails.
 set -e
-
-echo "--- Container Entrypoint Script Started ---"
-
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/env/setenv.sh"
+source "${SCRIPT_DIR}/env/configure.sh"
 INPUT_FILE="$1"
 OUTPUT_FILE="$2"
 WEIGHTS_FILE="$3"
 TREE_NAME="$4"
 BRANCH_NAME="$5"
-
-# --- 2. Validate Inputs ---
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
   echo "Error: Input file '$INPUT_FILE' is missing or not provided."
   exit 1
@@ -26,20 +21,14 @@ echo "Output file: ${OUTPUT_FILE}"
 echo "Weights file: ${WEIGHTS_FILE}"
 echo "Tree name: ${TREE_NAME}"
 echo "Branch name: ${BRANCH_NAME}"
-
-# --- 3. Execute the Python Inference Script ---
-# This calls your python script with all parameters clearly defined.
 python3 run_inference.py \
   --input "$INPUT_FILE" \
   --output "$OUTPUT_FILE" \
   --weights "$WEIGHTS_FILE" \
   --tree "$TREE_NAME" \
   --branch "$BRANCH_NAME"
-
-# --- 4. Final Check ---
 if [ ! -f "$OUTPUT_FILE" ]; then
   echo "Error: Python script did not create the expected output file: ${OUTPUT_FILE}"
   exit 1
 fi
 
-echo "--- Container Entrypoint Script Finished Successfully ---"

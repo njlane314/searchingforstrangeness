@@ -105,8 +105,7 @@
    source .setup
    source .build
    ```
-   - There exist automated bash scripts in the cloned respository that handle this configuration and build. 
-
+   - There exist automated bash scripts in the cloned respository that handle this configuration and build.
 
 ## Processing Files
 
