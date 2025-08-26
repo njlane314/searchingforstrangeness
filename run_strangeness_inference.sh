@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/env/setenv.sh"
-source "${SCRIPT_DIR}/env/configure.sh"
+source /usr/local/root/bin/thisroot.sh
 INPUT_FILE="$1"
 OUTPUT_FILE="$2"
 WEIGHTS_FILE="$3"
