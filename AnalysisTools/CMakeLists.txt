@@ -49,6 +49,7 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ubreco_BlipRecoAlg
                          ${LIBTORCH_LIBRARIES}
                          ${ROOT_GEOM}
+                         stdc++fs
         )
 
 install_headers()

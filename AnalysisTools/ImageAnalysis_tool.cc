@@ -15,7 +15,7 @@
 #include <numeric>
 #include <set>
 #include <fstream>
-#include <filesystem>
+#include <experimental/filesystem>
 #include <sstream>
 #include <TFile.h>
 #include <TTree.h>
@@ -56,6 +56,8 @@
 #include "../CommonDefs/Types.h"
 #include "../Image.h"
 #include "../ImageAlgorithm.h"
+
+namespace fs = std::experimental::filesystem;
 
 namespace analysis {
 
@@ -577,7 +579,7 @@ namespace analysis {
         auto end = std::chrono::steady_clock::now();
         double duration = std::chrono::duration<double>(end - start).count();
 
-        bool success = (code == 0) && std::filesystem::exists(temp_out);
+        bool success = (code == 0) && fs::exists(temp_out);
         if (!success) {
             std::ifstream error_stream(script_stderr);
             std::string error_message((std::istreambuf_iterator<char>(error_stream)), std::istreambuf_iterator<char>());
