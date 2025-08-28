@@ -15,6 +15,7 @@
 #include <numeric>
 #include <set>
 #include <fstream>
+#include <filesystem>
 #include <sstream>
 #include <TFile.h>
 #include <TTree.h>
@@ -511,12 +512,15 @@ namespace analysis {
         }
     }
 
-    float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_images, const std::string& absolute_scratch_dir, const std::string& work_dir, const std::string& weights_file) {
+    float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_images,
+        const std::string& absolute_scratch_dir,
+        const std::string& work_dir,
+        const std::string& weights_file) {
         std::string temp_in = absolute_scratch_dir + "/temp_test_in.root";
         std::string temp_out = absolute_scratch_dir + "/temp_test_out.txt";
         std::string script_stdout = absolute_scratch_dir + "/py_script.out";
         std::string script_stderr = absolute_scratch_dir + "/py_script.err";
-    
+
         TFile temp_file(temp_in.c_str(), "RECREATE");
         TTree tree("imagetree", "Images");
         std::vector<float> image_u = detector_images[0].data();
@@ -528,56 +532,79 @@ namespace analysis {
         tree.Fill();
         temp_file.Write();
         temp_file.Close();
-    
+
         std::string branch_name = "image_w";
         std::string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
         std::string wrapper_script = "run_strangeness_inference.sh";
         std::string tree_name = "imagetree";
-    
-        std::string command = "apptainer exec "
-        // std::string command = "apptainer exec --no-home --cleanenv " <--- old version, removing '--no-home' and '--cleanenv' flags
-        "--bind /cvmfs," + absolute_scratch_dir + " " +
+
+        std::string bind_paths = absolute_scratch_dir;
+        const char* bind_env = std::getenv("APPTAINER_BINDPATH");
+        bool need_cvmfs = true;
+        
+        if (bind_env && std::string(bind_env).find("/cvmfs") != std::string::npos) {
+            need_cvmfs = false;
+        } else {
+            std::ifstream mounts("/proc/mounts");
+            std::string line;
+        
+            while (std::getline(mounts, line)) {
+                if (line.find(" /cvmfs ") != std::string::npos) {
+                    need_cvmfs = false;
+                    break;
+                }
+            }
+        }
+        
+        if (need_cvmfs) {
+            bind_paths = "/cvmfs," + bind_paths;
+        }
+
+        std::string command = "apptainer exec --bind " + bind_paths + " " +
             container + " " +
-        "/bin/bash ./" + wrapper_script + " " + 
+            "/bin/bash ./" + wrapper_script + " " +
             temp_in + " " +
             temp_out + " " +
             work_dir + "/" + weights_file + " " +
             tree_name + " " +
             branch_name +
-        " > " + script_stdout + " 2> " + script_stderr;
-    
+            " > " + script_stdout + " 2> " + script_stderr;
+
         mf::LogInfo("ImageAnalysis") << "Executing inference: " << command;
-    
+
         auto start = std::chrono::steady_clock::now();
         int code = std::system(command.c_str());
         auto end = std::chrono::steady_clock::now();
         double duration = std::chrono::duration<double>(end - start).count();
-    
-        if (code != 0) {
+
+        bool success = (code == 0) && std::filesystem::exists(temp_out);
+        if (!success) {
             std::ifstream error_stream(script_stderr);
             std::string error_message((std::istreambuf_iterator<char>(error_stream)), std::istreambuf_iterator<char>());
             throw art::Exception(art::errors::LogicError)
-            << "Inference script failed with exit code " << code
-            << "\n--- Script stderr ---\n" << error_message << "\n--- End Script stderr ---";
-        }
-    
+                << "Inference script failed with exit code " << code
+                << "\n--- Script stderr ---\n" << error_message << "\n--- End Script stderr ---";
+        }   
+
         std::ifstream result_stream(temp_out.c_str());
         if (!result_stream) {
             throw art::Exception(art::errors::LogicError) << "Could not open temporary result file: " << temp_out;
         }
+        
         float score;
         result_stream >> score;
-    
+
         mf::LogInfo("ImageAnalysis") << "Inference time: " << duration << " seconds";
         mf::LogInfo("ImageAnalysis") << "Predicted score: " << score;
-    
+
         remove(temp_in.c_str());
         remove(temp_out.c_str());
         remove(script_stdout.c_str());
         remove(script_stderr.c_str());
-    
+
         return score;
     }
+
 
     DEFINE_ART_CLASS_TOOL(ImageAnalysis)
 }
