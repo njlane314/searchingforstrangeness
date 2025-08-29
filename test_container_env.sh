@@ -28,6 +28,9 @@ python3 -c "import torch; print('PyTorch version:', torch.__version__)"
 echo
 echo "--- 4. Checking for uproot ---"
 python3 -c "import uproot; print('uproot version:', uproot.__version__)"
+echo
+echo "--- 5. Checking for h5py ---"
+python3 -c "import h5py; print('h5py version:', h5py.__version__)" || echo "h5py not available"
 echo "--- Test script finished ---"
 exit 0
 

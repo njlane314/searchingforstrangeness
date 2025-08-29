@@ -8,6 +8,10 @@ TREE_NAME="$4"
 BRANCH_NAME="$5"
 unset PYTHONHOME
 unset PYTHONPATH
+if ! python3 -c "import h5py" >/dev/null 2>&1; then
+  echo "Error: Python module 'h5py' is required but not installed."
+  exit 1
+fi
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
   echo "Error: Input file '$INPUT_FILE' is missing or not provided."
   exit 1

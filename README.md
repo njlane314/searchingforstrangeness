@@ -2,6 +2,9 @@
 
 ## Building the Project
 
+Before building and running the inference utilities, ensure that required Python
+packages such as `h5py` are available in the runtime environment.
+
 1. **Set up the environment:**
 
    ```bash

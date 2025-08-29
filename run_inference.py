@@ -1,6 +1,10 @@
 import sys
 import os
-import h5py
+try:
+  import h5py
+except ModuleNotFoundError:
+  print("Error: h5py is required but not installed. Please install h5py to run this script.")
+  sys.exit(1)
 import torch
 import MinkowskiEngine as ME
 import numpy as np
