@@ -565,7 +565,7 @@ namespace analysis {
             bind_paths = "/cvmfs," + bind_paths;
         }
 
-        std::string command = "apptainer exec --cleanev --bind " + bind_paths + " " +
+        std::string command = "apptainer exec --cleanenv --bind " + bind_paths + " " +
             container + " " +
             "/bin/bash ./" + wrapper_script + " " +
             temp_in + " " +
