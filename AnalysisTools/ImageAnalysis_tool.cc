@@ -17,6 +17,7 @@
 #include <fstream>
 #include <experimental/filesystem>
 #include <sstream>
+#include <H5Cpp.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TDirectoryFile.h>
@@ -518,27 +519,30 @@ namespace analysis {
         const std::string& absolute_scratch_dir,
         const std::string& work_dir,
         const std::string& weights_file) {
-        std::string temp_in = absolute_scratch_dir + "/temp_test_in.root";
+        std::string temp_in = absolute_scratch_dir + "/temp_test_in.h5";
         std::string temp_out = absolute_scratch_dir + "/temp_test_out.txt";
         std::string script_stdout = absolute_scratch_dir + "/py_script.out";
         std::string script_stderr = absolute_scratch_dir + "/py_script.err";
 
-        TFile temp_file(temp_in.c_str(), "RECREATE");
-        TTree tree("imagetree", "Images");
+        std::string tree_name = "imagetree";
         std::vector<float> image_u = detector_images[0].data();
         std::vector<float> image_v = detector_images[1].data();
         std::vector<float> image_w = detector_images[2].data();
-        tree.Branch("image_u", &image_u);
-        tree.Branch("image_v", &image_v);
-        tree.Branch("image_w", &image_w);
-        tree.Fill();
-        temp_file.Write();
-        temp_file.Close();
+        const hsize_t dims[2] = {1, static_cast<hsize_t>(image_u.size())};
+        H5::H5File h5file(temp_in.c_str(), H5F_ACC_TRUNC);
+        H5::Group group = h5file.createGroup("/" + tree_name);
+        H5::DataSpace dataspace(2, dims);
+        H5::DataSet dset_u = group.createDataSet("image_u", H5::PredType::NATIVE_FLOAT, dataspace);
+        H5::DataSet dset_v = group.createDataSet("image_v", H5::PredType::NATIVE_FLOAT, dataspace);
+        H5::DataSet dset_w = group.createDataSet("image_w", H5::PredType::NATIVE_FLOAT, dataspace);
+        dset_u.write(image_u.data(), H5::PredType::NATIVE_FLOAT);
+        dset_v.write(image_v.data(), H5::PredType::NATIVE_FLOAT);
+        dset_w.write(image_w.data(), H5::PredType::NATIVE_FLOAT);
+        h5file.close();
 
         std::string branch_name = "image_w";
         std::string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
         std::string wrapper_script = "run_strangeness_inference.sh";
-        std::string tree_name = "imagetree";
 
         std::string bind_paths = absolute_scratch_dir;
         const char* bind_env = std::getenv("APPTAINER_BINDPATH");
@@ -562,7 +566,7 @@ namespace analysis {
             bind_paths = "/cvmfs," + bind_paths;
         }
 
-        std::string command = "apptainer exec --bind " + bind_paths + " " +
+        std::string command = "apptainer exec --cleanev --bind " + bind_paths + " " +
             container + " " +
             "/bin/bash ./" + wrapper_script + " " +
             temp_in + " " +
