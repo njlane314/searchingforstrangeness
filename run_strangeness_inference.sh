@@ -8,6 +8,27 @@ TREE_NAME="$4"
 BRANCH_NAME="$5"
 unset PYTHONHOME
 unset PYTHONPATH
+# Attempt to source a Python environment from CVMFS so that required
+# libraries like h5py are available.
+PY_SETUP=""
+for pyroot in \
+  /cvmfs/uboone.opensciencegrid.org/products/python \
+  /cvmfs/larsoft.opensciencegrid.org/products/python; do
+  if [ -d "$pyroot" ]; then
+    PY_SETUP=$(find "$pyroot" -maxdepth 2 -name setup.sh 2>/dev/null | head -n 1)
+    if [ -n "$PY_SETUP" ]; then
+      source "$PY_SETUP"
+      break
+    fi
+  fi
+done
+if [ -z "$PY_SETUP" ]; then
+  echo "Warning: No CVMFS Python setup script found; using system Python."
+fi
+if ! python3 -c "import h5py" >/dev/null 2>&1; then
+  echo "Error: Python module 'h5py' is required but not installed."
+  exit 1
+fi
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
   echo "Error: Input file '$INPUT_FILE' is missing or not provided."
   exit 1

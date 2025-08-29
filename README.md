@@ -2,6 +2,11 @@
 
 ## Building the Project
 
+Before building and running the inference utilities, ensure that required Python
+packages such as `h5py` are available in the runtime environment. The
+`run_strangeness_inference.sh` wrapper attempts to source a Python setup script
+from CVMFS when available so that these dependencies are accessible at runtime.
+
 1. **Set up the environment:**
 
    ```bash
