@@ -1,0 +1,43 @@
+{
+  "analysis_plugins": [
+    {
+      "variables": [
+        {
+          "name": "optical_pe_beam",
+          "branch": "optical_filter_pe_beam",
+          "label": "Optical PE Beam",
+          "stratum": "inclusive_strange_channels",
+          "bins": {
+            "mode": "dynamic",
+            "strategy": "bayesian_blocks",
+            "min": 0.0,
+            "max": 1000.0,
+            "include_out_of_range_bins": false
+          }
+        }
+      ]
+    },
+    {
+      "regions": [
+        {
+          "name": "EMPTY"
+        }
+      ]
+    }
+  ],
+  "plot_plugins": [
+    {
+      "histograms": [
+        {
+          "type": "stacked_histogram",
+          "variable": "optical_pe_beam",
+          "region": "EMPTY",
+          "category_column": "inclusive_strange_channels",
+          "n_bins": -1,
+          "min": 0.0,
+          "max": 1000.0
+        }
+      ]
+    }
+  ]
+}
