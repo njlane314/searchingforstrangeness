@@ -1,6 +1,20 @@
 #!/bin/bash
 set -e
-source /usr/local/root/bin/thisroot.sh
+
+# Locate and source the ROOT setup script. Prefer a standard installation
+# discovered via `root-config` but fall back to the historical location
+# if that fails.  Failing to source ROOT should terminate with a clear
+# error message so the calling art job reports the problem.
+if command -v root-config >/dev/null 2>&1; then
+  ROOT_PREFIX="$(root-config --prefix)"
+  ROOT_SETUP="${ROOT_PREFIX}/bin/thisroot.sh"
+elif [ -f /usr/local/root/bin/thisroot.sh ]; then
+  ROOT_SETUP="/usr/local/root/bin/thisroot.sh"
+else
+  echo "Error: unable to locate ROOT setup script" >&2
+  exit 1
+fi
+source "$ROOT_SETUP"
 INPUT_FILE="$1"
 OUTPUT_FILE="$2"
 WEIGHTS_FILE="$3"
@@ -23,18 +37,23 @@ for pyroot in \
   fi
 done
 if [ -z "$PY_SETUP" ]; then
-  echo "Warning: No CVMFS Python setup script found; using system Python."
+  echo "Warning: No CVMFS Python setup script found; using system Python." >&2
 fi
 if ! python3 -c "import h5py" >/dev/null 2>&1; then
-  echo "Error: Python module 'h5py' is required but not installed."
+  echo "Error: Python module 'h5py' is required but not installed." >&2
+  exit 1
+fi
+# Check for additional Python dependencies required by run_inference.py.
+if ! python3 -c "import MinkowskiEngine" >/dev/null 2>&1; then
+  echo "Error: Python module 'MinkowskiEngine' is required but not installed." >&2
   exit 1
 fi
 if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
-  echo "Error: Input file '$INPUT_FILE' is missing or not provided."
+  echo "Error: Input file '$INPUT_FILE' is missing or not provided." >&2
   exit 1
 fi
 if [ -z "$WEIGHTS_FILE" ] || [ ! -f "$WEIGHTS_FILE" ]; then
-  echo "Error: Weights file '$WEIGHTS_FILE' is missing or not provided."
+  echo "Error: Weights file '$WEIGHTS_FILE' is missing or not provided." >&2
   exit 1
 fi
 echo "Input file: ${INPUT_FILE}"
@@ -48,8 +67,11 @@ python3 run_inference.py \
   --weights "$WEIGHTS_FILE" \
   --tree "$TREE_NAME" \
   --branch "$BRANCH_NAME"
+
+# Ensure the inference produced an output file; report the error to stderr so
+# that the art framework captures the reason for a non-zero exit status.
 if [ ! -f "$OUTPUT_FILE" ]; then
-  echo "Error: Python script did not create the expected output file: ${OUTPUT_FILE}"
+  echo "Error: Python script did not create the expected output file: ${OUTPUT_FILE}" >&2
   exit 1
 fi
 
