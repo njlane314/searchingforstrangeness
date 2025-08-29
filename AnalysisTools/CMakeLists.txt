@@ -1,6 +1,7 @@
 cet_enable_asserts()
 
 find_package(HDF5 REQUIRED COMPONENTS C CXX)
+include_directories(${HDF5_INCLUDE_DIRS})
 
 art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          lardataobj_Simulation
@@ -49,10 +50,10 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          lardataobj_RawData
                          ubobj_Trigger
                          ubreco_BlipRecoAlg
-                         ${LIBTORCH_LIBRARIES}
-                         ${ROOT_GEOM}
-                         HDF5::HDF5
-                         stdc++fs
+                           ${LIBTORCH_LIBRARIES}
+                           ${ROOT_GEOM}
+                           ${HDF5_LIBRARIES}
+                           stdc++fs
         )
 
 install_headers()
