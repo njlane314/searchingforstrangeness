@@ -3,10 +3,14 @@ import os
 try:
   import h5py
 except ModuleNotFoundError:
-  print("Error: h5py is required but not installed. Please install h5py to run this script.")
+  print("Error: h5py is required but not installed. Please install h5py to run this script.", file=sys.stderr)
+  sys.exit(1)
+try:
+  import MinkowskiEngine as ME
+except ModuleNotFoundError:
+  print("Error: MinkowskiEngine is required but not installed. Please install MinkowskiEngine to run this script.", file=sys.stderr)
   sys.exit(1)
 import torch
-import MinkowskiEngine as ME
 import numpy as np
 import argparse
 import time
