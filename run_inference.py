@@ -1,6 +1,6 @@
 import sys
 import os
-import uproot
+import h5py
 import torch
 import MinkowskiEngine as ME
 import numpy as np
@@ -90,11 +90,11 @@ def extract_features(flat_img):
 def main():
   start_time = time.time()
   parser = argparse.ArgumentParser(description="Run inference and create a new text file with results.")
-  parser.add_argument("--input", type=str, required=True, help="Input ROOT file")
+  parser.add_argument("--input", type=str, required=True, help="Input HDF5 file")
   parser.add_argument("--output", type=str, required=True, help="Output text file for scores")
   parser.add_argument("--weights", type=str, required=True, help="Model weights (.pth)")
-  parser.add_argument("--tree", type=str, default="imagetree", help="TTree name to process")
-  parser.add_argument("--branch", type=str, default="image_u", help="Image branch name")
+  parser.add_argument("--tree", type=str, default="imagetree", help="HDF5 group name to process")
+  parser.add_argument("--branch", type=str, default="image_u", help="Image dataset name")
   args = parser.parse_args()
 
   print("--- Running Inference Script ---")
@@ -104,9 +104,9 @@ def main():
   model.eval()
   print(f"Initialization time: {time.time() - start_time:.4f} seconds")
 
-  with uproot.open(args.input) as infile:
-    tree = infile[args.tree]
-    imgs = tree[args.branch].array(library="np")
+  with h5py.File(args.input, "r") as infile:
+    dataset = infile[args.tree][args.branch]
+    imgs = dataset[:]
 
   n = len(imgs)
   logits = np.zeros(n, dtype=np.float32)
