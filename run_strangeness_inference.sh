@@ -44,9 +44,23 @@ done
 if [ -z "$PY_SETUP" ]; then
   echo "Warning: No CVMFS Python setup script found; using system Python." >&2
 fi
-if ! python3 -c "import h5py" >/dev/null 2>&1; then
-  echo "Error: Python module 'h5py' is required but not installed." >&2
+# Verify that CVMFS is available inside the container environment.
+if [ ! -d /cvmfs ]; then
+  echo "Error: /cvmfs is not accessible. Bind the CVMFS directory when running the container (e.g., 'apptainer exec --bind /cvmfs ...')." >&2
   exit 1
+fi
+# Ensure h5py is present; attempt a local installation if it's missing.
+if ! python3 -c "import h5py" >/dev/null 2>&1; then
+  echo "Python module 'h5py' not found; attempting installation..." >&2
+  if python3 -m pip install --user h5py >/dev/null 2>&1; then
+    if ! python3 -c "import h5py" >/dev/null 2>&1; then
+      echo "Error: Python module 'h5py' is required but installation failed." >&2
+      exit 1
+    fi
+  else
+    echo "Error: Failed to install 'h5py'. Ensure network access or provide it in the runtime environment." >&2
+    exit 1
+  fi
 fi
 # Check for additional Python dependencies required by run_inference.py.
 if ! python3 -c "import MinkowskiEngine" >/dev/null 2>&1; then
