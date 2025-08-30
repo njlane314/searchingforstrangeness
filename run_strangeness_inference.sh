@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# Ensure UPS products such as HDF5 are available
+source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh
+setup hdf5 v1_12_2a -q e20:prof
+ups active hdf5
+
 # Locate and source the ROOT setup script. Prefer a standard installation
 # discovered via `root-config` but fall back to the historical location
 # if that fails.  Failing to source ROOT should terminate with a clear
