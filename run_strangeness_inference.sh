@@ -2,9 +2,23 @@
 set -e
 
 # Ensure UPS products such as HDF5 are available
+if [ ! -f /etc/bashrc ]; then
+  echo '# minimal bashrc' > /tmp/bashrc
+  export BASH_ENV=/tmp/bashrc
+fi
+set +e
 source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh
-setup hdf5 v1_12_2a -q e20:prof
-ups active hdf5
+setup_rc=$?
+set -e
+if [ "$setup_rc" -eq 0 ]; then
+  setup hdf5 v1_12_2a -q e20:prof
+  ups active hdf5
+elif [ ! -f /etc/bashrc ]; then
+  echo "Warning: UPS setup failed and /etc/bashrc is missing; proceeding without UPS environment." >&2
+else
+  echo "Error: failed to source UPS setup script" >&2
+  exit 1
+fi
 
 # Locate and source the ROOT setup script. Prefer a standard installation
 # discovered via `root-config` but fall back to the historical location
