@@ -11,9 +11,10 @@ echo "--- CVMFS found ---"
 
 echo "--- Sourcing minimal UPS setup scripts ---"
 # This is the direct alternative to setup_uboone.sh for an AL9/Ubuntu-like environment
-source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup >/dev/null 2>&1
-source /cvmfs/uboone.opensciencegrid.org/products/setup >/dev/null 2>&1
-source /cvmfs/larsoft.opensciencegrid.org/products/setup >/dev/null 2>&1
+# Removed error suppression to debug script failure
+source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup
+source /cvmfs/uboone.opensciencegrid.org/products/setup
+source /cvmfs/larsoft.opensciencegrid.org/products/setup
 echo "--- Minimal UPS setup complete ---"
 
 echo "--- Setting up hdf5 (suppressing harmless warnings) ---"
