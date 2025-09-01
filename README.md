@@ -20,6 +20,44 @@ apptainer exec \
   ./run_strangeness_inference.sh <input.root> <output.root> <weights.pth> <tree> <branch>
 ```
 
+### Variable Reference
+
+The placeholders used throughout this guide are summarized below. Replace each
+with a value appropriate for your environment.
+
+| Placeholder | Description | Example |
+|-------------|-------------|---------|
+| `<input.root>` | Input ROOT file containing events for inference. | `events.root` |
+| `<output.root>` | Output ROOT file written by the inference script. | `results.root` |
+| `<weights.pth>` | Neural-network weight file. | `model_weights.pth` |
+| `<tree>` | Name of the TTree within the input file. | `ImageTree` |
+| `<branch>` | Branch within the TTree to process. | `image_branch` |
+| `<sam_definition>` | SAM dataset definition name. | `prod_strange_resample_fhc_run2` |
+| `<num_files>` | Number of files to select from a SAM definition. | `250` |
+| `<file>` | Specific file returned from SAM queries. | `file1.root` |
+| `<fhicl_file>` | FHiCL configuration file for `lar`. | `analysis.fcl` |
+| `<filepath>` | Path to an input file processed by `lar`. | `/path/to/file.root` |
+| `<outputfile>` | Output file produced by `lar`. | `processed.root` |
+| `<combined_output>` | Name of merged output file produced by `hadd`. | `merged.root` |
+| `<outputfiles>` | List of intermediate files to merge or clean. | `part*.root` |
+| `&name;` | Project name placeholder in XML job files. | `strange_job` |
+| `&release;` | Software release placeholder in XML job files. | `v08_00_00` |
+| `<tarball_name>` | Name of the tarball created with `make_tar_uboone.sh`. | `code.tar` |
+| `<tarball_dest>` | Destination directory for the tarball. | `/pnfs/uboone/resilient/...` |
+| `<vault_server>` | Vault server used by `htgettoken`. | `https://vault.server` |
+| `<experiment>` | Experiment identifier passed to `htgettoken`. | `uboone` |
+| `<xml_config_file>` | XML configuration file for `project.py`. | `job.xml` |
+| `<stage>` | Named stage within a project XML. | `analyse` |
+| `<product>` | UPS product to set up. | `larsoft` |
+| `<version>` | Version of the UPS product. | `v08_00_00` |
+| `<qualifiers>` | Qualifiers for the UPS product setup. | `e17:prof` |
+| `<virtual_organization>` | VOMS virtual organization. | `fermilab` |
+| `<definition_name>` | SAM dataset definition name used in bulk operations. | `nl_numi_fhc_beam_run1` |
+| `<xml_file>` | XML file specified when invoking `project.py`. | `workflow.xml` |
+| `<input_file>` | Generic input file given to `lar`. | `input.root` |
+| `<output_file>` | Output file path for `lar`. | `output.root` |
+| `<your.root>` | ROOT file used in the event dump example. | `sample.root` |
+
 1. **Set up the environment:**
 
    ```bash
