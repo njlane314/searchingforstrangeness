@@ -75,21 +75,20 @@ namespace analysis {
         temp_file.Close();
 
         std::string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
-        std::string wrapper_script = "run_strangeness_inference.sh";
-        std::string weights_file = "binary_classifier_resnet34.pth";
+        const char* base_env = std::getenv("STRANGENESS_DIR");
+        std::string base_dir = base_env ? base_env : ".";
+        std::string wrapper_script = base_dir + "/run_strangeness_inference.sh";
+        std::string weights_file = base_dir + "/weights/binary_classifier_resnet34.pth";
         std::string tree_name = "imagetree";
         std::string branch_name = "image_u";
-        char cwd_buffer[PATH_MAX];
-        getcwd(cwd_buffer, sizeof(cwd_buffer));
-        std::string work_dir(cwd_buffer);
 
         std::string command = "apptainer exec --no-home --cleanenv "
-        "--bind /cvmfs,/pnfs," + absolute_scratch_dir + " " +
+        "--bind /cvmfs," + absolute_scratch_dir + " " +
             container + " " +
-        "/bin/bash " + work_dir + "/" + wrapper_script + " " +
+        "/bin/bash " + wrapper_script + " " +
             temp_in + " " +
             temp_out + " " +
-            work_dir + "/" + weights_file + " " +
+            weights_file + " " +
             tree_name + " " +
             branch_name +
         " > " + script_stdout + " 2> " + script_stderr;

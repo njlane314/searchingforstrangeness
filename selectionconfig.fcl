@@ -101,14 +101,22 @@ ImageAnalysis: {
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
     BadChannelFile: "badchannels.txt"
+    WeightsBaseDir: "weights"
     imageWidth: 512
     imageHeight: 512
     Models: [
         {
             name: "binary"
-            weights_file: "./binary_classifier_resnet34.pth"
+            arch: "minkunet"
+            weights_file: "binary_classifier_resnet34.pth"
+        },
+        {
+            name: "binary_clone"
+            arch: "minkunet"
+            weights_file: "binary_classifier_resnet34.pth"
         }
     ]
+    ActiveModels: [ "binary", "binary_clone" ]
 }
 
 SliceAnalysis: {
