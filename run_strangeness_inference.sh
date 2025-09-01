@@ -9,10 +9,22 @@ if [ ! -d /cvmfs ]; then
 fi
 echo "--- CVMFS found ---"
 
-echo "--- Sourcing uboone setup script ---"
-source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh
 echo "--- Setting up hdf5 ---"
+set +e # Temporarily disable exit-on-error
 setup hdf5 v1_12_2a -q e20:prof
+setup_rc=$? # Capture the exit code of the setup command
+set -e # Re-enable exit-on-error
+
+if [ $setup_rc -ne 0 ]; then
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+    echo "ERROR: The hdf5 setup command failed with exit code $setup_rc." >&2
+    echo "This might be because the 'setup' command itself is not found." >&2
+    echo "The script cannot continue." >&2
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
+    exit 1
+fi
+echo "--- hdf5 setup complete ---"
+
 
 echo "--- Locating and sourcing ROOT ---"
 if command -v root-config >/dev/null 2>&1; then
