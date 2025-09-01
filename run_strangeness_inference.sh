@@ -9,19 +9,23 @@ if [ ! -d /cvmfs ]; then
 fi
 echo "--- CVMFS found ---"
 
-echo "--- Sourcing minimal UPS setup scripts ---"
-# This is the direct alternative to setup_uboone.sh for an AL9/Ubuntu-like environment
-# Removed error suppression to debug script failure
-source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup
-source /cvmfs/uboone.opensciencegrid.org/products/setup
-source /cvmfs/larsoft.opensciencegrid.org/products/setup
-echo "--- Minimal UPS setup complete ---"
+echo "--- Sourcing official uboone setup script ---"
+# Temporarily disable exit-on-error to handle non-fatal warnings
+set +e
+source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh
+source_rc=$?
+set -e
+
+# We will ignore the exit code for now, as the interactive test proved it works
+# despite the script's internal errors.
+echo "--- uboone setup script sourced ---"
 
 echo "--- Setting up hdf5 (suppressing harmless warnings) ---"
-# Redirect stderr to /dev/null for this command to hide known, non-fatal errors
 setup hdf5 v1_12_2a -q e20:prof 2>/dev/null
 echo "--- hdf5 setup complete ---"
 
+echo "--- Verifying hdf5 setup ---"
+ups active hdf5
 
 echo "--- Locating and sourcing ROOT ---"
 if command -v root-config >/dev/null 2>&1; then
