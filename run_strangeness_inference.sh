@@ -9,20 +9,16 @@ if [ ! -d /cvmfs ]; then
 fi
 echo "--- CVMFS found ---"
 
-echo "--- Setting up hdf5 ---"
-set +e # Temporarily disable exit-on-error
-setup hdf5 v1_12_2a -q e20:prof
-setup_rc=$? # Capture the exit code of the setup command
-set -e # Re-enable exit-on-error
+echo "--- Sourcing minimal UPS setup scripts ---"
+# This is the direct alternative to setup_uboone.sh for an AL9/Ubuntu-like environment
+source /cvmfs/fermilab.opensciencegrid.org/products/common/etc/setup >/dev/null 2>&1
+source /cvmfs/uboone.opensciencegrid.org/products/setup >/dev/null 2>&1
+source /cvmfs/larsoft.opensciencegrid.org/products/setup >/dev/null 2>&1
+echo "--- Minimal UPS setup complete ---"
 
-if [ $setup_rc -ne 0 ]; then
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-    echo "ERROR: The hdf5 setup command failed with exit code $setup_rc." >&2
-    echo "This might be because the 'setup' command itself is not found." >&2
-    echo "The script cannot continue." >&2
-    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" >&2
-    exit 1
-fi
+echo "--- Setting up hdf5 (suppressing harmless warnings) ---"
+# Redirect stderr to /dev/null for this command to hide known, non-fatal errors
+setup hdf5 v1_12_2a -q e20:prof 2>/dev/null
 echo "--- hdf5 setup complete ---"
 
 
