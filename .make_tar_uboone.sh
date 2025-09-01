@@ -124,7 +124,7 @@ if [ -f $tar ]; then
   rm $tar
 fi
 
-ls -A $dir | egrep -v '.root$|tmp' | tar -C $dir -T- -czf $tar --exclude=.svn --exclude=\*.tar
+ls -A $dir | egrep -v '.root$|tmp' | tar -C $dir -T- -czf $tar --exclude=.svn --exclude=.git --exclude=env --exclude=scratch --exclude=\*.tar
 
 
 
