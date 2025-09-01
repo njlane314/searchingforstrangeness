@@ -9,8 +9,9 @@ Before building and running the inference utilities, ensure that the runtime
   repository root is available through the `STRANGENESS_DIR` environment
   variable, and model weights are resolved from paths like
   `$STRANGENESS_DIR/weights/<name>.pth` specified in the FHiCL
-  configuration. Use the `--model` option to pick a file from `weights/` or supply
-  an explicit path with `--weights`. The inference wrapper writes a temporary
+  configuration. Model architectures reside under `models/` and are chosen
+  with `--arch`. Use the `--model` option to pick a weight file from
+  `weights/` or supply an explicit path with `--weights`. The inference wrapper writes a temporary
   `.npy` file containing the U, V, and W plane images and averages the network
   response across them. Multiple models may be listed under the `Models`
   section in the FHiCL file, and each model's score is stored in a branch named
@@ -25,7 +26,7 @@ apptainer exec \
   --bind /cvmfs:/cvmfs \
   --bind /exp/uboone:/exp/uboone \
   /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7 \
-  ./run_strangeness_inference.sh --npy <images.npy> --output <scores.txt> --model <model_name>
+  ./run_strangeness_inference.sh --npy <images.npy> --output <scores.txt> --arch <arch_module> --model <model_name>
 ```
 
 ### Variable Reference
@@ -38,6 +39,7 @@ with a value appropriate for your environment.
 | `<input.root>` | Input ROOT file containing events for inference. | `events.root` |
 | `<output.root>` | Output ROOT file written by the inference script. | `results.root` |
 | `<model_name>` | Model name located in the `weights/` directory. | `binary_classifier_resnet34` |
+| `<arch_module>` | Model architecture module in the `models/` directory. | `minkunet` |
 | `<sam_definition>` | SAM dataset definition name. | `prod_strange_resample_fhc_run2` |
 | `<num_files>` | Number of files to select from a SAM definition. | `250` |
 | `<file>` | Specific file returned from SAM queries. | `file1.root` |

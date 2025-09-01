@@ -213,6 +213,7 @@ namespace analysis {
     struct ModelConfig {
         std::string name;
         std::string weights_file;
+        std::string arch;
     };
 
     class ImageAnalysis : public AnalysisToolBase {
@@ -284,7 +285,11 @@ namespace analysis {
         std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
         std::pair<double, double> calculateChargeCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
         void constructPixelImages(const art::Event& e, const std::vector<art::Ptr<recob::Hit>>& hits, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images, bool is_data);
-        float runInference(const std::vector<Image<float>>& detector_images, const std::string& absolute_scratch_dir, const std::string& work_dir, const std::string& weights_file);
+        float runInference(const std::vector<Image<float>>& detector_images,
+                           const std::string& absolute_scratch_dir,
+                           const std::string& work_dir,
+                           const std::string& arch,
+                           const std::string& weights_file);
     };
 
     ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet& pset) {
@@ -316,7 +321,9 @@ namespace analysis {
         }
         auto model_psets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
         for (const auto& ps : model_psets) {
-            fModels.push_back({ps.get<std::string>("name"), ps.get<std::string>("weights_file")});
+            fModels.push_back({ps.get<std::string>("name"),
+                              ps.get<std::string>("weights_file"),
+                              ps.get<std::string>("arch")});
         }
         _image_width = 512;
         _image_height = 512;
@@ -511,7 +518,7 @@ namespace analysis {
             std::string wpath = resolve_weights(m.weights_file, work_dir, fWeightsBaseDir,
                                                absolute_scratch_dir, m.name, fFetchWeightsWithIFDH);
             mf::LogInfo("ImageAnalysis") << "Model " << m.name << " using weights: " << wpath;
-            float score = this->runInference(detector_images, absolute_scratch_dir, work_dir, wpath);
+            float score = this->runInference(detector_images, absolute_scratch_dir, work_dir, m.arch, wpath);
             _inference_scores[m.name] = score;
         }
 
@@ -692,6 +699,7 @@ namespace analysis {
 float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_images,
         const std::string& absolute_scratch_dir,
         const std::string& work_dir,
+        const std::string& arch,
         const std::string& weights_file) {
         using std::string;
         string npy_in        = absolute_scratch_dir + "/detector_images.npy";
@@ -729,6 +737,7 @@ float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_imag
             << "/bin/bash " << wrapper_script << " "
             << "--npy " << npy_in << " "
             << "--output " << temp_out << " "
+            << "--arch " << arch << " "
             << "--weights " << weights_file
             << " > " << script_stdout << " 2> " << script_stderr;
 

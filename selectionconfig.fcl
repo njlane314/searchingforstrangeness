@@ -107,10 +107,12 @@ ImageAnalysis: {
     Models: [
         {
             name: "binary"
+            arch: "minkunet"
             weights_file: "binary_classifier_resnet34.pth"
         },
         {
             name: "binary_clone"
+            arch: "minkunet"
             weights_file: "binary_classifier_resnet34.pth"
         }
     ]
