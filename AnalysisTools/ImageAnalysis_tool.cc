@@ -18,6 +18,7 @@
 #include <experimental/filesystem>
 #include <sstream>
 #include <iomanip>
+#include <cstdlib>
 #include <TFile.h>
 #include <TTree.h>
 #include <TDirectoryFile.h>
@@ -91,7 +92,123 @@ static void save_npy_f32_1d(const std::string& path, const std::vector<float>& d
                   << "Short write to " << path;
 }
 
+// Minimal .npy (v1.0) writer for float32 2D arrays
+static void save_npy_f32_2d(const std::string& path,
+                            const std::vector<std::vector<float>>& data) {
+    if (data.empty())
+        throw art::Exception(art::errors::LogicError)
+            << "Cannot write empty array to " << path;
+
+    size_t rows = data.size();
+    size_t cols = data.front().size();
+    for (const auto& row : data) {
+        if (row.size() != cols)
+            throw art::Exception(art::errors::LogicError)
+                << "Inconsistent row size writing " << path;
+    }
+
+    const char magic[] = "\x93NUMPY";
+    const uint8_t major = 1, minor = 0;
+
+    std::ostringstream dict;
+    dict << "{'descr': '<f4', 'fortran_order': False, 'shape': (" << rows
+         << ", " << cols << ",), }";
+    std::string header = dict.str();
+
+    size_t pre = sizeof(magic) - 1 + 2 + 2;
+    size_t pad_len = 16 - ((pre + header.size()) % 16);
+    if (pad_len == 16) pad_len = 0;
+    header.append(pad_len, ' ');
+    header.push_back('\n');
+
+    uint16_t hlen = static_cast<uint16_t>(header.size());
+
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) throw art::Exception(art::errors::LogicError)
+                  << "Cannot open " << path << " for writing";
+
+    ofs.write(magic, sizeof(magic) - 1);
+    ofs.put(static_cast<char>(major));
+    ofs.put(static_cast<char>(minor));
+    ofs.write(reinterpret_cast<const char*>(&hlen), sizeof(hlen));
+    ofs.write(header.data(), header.size());
+
+    for (const auto& row : data) {
+        ofs.write(reinterpret_cast<const char*>(row.data()),
+                  static_cast<std::streamsize>(row.size() * sizeof(float)));
+    }
+    if (!ofs) throw art::Exception(art::errors::LogicError)
+                  << "Short write to " << path;
+}
+
 namespace analysis {
+
+    static inline bool starts_with(const std::string& s, const char* p) {
+        return s.rfind(p, 0) == 0;
+    }
+
+    static inline bool is_remote_url(const std::string& s) {
+        return starts_with(s, "http://") || starts_with(s, "https://") || starts_with(s, "root://");
+    }
+
+    static inline bool is_pnfs(const std::string& s) {
+        return starts_with(s, "/pnfs/") || starts_with(s, "/eos/") || starts_with(s, "/stash/");
+    }
+
+    static std::optional<std::string>
+    find_file_nearby(const fs::path& start, const std::string& filename, int max_depth = 3) {
+        fs::recursive_directory_iterator it(start, fs::directory_options::skip_permission_denied), end;
+        for (; it != end; ++it) {
+            if (it.depth() > max_depth) { it.pop(); continue; }
+            if (!it->is_regular_file()) continue;
+            if (it->path().filename() == filename) return it->path().string();
+        }
+        return std::nullopt;
+    }
+
+    static std::string resolve_weights(const std::string& weights_file,
+                                       const std::string& work_dir,
+                                       const std::string& base_dir,
+                                       const std::string& scratch_dir,
+                                       const std::string& model_name,
+                                       bool fetch_ifdh) {
+        fs::path wf(weights_file);
+
+        if (wf.is_absolute() && fs::exists(wf)) return wf.string();
+
+        if (!base_dir.empty()) {
+            fs::path p = fs::path(base_dir) / wf;
+            if (fs::exists(p)) return p.string();
+        }
+
+        for (fs::path p : {
+                fs::path(work_dir) / "weights" / wf.filename(),
+                fs::path(work_dir) / wf,
+                fs::path(scratch_dir) / "weights" / wf.filename()
+            }) {
+            if (fs::exists(p)) return p.string();
+        }
+
+        if (auto hit = find_file_nearby(work_dir, wf.filename().string(), 3)) return *hit;
+
+        if (fetch_ifdh && (is_pnfs(weights_file) || is_remote_url(weights_file))) {
+            fs::path dst = fs::path(scratch_dir) / (std::string("weights_") + model_name + "_" + wf.filename().string());
+            std::ostringstream cmd;
+            cmd << "ifdh cp -D " << weights_file << " " << dst.string();
+            int rc = std::system(cmd.str().c_str());
+            if (rc == 0 && fs::exists(dst)) return dst.string();
+        }
+
+        std::ostringstream msg;
+        msg << "Weights not found for model '" << model_name << "'\n"
+            << "  requested: " << weights_file << "\n"
+            << "  tried base: " << (fs::path(base_dir) / wf) << "\n"
+            << "  tried cwd : " << (fs::path(work_dir) / wf) << " and weights/ subdir\n"
+            << "  scratch   : " << (fs::path(scratch_dir) / "weights" / wf.filename()) << "\n"
+            << "  (set WeightsBaseDir or WEIGHTS_BASE_DIR, or provide absolute path, "
+            << "or enable FetchWeightsWithIFDH and use PNFS/URL)";
+        throw art::Exception(art::errors::Configuration) << msg.str();
+    }
 
     struct ModelConfig {
         std::string name;
@@ -120,6 +237,9 @@ namespace analysis {
         std::string fBadChannelFile;
         std::set<unsigned int> fBadChannels;
         std::vector<ModelConfig> fModels;
+        std::string fWeightsBaseDir;
+        std::vector<std::string> fActiveModels;
+        bool fFetchWeightsWithIFDH;
         int _image_width;
         int _image_height;
         float _adc_image_threshold;
@@ -180,6 +300,20 @@ namespace analysis {
         fMCPproducer = p.get<art::InputTag>("MCPproducer");
         fBKTproducer = p.get<art::InputTag>("BKTproducer");
         fBadChannelFile = p.get<std::string>("BadChannelFile");
+        if (!fBadChannelFile.empty() && !fs::path(fBadChannelFile).is_absolute()) {
+            if (const char* base = std::getenv("STRANGENESS_DIR")) {
+                fBadChannelFile = (fs::path(base) / fBadChannelFile).string();
+            }
+        }
+        fWeightsBaseDir       = p.get<std::string>("WeightsBaseDir", "");
+        fActiveModels         = p.get<std::vector<std::string>>("ActiveModels", {});
+        fFetchWeightsWithIFDH = p.get<bool>("FetchWeightsWithIFDH", false);
+        if (const char* wbd = std::getenv("WEIGHTS_BASE_DIR")) fWeightsBaseDir = wbd;
+        if (const char* am = std::getenv("ACTIVE_MODELS")) {
+            fActiveModels.clear();
+            std::stringstream ss(am); std::string tok;
+            while (std::getline(ss, tok, ',')) if (!tok.empty()) fActiveModels.push_back(tok);
+        }
         auto model_psets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
         for (const auto& ps : model_psets) {
             fModels.push_back({ps.get<std::string>("name"), ps.get<std::string>("weights_file")});
@@ -287,9 +421,8 @@ namespace analysis {
         _is_vtx_in_image_u = false;
         _is_vtx_in_image_v = false;
         _is_vtx_in_image_w = false;
-        _inference_scores.clear();
-        for (const auto& model : fModels) {
-            _inference_scores[model.name] = std::numeric_limits<float>::quiet_NaN();
+        for (auto& kv : _inference_scores) {
+            kv.second = std::numeric_limits<float>::quiet_NaN();
         }
     }
 
@@ -367,9 +500,19 @@ namespace analysis {
         getcwd(cwd_buffer, sizeof(cwd_buffer));
         std::string work_dir(cwd_buffer);
 
-        for (const auto& model : fModels) {
-            float score = this->runInference(detector_images, absolute_scratch_dir, work_dir, model.weights_file);
-            _inference_scores[model.name] = score;
+        std::vector<ModelConfig> todo;
+        if (fActiveModels.empty()) todo = fModels;
+        else {
+            std::set<std::string> want(fActiveModels.begin(), fActiveModels.end());
+            for (auto const& m : fModels) if (want.count(m.name)) todo.push_back(m);
+        }
+
+        for (auto const& m : todo) {
+            std::string wpath = resolve_weights(m.weights_file, work_dir, fWeightsBaseDir,
+                                               absolute_scratch_dir, m.name, fFetchWeightsWithIFDH);
+            mf::LogInfo("ImageAnalysis") << "Model " << m.name << " using weights: " << wpath;
+            float score = this->runInference(detector_images, absolute_scratch_dir, work_dir, wpath);
+            _inference_scores[m.name] = score;
         }
 
         if (_reco_neutrino_vertex_x != std::numeric_limits<float>::lowest()) {
@@ -551,16 +694,21 @@ float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_imag
         const std::string& work_dir,
         const std::string& weights_file) {
         using std::string;
-        string npy_in        = absolute_scratch_dir + "/image_w.npy";
+        string npy_in        = absolute_scratch_dir + "/detector_images.npy";
         string temp_out      = absolute_scratch_dir + "/temp_test_out.txt";
         string script_stdout = absolute_scratch_dir + "/py_script.out";
         string script_stderr = absolute_scratch_dir + "/py_script.err";
 
-        std::vector<float> image_w = detector_images[2].data();
-        save_npy_f32_1d(npy_in, image_w);
+        std::vector<std::vector<float>> images;
+        images.push_back(detector_images[0].data());
+        images.push_back(detector_images[1].data());
+        images.push_back(detector_images[2].data());
+        save_npy_f32_2d(npy_in, images);
 
         string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
-        string wrapper_script = "run_strangeness_inference.sh";
+        const char* base_env = std::getenv("STRANGENESS_DIR");
+        fs::path base_dir = base_env ? fs::path(base_env) : fs::path(work_dir);
+        string wrapper_script = (base_dir / "run_strangeness_inference.sh").string();
 
         std::string bind_paths = absolute_scratch_dir;
         bool need_cvmfs = true;
@@ -578,10 +726,10 @@ float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_imag
         std::ostringstream cmd;
         cmd << "apptainer exec --cleanenv --bind " << bind_paths << " "
             << container << " "
-            << "/bin/bash ./" << wrapper_script << " "
+            << "/bin/bash " << wrapper_script << " "
             << "--npy " << npy_in << " "
             << "--output " << temp_out << " "
-            << "--weights " << (fs::path(work_dir) / weights_file).string()
+            << "--weights " << weights_file
             << " > " << script_stdout << " 2> " << script_stderr;
 
         mf::LogInfo("ImageAnalysis") << "Executing inference: " << cmd.str();

@@ -3,9 +3,19 @@
 ## Building the Project
 
 Before building and running the inference utilities, ensure that the runtime
-environment provides the Python packages `numpy` and `MinkowskiEngine`. The
-`run_strangeness_inference.sh` wrapper simply forwards arguments to the Python
-script, so `MinkowskiEngine` must already be available in the environment.
+  environment provides the Python packages `numpy` and `MinkowskiEngine`. The
+  `run_strangeness_inference.sh` wrapper simply forwards arguments to the Python
+  script, so `MinkowskiEngine` must already be available. During grid jobs the
+  repository root is available through the `STRANGENESS_DIR` environment
+  variable, and model weights are resolved from paths like
+  `$STRANGENESS_DIR/weights/<name>.pth` specified in the FHiCL
+  configuration. Use the `--model` option to pick a file from `weights/` or supply
+  an explicit path with `--weights`. The inference wrapper writes a temporary
+  `.npy` file containing the U, V, and W plane images and averages the network
+  response across them. Multiple models may be listed under the `Models`
+  section in the FHiCL file, and each model's score is stored in a branch named
+  `inference_score_<model>`. At runtime the search path can be overridden with
+  the `WEIGHTS_BASE_DIR` environment variable.
 
 To execute within a container, bind the necessary CVMFS directories so these
 dependencies can be located. For example:
@@ -14,9 +24,8 @@ dependencies can be located. For example:
 apptainer exec \
   --bind /cvmfs:/cvmfs \
   --bind /exp/uboone:/exp/uboone \
-  --bind /pnfs/uboone:/pnfs/uboone \
   /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7 \
-  ./run_strangeness_inference.sh --npy <images.npy> --output <scores.txt> --weights <weights.pth>
+  ./run_strangeness_inference.sh --npy <images.npy> --output <scores.txt> --model <model_name>
 ```
 
 ### Variable Reference
@@ -28,7 +37,7 @@ with a value appropriate for your environment.
 |-------------|-------------|---------|
 | `<input.root>` | Input ROOT file containing events for inference. | `events.root` |
 | `<output.root>` | Output ROOT file written by the inference script. | `results.root` |
-| `<weights.pth>` | Neural-network weight file. | `model_weights.pth` |
+| `<model_name>` | Model name located in the `weights/` directory. | `binary_classifier_resnet34` |
 | `<sam_definition>` | SAM dataset definition name. | `prod_strange_resample_fhc_run2` |
 | `<num_files>` | Number of files to select from a SAM definition. | `250` |
 | `<file>` | Specific file returned from SAM queries. | `file1.root` |

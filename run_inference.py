@@ -110,13 +110,23 @@ def main():
   start_time = time.time()
   parser = argparse.ArgumentParser(description="Run inference (NPY input).")
   parser.add_argument("--npy", type=str, required=True, help="NPY file with image(s)")
-  parser.add_argument("--output", type=str, required=True)
-  parser.add_argument("--weights", type=str, required=True)
+  parser.add_argument("--output", type=str, required=True, help="Output text file")
+  weight_group = parser.add_mutually_exclusive_group(required=True)
+  weight_group.add_argument("--weights", type=str, help="Path to a weights file")
+  weight_group.add_argument("--model", type=str, help="Model name under the 'weights' directory")
   args = parser.parse_args()
+
+  if args.model:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    weights_path = os.path.join(script_dir, "weights", args.model)
+    if not os.path.splitext(weights_path)[1]:
+      weights_path += ".pth"
+  else:
+    weights_path = args.weights
 
   device = torch.device("cpu")
   model = MinkUNetClassifier().to(device)
-  model.load_state_dict(torch.load(args.weights, map_location="cpu"))
+  model.load_state_dict(torch.load(weights_path, map_location="cpu"))
   model.eval()
 
   imgs = load_imgs_from_npy(args.npy)
@@ -136,9 +146,9 @@ def main():
       x = ME.SparseTensor(feats_t, coordinates=batched, device=device)
       logits[i] = float(model(x).F.squeeze().cpu().item())
 
+  score = float(np.mean(logits))
   with open(args.output, "w") as f:
-    for s in logits:
-      f.write(f"{s}\n")
+    f.write(f"{score}\n")
 
   
 
