@@ -1,114 +1,64 @@
 #!/bin/bash
-set -e
+set -ex
 
-# Ensure UPS products such as HDF5 are available
-if [ ! -f /etc/bashrc ]; then
-  echo '# minimal bashrc' > /tmp/bashrc
-  export BASH_ENV=/tmp/bashrc
-fi
-tmp_setup_log=$(mktemp)
-set +e
-source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh >/dev/null 2>"$tmp_setup_log"
-setup_rc=$?
-set -e
-if [ "$setup_rc" -eq 0 ]; then
-  setup hdf5 v1_12_2a -q e20:prof
-  ups active hdf5
-elif [ ! -f /etc/bashrc ]; then
-  echo "Warning: UPS setup failed and /etc/bashrc is missing; proceeding without UPS environment." >&2
-else
-  echo "Error: failed to source UPS setup script" >&2
-  cat "$tmp_setup_log" >&2
-  rm -f "$tmp_setup_log"
+echo "--- Checking for CVMFS ---"
+if [ ! -d /cvmfs ]; then
+  echo "Error: /cvmfs is not accessible inside the container." >&2
+  echo "You may need to explicitly bind it, e.g., 'apptainer exec --bind /cvmfs ...'." >&2
   exit 1
 fi
-rm -f "$tmp_setup_log"
+echo "--- CVMFS found ---"
 
-# Locate and source the ROOT setup script. Prefer a standard installation
-# discovered via `root-config` but fall back to the historical location
-# if that fails.  Failing to source ROOT should terminate with a clear
-# error message so the calling art job reports the problem.
+echo "--- Sourcing uboone setup script ---"
+source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone.sh
+echo "--- Setting up hdf5 ---"
+setup hdf5 v1_12_2a -q e20:prof
+
+echo "--- Locating and sourcing ROOT ---"
 if command -v root-config >/dev/null 2>&1; then
-  ROOT_PREFIX="$(root-config --prefix)"
-  ROOT_SETUP="${ROOT_PREFIX}/bin/thisroot.sh"
-elif [ -f /usr/local/root/bin/thisroot.sh ]; then
-  ROOT_SETUP="/usr/local/root/bin/thisroot.sh"
+  source "$(root-config --prefix)/bin/thisroot.sh"
 else
-  echo "Error: unable to locate ROOT setup script" >&2
-  exit 1
+  source "/usr/local/root/bin/thisroot.sh"
 fi
-source "$ROOT_SETUP"
+echo "--- ROOT setup complete ---"
+
 INPUT_FILE="$1"
 OUTPUT_FILE="$2"
 WEIGHTS_FILE="$3"
 TREE_NAME="$4"
 BRANCH_NAME="$5"
-unset PYTHONHOME
-unset PYTHONPATH
-# Attempt to source a Python environment from CVMFS so that required
-# libraries like h5py are available.
-PY_SETUP=""
-for pyroot in \
-  /cvmfs/uboone.opensciencegrid.org/products/python \
-  /cvmfs/larsoft.opensciencegrid.org/products/python; do
-  if [ -d "$pyroot" ]; then
-    PY_SETUP=$(find "$pyroot" -maxdepth 2 -name setup.sh 2>/dev/null | head -n 1)
-    if [ -n "$PY_SETUP" ]; then
-      source "$PY_SETUP"
-      break
-    fi
-  fi
-done
-if [ -z "$PY_SETUP" ]; then
-  echo "Warning: No CVMFS Python setup script found; using system Python." >&2
-fi
-# Verify that CVMFS is available inside the container environment.
-if [ ! -d /cvmfs ]; then
-  echo "Error: /cvmfs is not accessible. Bind the CVMFS directory when running the container (e.g., 'apptainer exec --bind /cvmfs ...')." >&2
-  exit 1
-fi
-# Ensure h5py is present; attempt a local installation if it's missing.
-if ! python3 -c "import h5py" >/dev/null 2>&1; then
-  echo "Python module 'h5py' not found; attempting installation..." >&2
-  if python3 -m pip install --user h5py >/dev/null 2>&1; then
-    if ! python3 -c "import h5py" >/dev/null 2>&1; then
-      echo "Error: Python module 'h5py' is required but installation failed." >&2
-      exit 1
-    fi
-  else
-    echo "Error: Failed to install 'h5py'. Ensure network access or provide it in the runtime environment." >&2
-    exit 1
-  fi
-fi
-# Check for additional Python dependencies required by run_inference.py.
-if ! python3 -c "import MinkowskiEngine" >/dev/null 2>&1; then
-  echo "Error: Python module 'MinkowskiEngine' is required but not installed." >&2
-  exit 1
-fi
-if [ -z "$INPUT_FILE" ] || [ ! -f "$INPUT_FILE" ]; then
-  echo "Error: Input file '$INPUT_FILE' is missing or not provided." >&2
-  exit 1
-fi
-if [ -z "$WEIGHTS_FILE" ] || [ ! -f "$WEIGHTS_FILE" ]; then
-  echo "Error: Weights file '$WEIGHTS_FILE' is missing or not provided." >&2
-  exit 1
-fi
+
+echo "--- Input arguments received ---"
 echo "Input file: ${INPUT_FILE}"
 echo "Output file: ${OUTPUT_FILE}"
 echo "Weights file: ${WEIGHTS_FILE}"
 echo "Tree name: ${TREE_NAME}"
 echo "Branch name: ${BRANCH_NAME}"
+
+unset PYTHONHOME
+unset PYTHONPATH
+
+echo "--- Setting up Python from CVMFS ---"
+PY_SETUP=$(find /cvmfs/uboone.opensciencegrid.org/products/python /cvmfs/larsoft.opensciencegrid.org/products/python -name "setup.sh" 2>/dev/null | head -n 1)
+if [ -n "$PY_SETUP" ]; then
+    source "$PY_SETUP"
+    echo "--- Sourced Python from $PY_SETUP ---"
+else
+    echo "--- Could not find Python setup script in CVMFS ---"
+fi
+
+echo "--- Starting Python inference script ---"
 python3 run_inference.py \
   --input "$INPUT_FILE" \
   --output "$OUTPUT_FILE" \
   --weights "$WEIGHTS_FILE" \
   --tree "$TREE_NAME" \
   --branch "$BRANCH_NAME"
+echo "--- Python script finished ---"
 
-# Ensure the inference produced an output file; report the error to stderr so
-# that the art framework captures the reason for a non-zero exit status.
+echo "--- Verifying output file creation ---"
 if [ ! -f "$OUTPUT_FILE" ]; then
   echo "Error: Python script did not create the expected output file: ${OUTPUT_FILE}" >&2
   exit 1
 fi
-
+echo "--- Script completed successfully, output file found. ---"
