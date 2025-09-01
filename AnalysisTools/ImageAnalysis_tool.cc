@@ -160,7 +160,10 @@ namespace analysis {
         fs::recursive_directory_iterator it(start, fs::directory_options::skip_permission_denied), end;
         for (; it != end; ++it) {
             if (it.depth() > max_depth) { it.pop(); continue; }
-            if (!it->is_regular_file()) continue;
+            // std::experimental::filesystem::directory_entry does not expose
+            // "is_regular_file" as a member function in some environments.
+            // Use the free function instead for broader compatibility.
+            if (!fs::is_regular_file(it->path())) continue;
             if (it->path().filename() == filename) return it->path().string();
         }
         return std::nullopt;
