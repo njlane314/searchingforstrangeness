@@ -110,7 +110,6 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights</workdir>
         <datatier>eventweight</datatier>
         <numjobs>1500</numjobs>
-        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_numi_fhc_run1_strangeness">
@@ -291,7 +290,6 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
         <datatier>selected</datatier>
         <numjobs>1000</numjobs>
-        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="selection_detvar_wiremodthetaxz">
