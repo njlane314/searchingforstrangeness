@@ -17,7 +17,7 @@
 #include <fstream>
 #include <experimental/filesystem>
 #include <sstream>
-#include <H5Cpp.h>
+#include <iomanip>
 #include <TFile.h>
 #include <TTree.h>
 #include <TDirectoryFile.h>
@@ -58,6 +58,38 @@
 #include "../ImageAlgorithm.h"
 
 namespace fs = std::experimental::filesystem;
+
+// Minimal .npy (v1.0) writer for float32 1D arrays
+static void save_npy_f32_1d(const std::string& path, const std::vector<float>& data) {
+    const char magic[] = "\x93NUMPY";
+    const uint8_t major = 1, minor = 0;
+
+    std::ostringstream dict;
+    dict << "{'descr': '<f4', 'fortran_order': False, 'shape': (" << data.size() << ",), }";
+    std::string header = dict.str();
+
+    size_t pre = sizeof(magic) - 1 + 2 + 2;
+    size_t pad_len = 16 - ((pre + header.size()) % 16);
+    if (pad_len == 16) pad_len = 0;
+    header.append(pad_len, ' ');
+    header.push_back('\n');
+
+    uint16_t hlen = static_cast<uint16_t>(header.size());
+
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) throw art::Exception(art::errors::LogicError)
+                  << "Cannot open " << path << " for writing";
+
+    ofs.write(magic, sizeof(magic) - 1);
+    ofs.put(static_cast<char>(major));
+    ofs.put(static_cast<char>(minor));
+    ofs.write(reinterpret_cast<const char*>(&hlen), sizeof(hlen));
+    ofs.write(header.data(), header.size());
+    ofs.write(reinterpret_cast<const char*>(data.data()),
+              static_cast<std::streamsize>(data.size() * sizeof(float)));
+    if (!ofs) throw art::Exception(art::errors::LogicError)
+                  << "Short write to " << path;
+}
 
 namespace analysis {
 
@@ -514,98 +546,73 @@ namespace analysis {
         }
     }
 
-    float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_images,
+float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_images,
         const std::string& absolute_scratch_dir,
         const std::string& work_dir,
         const std::string& weights_file) {
-        std::string temp_in = absolute_scratch_dir + "/temp_test_in.h5";
-        std::string temp_out = absolute_scratch_dir + "/temp_test_out.txt";
-        std::string script_stdout = absolute_scratch_dir + "/py_script.out";
-        std::string script_stderr = absolute_scratch_dir + "/py_script.err";
+        using std::string;
+        string npy_in        = absolute_scratch_dir + "/image_w.npy";
+        string temp_out      = absolute_scratch_dir + "/temp_test_out.txt";
+        string script_stdout = absolute_scratch_dir + "/py_script.out";
+        string script_stderr = absolute_scratch_dir + "/py_script.err";
 
-        std::string tree_name = "imagetree";
-        std::vector<float> image_u = detector_images[0].data();
-        std::vector<float> image_v = detector_images[1].data();
         std::vector<float> image_w = detector_images[2].data();
-        const hsize_t dims[2] = {1, static_cast<hsize_t>(image_u.size())};
-        H5::H5File h5file(temp_in.c_str(), H5F_ACC_TRUNC);
-        H5::Group group = h5file.createGroup("/" + tree_name);
-        H5::DataSpace dataspace(2, dims);
-        H5::DataSet dset_u = group.createDataSet("image_u", H5::PredType::NATIVE_FLOAT, dataspace);
-        H5::DataSet dset_v = group.createDataSet("image_v", H5::PredType::NATIVE_FLOAT, dataspace);
-        H5::DataSet dset_w = group.createDataSet("image_w", H5::PredType::NATIVE_FLOAT, dataspace);
-        dset_u.write(image_u.data(), H5::PredType::NATIVE_FLOAT);
-        dset_v.write(image_v.data(), H5::PredType::NATIVE_FLOAT);
-        dset_w.write(image_w.data(), H5::PredType::NATIVE_FLOAT);
-        h5file.close();
+        save_npy_f32_1d(npy_in, image_w);
 
-        std::string branch_name = "image_w";
-        std::string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
-        std::string wrapper_script = "run_strangeness_inference.sh";
+        string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
+        string wrapper_script = "run_strangeness_inference.sh";
 
         std::string bind_paths = absolute_scratch_dir;
-        const char* bind_env = std::getenv("APPTAINER_BINDPATH");
         bool need_cvmfs = true;
-        
-        if (bind_env && std::string(bind_env).find("/cvmfs") != std::string::npos) {
-            need_cvmfs = false;
+        if (const char* bind_env = std::getenv("APPTAINER_BINDPATH")) {
+            if (std::string(bind_env).find("/cvmfs") != std::string::npos) need_cvmfs = false;
         } else {
             std::ifstream mounts("/proc/mounts");
             std::string line;
-        
             while (std::getline(mounts, line)) {
-                if (line.find(" /cvmfs ") != std::string::npos) {
-                    need_cvmfs = false;
-                    break;
-                }
+                if (line.find(" /cvmfs ") != std::string::npos) { need_cvmfs = false; break; }
             }
         }
-        
-        if (need_cvmfs) {
-            bind_paths = "/cvmfs," + bind_paths;
-        }
+        if (need_cvmfs) bind_paths = "/cvmfs," + bind_paths;
 
-        std::string command = "apptainer exec --cleanenv --bind " + bind_paths + " " +
-            container + " " +
-            "/bin/bash ./" + wrapper_script + " " +
-            temp_in + " " +
-            temp_out + " " +
-            work_dir + "/" + weights_file + " " +
-            tree_name + " " +
-            branch_name +
-            " > " + script_stdout + " 2> " + script_stderr;
+        std::ostringstream cmd;
+        cmd << "apptainer exec --cleanenv --bind " << bind_paths << " "
+            << container << " "
+            << "/bin/bash ./" << wrapper_script << " "
+            << "--npy " << npy_in << " "
+            << "--output " << temp_out << " "
+            << "--weights " << (fs::path(work_dir) / weights_file).string()
+            << " > " << script_stdout << " 2> " << script_stderr;
 
-        mf::LogInfo("ImageAnalysis") << "Executing inference: " << command;
+        mf::LogInfo("ImageAnalysis") << "Executing inference: " << cmd.str();
 
         auto start = std::chrono::steady_clock::now();
-        int code = std::system(command.c_str());
+        int code = std::system(cmd.str().c_str());
         auto end = std::chrono::steady_clock::now();
         double duration = std::chrono::duration<double>(end - start).count();
 
         bool success = (code == 0) && fs::exists(temp_out);
         if (!success) {
             std::ifstream error_stream(script_stderr);
-            std::string error_message((std::istreambuf_iterator<char>(error_stream)), std::istreambuf_iterator<char>());
+            std::string error_message((std::istreambuf_iterator<char>(error_stream)), {});
             throw art::Exception(art::errors::LogicError)
                 << "Inference script failed with exit code " << code
                 << "\n--- Script stderr ---\n" << error_message << "\n--- End Script stderr ---";
-        }   
+        }
 
         std::ifstream result_stream(temp_out.c_str());
         if (!result_stream) {
-            throw art::Exception(art::errors::LogicError) << "Could not open temporary result file: " << temp_out;
+            throw art::Exception(art::errors::LogicError)
+                << "Could not open temporary result file: " << temp_out;
         }
-        
-        float score;
-        result_stream >> score;
+        float score; result_stream >> score;
 
         mf::LogInfo("ImageAnalysis") << "Inference time: " << duration << " seconds";
         mf::LogInfo("ImageAnalysis") << "Predicted score: " << score;
 
-        remove(temp_in.c_str());
-        remove(temp_out.c_str());
-        remove(script_stdout.c_str());
-        remove(script_stderr.c_str());
+        std::error_code ec;
+        fs::remove(npy_in, ec); fs::remove(temp_out, ec);
+        fs::remove(script_stdout, ec); fs::remove(script_stderr, ec);
 
         return score;
     }

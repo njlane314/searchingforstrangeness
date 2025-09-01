@@ -1,11 +1,6 @@
 import sys
 import os
 try:
-  import h5py
-except ModuleNotFoundError:
-  print("Error: h5py is required but not installed. Please install h5py to run this script.", file=sys.stderr)
-  sys.exit(1)
-try:
   import MinkowskiEngine as ME
 except ModuleNotFoundError:
   print("Error: MinkowskiEngine is required but not installed. Please install MinkowskiEngine to run this script.", file=sys.stderr)
@@ -95,57 +90,57 @@ def extract_features(flat_img):
   feats = np.vstack([norm_rows, norm_cols, log_adc, norm_density]).T.astype(np.float32)
   return coords, feats
 
+def load_imgs_from_npy(path):
+  arr = np.load(path, allow_pickle=False, mmap_mode=None)
+  if arr.ndim == 2 and arr.shape == (512, 512):
+    arr = arr.reshape(1, -1)
+  elif arr.ndim == 3 and arr.shape[1:] == (512, 512):
+    arr = arr.reshape(arr.shape[0], -1)
+  elif arr.ndim == 1 and arr.size == 512*512:
+    arr = arr.reshape(1, -1)
+  elif arr.ndim == 2 and arr.shape[1] == 512*512:
+    pass
+  else:
+    raise RuntimeError(f"Unexpected .npy shape {arr.shape}; expected (512,512), (N,512,512), (512*512,), or (N,512*512)")
+  if arr.dtype != np.float32:
+    arr = arr.astype(np.float32, copy=False)
+  return arr
+
 def main():
   start_time = time.time()
-  parser = argparse.ArgumentParser(description="Run inference and create a new text file with results.")
-  parser.add_argument("--input", type=str, required=True, help="Input HDF5 file")
-  parser.add_argument("--output", type=str, required=True, help="Output text file for scores")
-  parser.add_argument("--weights", type=str, required=True, help="Model weights (.pth)")
-  parser.add_argument("--tree", type=str, default="imagetree", help="HDF5 group name to process")
-  parser.add_argument("--branch", type=str, default="image_u", help="Image dataset name")
+  parser = argparse.ArgumentParser(description="Run inference (NPY input).")
+  parser.add_argument("--npy", type=str, required=True, help="NPY file with image(s)")
+  parser.add_argument("--output", type=str, required=True)
+  parser.add_argument("--weights", type=str, required=True)
   args = parser.parse_args()
 
-  print("--- Running Inference Script ---")
-  device = torch.device('cpu')
+  device = torch.device("cpu")
   model = MinkUNetClassifier().to(device)
-  model.load_state_dict(torch.load(args.weights, map_location='cpu'))
+  model.load_state_dict(torch.load(args.weights, map_location="cpu"))
   model.eval()
-  print(f"Initialization time: {time.time() - start_time:.4f} seconds")
 
-  with h5py.File(args.input, "r") as infile:
-    dataset = infile[args.tree][args.branch]
-    imgs = dataset[:]
-
+  imgs = load_imgs_from_npy(args.npy)
   n = len(imgs)
   logits = np.zeros(n, dtype=np.float32)
 
-  inference_loop_start = time.time()
-  for i, flat in enumerate(imgs):
-    if flat.size == 0:
-      logits[i] = 0.0
-      continue
-    coords, feats = extract_features(flat)
-    if coords is None:
-      logits[i] = 0.0
-      continue
+  torch.set_num_threads(1)
+  with torch.no_grad():
+    for i, flat in enumerate(imgs):
+      if flat.size == 0:
+        continue
+      coords, feats = extract_features(flat)
+      if coords is None:
+        continue
+      batched = ME.utils.batched_coordinates([coords])
+      feats_t = torch.from_numpy(feats).to(device)
+      x = ME.SparseTensor(feats_t, coordinates=batched, device=device)
+      logits[i] = float(model(x).F.squeeze().cpu().item())
 
-    batched_coords = ME.utils.batched_coordinates([coords])
-    feats_t = torch.from_numpy(feats).to(device)
-    x = ME.SparseTensor(feats_t, coordinates=batched_coords, device=device)
-    out = model(x).F.cpu().detach().numpy().ravel()[0]
-    logits[i] = out
-
-  inference_loop_time = time.time() - inference_loop_start
-  print(f"Inference loop time for {n} events: {inference_loop_time:.4f} seconds")
-  print("Inference complete.")
-
-  # Save results to text file (one score per line)
-  print(f"Writing {len(logits)} scores to output file: {args.output}")
   with open(args.output, "w") as f:
-    for score in logits:
-      f.write(f"{score}\n")
+    for s in logits:
+      f.write(f"{s}\n")
 
-  print(f"\nWorkflow complete. Results saved to {args.output}")
+  
 
 if __name__ == "__main__":
   main()

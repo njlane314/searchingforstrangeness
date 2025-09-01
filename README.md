@@ -3,10 +3,9 @@
 ## Building the Project
 
 Before building and running the inference utilities, ensure that the runtime
-environment provides the Python packages `h5py` and `MinkowskiEngine`. The
-`run_strangeness_inference.sh` wrapper attempts to source a Python setup script
-from CVMFS and will try to install `h5py` if it is missing, but
-`MinkowskiEngine` must already be available.
+environment provides the Python packages `numpy` and `MinkowskiEngine`. The
+`run_strangeness_inference.sh` wrapper simply forwards arguments to the Python
+script, so `MinkowskiEngine` must already be available in the environment.
 
 To execute within a container, bind the necessary CVMFS directories so these
 dependencies can be located. For example:
@@ -17,7 +16,7 @@ apptainer exec \
   --bind /exp/uboone:/exp/uboone \
   --bind /pnfs/uboone:/pnfs/uboone \
   /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7 \
-  ./run_strangeness_inference.sh <input.root> <output.root> <weights.pth> <tree> <branch>
+  ./run_strangeness_inference.sh --npy <images.npy> --output <scores.txt> --weights <weights.pth>
 ```
 
 ### Variable Reference
@@ -30,8 +29,6 @@ with a value appropriate for your environment.
 | `<input.root>` | Input ROOT file containing events for inference. | `events.root` |
 | `<output.root>` | Output ROOT file written by the inference script. | `results.root` |
 | `<weights.pth>` | Neural-network weight file. | `model_weights.pth` |
-| `<tree>` | Name of the TTree within the input file. | `ImageTree` |
-| `<branch>` | Branch within the TTree to process. | `image_branch` |
 | `<sam_definition>` | SAM dataset definition name. | `prod_strange_resample_fhc_run2` |
 | `<num_files>` | Number of files to select from a SAM definition. | `250` |
 | `<file>` | Specific file returned from SAM queries. | `file1.root` |
