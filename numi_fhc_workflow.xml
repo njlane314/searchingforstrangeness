@@ -100,7 +100,6 @@
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
         <datatier>test</datatier>
         <numjobs>1</numjobs>
-        <jobsub>&jobsub_config;</jobsub>
     </stage>
 
     <stage name="reweight_numi_fhc_run1_strangeness">
