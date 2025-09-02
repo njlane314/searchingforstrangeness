@@ -19,6 +19,8 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdlib>
+#include <unistd.h>
+#include <limits.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TDirectoryFile.h>
@@ -31,6 +33,7 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "cetlib_except/exception.h"
+#include <cetlib/search_path.h>
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
@@ -179,6 +182,10 @@ namespace analysis {
 
         if (wf.is_absolute() && fs::exists(wf)) return wf.string();
 
+        cet::search_path sp("FW_SEARCH_PATH");
+        std::string resolved;
+        if (sp.find_file(wf.string(), resolved)) return resolved;
+
         if (!base_dir.empty()) {
             fs::path p = fs::path(base_dir) / wf;
             if (fs::exists(p)) return p.string();
@@ -308,9 +315,24 @@ namespace analysis {
         fMCPproducer = p.get<art::InputTag>("MCPproducer");
         fBKTproducer = p.get<art::InputTag>("BKTproducer");
         fBadChannelFile = p.get<std::string>("BadChannelFile");
-        if (!fBadChannelFile.empty() && !fs::path(fBadChannelFile).is_absolute()) {
-            if (const char* base = std::getenv("STRANGENESS_DIR")) {
-                fBadChannelFile = (fs::path(base) / fBadChannelFile).string();
+        if (!fBadChannelFile.empty()) {
+            cet::search_path sp("FW_SEARCH_PATH");
+            std::string resolved_path;
+            if (sp.find_file(fBadChannelFile, resolved_path)) {
+                fBadChannelFile = resolved_path;
+                mf::LogInfo("ImageAnalysis")
+                    << "Bad channel file resolved to '" << fBadChannelFile << "'";
+            }
+            else {
+                mf::LogWarning("ImageAnalysis")
+                    << "Bad channel file '" << fBadChannelFile
+                    << "' not found via FW_SEARCH_PATH";
+                fBadChannelFile.clear();
+            }
+            char cwd[PATH_MAX];
+            if (getcwd(cwd, sizeof(cwd))) {
+                mf::LogInfo("ImageAnalysis") << "Job CWD: " << cwd;
+                std::system("ls -al");
             }
         }
         fWeightsBaseDir       = p.get<std::string>("WeightsBaseDir", "");
@@ -717,9 +739,13 @@ float ImageAnalysis::runInference(const std::vector<Image<float>>& detector_imag
         save_npy_f32_2d(npy_in, images);
 
         string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
-        const char* base_env = std::getenv("STRANGENESS_DIR");
-        fs::path base_dir = base_env ? fs::path(base_env) : fs::path(work_dir);
-        string wrapper_script = (base_dir / "run_strangeness_inference.sh").string();
+        cet::search_path sp("FW_SEARCH_PATH");
+        string wrapper_script;
+        if (!sp.find_file("run_strangeness_inference.sh", wrapper_script)) {
+            mf::LogWarning("ImageAnalysis")
+                << "run_strangeness_inference.sh not found via FW_SEARCH_PATH";
+            return 0.f;
+        }
 
         std::string bind_paths = absolute_scratch_dir;
         bool need_cvmfs = true;
