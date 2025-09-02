@@ -74,3 +74,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error")
 install_headers()
 install_fhicl()
 install_source()
+
+# Install auxiliary data files
+install(FILES badchannels.txt DESTINATION ${product}/data)
+
+# Install model architectures and weight files
+install(DIRECTORY models weights DESTINATION ${product}/data
+        FILES_MATCHING PATTERN "*")
+
+# Install Python and Bash scripts for inference pipeline
+file(GLOB STRANGENESS_SCRIPTS "*.py" "*.sh")
+install(FILES ${STRANGENESS_SCRIPTS} DESTINATION ${product}/scripts)
