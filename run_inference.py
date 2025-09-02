@@ -9,6 +9,7 @@ import torch
 import numpy as np
 import argparse
 import time
+import subprocess
 from models import load_model
 
 def extract_features(flat_img):
@@ -53,14 +54,48 @@ def main():
   weight_group.add_argument("--weights", type=str, help="Path to a weights file")
   weight_group.add_argument("--model", type=str, help="Model weights name under the 'weights' directory")
   args = parser.parse_args()
+  print(f"Working directory: {os.getcwd()}")
+  subprocess.run(["ls", "-al"])
 
   if args.model:
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    weights_path = os.path.join(script_dir, "weights", args.model)
-    if not os.path.splitext(weights_path)[1]:
-      weights_path += ".pth"
+    candidate = args.model
+    if not os.path.splitext(candidate)[1]:
+      candidate += ".pth"
+    local_path = os.path.join(script_dir, "weights", candidate)
+    if os.path.exists(local_path):
+      weights_path = local_path
+      print(f"Using weights file: {weights_path}")
+    else:
+      weights_path = None
+      fw_search = os.environ.get("FW_SEARCH_PATH", "")
+      for d in fw_search.split(":"):
+        test = os.path.join(d, "weights", candidate)
+        if os.path.exists(test):
+          weights_path = test
+          print(f"Using weights file: {weights_path}")
+          break
+      if weights_path is None:
+        print(f"Weights file '{candidate}' not found", file=sys.stderr)
+        print(f"CWD: {os.getcwd()}", file=sys.stderr)
+        subprocess.run(["ls", "-al"], check=False)
+        sys.exit(1)
   else:
     weights_path = args.weights
+    if not os.path.isabs(weights_path) and not os.path.exists(weights_path):
+      fw_search = os.environ.get("FW_SEARCH_PATH", "")
+      for d in fw_search.split(":"):
+        test = os.path.join(d, weights_path)
+        if os.path.exists(test):
+          weights_path = test
+          break
+    if os.path.exists(weights_path):
+      print(f"Using weights file: {weights_path}")
+    else:
+      print(f"Weights file '{weights_path}' not found", file=sys.stderr)
+      print(f"CWD: {os.getcwd()}", file=sys.stderr)
+      subprocess.run(["ls", "-al"], check=False)
+      sys.exit(1)
 
   device = torch.device("cpu")
   model = load_model(args.arch).to(device)
