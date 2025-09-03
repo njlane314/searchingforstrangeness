@@ -1,31 +1,24 @@
-
 *.d
-
 
 *.slo
 *.lo
 *.o
 *.obj
 
-
 *.gch
 *.pch
-
 
 *.so
 *.dylib
 *.dll
 
-
 *.mod
 *.smod
-
 
 *.lai
 *.la
 *.a
 *.lib
-
 
 *.exe
 *.out
@@ -34,11 +27,6 @@
 *.root
 *.csv
 *.png
-
-build_log.txt
-
-Sandbox/*
-!Sandbox/.keep
 
 .tmp/*
 
