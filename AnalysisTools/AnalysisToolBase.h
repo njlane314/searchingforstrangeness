@@ -7,7 +7,7 @@
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Principal/Event.h"
-#include "Common/Types.h"
+#include "Common/ProxyTypes.h"
 #include "TTree.h"
 #include <limits>
 
@@ -27,6 +27,6 @@ namespace analysis
         
         virtual void resetTTree(TTree* _tree) = 0;
     };
-} 
+}
 
-#endif
+#endif // ANALYSISTOOLBASE_H

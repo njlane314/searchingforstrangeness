@@ -1,7 +1,7 @@
 
 
-#ifndef PROXIMITYCLUSTERING_H
-#define PROXIMITYCLUSTERING_H
+#ifndef HITPROXIMITYCLUSTERING_H
+#define HITPROXIMITYCLUSTERING_H
 
 #include <map>
 
@@ -287,6 +287,7 @@ bool cluster(const std::vector<art::Ptr<recob::Hit>> &hit_ptr_v,
 }
 
 } // namespace common
-#endif
+
+#endif // HITPROXIMITYCLUSTERING_H
 
 /

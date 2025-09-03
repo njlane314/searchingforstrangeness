@@ -82,4 +82,4 @@ bool TruthContained(const float &FVxS, const float &FVyS, const float &FVzS,
 
 } // namespace common
 
-#endif
+#endif // TRUTHCONTAINMENT_H

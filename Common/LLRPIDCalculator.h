@@ -1,8 +1,8 @@
-#ifndef LLRPID_H
-#define LLRPID_H
+#ifndef LLRPIDCALCULATOR_H
+#define LLRPIDCALCULATOR_H
 
-#include "BacktrackingFuncs.h"
-#include "Geometry.h"
+#include "BacktrackingUtilities.h"
+#include "GeometryUtils.h"
 
 namespace common {
 
@@ -180,4 +180,4 @@ class LLRPID {
 };
 } // namespace common
 
-#endif
+#endif // LLRPIDCALCULATOR_H

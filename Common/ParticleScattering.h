@@ -1,5 +1,5 @@
-#ifndef SCATTERSFUNCS_H
-#define SCATTERSFUNCS_H
+#ifndef PARTICLESCATTERING_H
+#define PARTICLESCATTERING_H
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
@@ -147,4 +147,4 @@ int getLeadElectromagneticTrack(const art::Ptr<simb::MCParticle> &mc_part, const
 
 } // namespace common
 
-#endif
+#endif // PARTICLESCATTERING_H

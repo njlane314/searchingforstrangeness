@@ -29,7 +29,7 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "AnalysisTools/AnalysisToolBase.h"
-#include "Common/Types.h"
+#include "Common/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
 
 #include "TTree.h"

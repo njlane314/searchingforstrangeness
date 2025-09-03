@@ -5,7 +5,7 @@
 #include "AnalysisToolBase.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
-#include "Common/BacktrackingFuncs.h"
+#include "Common/BacktrackingUtilities.h"
 
 namespace analysis {
 

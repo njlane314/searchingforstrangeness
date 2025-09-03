@@ -1,5 +1,5 @@
-#ifndef DESCENDENTSFUNCS_H
-#define DESCENDENTSFUNCS_H
+#ifndef PFPARTICLEDESCENDANTS_H
+#define PFPARTICLEDESCENDANTS_H
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
@@ -32,4 +32,4 @@ unsigned int GetNDescendents(const art::Ptr<recob::PFParticle> &particle, const 
 }
 } // namespace common
 
-#endif
+#endif // PFPARTICLEDESCENDANTS_H
