@@ -3,14 +3,7 @@
 
 BEGIN_PROLOG
 
-FidVol: {
-    Xstart: 10.
-    Xend:   10.
-    Ystart: 15.
-    Yend:   15.
-    Zstart: 10.
-    Zend:   50.
-}
+#include "fidvol.fcl"
 
 microboone_antibdtfilter:
 {
