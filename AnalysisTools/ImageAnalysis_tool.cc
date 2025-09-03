@@ -58,8 +58,8 @@
 #include "AnalysisToolBase.h"
 #include "../CommonDefs/Pandora.h"
 #include "../CommonDefs/Types.h"
-#include "../Image.h"
-#include "../ImageAlgorithm.h"
+#include "../CommonDefs/Image.h"
+#include "../CommonDefs/ImageAlgorithm.h"
 
 namespace fs = std::experimental::filesystem;
 
