@@ -46,17 +46,11 @@
     "fcl": [
       "run_neutrinoselection.fcl"
     ],
-    "initsource": "init_payload_paths.sh",
     "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test/out",
     "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test/log",
     "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test",
     "datatier": "test",
-    "numjobs": 1,
-    "jobsub": [
-      "--tar_file_name=file:///pnfs/uboone/scratch/users/nlane/tarballs/strangeness_assets.tar.gz",
-      "            --tar_file_name=dropbox:///dune/app/users/nlane/assets.tar.gz",
-      "            -f /pnfs/uboone/scratch/users/nlane/init_payload_paths.sh"
-    ]
+    "numjobs": 1
   },
   {
     "name": "reweight_numi_fhc_run1_strangeness",

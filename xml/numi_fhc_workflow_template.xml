@@ -5,6 +5,7 @@
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
+    <!ENTITY initsrc "scripts/init_payload_paths.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
