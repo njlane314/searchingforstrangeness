@@ -20,7 +20,7 @@
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "TTree.h"
 #include "TVector3.h"
-#include "Common/Types.h"
+#include "Common/ProxyTypes.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>

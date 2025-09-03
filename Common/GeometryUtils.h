@@ -1,5 +1,5 @@
-#ifndef GEOMETRYFUNCS_H
-#define GEOMETRYFUNCS_H
+#ifndef GEOMETRYUTILS_H
+#define GEOMETRYUTILS_H
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"

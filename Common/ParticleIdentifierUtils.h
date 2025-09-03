@@ -1,5 +1,5 @@
-#ifndef PIDFUNCS_H
-#define PIDFUNCS_H
+#ifndef PARTICLEIDENTIFIERUTILS_H
+#define PARTICLEIDENTIFIERUTILS_H
 #include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
 
 namespace common

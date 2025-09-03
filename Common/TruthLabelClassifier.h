@@ -1,5 +1,5 @@
-#ifndef IMAGE_ALGORITHM_H
-#define IMAGE_ALGORITHM_H
+#ifndef TRUTHLABELCLASSIFIER_H
+#define TRUTHLABELCLASSIFIER_H
 
 #include <vector>
 #include <string>
@@ -48,8 +48,8 @@
 #include "lardata/Utilities/GeometryUtilities.h"
 #include "lardata/Utilities/FindManyInChainP.h"
 
-#include "Image.h"
-#include "Common/Pandora.h"
+#include "ImageTypes.h"
+#include "Common/PandoraUtilities.h"
 
 namespace analysis
 {

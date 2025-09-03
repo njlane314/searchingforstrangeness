@@ -4,12 +4,12 @@
 #include <iostream>
 #include <limits>
 #include "AnalysisToolBase.h"
-#include "../Common/Types.h"
-#include "../Common/BacktrackingFuncs.h"
-#include "../Common/TrackShowerScoreFuncs.h"
-#include "../Common/SCECorrections.h"
-#include "../Common/Geometry.h"
-#include "../Common/CalibrationFuncs.h"
+#include "../Common/ProxyTypes.h"
+#include "../Common/BacktrackingUtilities.h"
+#include "../Common/TrackShowerScore.h"
+#include "../Common/SpaceChargeCorrections.h"
+#include "../Common/GeometryUtils.h"
+#include "../Common/EnergyCalibration.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
 namespace analysis {

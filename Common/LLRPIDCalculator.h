@@ -1,11 +1,11 @@
-#ifndef LLRPID_H
-#define LLRPID_H
+#ifndef LLRPIDCALCULATOR_H
+#define LLRPIDCALCULATOR_H
 
-// #include "LLRPID_proton_muon_lookup.h"
-// #include "LLRPID_correction_lookup.h"
+// #include "LLRProtonMuonLookup.h"
+// #include "LLRCorrectionLookup.h"
 
-#include "BacktrackingFuncs.h"
-#include "Geometry.h"
+#include "BacktrackingUtilities.h"
+#include "GeometryUtils.h"
 
 namespace common
 {

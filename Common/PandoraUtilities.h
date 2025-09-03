@@ -1,5 +1,5 @@
-#ifndef PANDORAFUNCS_H
-#define PANDORAFUNCS_H
+#ifndef PANDORAUTILITIES_H
+#define PANDORAUTILITIES_H
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
@@ -28,7 +28,7 @@ namespace common
         else if (pandora_view == geo::kV)
             return TPC_VIEW_V;
         else
-            throw cet::exception("PandoraFuncs") << "wire view not recognised";
+            throw cet::exception("PandoraUtilities") << "wire view not recognised";
     }
 
     float YZtoU(const float y_coord, const float z_coord)

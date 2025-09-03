@@ -1,5 +1,5 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef IMAGETYPES_H
+#define IMAGETYPES_H
 
 #include <vector>
 #include <algorithm>

@@ -23,11 +23,11 @@
 #include "TVector3.h"
 #include "TLorentzVector.h"
 #include <cmath>
-#include "../Common/BacktrackingFuncs.h"
-#include "../Common/Geometry.h"
-#include "../Common/SCECorrections.h"
-#include "../Common/Containment.h"
-#include "../Common/Scatters.h"
+#include "../Common/BacktrackingUtilities.h"
+#include "../Common/GeometryUtils.h"
+#include "../Common/SpaceChargeCorrections.h"
+#include "../Common/TruthContainment.h"
+#include "../Common/ParticleScattering.h"
 
 namespace analysis {
 

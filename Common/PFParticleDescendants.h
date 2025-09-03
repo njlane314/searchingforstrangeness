@@ -1,5 +1,5 @@
-#ifndef DESCENDENTSFUNCS_H
-#define DESCENDENTSFUNCS_H
+#ifndef PFPARTICLEDESCENDANTS_H
+#define PFPARTICLEDESCENDANTS_H
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 

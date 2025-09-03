@@ -1,5 +1,5 @@
-#ifndef COMMONDEFS_TYPEDEFS_H
-#define COMMONDEFS_TYPEDEFS_H
+#ifndef PROXYTYPES_H
+#define PROXYTYPES_H
 
 #include "art/Framework/Principal/Event.h"
 
