@@ -72,7 +72,6 @@ namespace fs = std::experimental::filesystem;
 
 namespace analysis {
 
-
 struct ModelConfig {
     std::string name;
     std::string weights_file;
