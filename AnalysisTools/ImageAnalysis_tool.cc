@@ -46,7 +46,6 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <cstdio>
 #include <fstream>
@@ -65,6 +64,25 @@
 #include <vector>
 
 namespace analysis {
+
+namespace {
+inline bool fileExists(const std::string &p) {
+    struct stat sb;
+    return ::stat(p.c_str(), &sb) == 0 && S_ISREG(sb.st_mode);
+}
+inline bool dirExists(const std::string &p) {
+    struct stat sb;
+    return ::stat(p.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode);
+}
+inline std::string joinPath(std::string a, const std::string &b) {
+    if (a.empty()) return b;
+    if (!a.empty() && a.back() != '/') a.push_back('/');
+    return a + b;
+}
+inline bool isAbs(const std::string &p) {
+    return !p.empty() && p.front() == '/';
+}
+} // namespace
 
 struct ModelConfig {
     std::string name;
@@ -96,6 +114,9 @@ class ImageAnalysis : public AnalysisToolBase {
     std::vector<ModelConfig> fModels;
     std::string fWeightsBaseDir;
     std::vector<std::string> fActiveModels;
+    std::string fAssetsBaseDir;
+    std::string fInferenceWrapper;
+    std::string fWorkDir;
     int _image_width;
     int _image_height;
     float _adc_image_threshold;
@@ -143,6 +164,7 @@ class ImageAnalysis : public AnalysisToolBase {
     TruthLabelClassifier::TruthPrimaryLabel labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, bool has_mcps) const;
     void constructPixelImages(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data);
     float runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file);
+    std::string resolveAssetPath(const std::string &relOrAbs, bool must_exist = true) const;
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -150,6 +172,40 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
 }
 
 void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
+    char cwd_buffer[PATH_MAX];
+    getcwd(cwd_buffer, sizeof(cwd_buffer));
+    fWorkDir = std::string(cwd_buffer);
+
+    fAssetsBaseDir = p.get<std::string>("AssetsBaseDir", "");
+    if (const char *env = std::getenv("ASSETS_BASE_DIR"))
+        fAssetsBaseDir = env;
+    if (!fAssetsBaseDir.empty() && !isAbs(fAssetsBaseDir))
+        fAssetsBaseDir = joinPath(fWorkDir, fAssetsBaseDir);
+
+    std::string badRel = p.get<std::string>("BadChannelFile", "calib/badchannels.txt");
+    if (const char *env = std::getenv("IA_BADCHANNELS"))
+        badRel = env;
+    fBadChannelFile = resolveAssetPath(badRel, true);
+    mf::LogInfo("ImageAnalysis") << "Bad channel file: " << fBadChannelFile;
+    this->loadBadChannels(fBadChannelFile);
+
+    fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "weights");
+    if (const char *env = std::getenv("WEIGHTS_BASE_DIR"))
+        fWeightsBaseDir = env;
+    if (!isAbs(fWeightsBaseDir))
+        fWeightsBaseDir = resolveAssetPath(fWeightsBaseDir, false);
+    if (!dirExists(fWeightsBaseDir)) {
+        throw art::Exception(art::errors::Configuration)
+            << "Weights base dir '" << fWeightsBaseDir << "' does not exist.";
+    }
+    mf::LogInfo("ImageAnalysis") << "Weights base dir: " << fWeightsBaseDir;
+
+    std::string wrapperRel = p.get<std::string>("InferenceWrapper", "scripts/run_strangeness_inference.sh");
+    if (const char *env = std::getenv("IA_INFERENCE_WRAPPER"))
+        wrapperRel = env;
+    fInferenceWrapper = resolveAssetPath(wrapperRel, true);
+    mf::LogInfo("ImageAnalysis") << "Inference wrapper: " << fInferenceWrapper;
+
     fPFPproducer = p.get<art::InputTag>("PFPproducer");
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
     fSLCproducer = p.get<art::InputTag>("SLCproducer");
@@ -157,41 +213,8 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
-    fBadChannelFile = p.get<std::string>("BadChannelFile");
-    if (!fBadChannelFile.empty()) {
-        cet::search_path sp("FW_SEARCH_PATH");
-        std::string resolved_path;
-        if (sp.find_file(fBadChannelFile, resolved_path)) {
-            fBadChannelFile = resolved_path;
-            mf::LogInfo("ImageAnalysis")
-                << "Bad channel file resolved to '" << fBadChannelFile << "'";
-        } else {
-            mf::LogWarning("ImageAnalysis")
-                << "Bad channel file '" << fBadChannelFile
-                << "' not found via FW_SEARCH_PATH";
-            fBadChannelFile.clear();
-        }
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd))) {
-            mf::LogInfo log("ImageAnalysis");
-            log << "Job CWD: " << cwd << '\n';
-            DIR *dir = opendir(cwd);
-            if (dir) {
-                struct dirent *entry;
-                while ((entry = readdir(dir)) != nullptr) {
-                    log << "  " << entry->d_name << '\n';
-                }
-                closedir(dir);
-            } else {
-                mf::LogWarning("ImageAnalysis")
-                    << "Unable to list directory contents";
-            }
-        }
-    }
-    fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "");
+
     fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
-    if (const char *wbd = std::getenv("WEIGHTS_BASE_DIR"))
-        fWeightsBaseDir = wbd;
     if (const char *am = std::getenv("ACTIVE_MODELS")) {
         fActiveModels.clear();
         std::stringstream ss(am);
@@ -200,31 +223,55 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
             if (!tok.empty())
                 fActiveModels.push_back(tok);
     }
+
     auto model_psets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
+    fModels.clear();
     for (const auto &ps : model_psets) {
         fModels.push_back({ps.get<std::string>("name"),
                            ps.get<std::string>("weights_file"),
                            ps.get<std::string>("arch")});
     }
+
     _image_width = 512;
     _image_height = 512;
     _adc_image_threshold = 1.0;
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
-    _detp =
-        art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-    auto clock =
-        art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
+    _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
+    auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
     double tick_period = clock->TPCClock().TickPeriod();
     double drift_velocity = _detp->DriftVelocity();
     _drift_step = tick_period * drift_velocity * 1e1;
     _wire_pitch_u = _geo->WirePitch(geo::kU);
     _wire_pitch_v = _geo->WirePitch(geo::kV);
     _wire_pitch_w = _geo->WirePitch(geo::kW);
-    _semantic_classifier =
-        std::make_unique<TruthLabelClassifier>(fMCPproducer);
-    if (!fBadChannelFile.empty()) {
-        this->loadBadChannels(fBadChannelFile);
+    _semantic_classifier = std::make_unique<TruthLabelClassifier>(fMCPproducer);
+}
+
+std::string ImageAnalysis::resolveAssetPath(const std::string &relOrAbs, bool must_exist) const {
+    if (relOrAbs.empty()) return {};
+    if (isAbs(relOrAbs) && (!must_exist || fileExists(relOrAbs) || dirExists(relOrAbs)))
+        return relOrAbs;
+    if (!fAssetsBaseDir.empty()) {
+        auto cand = joinPath(fAssetsBaseDir, relOrAbs);
+        if (!must_exist || fileExists(cand) || dirExists(cand))
+            return cand;
     }
+    if (!fWorkDir.empty()) {
+        auto cand = joinPath(fWorkDir, relOrAbs);
+        if (!must_exist || fileExists(cand) || dirExists(cand))
+            return cand;
+    }
+    cet::search_path sp("FW_SEARCH_PATH");
+    std::string resolved;
+    if (sp.find_file(relOrAbs, resolved))
+        return resolved;
+    if (must_exist) {
+        throw art::Exception(art::errors::Configuration)
+            << "Could not resolve path '" << relOrAbs
+            << "'. Tried under AssetsBaseDir='" << fAssetsBaseDir
+            << "', CWD='" << fWorkDir << "', and FW_SEARCH_PATH.";
+    }
+    return relOrAbs;
 }
 
 void ImageAnalysis::loadBadChannels(const std::string &filename) {
@@ -421,10 +468,6 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
     realpath(scratch_dir.c_str(), scratch_path_buffer);
     std::string absolute_scratch_dir(scratch_path_buffer);
 
-    char cwd_buffer[PATH_MAX];
-    getcwd(cwd_buffer, sizeof(cwd_buffer));
-    std::string work_dir(cwd_buffer);
-
     std::vector<ModelConfig> todo;
     if (fActiveModels.empty())
         todo = fModels;
@@ -436,14 +479,10 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
     }
 
     for (auto const &m : todo) {
-        std::string base = fWeightsBaseDir.empty() ? work_dir : fWeightsBaseDir;
-        if (!base.empty() && base[0] != '/')
-            base = work_dir + "/" + base;
-        if (!base.empty() && base.back() != '/')
-            base += '/';
-        std::string wpath = base + m.weights_file;
-        struct stat sb;
-        if (stat(wpath.c_str(), &sb) != 0) {
+        std::string wpath = isAbs(m.weights_file)
+                                ? m.weights_file
+                                : joinPath(fWeightsBaseDir, m.weights_file);
+        if (!fileExists(wpath)) {
             throw art::Exception(art::errors::Configuration)
                 << "Weights file not found for model '" << m.name
                 << "': " << wpath;
@@ -451,7 +490,7 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
         mf::LogInfo("ImageAnalysis")
             << "Model " << m.name << " using weights: " << wpath;
         float score = this->runInference(detector_images, absolute_scratch_dir,
-                                         work_dir, m.arch, wpath);
+                                         fWorkDir, m.arch, wpath);
         _inference_scores[m.name] = score;
     }
 
@@ -680,10 +719,11 @@ void ImageAnalysis::constructPixelImages(const art::Event &event, const std::vec
 
 float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file) {
     using std::string;
-    string npy_in = absolute_scratch_dir + "/detector_images.npy";
-    string temp_out = absolute_scratch_dir + "/temp_test_out.txt";
-    string script_stdout = absolute_scratch_dir + "/py_script.out";
-    string script_stderr = absolute_scratch_dir + "/py_script.err";
+    (void)work_dir;
+    string npy_in = joinPath(absolute_scratch_dir, "detector_images.npy");
+    string temp_out = joinPath(absolute_scratch_dir, "temp_test_out.txt");
+    string script_stdout = joinPath(absolute_scratch_dir, "py_script.out");
+    string script_stderr = joinPath(absolute_scratch_dir, "py_script.err");
 
     std::vector<std::vector<float>> images;
     images.push_back(detector_images[0].data());
@@ -691,15 +731,7 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
     images.push_back(detector_images[2].data());
     common::save_npy_f32_2d(npy_in, images);
 
-    string container = "/cvmfs/uboone.opensciencegrid.org/containers/"
-                       "lantern_v2_me_06_03_prod";
-    cet::search_path sp("FW_SEARCH_PATH");
-    string wrapper_script;
-    if (!sp.find_file("run_strangeness_inference.sh", wrapper_script)) {
-        mf::LogWarning("ImageAnalysis")
-            << "run_strangeness_inference.sh not found via FW_SEARCH_PATH";
-        return 0.f;
-    }
+    string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
 
     std::string bind_paths = absolute_scratch_dir;
     bool need_cvmfs = true;
@@ -722,12 +754,12 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
     std::ostringstream cmd;
     cmd << "apptainer exec --cleanenv --bind " << bind_paths << " "
         << container << " "
-        << "/bin/bash " << wrapper_script << " "
+        << "/bin/bash " << fInferenceWrapper << " "
         << "--npy " << npy_in << " "
         << "--output " << temp_out << " "
         << "--arch " << arch << " "
-        << "--weights " << weights_file << " > " << script_stdout << " 2> "
-        << script_stderr;
+        << "--weights " << weights_file
+        << " > " << script_stdout << " 2> " << script_stderr;
 
     mf::LogInfo("ImageAnalysis") << "Executing inference: " << cmd.str();
 
