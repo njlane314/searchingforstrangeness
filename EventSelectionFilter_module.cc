@@ -100,8 +100,8 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
 
-    _verbose = p.get<bool>("Verbose");
-    _data = p.get<bool>("IsData");
+    _verbose = p.get<bool>("Verbose", false);
+    _data = p.get<bool>("IsData", false);
     _fake_data = p.get<bool>("IsFakeData", false);
     _filter = p.get<bool>("Filter", false);
 
