@@ -65,7 +65,7 @@ namespace common
         TVector3 pfp_dir;
         const lariov::TPCEnergyCalibProvider &_energy_calib_provider = art::ServiceHandle<lariov::TPCEnergyCalibService>()->GetProvider();
 
-        // Field needed for calibration factor
+        
         float x_start, y_start, z_start;
         float x_middle, y_middle, z_middle;
         float x_end, y_end, z_end;
@@ -80,14 +80,14 @@ namespace common
         z_start = shower_obj->ShowerStart().Z();
 
         float _dQdx_rectangle_length = 4;
-        pfp_dir.SetMag(_dQdx_rectangle_length / 2.); //Go 2cm along the direction of the object.
+        pfp_dir.SetMag(_dQdx_rectangle_length / 2.); 
         x_middle = x_start + pfp_dir.X();
         y_middle = y_start + pfp_dir.Y();
         z_middle = z_start + pfp_dir.Z();
         x_end = x_middle + pfp_dir.X();
         y_end = y_middle + pfp_dir.Y();
         z_end = z_middle + pfp_dir.Z();
-        pfp_dir.SetMag(1.); //Normalise again for safety (not needed).
+        pfp_dir.SetMag(1.); 
 
         for (int plane_nr = 0; plane_nr < 3; ++plane_nr)
         {
@@ -114,19 +114,19 @@ namespace common
             if (!xcorrection_end)
                 xcorrection_end = 1.0;
             end_corr = yzcorrection_end * xcorrection_end;
-            //std::cout << "[EnergyHelper] dqdx_cali " << start_corr << middle_corr << end_corr << std::endl;
+            
             dqdx_cali[plane_nr] = (start_corr + middle_corr + end_corr) / 3;
         }
     }
     
-    //----------------------------------------------------------------------------------                                                                           
-    // Modified Box model correction                                                                                                                                     
+    
+    
     double ModBoxCorrection(const double dQdx, const float x, const float y, const float z) {
       
-      double rho = 1.383;//detprop->Density();            // LAr density in g/cm^3
-      double Wion = 23.6/1e6;//util::kGeVToElectrons;  // 23.6 eV = 1e, Wion in MeV/e
+      double rho = 1.383;
+      double Wion = 23.6/1e6;
       
-      auto E_field = GetLocalEFieldMag(x,y,z); // kV / cm
+      auto E_field = GetLocalEFieldMag(x,y,z); 
       
       double fModBoxA = 0.930;
       double fModBoxB = 0.212;
@@ -139,6 +139,6 @@ namespace common
       
     }
     
-} // namespace common
+} 
 
 #endif

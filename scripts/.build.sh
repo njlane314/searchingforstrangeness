@@ -8,4 +8,3 @@ mrb i -j8
 
 cd $WRK_DIR
 
-# mrb z

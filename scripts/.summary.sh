@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Default definitions used when no input is supplied
+
 default_definitions=(
     "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2"
     "prod_strange_resample_fhc_run2_fhc_reco2_reco2"
@@ -35,8 +35,8 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     exit 0
 fi
 
-# Determine input definitions from arguments or fall back to defaults
-if [[ $# -gt 0 ]]; then
+
+if [[ $
     if [[ -f "$1" ]]; then
         mapfile -t input_definitions < "$1"
     else

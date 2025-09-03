@@ -1,7 +1,7 @@
 #ifndef TRUTHCONTAINMENT_H
 #define TRUTHCONTAINMENT_H
 
-// services for detector properties
+
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
@@ -20,13 +20,7 @@
 namespace common
 {
 
-  /**
-   * @brief Determine if the specified point is in the fiducial volume
-   *        Not recommended, no array size checking is done.
-   *
-   * @param x array of 3D location
-   * @return True if the point is inside the fiducial volume
-   */  
+    
   bool isFiducial(const double x[3], 
 		  const double fFidvolXstart, const double fFidvolYstart, const double fFidvolZstart,
 		  const double fFidvolXend, const double fFidvolYend, const double fFidvolZend)
@@ -52,10 +46,10 @@ namespace common
 		      const std::vector<sim::MCShower> &inputMCShower,
 		      const std::vector<sim::MCTrack> &inputMCTrack ) {
     
-    // require truth-containment by
-    // (1) requiring the vertex is in the FV
-    // (2) require all MCTracks are contained within the FV
-    // (3) require all MCShowers to deposit > some fraction of energy in the FV
+    
+    
+    
+    
     
 
     for (auto mcs : inputMCShower) {
@@ -65,13 +59,13 @@ namespace common
 	if ( (contained < 0.6) && (edep < 100.) ) {
 	  return false;
 	}
-      }// if primary
+      }
     }
     
     for (auto mct : inputMCTrack) {
       
       if (mct.Process() == "primary") {
-	//is the start point in the FV?
+	
 	sim::MCStep mc_step_track_start = mct.Start();
 	sim::MCStep mc_step_track_end   = mct.End();
 	
@@ -99,6 +93,6 @@ namespace common
     
   }
   
-} // namespace common
+} 
 
 #endif

@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "$#" -ne 1 ]; then
+if [ "$
     echo "Usage: $(basename "$0") <sam_definition>"
     exit 1
 fi

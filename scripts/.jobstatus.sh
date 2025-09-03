@@ -59,9 +59,9 @@ check_all_jobs() {
 
 USER=$(echo $USER)
 
-if [[ "$#" -eq 2 ]]; then
+if [[ "$
     check_specific_job "$1" "$2"
-elif [[ "$#" -eq 0 ]]; then
+elif [[ "$
     check_all_jobs
 else
     echo "Usage: source check_jobs.sh [xml_config_file] [stage]"

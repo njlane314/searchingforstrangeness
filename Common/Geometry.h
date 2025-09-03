@@ -76,7 +76,7 @@ namespace common
     for(size_t i=0; i < trk.NumberTrajectoryPoints(); i++)
     {
       if (trk.HasValidPoint(i))
-      { // check this point is valid
+      { 
         auto point_i = trk.LocationAtPoint(i);
         float distance = common::distance3d((double)point_i.X(), (double)point_i.Y(), (double)point_i.Z(),
                   x, y, z);
@@ -85,8 +85,8 @@ namespace common
           min_dist = distance;
           i_min = i;
         }
-      }// if point is valid
-    }// for all track points
+      }
+    }
 
     auto direction = trk.DirectionAtPoint(i_min);
     out[0] = (float)direction.X();
@@ -157,6 +157,6 @@ namespace common
     out.push_back(aux_phi_v);
     return out;
   }
-} // namespace common
+} 
 
 #endif

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
+if [ "$
     echo "Usage: $0 /path/to/file.root" >&2
     exit 1
 fi

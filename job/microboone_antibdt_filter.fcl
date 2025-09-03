@@ -12,7 +12,7 @@ FidVol: {
     Zend:   50.
 }
 
-microboone_antibdtfilter: 
+microboone_antibdtfilter:
 {
     module_type: "NeutrinoSelectionFilter"
     Filter: true
@@ -40,10 +40,10 @@ microboone_antibdtfilter:
         TRKproducerTrkFit: "shrreco3dKalmanShower"
         Clusterproducer: @local::standard_producers.CLSproducer
         Hitproducer: @local::standard_producers.HITproducer
-        mcsfitmu: @local::mcsfitproducer.fitter # @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-        LocaldEdx: false # use dQdx and convert to dEdx with fixed conversion
-        # ADC to E conversion taken from reco2 production fhicl file
-        ADCtoE: [232,249,243.7] # e-/ADC @local::microboone_reco_data_producers.shrreco3d.ADCtoE
+        mcsfitmu: @local::mcsfitproducer.fitter
+        LocaldEdx: false
+
+        ADCtoE: [232,249,243.7]
         RecalibrateHits: true
         FidvolXstart: @local::FidVol.Xstart
         FidvolXend:   @local::FidVol.Xend
@@ -71,7 +71,7 @@ microboone_antibdtfilter:
             SLCproducer: @local::standard_producers.SLCproducer
             MCPproducer: @local::standard_producers.MCPproducer
             PFPproducer: @local::standard_producers.PFPproducer
-            ProtonThreshold: 0.04 # GeV
+            ProtonThreshold: 0.04
             fidvolXstart: @local::FidVol.Xstart
             fidvolXend:   @local::FidVol.Xend
             fidvolYstart: @local::FidVol.Ystart

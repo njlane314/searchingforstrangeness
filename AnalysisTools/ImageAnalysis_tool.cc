@@ -63,7 +63,7 @@
 
 namespace fs = std::experimental::filesystem;
 
-// Minimal .npy (v1.0) writer for float32 1D arrays
+
 static void save_npy_f32_1d(const std::string& path, const std::vector<float>& data) {
     const char magic[] = "\x93NUMPY";
     const uint8_t major = 1, minor = 0;
@@ -95,7 +95,7 @@ static void save_npy_f32_1d(const std::string& path, const std::vector<float>& d
                   << "Short write to " << path;
 }
 
-// Minimal .npy (v1.0) writer for float32 2D arrays
+
 static void save_npy_f32_2d(const std::string& path,
                             const std::vector<std::vector<float>>& data) {
     if (data.empty())
@@ -151,7 +151,7 @@ namespace analysis {
     }
 
     static inline bool is_remote_url(const std::string& s) {
-        return starts_with(s, "http://") || starts_with(s, "https://") || starts_with(s, "root://");
+        return starts_with(s, "http:
     }
 
     static inline bool is_pnfs(const std::string& s) {
@@ -163,9 +163,9 @@ namespace analysis {
         fs::recursive_directory_iterator it(start, fs::directory_options::skip_permission_denied), end;
         for (; it != end; ++it) {
             if (it.depth() > max_depth) { it.pop(); continue; }
-            // std::experimental::filesystem::directory_entry does not expose
-            // "is_regular_file" as a member function in some environments.
-            // Use the free function instead for broader compatibility.
+            
+            
+            
             if (!fs::is_regular_file(it->path())) continue;
             if (it->path().filename() == filename) return it->path().string();
         }

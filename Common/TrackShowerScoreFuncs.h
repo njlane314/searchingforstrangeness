@@ -23,13 +23,13 @@ float GetTrackShowerScore(const ProxyPfpElem_t &pfp_pxy)
             {
                 if (it->first == "TrackScore")
                 return it->second;
-            } // for map elements
-        }   // if pfp metadata map not empty
-    }     // for list
+            } 
+        }   
+    }     
 
     return -1;
 }
 
-} // namespace common
+} 
 
 #endif

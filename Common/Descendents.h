@@ -3,8 +3,8 @@
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
-// Recursive functions for finding descendents in the PFParticle hierarchy 
-//////////////////////////////////////////////////////////////////////////
+
+
 
 namespace common
 {
@@ -36,6 +36,6 @@ namespace common
             if (downstreamParticle != particle) nDescendents++;
         return nDescendents;
     }
-} // namespace common
+} 
 
 #endif

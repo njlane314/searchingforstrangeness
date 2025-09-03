@@ -123,7 +123,7 @@ def main():
   with open(args.output, "w") as f:
     f.write(f"{score}\n")
 
-  
+
 
 if __name__ == "__main__":
   main()

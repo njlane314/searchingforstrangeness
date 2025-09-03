@@ -13,5 +13,5 @@ apptainer shell \
           /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:jsl
 '
 
-#/cvmfs/uboone.opensciencegrid.org/bin/shell_apptainer.sh -i /cvmfs/singularity.opensciencegrid.org/fermilab/fnal-dev-sl7:jsl
+
 /cvmfs/uboone.opensciencegrid.org/bin/shell_apptainer.sh

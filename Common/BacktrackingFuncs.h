@@ -32,8 +32,8 @@ namespace common
 
     art::Ptr<simb::MCParticle> getAssocMCParticle(art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &hittruth, const std::vector<art::Ptr<recob::Hit>> &hits, float &purity, float &completeness)
     {
-        float pfpcharge = 0; // total hit charge from clusters
-        float maxcharge = 0; // charge backtracked to best match
+        float pfpcharge = 0; 
+        float maxcharge = 0; 
 
         std::unordered_map<int, double> trkide;
         std::unordered_map<int, float> trkq;
@@ -48,9 +48,9 @@ namespace common
 
             for (size_t i_p = 0; i_p < particle_vec.size(); ++i_p)
             {
-                trkide[particle_vec[i_p]->TrackId()] += match_vec[i_p]->energy;                    //store energy per track id
-                trkq[particle_vec[i_p]->TrackId()] += h->Integral() * match_vec[i_p]->ideFraction; //store hit integral associated to this hit
-                tote += match_vec[i_p]->energy;                                                    //calculate total energy deposited
+                trkide[particle_vec[i_p]->TrackId()] += match_vec[i_p]->energy;                    
+                trkq[particle_vec[i_p]->TrackId()] += h->Integral() * match_vec[i_p]->ideFraction; 
+                tote += match_vec[i_p]->energy;                                                    
                 if (trkide[particle_vec[i_p]->TrackId()] > maxe)
                 { 
                     maxe = trkide[particle_vec[i_p]->TrackId()];

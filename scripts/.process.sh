@@ -93,7 +93,7 @@ check_command samweb
 check_command lar
 check_command hadd
 
-if [ "$#" -ne 2 ]; then
+if [ "$
     echo "Usage: $(basename "$0") <fhicl_file> <num_files>"
     exit 1
 fi
