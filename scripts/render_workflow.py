@@ -29,14 +29,19 @@ def render_stage(stage: dict, mapping: dict, template: Template) -> str:
         lines.append(f"    <inputstage>{apply_entities(stage['inputstage'], mapping)}</inputstage>")
     for fcl in stage.get('fcl', []):
         lines.append(f"    <fcl>{apply_entities(fcl, mapping)}</fcl>")
-    if 'initsource' in stage:
+    uses_selection = any('run_neutrinoselection.fcl' in fcl for fcl in stage.get('fcl', []))
+    if uses_selection:
+        lines.append("    <initsource>&initsrc;</initsource>")
+    elif 'initsource' in stage:
         lines.append(f"    <initsource>{apply_entities(stage['initsource'], mapping)}</initsource>")
     lines.append(f"    <outdir>{apply_entities(stage['outdir'], mapping)}</outdir>")
     lines.append(f"    <logdir>{apply_entities(stage['logdir'], mapping)}</logdir>")
     lines.append(f"    <workdir>{apply_entities(stage['workdir'], mapping)}</workdir>")
     lines.append(f"    <datatier>{apply_entities(stage['datatier'], mapping)}</datatier>")
     lines.append(f"    <numjobs>{apply_entities(str(stage['numjobs']), mapping)}</numjobs>")
-    if 'jobsub' in stage:
+    if uses_selection:
+        lines.append("    <jobsub>&jobsub_config;</jobsub>")
+    elif 'jobsub' in stage:
         jobsub_lines = '\n'.join('        ' + apply_entities(line, mapping) for line in stage['jobsub'])
         lines.append('    <jobsub>\n' + jobsub_lines + '\n    </jobsub>')
     content = '\n'.join(lines)

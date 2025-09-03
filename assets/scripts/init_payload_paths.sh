@@ -11,7 +11,7 @@ ASSETS="${INPUT_TAR_DIR_LOCAL:-}"
 [ -z "$ASSETS" ] && ASSETS="${MRB_INSTALL:-$PWD}"
 
 
-export FW_SEARCH_PATH="${ASSETS}:${ASSETS}/weights:${ASSETS}/models:${FW_SEARCH_PATH:-}"
+export FW_SEARCH_PATH="${ASSETS}:${ASSETS}/scripts:${ASSETS}/weights:${ASSETS}/models${FW_SEARCH_PATH:+:${FW_SEARCH_PATH}}"
 
 
 export WEIGHTS_DIR="${WEIGHTS_DIR:-${ASSETS}/weights}"
