@@ -46,8 +46,9 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <dirent.h>
+#include <sys/stat.h>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <limits.h>
@@ -174,13 +175,16 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
         if (getcwd(cwd, sizeof(cwd))) {
             mf::LogInfo log("ImageAnalysis");
             log << "Job CWD: " << cwd << '\n';
-            try {
-                for (const auto &entry : fs::directory_iterator(cwd)) {
-                    log << "  " << entry.path().filename().string() << '\n';
+            DIR *dir = opendir(cwd);
+            if (dir) {
+                struct dirent *entry;
+                while ((entry = readdir(dir)) != nullptr) {
+                    log << "  " << entry->d_name << '\n';
                 }
-            } catch (const fs::filesystem_error &e) {
+                closedir(dir);
+            } else {
                 mf::LogWarning("ImageAnalysis")
-                    << "Unable to list directory contents: " << e.what();
+                    << "Unable to list directory contents";
             }
         }
     }
@@ -432,20 +436,22 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
     }
 
     for (auto const &m : todo) {
-        fs::path base = fWeightsBaseDir.empty() ? fs::path(work_dir)
-                                                : fs::path(fWeightsBaseDir);
-        if (base.is_relative())
-            base = fs::path(work_dir) / base;
-        fs::path wpath = base / m.weights_file;
-        if (!fs::exists(wpath)) {
+        std::string base = fWeightsBaseDir.empty() ? work_dir : fWeightsBaseDir;
+        if (!base.empty() && base[0] != '/')
+            base = work_dir + "/" + base;
+        if (!base.empty() && base.back() != '/')
+            base += '/';
+        std::string wpath = base + m.weights_file;
+        struct stat sb;
+        if (stat(wpath.c_str(), &sb) != 0) {
             throw art::Exception(art::errors::Configuration)
                 << "Weights file not found for model '" << m.name
-                << "': " << wpath.string();
+                << "': " << wpath;
         }
         mf::LogInfo("ImageAnalysis")
-            << "Model " << m.name << " using weights: " << wpath.string();
+            << "Model " << m.name << " using weights: " << wpath;
         float score = this->runInference(detector_images, absolute_scratch_dir,
-                                         work_dir, m.arch, wpath.string());
+                                         work_dir, m.arch, wpath);
         _inference_scores[m.name] = score;
     }
 
@@ -730,7 +736,8 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
     auto end = std::chrono::steady_clock::now();
     double duration = std::chrono::duration<double>(end - start).count();
 
-    bool success = (code == 0) && fs::exists(temp_out);
+    struct stat temp_stat;
+    bool success = (code == 0) && (stat(temp_out.c_str(), &temp_stat) == 0);
     if (!success) {
         std::ifstream error_stream(script_stderr);
         std::string error_message(
@@ -753,11 +760,10 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
         << "Inference time: " << duration << " seconds";
     mf::LogInfo("ImageAnalysis") << "Predicted score: " << score;
 
-    std::error_code ec;
-    fs::remove(npy_in, ec);
-    fs::remove(temp_out, ec);
-    fs::remove(script_stdout, ec);
-    fs::remove(script_stderr, ec);
+    std::remove(npy_in.c_str());
+    std::remove(temp_out.c_str());
+    std::remove(script_stdout.c_str());
+    std::remove(script_stderr.c_str());
 
     return score;
 }
