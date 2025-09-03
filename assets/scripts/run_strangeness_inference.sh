@@ -1,37 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
-unset PYTHONHOME PYTHONPATH
-export PYTHONNOUSERSITE=1
-export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 
-echo "CWD: $(pwd)"
-ls -al
+# Resolve ASSETS_BASE_DIR robustly from this script path
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+: "${ASSETS_BASE_DIR:="$(cd "$THIS_DIR/.." && pwd)"}"
 
-fw_script=""
-if [[ -n "${FW_SEARCH_PATH:-}" ]]; then
-  IFS=':' read -ra dirs <<< "$FW_SEARCH_PATH"
-  for d in "${dirs[@]}"; do
-    if [[ -f "$d/run_inference.py" ]]; then
-      fw_script="$d/run_inference.py"
-      break
-    fi
-  done
-fi
-if [[ -z "$fw_script" ]]; then
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  candidate="${script_dir}/run_inference.py"
-  if [[ -f "$candidate" ]]; then
-    fw_script="$candidate"
-  fi
-fi
-if [[ -z "$fw_script" || ! -f "$fw_script" ]]; then
-  echo "run_inference.py not found" >&2
-  echo "CWD: $(pwd)" >&2
-  ls -al >&2
+# Sanity check the expected subdirs
+if [[ ! -d "$ASSETS_BASE_DIR/calib" || ! -d "$ASSETS_BASE_DIR/weights" ]]; then
+  echo "ERROR: ASSETS_BASE_DIR invalid: $ASSETS_BASE_DIR" >&2
   exit 1
-else
-  echo "Using run_inference.py at $fw_script"
 fi
 
-python3 "$fw_script" "$@"
+export WEIGHTS_BASE_DIR="${WEIGHTS_BASE_DIR:-$ASSETS_BASE_DIR/weights}"
+export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/calib/badchannels.txt}"
+export IA_INFERENCE_WRAPPER="$THIS_DIR/run_strangeness_inference.sh"
 
+# Make sure Python will see our packages
+export PYTHONPATH="$ASSETS_BASE_DIR:$ASSETS_BASE_DIR/models:$ASSETS_BASE_DIR/scripts${PYTHONPATH:+:$PYTHONPATH}"
+
+# Optional: avoid surprises from a host Python
+unset PYTHONHOME
+
+echo "[init] ASSETS_BASE_DIR=$ASSETS_BASE_DIR"
+echo "[init] PYTHONPATH=$PYTHONPATH"
+
+cd "$ASSETS_BASE_DIR"
+exec python3 -u "$ASSETS_BASE_DIR/scripts/run_inference.py" "$@"

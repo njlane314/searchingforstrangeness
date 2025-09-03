@@ -725,15 +725,29 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
     string script_stdout = joinPath(absolute_scratch_dir, "py_script.out");
     string script_stderr = joinPath(absolute_scratch_dir, "py_script.err");
 
-    std::vector<std::vector<float>> images;
-    images.push_back(detector_images[0].data());
-    images.push_back(detector_images[1].data());
-    images.push_back(detector_images[2].data());
+    std::vector<std::vector<float>> images = {
+        detector_images[0].data(),
+        detector_images[1].data(),
+        detector_images[2].data()
+    };
     common::save_npy_f32_2d(npy_in, images);
 
     string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
 
-    std::string bind_paths = absolute_scratch_dir;
+    // Determine assets directory for binding
+    std::string assets_dir = fAssetsBaseDir;
+    if (assets_dir.empty()) {
+        auto pos = fInferenceWrapper.rfind("/scripts/");
+        assets_dir = (pos == std::string::npos) ? std::string{} : fInferenceWrapper.substr(0, pos);
+    }
+
+    // Build bind list
+    std::vector<std::string> binds;
+    if (!assets_dir.empty())
+        binds.push_back(assets_dir);
+    binds.push_back(absolute_scratch_dir);
+
+    // Add /cvmfs if not already mounted
     bool need_cvmfs = true;
     if (const char *bind_env = std::getenv("APPTAINER_BINDPATH")) {
         if (std::string(bind_env).find("/cvmfs") != std::string::npos)
@@ -749,10 +763,17 @@ float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_imag
         }
     }
     if (need_cvmfs)
-        bind_paths = "/cvmfs," + bind_paths;
+        binds.insert(binds.begin(), "/cvmfs");
+
+    std::ostringstream bind_csv;
+    for (size_t i = 0; i < binds.size(); ++i) {
+        if (i)
+            bind_csv << ",";
+        bind_csv << binds[i];
+    }
 
     std::ostringstream cmd;
-    cmd << "apptainer exec --cleanenv --bind " << bind_paths << " "
+    cmd << "apptainer exec --cleanenv --bind " << bind_csv.str() << " "
         << container << " "
         << "/bin/bash " << fInferenceWrapper << " "
         << "--npy " << npy_in << " "
