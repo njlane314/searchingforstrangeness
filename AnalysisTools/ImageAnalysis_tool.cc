@@ -234,6 +234,29 @@ static inline bool is_pnfs(const std::string &s) {
       std::pair<double, double>
       calculateChargeCentroid(const art::Event &event, common::PandoraView view,
                               const std::vector<art::Ptr<recob::Hit>> &hits);
+      void fillDetectorImage(
+          const recob::Wire &wire, size_t wire_idx,
+          const std::vector<ImageProperties> &properties,
+          const art::FindManyP<recob::Hit> &wire_hit_assoc,
+          const std::set<art::Ptr<recob::Hit>> &hit_set,
+          const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
+              &mcp_bkth_assoc,
+          const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
+          const std::map<int, size_t> &trackid_to_index,
+          const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
+              &semantic_label_vector,
+          std::vector<Image<float>> &detector_images,
+          std::vector<Image<int>> &semantic_images, bool is_data,
+          bool has_mcps);
+      TruthLabelClassifier::TruthPrimaryLabel labelSemanticPixels(
+          const art::Ptr<recob::Hit> &matched_hit,
+          const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
+              &mcp_bkth_assoc,
+          const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
+          const std::map<int, size_t> &trackid_to_index,
+          const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
+              &semantic_label_vector,
+          bool has_mcps) const;
       void constructPixelImages(const art::Event &event,
                                 const std::vector<art::Ptr<recob::Hit>> &hits,
                                 const std::vector<ImageProperties> &properties,
@@ -627,6 +650,130 @@ static inline bool is_pnfs(const std::string &s) {
       return {sum_wire / sum_charge, sum_drift / sum_charge};
     }
 
+    TruthLabelClassifier::TruthPrimaryLabel
+    ImageAnalysis::labelSemanticPixels(
+        const art::Ptr<recob::Hit> &matched_hit,
+        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
+            &mcp_bkth_assoc,
+        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
+        const std::map<int, size_t> &trackid_to_index,
+        const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
+            &semantic_label_vector,
+        bool has_mcps) const {
+      TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
+          TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
+      if (!has_mcps || !mcp_vector.isValid())
+        return semantic_pixel_label;
+      std::vector<art::Ptr<simb::MCParticle>> mcp_particles_ass_to_hit;
+      std::vector<anab::BackTrackerHitMatchingData const *> bkth_data_ass_to_hit;
+      mcp_bkth_assoc.get(matched_hit.key(), mcp_particles_ass_to_hit,
+                         bkth_data_ass_to_hit);
+      if (!bkth_data_ass_to_hit.empty()) {
+        float max_ide_fraction = -1.0;
+        int best_match_track_id = -1;
+        for (size_t i_bkth = 0; i_bkth < bkth_data_ass_to_hit.size(); ++i_bkth) {
+          if (bkth_data_ass_to_hit[i_bkth] &&
+              bkth_data_ass_to_hit[i_bkth]->ideFraction > max_ide_fraction) {
+            max_ide_fraction = bkth_data_ass_to_hit[i_bkth]->ideFraction;
+            best_match_track_id = mcp_particles_ass_to_hit[i_bkth]->TrackId();
+          }
+        }
+        if (best_match_track_id != -1) {
+          auto it_trackid = trackid_to_index.find(best_match_track_id);
+          if (it_trackid != trackid_to_index.end()) {
+            size_t particle_mcp_idx = it_trackid->second;
+            if (particle_mcp_idx < semantic_label_vector.size()) {
+              semantic_pixel_label =
+                  semantic_label_vector[particle_mcp_idx];
+            }
+          }
+        }
+      }
+      return semantic_pixel_label;
+    }
+
+    void ImageAnalysis::fillDetectorImage(
+        const recob::Wire &wire, size_t wire_idx,
+        const std::vector<ImageProperties> &properties,
+        const art::FindManyP<recob::Hit> &wire_hit_assoc,
+        const std::set<art::Ptr<recob::Hit>> &hit_set,
+        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
+            &mcp_bkth_assoc,
+        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
+        const std::map<int, size_t> &trackid_to_index,
+        const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
+            &semantic_label_vector,
+        std::vector<Image<float>> &detector_images,
+        std::vector<Image<int>> &semantic_images, bool is_data,
+        bool has_mcps) {
+      auto ch_id = wire.Channel();
+      if (fBadChannels.count(ch_id)) {
+        return;
+      }
+      std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
+      if (wire_ids.empty())
+        return;
+      geo::View_t view = _geo->View(wire_ids.front().planeID());
+      size_t view_idx = static_cast<size_t>(view);
+      const geo::WireGeo *wire_geo = _geo->WirePtr(wire_ids.front());
+      TVector3 center = wire_geo->GetCenter();
+      TVector3 wire_center(center.X(), center.Y(), center.Z());
+      double wire_coord =
+          (view == geo::kW)
+              ? wire_center.Z()
+              : (view == geo::kU)
+                    ? (wire_center.Z() * std::cos(1.04719758034) -
+                       wire_center.Y() * std::sin(1.04719758034))
+                    : (wire_center.Z() * std::cos(-1.04719758034) -
+                       wire_center.Y() * std::sin(-1.04719758034));
+      auto hits_for_wire = wire_hit_assoc.at(wire_idx);
+      std::vector<art::Ptr<recob::Hit>> filtered_hits;
+      for (const auto &hit : hits_for_wire) {
+        if (hit_set.count(hit)) {
+          filtered_hits.push_back(hit);
+        }
+      }
+      std::sort(filtered_hits.begin(), filtered_hits.end(),
+                [](const art::Ptr<recob::Hit> &a,
+                   const art::Ptr<recob::Hit> &b) {
+                  return a->StartTick() < b->StartTick();
+                });
+      size_t hit_index = 0;
+      for (const auto &range : wire.SignalROI().get_ranges()) {
+        const auto &adcs = range.data();
+        int start_tick = range.begin_index();
+        for (size_t adc_index = 0; adc_index < adcs.size(); ++adc_index) {
+          int tick = start_tick + adc_index;
+          double x_drift_pos = _detp->ConvertTicksToX(
+              static_cast<double>(tick), wire_ids.front().planeID());
+          size_t row = properties[view_idx].row(x_drift_pos);
+          size_t col = properties[view_idx].col(wire_coord);
+          if (row == static_cast<size_t>(-1) ||
+              col == static_cast<size_t>(-1))
+            continue;
+          while (hit_index < filtered_hits.size() &&
+                 filtered_hits[hit_index]->EndTick() <= tick) {
+            ++hit_index;
+          }
+          if (hit_index < filtered_hits.size() &&
+              filtered_hits[hit_index]->StartTick() <= tick &&
+              tick < filtered_hits[hit_index]->EndTick()) {
+            if (adcs[adc_index] > _adc_image_threshold) {
+              detector_images[view_idx].set(row, col, adcs[adc_index]);
+              if (!is_data) {
+                TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
+                    labelSemanticPixels(filtered_hits[hit_index], mcp_bkth_assoc,
+                                        mcp_vector, trackid_to_index,
+                                        semantic_label_vector, has_mcps);
+                semantic_images[view_idx].set(
+                    row, col, static_cast<int>(semantic_pixel_label), false);
+              }
+            }
+          }
+        }
+      }
+    }
+
     void ImageAnalysis::constructPixelImages(
         const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits,
         const std::vector<ImageProperties> &properties,
@@ -671,107 +818,10 @@ static inline bool is_pnfs(const std::string &s) {
 
       std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
       for (size_t wire_idx = 0; wire_idx < wire_vector->size(); ++wire_idx) {
-        const auto &wire = wire_vector->at(wire_idx);
-        auto ch_id = wire.Channel();
-        if (fBadChannels.count(ch_id)) {
-          continue;
-        }
-        std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
-        if (wire_ids.empty())
-          continue;
-        geo::View_t view = _geo->View(wire_ids.front().planeID());
-        size_t view_idx = static_cast<size_t>(view);
-        const geo::WireGeo *wire_geo = _geo->WirePtr(wire_ids.front());
-        TVector3 center = wire_geo->GetCenter();
-        TVector3 wire_center(center.X(), center.Y(), center.Z());
-        double wire_coord = (view == geo::kW) ? wire_center.Z()
-                            : (view == geo::kU)
-                                ? (wire_center.Z() * std::cos(1.04719758034) -
-                                   wire_center.Y() * std::sin(1.04719758034))
-                                : (wire_center.Z() * std::cos(-1.04719758034) -
-                                   wire_center.Y() * std::sin(-1.04719758034));
-        auto hits_for_wire = wire_hit_assoc.at(wire_idx);
-        std::vector<art::Ptr<recob::Hit>> filtered_hits;
-        for (const auto &hit : hits_for_wire) {
-          if (hit_set.count(hit)) {
-            filtered_hits.push_back(hit);
-          }
-        }
-        std::sort(
-            filtered_hits.begin(), filtered_hits.end(),
-            [](const art::Ptr<recob::Hit> &a, const art::Ptr<recob::Hit> &b) {
-              return a->StartTick() < b->StartTick();
-            });
-        size_t hit_index = 0;
-        for (const auto &range : wire.SignalROI().get_ranges()) {
-          const auto &adcs = range.data();
-          int start_tick = range.begin_index();
-          for (size_t adc_index = 0; adc_index < adcs.size(); ++adc_index) {
-            int tick = start_tick + adc_index;
-            double x_drift_pos = _detp->ConvertTicksToX(
-                static_cast<double>(tick), wire_ids.front().planeID());
-            size_t row = properties[view_idx].row(x_drift_pos);
-            size_t col = properties[view_idx].col(wire_coord);
-            if (row == static_cast<size_t>(-1) ||
-                col == static_cast<size_t>(-1))
-              continue;
-            while (hit_index < filtered_hits.size() &&
-                   filtered_hits[hit_index]->EndTick() <= tick) {
-              ++hit_index;
-            }
-            if (hit_index < filtered_hits.size() &&
-                filtered_hits[hit_index]->StartTick() <= tick &&
-                tick < filtered_hits[hit_index]->EndTick()) {
-              if (adcs[adc_index] > _adc_image_threshold) {
-                detector_images[view_idx].set(row, col, adcs[adc_index]);
-                if (!is_data) {
-                  const art::Ptr<recob::Hit> &matched_hit =
-                      filtered_hits[hit_index];
-                  TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
-                      TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
-                  if (has_mcps && mcp_vector.isValid() &&
-                      _semantic_classifier) {
-                    std::vector<art::Ptr<simb::MCParticle>>
-                        mcp_particles_ass_to_hit;
-                    std::vector<anab::BackTrackerHitMatchingData const *>
-                        bkth_data_ass_to_hit;
-                    mcp_bkth_assoc.get(matched_hit.key(),
-                                       mcp_particles_ass_to_hit,
-                                       bkth_data_ass_to_hit);
-                    if (!bkth_data_ass_to_hit.empty()) {
-                      float max_ide_fraction = -1.0;
-                      int best_match_track_id = -1;
-                      for (size_t i_bkth = 0;
-                           i_bkth < bkth_data_ass_to_hit.size(); ++i_bkth) {
-                        if (bkth_data_ass_to_hit[i_bkth] &&
-                            bkth_data_ass_to_hit[i_bkth]->ideFraction >
-                                max_ide_fraction) {
-                          max_ide_fraction =
-                              bkth_data_ass_to_hit[i_bkth]->ideFraction;
-                          best_match_track_id =
-                              mcp_particles_ass_to_hit[i_bkth]->TrackId();
-                        }
-                      }
-                      if (best_match_track_id != -1) {
-                        auto it_trackid =
-                            trackid_to_index.find(best_match_track_id);
-                        if (it_trackid != trackid_to_index.end()) {
-                          size_t particle_mcp_idx = it_trackid->second;
-                          if (particle_mcp_idx < semantic_label_vector.size()) {
-                            semantic_pixel_label =
-                                semantic_label_vector[particle_mcp_idx];
-                          }
-                        }
-                      }
-                    }
-                  }
-                  semantic_images[view_idx].set(
-                      row, col, static_cast<int>(semantic_pixel_label), false);
-                }
-              }
-            }
-          }
-        }
+        fillDetectorImage(wire_vector->at(wire_idx), wire_idx, properties,
+                          wire_hit_assoc, hit_set, mcp_bkth_assoc, mcp_vector,
+                          trackid_to_index, semantic_label_vector,
+                          detector_images, semantic_images, is_data, has_mcps);
       }
     }
 
