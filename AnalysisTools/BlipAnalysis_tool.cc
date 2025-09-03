@@ -7,18 +7,18 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 
-#include "../CommonDefs/Types.h"
+#include "../Common/Types.h"
 
-#include "../CommonDefs/BacktrackingFuncs.h"
-#include "../CommonDefs/TrackShowerScoreFuncs.h"
-#include "../CommonDefs/PIDFuncs.h"
-#include "../CommonDefs/SCECorrections.h"
-#include "../CommonDefs/Geometry.h"
+#include "../Common/BacktrackingFuncs.h"
+#include "../Common/TrackShowerScoreFuncs.h"
+#include "../Common/PIDFuncs.h"
+#include "../Common/SCECorrections.h"
+#include "../Common/Geometry.h"
 
-#include "../CommonDefs/LLR_PID.h"
-#include "../CommonDefs/LLRPID_proton_muon_lookup.h"
-#include "../CommonDefs/LLRPID_correction_lookup.h"
-#include "../CommonDefs/CalibrationFuncs.h"
+#include "../Common/LLR_PID.h"
+#include "../Common/LLRPID_proton_muon_lookup.h"
+#include "../Common/LLRPID_correction_lookup.h"
+#include "../Common/CalibrationFuncs.h"
 
 #include "larreco/RecoAlg/TrajectoryMCSFitter.h"
 #include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
