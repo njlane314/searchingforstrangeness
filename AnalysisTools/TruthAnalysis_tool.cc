@@ -36,7 +36,7 @@ public:
     explicit TruthAnalysis(fhicl::ParameterSet const& p);
     virtual ~TruthAnalysis() = default;
     void configure(const fhicl::ParameterSet& pset) override;
-    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) override;
     void analyseEvent(const art::Event& event, bool is_data) override;
     void setBranches(TTree* tree) override;
     void resetTTree(TTree* tree) override;
@@ -480,14 +480,14 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _true_visible_energy = 0;
 }
 
-void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {
+void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) {
     if (is_data) return;
 
     auto const& cluster_h = event.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
     art::FindManyP<recob::Hit> assocHits(cluster_h, event, fCLSproducer);
 
     std::vector<art::Ptr<recob::Hit>> inputHits;
-    for (const auto& pfp : slice_pfp_v) {
+    for (const auto& pfp : slice_pfp_vec) {
         auto clusters = pfp.get<recob::Cluster>();
         for (const auto& cluster : clusters) {
             auto hits = assocHits.at(cluster.key());
@@ -559,16 +559,16 @@ void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
     }
 }
 
-void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
+void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     if (is_data) {
         this->resetTTree(nullptr);
         return;
     }
 
-    auto const& mct_h = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
+    auto const& mct_h = event.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
     auto mct = mct_h->at(0);
 
-    auto const& mcflux_h = e.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
+    auto const& mcflux_h = event.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
     if (mcflux_h.isValid() && !mcflux_h->empty()) {
         auto flux = mcflux_h->at(0);
         
@@ -652,7 +652,7 @@ void TruthAnalysis::analyseEvent(art::Event const& e, bool is_data) {
     _true_visible_total_momentum = total_visible_momentum.Mag();
     _true_visible_energy = total_visible_momentum.E();
 
-    auto const& mcp_h = e.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
+    auto const& mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcParticleMap;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         mcParticleMap[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);

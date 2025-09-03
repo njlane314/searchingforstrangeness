@@ -232,8 +232,8 @@ namespace analysis {
         virtual ~ImageAnalysis() = default;
 
         void configure(const fhicl::ParameterSet& p) override;
-        void analyseEvent(art::Event const& e, bool _is_data) override {}
-        void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, bool _is_data, bool selected) override;
+        void analyseEvent(const art::Event& event, bool is_data) override {}
+        void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec, bool is_data, bool is_selected) override;
         void setBranches(TTree* _tree) override;
         void resetTTree(TTree* _tree) override;
 
@@ -291,10 +291,10 @@ namespace analysis {
         std::unordered_map<std::string, float> _inference_scores;
 
         void loadBadChannels(const std::string& filename);
-        std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event& e);
-        std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
-        std::pair<double, double> calculateChargeCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
-        void constructPixelImages(const art::Event& e, const std::vector<art::Ptr<recob::Hit>>& hits, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images, bool is_data);
+        std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event& event);
+        std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event& event, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec);
+        std::pair<double, double> calculateChargeCentroid(const art::Event& event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits);
+        void constructPixelImages(const art::Event& event, const std::vector<art::Ptr<recob::Hit>>& hits, const std::vector<ImageProperties>& properties, std::vector<Image<float>>& detector_images, std::vector<Image<int>>& semantic_images, bool is_data);
         float runInference(const std::vector<Image<float>>& detector_images,
                            const std::string& absolute_scratch_dir,
                            const std::string& work_dir,
@@ -458,8 +458,8 @@ namespace analysis {
         }
     }
 
-    void ImageAnalysis::analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& pfp_pxy_v, bool _is_data, bool selected) {
-        for (const auto& pfp : pfp_pxy_v) {
+void ImageAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec, bool is_data, bool is_selected) {
+        for (const auto& pfp : pfp_pxy_vec) {
             if (pfp->IsPrimary()) {
                 const auto& vtx = pfp.get<recob::Vertex>();
                 if (vtx.size() > 0) {
@@ -472,12 +472,12 @@ namespace analysis {
             }
         }
 
-        std::vector<art::Ptr<recob::Hit>> all_hits = this->collectAllHits(e);
-        std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectSliceHits(e, pfp_pxy_v);
+        std::vector<art::Ptr<recob::Hit>> all_hits = this->collectAllHits(event);
+        std::vector<art::Ptr<recob::Hit>> neutrino_hits = this->collectSliceHits(event, pfp_pxy_vec);
 
-        auto [centroid_wire_u, centroid_drift_u] = this->calculateChargeCentroid(e, common::TPC_VIEW_U, neutrino_hits);
-        auto [centroid_wire_v, centroid_drift_v] = this->calculateChargeCentroid(e, common::TPC_VIEW_V, neutrino_hits);
-        auto [centroid_wire_w, centroid_drift_w] = this->calculateChargeCentroid(e, common::TPC_VIEW_W, neutrino_hits);
+        auto [centroid_wire_u, centroid_drift_u] = this->calculateChargeCentroid(event, common::TPC_VIEW_U, neutrino_hits);
+        auto [centroid_wire_v, centroid_drift_v] = this->calculateChargeCentroid(event, common::TPC_VIEW_V, neutrino_hits);
+        auto [centroid_wire_w, centroid_drift_w] = this->calculateChargeCentroid(event, common::TPC_VIEW_W, neutrino_hits);
 
         std::vector<ImageProperties> properties;
         properties.emplace_back(centroid_wire_u, centroid_drift_u, _image_width, _image_height, _drift_step, _wire_pitch_u, geo::kU);
@@ -486,11 +486,11 @@ namespace analysis {
 
         std::vector<Image<float>> detector_images;
         std::vector<Image<int>> semantic_images;
-        this->constructPixelImages(e, neutrino_hits, properties, detector_images, semantic_images, _is_data);
+        this->constructPixelImages(event, neutrino_hits, properties, detector_images, semantic_images, _is_data);
 
         std::vector<Image<float>> event_detector_images;
         std::vector<Image<int>> event_semantic_images;
-        this->constructPixelImages(e, all_hits, properties, event_detector_images, event_semantic_images, _is_data);
+        this->constructPixelImages(event, all_hits, properties, event_detector_images, event_semantic_images, _is_data);
 
         _detector_image_u = detector_images[0].data();
         _detector_image_v = detector_images[1].data();
@@ -558,25 +558,25 @@ namespace analysis {
         }
     }
 
-    std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectAllHits(const art::Event& e) {
+    std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectAllHits(const art::Event& event) {
         std::vector<art::Ptr<recob::Hit>> all_hits;
-        auto hit_handle = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+        auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
         for (size_t i = 0; i < hit_handle->size(); ++i) {
             all_hits.emplace_back(hit_handle, i);
         }
         return all_hits;
     }
 
-    std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) {
+    std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event& event, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec) {
         std::vector<art::Ptr<recob::Hit>> neutrino_hits;
-        auto pfpHandle = e.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-        art::FindManyP<recob::Slice> sliceAssoc(pfpHandle, e, fPFPproducer);
-        size_t pfpIndex = pfp_pxy_v[0].index();
+        auto pfpHandle = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+        art::FindManyP<recob::Slice> sliceAssoc(pfpHandle, event, fPFPproducer);
+        size_t pfpIndex = pfp_pxy_vec[0].index();
         const auto& slices = sliceAssoc.at(pfpIndex);
         if (slices.empty()) return {};
         const art::Ptr<recob::Slice>& slice = slices[0];
-        auto sliceHandle = e.getValidHandle<std::vector<recob::Slice>>(fSLCprodcuer);
-        art::FindManyP<recob::Hit> hitAssoc(sliceHandle, e, fSLCprodcuer);
+        auto sliceHandle = event.getValidHandle<std::vector<recob::Slice>>(fSLCprodcuer);
+        art::FindManyP<recob::Hit> hitAssoc(sliceHandle, event, fSLCprodcuer);
         const std::vector<art::Ptr<recob::Hit>>& sliceHits = hitAssoc.at(slice.key());
         neutrino_hits.reserve(sliceHits.size());
         for (const auto& hit : sliceHits) {
@@ -585,7 +585,7 @@ namespace analysis {
         return neutrino_hits;
     }
 
-    std::pair<double, double> ImageAnalysis::calculateChargeCentroid(const art::Event& e, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) {
+    std::pair<double, double> ImageAnalysis::calculateChargeCentroid(const art::Event& event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>>& hits) {
         double sum_charge = 0.0;
         double sum_wire = 0.0;
         double sum_drift = 0.0;
@@ -595,7 +595,7 @@ namespace analysis {
             }
             if (common::GetPandoraView(hit) != view) continue;
             double charge = hit->Integral();
-            TVector3 hit_pos = common::GetPandoraHitPosition(e, hit, view);
+            TVector3 hit_pos = common::GetPandoraHitPosition(event, hit, view);
             sum_charge += charge;
             sum_wire += hit_pos.Z() * charge;
             sum_drift += hit_pos.X() * charge;
@@ -604,7 +604,7 @@ namespace analysis {
         return {sum_wire / sum_charge, sum_drift / sum_charge};
     }
 
-    void ImageAnalysis::constructPixelImages(const art::Event& e,
+    void ImageAnalysis::constructPixelImages(const art::Event& event,
                                              const std::vector<art::Ptr<recob::Hit>>& hits,
                                              const std::vector<ImageProperties>& properties,
                                              std::vector<Image<float>>& detector_images,
@@ -621,16 +621,16 @@ namespace analysis {
             semantic_images.push_back(std::move(semantic_image));
         }
 
-        auto wire_vector = e.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
-        auto hit_vector = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+        auto wire_vector = event.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
+        auto hit_vector = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
         art::Handle<std::vector<simb::MCParticle>> mcp_vector;
-        bool has_mcps = e.getByLabel(fMCPproducer, mcp_vector);
-        art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, e, fHITproducer);
-        art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vector, e, fBKTproducer);
+        bool has_mcps = event.getByLabel(fMCPproducer, mcp_vector);
+        art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, fHITproducer);
+        art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(hit_vector, event, fBKTproducer);
 
         std::vector<TruthLabelClassifier::TruthPrimaryLabel> semantic_label_vector;
         if (!is_data && has_mcps && mcp_vector.isValid() && _semantic_classifier) {
-            semantic_label_vector = _semantic_classifier->classifyParticles(e);
+            semantic_label_vector = _semantic_classifier->classifyParticles(event);
         }
 
         std::map<int, size_t> trackid_to_index;

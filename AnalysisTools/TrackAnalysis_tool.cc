@@ -20,7 +20,7 @@ public:
     ~TrackAnalysis() {}
     void configure(const fhicl::ParameterSet& parameter_set) override;
     void analyseEvent(const art::Event& event, bool is_data) override;
-    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vector, bool is_data, bool is_selected) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree* tree) override;
     void resetTTree(TTree* tree) override;
 
@@ -101,13 +101,13 @@ void TrackAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _run = event.run();
 }
 
-void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vector, 
-                                 bool is_data, bool is_selected) {
+void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
+                                  bool is_data, bool is_selected) {
     const auto& calorimetry_proxy = proxy::getCollection<std::vector<recob::Track>>(
         event, fTRKproducer, proxy::withAssociated<anab::Calorimetry>(fCALproducer));
 
     TVector3 neutrino_vertex;
-    for (const auto& pfp : slice_pfp_vector) {
+    for (const auto& pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             double xyz[3] = {};
             auto vertices = pfp.get<recob::Vertex>();
@@ -127,8 +127,8 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
         space_point_collection.emplace_back(space_point_handle, i);
     }
 
-    for (size_t pfp_index = 0; pfp_index < slice_pfp_vector.size(); ++pfp_index) {
-        const auto& pfp = slice_pfp_vector[pfp_index];
+    for (size_t pfp_index = 0; pfp_index < slice_pfp_vec.size(); ++pfp_index) {
+        const auto& pfp = slice_pfp_vec[pfp_index];
         if (pfp->IsPrimary()) continue;
 
         auto tracks = pfp.get<recob::Track>();

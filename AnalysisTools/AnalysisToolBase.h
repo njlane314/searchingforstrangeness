@@ -19,9 +19,9 @@ namespace analysis
 
         virtual void configure(const fhicl::ParameterSet&) = 0;
 
-        virtual void analyseEvent(art::Event const& e, bool _is_data) = 0;
+        virtual void analyseEvent(const art::Event& event, bool is_data) = 0;
 
-        virtual void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool _is_data, bool selected) = 0;
+        virtual void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) = 0;
 
         virtual void setBranches(TTree* _tree) = 0;
         

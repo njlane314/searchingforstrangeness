@@ -14,8 +14,8 @@ public:
     SliceAnalysis(const fhicl::ParameterSet &pset);
     ~SliceAnalysis() {}
     void configure(fhicl::ParameterSet const &pset);
-    void analyseEvent(art::Event const &e, bool is_data) override;
-    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+    void analyseEvent(const art::Event &event, bool is_data) override;
+    void analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree *_tree) override;
     void resetTTree(TTree *_tree) override;
 
@@ -153,12 +153,12 @@ SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet &p) {
 
 void SliceAnalysis::configure(fhicl::ParameterSet const &p) {}
 
-void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
+void SliceAnalysis::analyseEvent(const art::Event &event, bool is_data) {
     if (is_data) return;
-    art::ValidHandle<std::vector<simb::MCTruth>> inputMCTruth = e.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
+    art::ValidHandle<std::vector<simb::MCTruth>> inputMCTruth = event.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
     if (inputMCTruth->empty()) return;
-    auto particle_labels = this->classifyParticles(e);
-    art::ValidHandle<std::vector<simb::MCParticle>> inputMCParticle = e.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
+    auto particle_labels = this->classifyParticles(event);
+    art::ValidHandle<std::vector<simb::MCParticle>> inputMCParticle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
     muon_ids.clear();
     electron_ids.clear();
     proton_ids.clear();
@@ -194,9 +194,9 @@ void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
             }
         }
     }
-    art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+    art::ValidHandle<std::vector<recob::Hit>> inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
     assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
-        new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBKTproducer));
+        new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, event, fBKTproducer));
     int muon_hits = 0, electron_hits = 0, proton_hits = 0, charged_pion_hits = 0;
     int neutral_pion_hits = 0, neutron_hits = 0, gamma_hits = 0, other_hits = 0;
     int charged_kaon_hits = 0, neutral_kaon_hits = 0, lambda_hits = 0;
@@ -232,9 +232,9 @@ void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
     event_sigma_zero_hits = sigma_zero_hits;
     event_cosmic_hits = cosmic_hits;
     if (!fOrigHITproducer.empty()) {
-        auto hitsOrig = e.getValidHandle<std::vector<recob::Hit>>(fOrigHITproducer);
+        auto hitsOrig = event.getValidHandle<std::vector<recob::Hit>>(fOrigHITproducer);
         auto assocMCPartOrig = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
-            new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitsOrig, e, fOrigBKTproducer));
+            new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitsOrig, event, fOrigBKTproducer));
         int orig_nu_hits = 0;
         for (size_t ih = 0; ih < hitsOrig->size(); ih++) {
             const art::Ptr<recob::Hit> hit_ptr(hitsOrig, ih);
@@ -246,17 +246,17 @@ void SliceAnalysis::analyseEvent(art::Event const &e, bool is_data) {
     }
 }
 
-void SliceAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) {
+void SliceAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) {
     if (is_data) return;
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(
-        e, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
-    art::ValidHandle<std::vector<recob::Slice>> inputSlice = e.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+        event, fCLSproducer, proxy::withAssociated<recob::Hit>(fCLSproducer));
+    art::ValidHandle<std::vector<recob::Slice>> inputSlice = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
     auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(
-        new art::FindManyP<recob::Hit>(inputSlice, e, fSLCproducer));
+        new art::FindManyP<recob::Hit>(inputSlice, event, fSLCproducer));
     neutrino_purity_from_pfp = 0;
     neutrino_completeness_from_pfp = 0;
     int total_hits = 0;
-    for (auto pfp : slice_pfp_v) {
+    for (auto pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             auto slice_pxy_v = pfp.get<recob::Slice>();
             if (slice_pxy_v.size() != 1) {

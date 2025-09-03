@@ -22,17 +22,17 @@ namespace selection
 
         void configure(const fhicl::ParameterSet&){};
 
-        virtual bool selectEvent(art::Event const& e, 
-                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) = 0;
+        virtual bool selectEvent(const art::Event& event,
+                                 const std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec) = 0;
 
         virtual void setBranches(TTree* _tree) = 0;
 
         virtual void resetTTree(TTree* _tree) = 0;
         
-        void SetData(bool isdata) { _isdata = isdata; }
+        void SetData(bool is_data) { _is_data = is_data; }
 
     protected:
-        bool _isdata;
+        bool _is_data;
     };  
 } 
 
