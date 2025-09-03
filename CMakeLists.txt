@@ -2,18 +2,8 @@ include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
 include_directories( $ENV{SEARCH_TOP} )
 
-# Ensure C++17 features (e.g. std::filesystem) are available
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
-
-
-
-
-
-
-
 
 include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/include/python2.7)
 
@@ -35,7 +25,7 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            lardataobj_RecoBase
                            lardataobj_MCBase
                            lardata_Utilities
-			   nusimdata_SimulationBase
+			               nusimdata_SimulationBase
                            larevt_Filters
                            larsim_MCCheater_BackTrackerService_service
                            larsim_MCCheater_ParticleInventoryService_service
@@ -64,10 +54,8 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            ${ROOT_BASIC_LIB_LIST}
                            ${ROOT_EG}
                            ${ROOT_MINUIT}
-            		   ${PANDORASDK}
-			   larpandora_LArPandoraInterface
-
-
+            		   	   ${PANDORASDK}
+			   			   larpandora_LArPandoraInterface
                            ${PYTHON_LIBRARY}
                            larreco_Calorimetry
                            pthread
@@ -78,14 +66,3 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error")
 install_headers()
 install_fhicl()
 install_source()
-
-
-install(FILES badchannels.txt DESTINATION ${product}/data)
-
-
-install(DIRECTORY models weights DESTINATION ${product}/data
-        FILES_MATCHING PATTERN "*")
-
-
-file(GLOB STRANGENESS_SCRIPTS "*.py" "*.sh")
-install(FILES ${STRANGENESS_SCRIPTS} DESTINATION ${product}/scripts)
