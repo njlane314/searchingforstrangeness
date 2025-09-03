@@ -62,7 +62,6 @@ namespace fs = std::experimental::filesystem;
 #include <map>
 #include <memory>
 #include <numeric>
-#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -73,91 +72,6 @@ namespace fs = std::experimental::filesystem;
 
 namespace analysis {
 
-static inline bool starts_with(const std::string &s,
-                               const std::string &prefix) {
-    return s.compare(0, prefix.size(), prefix) == 0;
-}
-
-static inline bool is_pnfs(const std::string &s) {
-    return starts_with(s, "/pnfs/") || starts_with(s, "/eos/") ||
-           starts_with(s, "/stash/");
-}
-
-static std::optional<std::string>
-find_file_nearby(const fs::path &start, const std::string &filename,
-                 int max_depth = 3) {
-    fs::recursive_directory_iterator it(
-        start, fs::directory_options::skip_permission_denied),
-        end;
-    for (; it != end; ++it) {
-        if (it.depth() > max_depth) {
-            it.pop();
-            continue;
-        }
-
-        if (!fs::is_regular_file(it->path()))
-            continue;
-        if (it->path().filename() == filename)
-            return it->path().string();
-    }
-    return std::nullopt;
-}
-
-static std::string resolve_weights(const std::string &weights_file,
-                                   const std::string &work_dir,
-                                   const std::string &base_dir,
-                                   const std::string &scratch_dir,
-                                   const std::string &model_name,
-                                   bool fetch_ifdh) {
-    fs::path wf(weights_file);
-
-    if (wf.is_absolute() && fs::exists(wf))
-        return wf.string();
-
-    cet::search_path sp("FW_SEARCH_PATH");
-    std::string resolved;
-    if (sp.find_file(wf.string(), resolved))
-        return resolved;
-
-    if (!base_dir.empty()) {
-        fs::path p = fs::path(base_dir) / wf;
-        if (fs::exists(p))
-            return p.string();
-    }
-
-    for (fs::path p : {fs::path(work_dir) / "weights" / wf.filename(),
-                       fs::path(work_dir) / wf,
-                       fs::path(scratch_dir) / "weights" / wf.filename()}) {
-        if (fs::exists(p))
-            return p.string();
-    }
-
-    if (auto hit = find_file_nearby(work_dir, wf.filename().string(), 3))
-        return *hit;
-
-    if (fetch_ifdh && is_pnfs(weights_file)) {
-        fs::path dst =
-            fs::path(scratch_dir) / (std::string("weights_") + model_name +
-                                     "_" + wf.filename().string());
-        std::ostringstream cmd;
-        cmd << "ifdh cp -D " << weights_file << " " << dst.string();
-        int rc = std::system(cmd.str().c_str());
-        if (rc == 0 && fs::exists(dst))
-            return dst.string();
-    }
-
-    std::ostringstream msg;
-    msg << "Weights not found for model '" << model_name << "'\n"
-        << "  requested: " << weights_file << "\n"
-        << "  tried base: " << (fs::path(base_dir) / wf) << "\n"
-        << "  tried cwd : " << (fs::path(work_dir) / wf)
-        << " and weights/ subdir\n"
-        << "  scratch   : "
-        << (fs::path(scratch_dir) / "weights" / wf.filename()) << "\n"
-        << "  (set WeightsBaseDir or WEIGHTS_BASE_DIR, or provide absolute "
-           "path, or enable FetchWeightsWithIFDH and use PNFS path)";
-    throw art::Exception(art::errors::Configuration) << msg.str();
-}
 
 struct ModelConfig {
     std::string name;
@@ -191,7 +105,6 @@ class ImageAnalysis : public AnalysisToolBase {
     std::vector<ModelConfig> fModels;
     std::string fWeightsBaseDir;
     std::vector<std::string> fActiveModels;
-    bool fFetchWeightsWithIFDH;
     int _image_width;
     int _image_height;
     float _adc_image_threshold;
@@ -316,7 +229,6 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     }
     fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "");
     fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
-    fFetchWeightsWithIFDH = p.get<bool>("FetchWeightsWithIFDH", false);
     if (const char *wbd = std::getenv("WEIGHTS_BASE_DIR"))
         fWeightsBaseDir = wbd;
     if (const char *am = std::getenv("ACTIVE_MODELS")) {
@@ -566,13 +478,20 @@ void ImageAnalysis::analyseSlice(
     }
 
     for (auto const &m : todo) {
-        std::string wpath = resolve_weights(
-            m.weights_file, work_dir, fWeightsBaseDir, absolute_scratch_dir,
-            m.name, fFetchWeightsWithIFDH);
+        fs::path base = fWeightsBaseDir.empty() ? fs::path(work_dir)
+                                                : fs::path(fWeightsBaseDir);
+        if (base.is_relative())
+            base = fs::path(work_dir) / base;
+        fs::path wpath = base / m.weights_file;
+        if (!fs::exists(wpath)) {
+            throw art::Exception(art::errors::Configuration)
+                << "Weights file not found for model '" << m.name
+                << "': " << wpath.string();
+        }
         mf::LogInfo("ImageAnalysis")
-            << "Model " << m.name << " using weights: " << wpath;
+            << "Model " << m.name << " using weights: " << wpath.string();
         float score = this->runInference(detector_images, absolute_scratch_dir,
-                                         work_dir, m.arch, wpath);
+                                         work_dir, m.arch, wpath.string());
         _inference_scores[m.name] = score;
     }
 
