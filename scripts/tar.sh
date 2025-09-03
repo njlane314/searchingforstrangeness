@@ -33,11 +33,11 @@ mkdir -p "${TAR_DIR}"
 pushd "${REPO_ROOT}" >/dev/null
 
 
-"${SCRIPT_DIR}/.tar_uboone.sh" strangeness.tar
+"${SCRIPT_DIR}/tar_uboone.sh" strangeness.tar
 mv -f strangeness.tar "${LARSOFT_TAR}"
 
 
-"${SCRIPT_DIR}/.pack_assets.sh" -r "${ASSETS_ROOT}" -o strangeness_assets.tar.gz
+"${SCRIPT_DIR}/pack_assets.sh" -r "${ASSETS_ROOT}" -o strangeness_assets.tar.gz
 mv -f strangeness_assets.tar.gz "${ASSETS_TAR}"
 
 popd >/dev/null
