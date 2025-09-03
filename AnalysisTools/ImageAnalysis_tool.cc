@@ -57,6 +57,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
@@ -66,18 +67,16 @@ namespace fs = std::experimental::filesystem;
 
 namespace analysis {
 
-static inline bool starts_with(const std::string &s, const char *p) {
-  return s.rfind(p, 0) == 0;
+static inline bool is_remote_url(const std::string &s) {
+  std::string_view sv{s};
+  return sv.starts_with("http:") || sv.starts_with("https:");
 }
 
-    static inline bool is_remote_url(const std::string& s) {
-        return starts_with(s, "http:
-    }
-
-    static inline bool is_pnfs(const std::string& s) {
-      return starts_with(s, "/pnfs/") || starts_with(s, "/eos/") ||
-             starts_with(s, "/stash/");
-    }
+static inline bool is_pnfs(const std::string &s) {
+  std::string_view sv{s};
+  return sv.starts_with("/pnfs/") || sv.starts_with("/eos/") ||
+         sv.starts_with("/stash/");
+}
 
     static std::optional<std::string>
     find_file_nearby(const fs::path &start, const std::string &filename,
