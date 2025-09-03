@@ -4,6 +4,7 @@
 #include "particleinventoryservice.fcl"
 #include "blipreco_configs.fcl"
 #include "producers.fcl"
+#include "fidvol.fcl"
 
 microboone_calo_mcc9_data: {
     CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
@@ -11,15 +12,6 @@ microboone_calo_mcc9_data: {
     CaloDoLifeTimeCorrection: false
     CaloLifeTimeForm: 0
     CaloUseModBox: true
-}
-
-FidVol: {
-    Xstart: 10.
-    Xend:   10.
-    Ystart: 15.
-    Yend:   15.
-    Zstart: 10.
-    Zend:   50.
 }
 
 BlipAnalysis: {
