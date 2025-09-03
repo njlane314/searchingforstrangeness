@@ -1,26 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-set -euo pipefail
-IFS=$'\n\t'
-
-cleanup_temp_dir() {
-    if [[ -n "${TEMP_DIR:-}" && -d "${TEMP_DIR}" ]]; then
-        echo "Cleaning up temporary files in ${TEMP_DIR}..."
-        rm -rf "${TEMP_DIR}" || {
-            echo "Warning: Failed to remove temporary directory '${TEMP_DIR}'. Manual cleanup might be needed."
-        }
-        echo "Temporary files cleaned."
-    fi
-}
-
-trap cleanup_temp_dir EXIT
-
-check_command() {
-    command -v "$1" >/dev/null 2>&1 || {
-        echo "Error: required command '$1' not found. Exiting..."
-        exit 1
-    }
-}
+set -e
 
 fetch_files_from_sam() {
     local files_list=$(samweb list-files defname:"${SAM_DEF}" | head -n "${NUM_FILES}")
@@ -81,6 +61,14 @@ combine_output_files() {
     echo "Successfully combined ROOT files into: ${COMBINED_OUTPUT}"
 }
 
+cleanup_temp_dir() {
+    echo "Cleaning up temporary files in ${TEMP_DIR}..."
+    rm -rf "${TEMP_DIR}" || {
+        echo "Warning: Failed to remove temporary directory '${TEMP_DIR}'. Manual cleanup might be needed."
+    }
+    echo "Temporary files cleaned."
+}
+
 FHICL_FILE="$1"
 NUM_FILES="$2"
 SAM_DEF="New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2"
@@ -89,11 +77,7 @@ FHICL_BASE=$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')
 COMBINED_OUTPUT="${OUTPUT_BASE_DIR}/${SAM_DEF}_${FHICL_BASE}_${NUM_FILES}_new_analysis.root"
 TEMP_DIR="${OUTPUT_BASE_DIR}/temp_root_files"
 
-check_command samweb
-check_command lar
-check_command hadd
-
-if [ "$
+if [ "$#" -ne 2 ]; then
     echo "Usage: $(basename "$0") <fhicl_file> <num_files>"
     exit 1
 fi
@@ -106,5 +90,6 @@ process_files_with_lar "${FETCHED_FILES}"
 
 combine_output_files
 
-echo "Process complete!"
+cleanup_temp_dir
 
+echo "Process complete!"
