@@ -34,7 +34,7 @@ physics: {
     filters: {
         nuselection: {
             @table::NeutrinoSelectionFilter
-            IsData: @is_data
+            IsData: @local::is_data
         }
     }
     path1: [ nuselection ]
