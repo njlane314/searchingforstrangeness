@@ -33,7 +33,7 @@ source: {
 physics: {
     filters: {
         nuselection: {
-            @local::NeutrinoSelectionFilter
+            @table::NeutrinoSelectionFilter
             IsData: @is_data
         }
     }
