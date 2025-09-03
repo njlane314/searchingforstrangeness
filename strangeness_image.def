@@ -1,7 +1,0 @@
-Bootstrap: localimage
-From: /cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod
-
-%post
-    echo "Installing uproot package..."
-    python3 -m pip install --upgrade pip
-    python3 -m pip install uproot
