@@ -85,6 +85,7 @@ FlashAnalysis: {
 
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
+    AssetsBaseDir: "assets"           # env override: ASSETS_BASE_DIR
     PFPproducer: @local::standard_producers.PFPproducer
     CLSproducer: @local::standard_producers.CLSproducer
     HITproducer: @local::standard_producers.HITproducer
@@ -92,8 +93,9 @@ ImageAnalysis: {
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    BadChannelFile: "ubana/data/badchannels.txt"
-    WeightsBaseDir: "weights"
+    BadChannelFile: "calib/badchannels.txt"
+    WeightsBaseDir: "weights"         # env override: WEIGHTS_BASE_DIR
+    InferenceWrapper: "scripts/run_strangeness_inference.sh"
     imageWidth: 512
     imageHeight: 512
     Models: [
@@ -108,7 +110,7 @@ ImageAnalysis: {
             weights_file: "binary_classifier_resnet34.pth"
         }
     ]
-    ActiveModels: [ "binary", "binary_clone" ]
+    ActiveModels: [ "binary", "binary_clone" ]  # env override: ACTIVE_MODELS
 }
 
 SliceAnalysis: {
