@@ -21,8 +21,8 @@ public:
     EventWeightAnalysis(const fhicl::ParameterSet &pset);
     ~EventWeightAnalysis(){};
     void configure(fhicl::ParameterSet const & pset);
-    void analyseEvent(art::Event const& e, bool is_data) override;
-    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) override;
+    void analyseEvent(const art::Event& event, bool is_data) override;
+    void analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree* _tree) override;
     void resetTTree(TTree* _tree) override;
 
@@ -132,10 +132,10 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
 
 void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
 
-void EventWeightAnalysis::analyseEvent(art::Event const& evt, bool is_data) {
-    _run = evt.run();
-    _subRun = evt.subRun();
-    _evt = evt.event();
+void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
+    _run = event.run();
+    _subRun = event.subRun();
+    _evt = event.event();
 
     _vecWeightsGenie  = std::vector<unsigned short>(_genieAllUniverses,1);
     _vecWeightsGenieD = std::vector<double>(_genieAllUniverses,1.0);
@@ -173,7 +173,7 @@ void EventWeightAnalysis::analyseEvent(art::Event const& evt, bool is_data) {
 
     for(auto& thisTag : vecTag){
         art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
-        evt.getByLabel(thisTag, eventweights_handle);
+        event.getByLabel(thisTag, eventweights_handle);
 
         if(eventweights_handle.isValid()) {
             std::vector<art::Ptr<evwgh::MCEventWeight>> eventweights;
@@ -442,7 +442,7 @@ void EventWeightAnalysis::analyseEvent(art::Event const& evt, bool is_data) {
         _weightstree->Fill();
 }
 
-void EventWeightAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool is_data, bool selected) {}
+void EventWeightAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) {}
 
 void EventWeightAnalysis::setBranches(TTree *_tree){
     if(!_tree) return;

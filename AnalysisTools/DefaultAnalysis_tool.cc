@@ -34,8 +34,8 @@ public:
     DefaultAnalysis(const fhicl::ParameterSet &pset);
     ~DefaultAnalysis(){};
     void configure(fhicl::ParameterSet const &pset);
-    void analyseEvent(art::Event const &e, bool fData) override;
-    void analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) override;
+    void analyseEvent(const art::Event &event, bool is_data) override;
+    void analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree *_tree) override;
     void resetTTree(TTree *_tree) override;
 
@@ -177,8 +177,8 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
 void DefaultAnalysis::configure(fhicl::ParameterSet const &p) {
 }
 
-void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
-    common::ProxySliceColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
+void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
+    common::ProxySliceColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(event, fPFPproducer,
         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
         proxy::withAssociated<recob::Slice>(fSLCproducer));
     int pfp_slice_id;
@@ -221,10 +221,10 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
 
     _slice_topological_scores = temp_slice_topo_score_v;
 
-    if (!fData && (!fMakeNuMINtuple)) {
+    if (!is_data && (!fMakeNuMINtuple)) {
         art::Handle<uboone::UbooneOpticalFilter> CommonOpticalFilter_h;
         art::InputTag fCommonOppFiltTag("opfiltercommon");
-        e.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
+        event.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
         _optical_filter_pe_beam = CommonOpticalFilter_h->PE_Beam();
         _optical_filter_pe_veto = CommonOpticalFilter_h->PE_Veto();
     }
@@ -233,11 +233,11 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
         art::Handle<uboone::UbooneOpticalFilter> CommonOpticalFilter_h;
         std::cout << "Test1: " << NuMIOpFilterProd << std::endl;
         art::InputTag fCommonOppFiltTag("opfiltercommon", "", NuMIOpFilterProd);
-        e.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
+        event.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
         if (!CommonOpticalFilter_h.isValid()) {
             std::cout << "Could not find data override for common op filter using default... (this is expected for overlay)" << std::endl;
             art::InputTag fCommonOppFiltTag("opfiltercommon");
-            e.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
+            event.getByLabel(fCommonOppFiltTag, CommonOpticalFilter_h);
         }
         _optical_filter_pe_beam = CommonOpticalFilter_h->PE_Beam();
         _optical_filter_pe_veto = CommonOpticalFilter_h->PE_Veto();
@@ -245,7 +245,7 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
         std::cout << "Test2: " << NuMISWTrigProd << std::endl;
         art::InputTag swtrig_tag("TriggerResults", "", NuMISWTrigProd);
         art::Handle<art::TriggerResults> swtrig_handle;
-        e.getByLabel(swtrig_tag, swtrig_handle);
+        event.getByLabel(swtrig_tag, swtrig_handle);
         if (swtrig_handle.isValid()) {
             if (swtrig_handle->accept() == true) {
                 _software_trigger = 1;
@@ -255,9 +255,9 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
             }
         }
 
-        if (!fData) {
+        if (!is_data) {
             art::InputTag triggerTag("swtrigger", "", NuMISWTrigProd);
-            const auto& triggerHandle = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
+            const auto& triggerHandle = event.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {
@@ -283,7 +283,7 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
     else {
         art::InputTag swtrig_tag("TriggerResults", "", "DataOverlayOptical");
         art::Handle<art::TriggerResults> swtrig_handle;
-        e.getByLabel(swtrig_tag, swtrig_handle);
+        event.getByLabel(swtrig_tag, swtrig_handle);
         if (swtrig_handle.isValid()) {
             if (swtrig_handle->accept() == true) {
                 _software_trigger = 1;
@@ -296,42 +296,42 @@ void DefaultAnalysis::analyseEvent(art::Event const &e, bool fData) {
 
     if (fCRTproducer != "") {
         art::Handle<art::Assns<crt::CRTHit, recob::OpFlash, void>> crtveto_h;
-        e.getByLabel(fCRTproducer, crtveto_h);
+        event.getByLabel(fCRTproducer, crtveto_h);
         _crt_veto = crtveto_h->size();
         if (_crt_veto == 1) {
             _crt_hit_pe = crtveto_h->at(0).first->peshit;
         }
     }
 
-    art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+    art::ValidHandle<std::vector<recob::Hit>> inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
     _event_total_hits = inputHits->size();
 }
 
-void DefaultAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
-    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e, fCLSproducer,
+void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) {
+    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(event, fCLSproducer,
         proxy::withAssociated<recob::Hit>(fCLSproducer));
-    art::ValidHandle<std::vector<recob::Slice>> inputSlice = e.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-    auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(new art::FindManyP<recob::Hit>(inputSlice, e, fSLCproducer));
+    art::ValidHandle<std::vector<recob::Slice>> inputSlice = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+    auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(new art::FindManyP<recob::Hit>(inputSlice, event, fSLCproducer));
 
     lar_pandora::LArPandoraHelper larpandora;
     lar_pandora::PFParticleVector pfparticles;
     lar_pandora::PFParticleMap particleMap;
-    larpandora.CollectPFParticles(e, "pandora", pfparticles);
+    larpandora.CollectPFParticles(event, "pandora", pfparticles);
     larpandora.BuildPFParticleMap(pfparticles, particleMap);
 
     std::vector<common::BtPart> btparts_v;
     std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
-    if (!fData) {
-        const std::vector<sim::MCShower> &inputMCShower = *(e.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
-        const std::vector<sim::MCTrack> &inputMCTrack = *(e.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
-        art::ValidHandle<std::vector<recob::Hit>> inputHits = e.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, e, fBKTproducer));
+    if (!is_data) {
+        const std::vector<sim::MCShower> &inputMCShower = *(event.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
+        const std::vector<sim::MCTrack> &inputMCTrack = *(event.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
+        art::ValidHandle<std::vector<recob::Hit>> inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, event, fBKTproducer));
         btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
     }
 
     size_t pfpidx = 0;
     _num_pfps = 0;
-    for (auto pfp : slice_pfp_v) {
+    for (auto pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             _slice_pdg = pfp->PdgCode();
             auto slice_pxy_v = pfp.get<recob::Slice>();
@@ -470,7 +470,7 @@ void DefaultAnalysis::analyseSlice(art::Event const &e, std::vector<common::Prox
         }
         _pfp_num_hits.push_back(hit_v.size());
 
-        if (!fData) {
+        if (!is_data) {
             if (clus_pxy_v.size() != 0) {
                 float purity = 0., completeness = 0., overlay_purity = 0.;
                 int ibt = common::getAssocBtPart(hit_v, assocMCPart, btparts_v, purity, completeness, overlay_purity);
@@ -545,7 +545,7 @@ void DefaultAnalysis::analyseSlice(art::Event const &e, std::vector<common::Prox
 
     _num_slices += 1;
 
-    if (selected) {
+    if (is_selected) {
         _selection_pass = 1;
     }
 }

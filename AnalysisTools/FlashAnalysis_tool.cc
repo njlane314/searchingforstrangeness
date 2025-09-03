@@ -18,7 +18,7 @@ class FlashAnalysis : public AnalysisToolBase {
 public:
     explicit FlashAnalysis(const fhicl::ParameterSet& pset);
     void configure(const fhicl::ParameterSet& pset) override;
-    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) override;
     void analyseEvent(const art::Event& event, bool is_data) override {}
     void setBranches(TTree* tree) override;
     void resetTTree(TTree* tree) override;
@@ -79,7 +79,7 @@ void FlashAnalysis::resetTTree(TTree* tree) {
     _flash_pe_per_charge = std::numeric_limits<float>::lowest();
 }
 
-void FlashAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool is_data, bool selected) {
+void FlashAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) {
     auto const& pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
     auto const& opflash_h = event.getValidHandle<std::vector<recob::OpFlash>>(fOpFlashProducer);
     auto const& cluster_h = event.getValidHandle<std::vector<recob::Cluster>>(fPFPproducer);
@@ -90,7 +90,7 @@ void FlashAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
     art::FindManyP<recob::Hit> fmHitFromCluster(cluster_h, event, fPFPproducer);
 
     art::Ptr<recob::PFParticle> primary_pfp_ptr;
-    for (const auto& pfp_pxy : slice_pfp_v) {
+    for (const auto& pfp_pxy : slice_pfp_vec) {
         if (pfp_pxy->IsPrimary()) {
             primary_pfp_ptr = art::Ptr<recob::PFParticle>(pfp_h, pfp_pxy.index());
             break;

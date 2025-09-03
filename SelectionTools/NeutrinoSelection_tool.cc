@@ -13,7 +13,7 @@ namespace selection
         
         void configure(fhicl::ParameterSet const & pset);
 
-        bool selectEvent(art::Event const& e, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v);
+        bool selectEvent(const art::Event& event, const std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec);
 
         void setBranches(TTree* _tree){};
         
@@ -24,8 +24,8 @@ namespace selection
     
     void NeutrinoSelection::configure(fhicl::ParameterSet const & pset) {}
     
-    bool NeutrinoSelection::selectEvent(art::Event const& e, 
-                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_v) { 
+    bool NeutrinoSelection::selectEvent(const art::Event& event,
+                                const std::vector<common::ProxyPfpElem_t>& pfp_pxy_vec) {
         return true;
     }
     

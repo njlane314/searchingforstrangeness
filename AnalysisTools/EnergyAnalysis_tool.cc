@@ -22,8 +22,8 @@ public:
     EnergyAnalysis(const fhicl::ParameterSet& pset);
     ~EnergyAnalysis(){ };
     void configure(fhicl::ParameterSet const & pset);
-    void analyseEvent(art::Event const& e, bool fData) override;
-    void analyseSlice(art::Event const& e, std::vector<common::ProxyPfpElem_t>& slice_pfp_v, bool fData, bool selected) override;
+    void analyseEvent(const art::Event& event, bool is_data) override;
+    void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree* _tree) override;
     void resetTTree(TTree* _tree) override;
     
@@ -54,13 +54,13 @@ EnergyAnalysis::EnergyAnalysis(const fhicl::ParameterSet& p) {
 
 void EnergyAnalysis::configure(fhicl::ParameterSet const & p) {}
 
-void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::ProxyPfpElem_t> &slice_pfp_v, bool fData, bool selected) {
-    common::ProxyCaloColl_t const& calo_proxy = proxy::getCollection<std::vector<recob::Track> >(e, fTRKproducer,
+void EnergyAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) {
+    common::ProxyCaloColl_t const& calo_proxy = proxy::getCollection<std::vector<recob::Track> >(event, fTRKproducer,
                                                         proxy::withAssociated<anab::Calorimetry>(fCALproducer));
-    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(e,fCLSproducer,proxy::withAssociated<recob::Hit>(fCLSproducer));
+    common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(event,fCLSproducer,proxy::withAssociated<recob::Hit>(fCLSproducer));
     
-    for (size_t i_pfp = 0; i_pfp < slice_pfp_v.size(); i_pfp++) {
-        auto const &pfp_pxy = slice_pfp_v.at(i_pfp);
+    for (size_t i_pfp = 0; i_pfp < slice_pfp_vec.size(); i_pfp++) {
+        auto const &pfp_pxy = slice_pfp_vec.at(i_pfp);
         auto PDG = fabs(pfp_pxy->PdgCode());
         if ((PDG == 12) || (PDG == 14))
             continue;
@@ -125,7 +125,7 @@ void EnergyAnalysis::analyseSlice(art::Event const &e, std::vector<common::Proxy
     return;
 }
 
-void EnergyAnalysis::analyseEvent(art::Event const &e, bool fData) {}
+void EnergyAnalysis::analyseEvent(const art::Event &event, bool is_data) {}
 
 void EnergyAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("neutrino_energy_0",&_neutrino_energy_0,"neutrino_energy_0/F");
