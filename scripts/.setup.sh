@@ -1,14 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Default software versions. Override via environment variables or
-# command-line arguments (e.g., --uboonecode-version vX_Y_Z).
+
+
 UBOONECODE_VERSION="${UBOONECODE_VERSION:-v08_00_00_82}"
 HDF5_VERSION="${HDF5_VERSION:-v1_10_5}"
 LIBTORCH_VERSION="${LIBTORCH_VERSION:-v1_0_1}"
 PYTHON_VERSION="${PYTHON_VERSION:-v2_7_14b}"
 
-while [[ $# -gt 0 ]]; do
+while [[ $
   case "$1" in
     --uboonecode-version)
       UBOONECODE_VERSION="${2:?--uboonecode-version requires an argument}"
@@ -33,22 +33,22 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Load the UPS setup to make `setup` and `unsetup_all` available.
+
 if ! command -v setup >/dev/null 2>&1; then
   source /cvmfs/uboone.opensciencegrid.org/products/setup
 fi
 
-# Ensure MRB is available before attempting to use it.
+
 if ! command -v mrb >/dev/null 2>&1; then
   setup mrb
 fi
 
-# Reset any existing UPS products to avoid environment conflicts.
+
 unsetup_all || true
 
 source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
 setup uboonecode "$UBOONECODE_VERSION" -q e17:prof
-#setup libtorch "$LIBTORCH_VERSION" -q Linux64bit+3.10-2.17:e17:prof
+
 setup hdf5 "$HDF5_VERSION" -q e17
 
 setup sam_web_client

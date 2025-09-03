@@ -1,8 +1,8 @@
 #ifndef LLRPID_H
 #define LLRPID_H
 
-// #include "LLRPID_proton_muon_lookup.h"
-// #include "LLRPID_correction_lookup.h"
+
+
 
 #include "BacktrackingFuncs.h"
 #include "Geometry.h"
@@ -67,7 +67,7 @@ namespace common
 
     size_t findLookupIndex(float dedx_value, std::vector<float> par_value, size_t plane)
     {
-      //findParameterBin
+      
       std::vector<size_t> this_parameters_bins;
       for(size_t i=0; i<par_value.size(); i++)
       {
@@ -75,7 +75,7 @@ namespace common
         this_parameters_bins.push_back(aux_index);
       }
 
-      //findLookUpRow
+      
       size_t lookup_row=0, accumulator_par_bins=1;
       for(size_t i=this_parameters_bins.size(); i-- > 0; )
       {
@@ -83,11 +83,11 @@ namespace common
         accumulator_par_bins *= parameters_num_bins[plane][i];
       }
 
-      //findLookUpRowindex
+      
       size_t lookup_row_index;
       lookup_row_index = lookup_row * dedx_num_bins[plane];
 
-      //findLookUpRowDedxIndex
+      
       size_t lookup_index = lookup_row_index;
       lookup_index += digitize(dedx_value, dedx_bin_edges[plane]);
 
@@ -95,10 +95,10 @@ namespace common
     }
 
 
-    // look-up in which corr_parameter bin we should be
+    
     size_t findLookupCorrParameterIndex(std::vector<float> corr_parameter_value, size_t plane)
     {
-      //findParameterBin
+      
       std::vector<size_t> this_corr_parameters_bins;
       for(size_t i=0; i<corr_parameter_value.size(); i++)
       {
@@ -106,7 +106,7 @@ namespace common
         this_corr_parameters_bins.push_back(aux_index);
       }
 
-      //findLookUpRow
+      
       size_t lookup_index=0, accumulator_par_bins=1;
       for(size_t i=this_corr_parameters_bins.size(); i-- > 0; )
       {
@@ -191,7 +191,7 @@ namespace common
           corr_par_values.push_back(corr_par_value);
         }
 
-        // fill vector of boolean to determine if hit has to be corrected or not
+        
         std::vector<bool> is_hit_montecarlo;
         const std::vector< size_t > &tp_indices = tkcalo->TpIndices();
         for (size_t i = 0; i < tp_indices.size(); i++)
@@ -199,11 +199,11 @@ namespace common
           size_t tp_index = tp_indices[i];
           is_hit_montecarlo.push_back(common::isHitBtMonteCarlo(tp_index, assocMCPart, fEnergyThresholdForMCHits));
         }
-        // correct hits
+        
         dqdx_values_corrected = correct_many_hits_one_plane(dqdx_values, corr_par_values, is_hit_montecarlo, plane);
       }
       return dqdx_values_corrected;
-    }// end of function
+    }
 
   private:
     size_t dedx_num_bins[3];

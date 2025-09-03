@@ -37,6 +37,6 @@ namespace common
     }
     return std::numeric_limits<double>::lowest();
   }
-} // namespace common
+} 
 
 #endif
