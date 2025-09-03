@@ -12,8 +12,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/Utilities/FindManyInChainP.h"
 
-#include "../CommonDefs/BacktrackingFuncs.h"
-#include "../CommonDefs/TrackShowerScoreFuncs.h"
+#include "../Common/BacktrackingFuncs.h"
+#include "../Common/TrackShowerScoreFuncs.h"
 
 namespace analysis {
 

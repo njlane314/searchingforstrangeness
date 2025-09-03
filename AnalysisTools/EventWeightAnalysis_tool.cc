@@ -3,7 +3,7 @@
 
 #include "AnalysisToolBase.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
-#include "../CommonDefs/Types.h"
+#include "../Common/Types.h"
 
 #include <string>
 #include <vector>
