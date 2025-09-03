@@ -8,7 +8,7 @@ HDF5_VERSION="${HDF5_VERSION:-v1_10_5}"
 LIBTORCH_VERSION="${LIBTORCH_VERSION:-v1_0_1}"
 PYTHON_VERSION="${PYTHON_VERSION:-v2_7_14b}"
 
-while [[ $
+while [[ $# -gt 0 ]]; do
   case "$1" in
     --uboonecode-version)
       UBOONECODE_VERSION="${2:?--uboonecode-version requires an argument}"
