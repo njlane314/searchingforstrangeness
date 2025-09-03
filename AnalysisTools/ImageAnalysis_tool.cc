@@ -176,7 +176,7 @@ static inline bool is_pnfs(const std::string &s) {
     private:
       art::InputTag fPFPproducer;
       art::InputTag fCLSproducer;
-      art::InputTag fSLCprodcuer;
+      art::InputTag fSLCproducer;
       art::InputTag fHITproducer;
       art::InputTag fWIREproducer;
       art::InputTag fMCPproducer;
@@ -253,7 +253,7 @@ static inline bool is_pnfs(const std::string &s) {
     void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
       fPFPproducer = p.get<art::InputTag>("PFPproducer");
       fCLSproducer = p.get<art::InputTag>("CLSproducer");
-      fSLCprodcuer = p.get<art::InputTag>("SLCproducer");
+      fSLCproducer = p.get<art::InputTag>("SLCproducer");
       fHITproducer = p.get<art::InputTag>("HITproducer");
       fWIREproducer = p.get<art::InputTag>("WIREproducer");
       fMCPproducer = p.get<art::InputTag>("MCPproducer");
@@ -593,8 +593,8 @@ static inline bool is_pnfs(const std::string &s) {
         return {};
       const art::Ptr<recob::Slice> &slice = slices[0];
       auto sliceHandle =
-          event.getValidHandle<std::vector<recob::Slice>>(fSLCprodcuer);
-      art::FindManyP<recob::Hit> hitAssoc(sliceHandle, event, fSLCprodcuer);
+          event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+      art::FindManyP<recob::Hit> hitAssoc(sliceHandle, event, fSLCproducer);
       const std::vector<art::Ptr<recob::Hit>> &sliceHits =
           hitAssoc.at(slice.key());
       neutrino_hits.reserve(sliceHits.size());
