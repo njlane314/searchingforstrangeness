@@ -4,8 +4,7 @@
     <!ENTITY release "v08_00_00_82">
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
-    <!ENTITY fcl_selection_mc "run_neutrinoselection_mc.fcl">
-    <!ENTITY fcl_selection_data "run_neutrinoselection_data.fcl">
+    <!ENTITY fcl_selection "run_neutrinoselection.fcl">
 
     <!ENTITY jobsub_config "
         -e STRANGENESS_DIR=$CONDOR_DIR_INPUT 
@@ -59,7 +58,7 @@
 
     <stage name="selection_numi_fhc_run1_ext">
         <inputdef>&input_def_ext_numi_run1;</inputdef> 
-        <fcl>&fcl_selection_data;</fcl>
+        <fcl>&fcl_selection; -a is_data:=true</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
@@ -84,7 +83,7 @@
 
     <stage name="selection_numi_fhc_run1_beam">
         <inputstage>reweight_numi_fhc_run1_beam</inputstage>
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
@@ -94,7 +93,7 @@
 
     <stage name="selection_numi_fhc_run1_beam_test">
         <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
@@ -120,7 +119,7 @@
 
     <stage name="selection_numi_fhc_run1_strangeness">
         <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
@@ -130,7 +129,7 @@
 
     <stage name="selection_detvar_cv_strangeness">
         <inputdef>&input_def_strangeness_detvar_cv;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv_strangeness</workdir>
@@ -140,7 +139,7 @@
 
     <stage name="selection_detvar_ly_rayleigh_strangeness">
         <inputdef>&input_def_strangeness_detvar_ly_rayleigh;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
@@ -150,7 +149,7 @@
 
     <stage name="selection_detvar_ly_down_strangeness">
         <inputdef>&input_def_strangeness_detvar_ly_down;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
@@ -160,7 +159,7 @@
 
     <stage name="selection_detvar_wiremodx_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremodx_sce;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness</workdir>
@@ -170,7 +169,7 @@
 
     <stage name="selection_detvar_wiremodyz_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremodyz_sce;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness</workdir>
@@ -180,7 +179,7 @@
 
     <stage name="selection_detvar_wiremod_yz_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremod_yz;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness</workdir>
@@ -190,7 +189,7 @@
 
     <stage name="selection_detvar_wiremod_thetayz_strangeness">
         <inputdef>&input_def_strangeness_detvar_wiremod_thetayz;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness</workdir>
@@ -200,7 +199,7 @@
 
     <stage name="selection_detvar_sce_strangeness">
         <inputdef>&input_def_strangeness_detvar_sce;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
@@ -210,7 +209,7 @@
 
     <stage name="selection_detvar_recomb2_strangeness">
         <inputdef>&input_def_strangeness_detvar_recomb2;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
@@ -220,7 +219,7 @@
 
     <stage name="selection_detvar_cv">
         <inputdef>&input_def_detvar_cv;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv</workdir>
@@ -230,7 +229,7 @@
 
     <stage name="selection_detvar_ly_suppression75attenuation8m">
         <inputdef>&input_def_detvar_ly_suppression75attenuation8m;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m</workdir>
@@ -240,7 +239,7 @@
 
     <stage name="selection_detvar_ly_rayleigh">
         <inputdef>&input_def_detvar_ly_rayleigh;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh</workdir>
@@ -250,7 +249,7 @@
 
     <stage name="selection_detvar_lydown">
         <inputdef>&input_def_detvar_lydown;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_lydown</workdir>
@@ -260,7 +259,7 @@
 
     <stage name="selection_detvar_sce">
         <inputdef>&input_def_detvar_sce;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce</workdir>
@@ -270,7 +269,7 @@
 
     <stage name="selection_detvar_recomb2">
         <inputdef>&input_def_detvar_recomb2;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
@@ -280,7 +279,7 @@
 
     <stage name="selection_detvar_wiremodx">
         <inputdef>&input_def_detvar_wiremodx;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx</workdir>
@@ -290,7 +289,7 @@
 
     <stage name="selection_detvar_wiremodyz">
         <inputdef>&input_def_detvar_wiremodyz;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
@@ -300,7 +299,7 @@
 
     <stage name="selection_detvar_wiremodthetaxz">
         <inputdef>&input_def_detvar_wiremodthetaxz;</inputdef>
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetaxz</workdir>
@@ -310,7 +309,7 @@
 
     <stage name="selection_detvar_wiremodthetayz_withsplines">
         <inputdef>&input_def_detvar_wiremodthetayz_withsplines;</inputdef> 
-        <fcl>&fcl_selection_mc;</fcl>
+        <fcl>&fcl_selection;</fcl>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines</workdir>
