@@ -1,0 +1,318 @@
+[
+  {
+    "name": "selection_numi_fhc_run1_ext",
+    "inputdef": "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000",
+    "fcl": [
+      "run_neutrinoselection.fcl -a is_data:=true"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_ext/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_ext/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_ext",
+    "datatier": "selected",
+    "numjobs": 2000
+  },
+  {
+    "name": "reweight_numi_fhc_run1_beam",
+    "inputdef": "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2",
+    "fcl": [
+      "run_eventweight_microboone_sep24.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_1.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_2.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_3.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_4.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_5.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam/reweights/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam/reweights/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam/reweights",
+    "datatier": "eventweight",
+    "numjobs": 3500
+  },
+  {
+    "name": "selection_numi_fhc_run1_beam",
+    "inputstage": "reweight_numi_fhc_run1_beam",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam",
+    "datatier": "selected",
+    "numjobs": 3500
+  },
+  {
+    "name": "selection_numi_fhc_run1_beam_test",
+    "inputdef": "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "initsource": "init_payload_paths.sh",
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_beam_test",
+    "datatier": "test",
+    "numjobs": 1,
+    "jobsub": [
+      "--tar_file_name=file:///pnfs/uboone/scratch/users/nlane/tarballs/strangeness_assets.tar.gz",
+      "            --tar_file_name=dropbox:///dune/app/users/nlane/assets.tar.gz",
+      "            -f /pnfs/uboone/scratch/users/nlane/init_payload_paths.sh"
+    ]
+  },
+  {
+    "name": "reweight_numi_fhc_run1_strangeness",
+    "inputdef": "prod_strange_resample_fhc_run2_fhc_reco2_reco2",
+    "fcl": [
+      "run_eventweight_microboone_sep24.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_1.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_2.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_3.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_4.fcl",
+      "run_eventweight_microboone_sep24_extragenieall_5.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness/reweights/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness/reweights/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness/reweights",
+    "datatier": "eventweight",
+    "numjobs": 1500
+  },
+  {
+    "name": "selection_numi_fhc_run1_strangeness",
+    "inputstage": "reweight_numi_fhc_run1_strangeness",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/numi_fhc_run1_strangeness",
+    "datatier": "selected",
+    "numjobs": 1500
+  },
+  {
+    "name": "selection_detvar_cv_strangeness",
+    "inputdef": "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv_strangeness",
+    "datatier": "selected",
+    "numjobs": 3000
+  },
+  {
+    "name": "selection_detvar_ly_rayleigh_strangeness",
+    "inputdef": "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_ly_down_strangeness",
+    "inputdef": "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_down_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_down_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_down_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremodx_sce_strangeness",
+    "inputdef": "detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx_sce_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx_sce_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx_sce_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremodyz_sce_strangeness",
+    "inputdef": "detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz_sce_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz_sce_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz_sce_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremod_yz_strangeness",
+    "inputdef": "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_yz_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_yz_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_yz_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremod_thetayz_strangeness",
+    "inputdef": "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_thetayz_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_thetayz_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremod_thetayz_strangeness",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_sce_strangeness",
+    "inputdef": "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce_strangeness",
+    "datatier": "selected",
+    "numjobs": 5000
+  },
+  {
+    "name": "selection_detvar_recomb2_strangeness",
+    "inputdef": "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2_strangeness/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2_strangeness/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2_strangeness",
+    "datatier": "selected",
+    "numjobs": 5000
+  },
+  {
+    "name": "selection_detvar_cv",
+    "inputdef": "prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_cv",
+    "datatier": "selected",
+    "numjobs": 8000
+  },
+  {
+    "name": "selection_detvar_ly_suppression75attenuation8m",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_suppression75attenuation8m/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_suppression75attenuation8m/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_suppression75attenuation8m",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_ly_rayleigh",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_ly_rayleigh",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_lydown",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_lydown/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_lydown/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_lydown",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_sce",
+    "inputdef": "prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_sce",
+    "datatier": "selected",
+    "numjobs": 5000
+  },
+  {
+    "name": "selection_detvar_recomb2",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_Recomb2_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_recomb2",
+    "datatier": "selected",
+    "numjobs": 5000
+  },
+  {
+    "name": "selection_detvar_wiremodx",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_WireModX_run1_reco2_fixed_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodx",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremodyz",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodyz",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremodthetaxz",
+    "inputdef": "prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetaxz/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetaxz/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetaxz",
+    "datatier": "selected",
+    "numjobs": 1000
+  },
+  {
+    "name": "selection_detvar_wiremodthetayz_withsplines",
+    "inputdef": "prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2",
+    "fcl": [
+      "run_neutrinoselection.fcl"
+    ],
+    "outdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetayz_withsplines/out",
+    "logdir": "/pnfs/uboone/scratch/users/nlane/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetayz_withsplines/log",
+    "workdir": "/pnfs/uboone/scratch/users/nlane/work/ntuples/v08_00_00_82/nl_numi_fhc_run1_strangeness/detvar_wiremodthetayz_withsplines",
+    "datatier": "selected",
+    "numjobs": 1000
+  }
+]

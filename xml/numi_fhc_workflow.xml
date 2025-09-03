@@ -59,270 +59,295 @@
     <maxfilesperjob>1</maxfilesperjob>
 
     <stage name="selection_numi_fhc_run1_ext">
-        <inputdef>&input_def_ext_numi_run1;</inputdef> 
-        <fcl>&fcl_selection; -a is_data:=true</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
-        <datatier>selected</datatier>
-        <numjobs>2000</numjobs>
-    </stage>
+    <inputdef>&input_def_ext_numi_run1;</inputdef>
+    <fcl>&fcl_selection; -a is_data:=true</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
+    <datatier>selected</datatier>
+    <numjobs>2000</numjobs>
+</stage>
 
-    <stage name="reweight_numi_fhc_run1_beam">
-        <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
-        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>3500</numjobs>
-    </stage>
 
-    <stage name="selection_numi_fhc_run1_beam">
-        <inputstage>reweight_numi_fhc_run1_beam</inputstage>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
-        <datatier>selected</datatier>
-        <numjobs>3500</numjobs>
-    </stage>
+<stage name="reweight_numi_fhc_run1_beam">
+    <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
+    <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights</workdir>
+    <datatier>eventweight</datatier>
+    <numjobs>3500</numjobs>
+</stage>
 
-    <stage name="selection_numi_fhc_run1_beam_test">
-        <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
-        <fcl>&fcl_selection;</fcl>
-        <initsource>init_payload_paths.sh</initsource>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
-        <datatier>test</datatier>
-        <numjobs>1</numjobs>
-        <jobsub>
-            &jobsub_config;
-            --tar_file_name=dropbox:///dune/app/users/nlane/assets.tar.gz
-            -f /pnfs/uboone/scratch/users/nlane/init_payload_paths.sh
-        </jobsub>
-    </stage>
 
-    <stage name="reweight_numi_fhc_run1_strangeness">
-        <inputdef>&input_def_strangeness_numi_fhc_run1;</inputdef>
-        <fcl>run_eventweight_microboone_sep24.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
-        <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>1500</numjobs>
-    </stage>
+<stage name="selection_numi_fhc_run1_beam">
+    <inputstage>reweight_numi_fhc_run1_beam</inputstage>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
+    <datatier>selected</datatier>
+    <numjobs>3500</numjobs>
+</stage>
 
-    <stage name="selection_numi_fhc_run1_strangeness">
-        <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1500</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_cv_strangeness">
-        <inputdef>&input_def_strangeness_detvar_cv;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>3000</numjobs>
-    </stage>
+<stage name="selection_numi_fhc_run1_beam_test">
+    <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <initsource>init_payload_paths.sh</initsource>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
+    <datatier>test</datatier>
+    <numjobs>1</numjobs>
+    <jobsub>
+        &jobsub_config;
+                    --tar_file_name=dropbox:///dune/app/users/&user;/assets.tar.gz
+                    -f /pnfs/uboone/scratch/users/&user;/init_payload_paths.sh
+    </jobsub>
+</stage>
 
-    <stage name="selection_detvar_ly_rayleigh_strangeness">
-        <inputdef>&input_def_strangeness_detvar_ly_rayleigh;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_ly_down_strangeness">
-        <inputdef>&input_def_strangeness_detvar_ly_down;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_down_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="reweight_numi_fhc_run1_strangeness">
+    <inputdef>&input_def_strangeness_numi_fhc_run1;</inputdef>
+    <fcl>run_eventweight_microboone_sep24.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
+    <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights</workdir>
+    <datatier>eventweight</datatier>
+    <numjobs>1500</numjobs>
+</stage>
 
-    <stage name="selection_detvar_wiremodx_sce_strangeness">
-        <inputdef>&input_def_strangeness_detvar_wiremodx_sce;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_wiremodyz_sce_strangeness">
-        <inputdef>&input_def_strangeness_detvar_wiremodyz_sce;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_numi_fhc_run1_strangeness">
+    <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1500</numjobs>
+</stage>
 
-    <stage name="selection_detvar_wiremod_yz_strangeness">
-        <inputdef>&input_def_strangeness_detvar_wiremod_yz;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_wiremod_thetayz_strangeness">
-        <inputdef>&input_def_strangeness_detvar_wiremod_thetayz;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_detvar_cv_strangeness">
+    <inputdef>&input_def_strangeness_detvar_cv;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>3000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_sce_strangeness">
-        <inputdef>&input_def_strangeness_detvar_sce;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>5000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_recomb2_strangeness">
-        <inputdef>&input_def_strangeness_detvar_recomb2;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
-        <datatier>selected</datatier>
-        <numjobs>5000</numjobs>
-    </stage>
+<stage name="selection_detvar_ly_rayleigh_strangeness">
+    <inputdef>&input_def_strangeness_detvar_ly_rayleigh;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_cv">
-        <inputdef>&input_def_detvar_cv;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_cv/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_cv</workdir>
-        <datatier>selected</datatier>
-        <numjobs>8000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_ly_suppression75attenuation8m">
-        <inputdef>&input_def_detvar_ly_suppression75attenuation8m;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_detvar_ly_down_strangeness">
+    <inputdef>&input_def_strangeness_detvar_ly_down;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_down_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_down_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_ly_rayleigh">
-        <inputdef>&input_def_detvar_ly_rayleigh;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_ly_rayleigh/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_ly_rayleigh</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_lydown">
-        <inputdef>&input_def_detvar_lydown;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_lydown/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_lydown</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_detvar_wiremodx_sce_strangeness">
+    <inputdef>&input_def_strangeness_detvar_wiremodx_sce;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_sce">
-        <inputdef>&input_def_detvar_sce;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_sce/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_sce</workdir>
-        <datatier>selected</datatier>
-        <numjobs>5000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_recomb2">
-        <inputdef>&input_def_detvar_recomb2;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
-        <datatier>selected</datatier>
-        <numjobs>5000</numjobs>
-    </stage>
+<stage name="selection_detvar_wiremodyz_sce_strangeness">
+    <inputdef>&input_def_strangeness_detvar_wiremodyz_sce;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_wiremodx">
-        <inputdef>&input_def_detvar_wiremodx;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodx/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodx</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_wiremodyz">
-        <inputdef>&input_def_detvar_wiremodyz;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodyz/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_detvar_wiremod_yz_strangeness">
+    <inputdef>&input_def_strangeness_detvar_wiremod_yz;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
 
-    <stage name="selection_detvar_wiremodthetaxz">
-        <inputdef>&input_def_detvar_wiremodthetaxz;</inputdef>
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetaxz/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetaxz</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
 
-    <stage name="selection_detvar_wiremodthetayz_withsplines">
-        <inputdef>&input_def_detvar_wiremodthetayz_withsplines;</inputdef> 
-        <fcl>&fcl_selection;</fcl>
-        <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1000</numjobs>
-    </stage>
+<stage name="selection_detvar_wiremod_thetayz_strangeness">
+    <inputdef>&input_def_strangeness_detvar_wiremod_thetayz;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_sce_strangeness">
+    <inputdef>&input_def_strangeness_detvar_sce;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_sce_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_sce_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>5000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_recomb2_strangeness">
+    <inputdef>&input_def_strangeness_detvar_recomb2;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_recomb2_strangeness/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_recomb2_strangeness/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
+    <datatier>selected</datatier>
+    <numjobs>5000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_cv">
+    <inputdef>&input_def_detvar_cv;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv</workdir>
+    <datatier>selected</datatier>
+    <numjobs>8000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_ly_suppression75attenuation8m">
+    <inputdef>&input_def_detvar_ly_suppression75attenuation8m;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_ly_rayleigh">
+    <inputdef>&input_def_detvar_ly_rayleigh;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_rayleigh/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_ly_rayleigh/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_rayleigh</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_lydown">
+    <inputdef>&input_def_detvar_lydown;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_lydown/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_lydown/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_lydown</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_sce">
+    <inputdef>&input_def_detvar_sce;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_sce/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_sce/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_sce</workdir>
+    <datatier>selected</datatier>
+    <numjobs>5000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_recomb2">
+    <inputdef>&input_def_detvar_recomb2;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_recomb2/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_recomb2/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
+    <datatier>selected</datatier>
+    <numjobs>5000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_wiremodx">
+    <inputdef>&input_def_detvar_wiremodx;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodx/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodx/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodx</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_wiremodyz">
+    <inputdef>&input_def_detvar_wiremodyz;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodyz/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodyz/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_wiremodthetaxz">
+    <inputdef>&input_def_detvar_wiremodthetaxz;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodthetaxz/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodthetaxz/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodthetaxz</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
+
+<stage name="selection_detvar_wiremodthetayz_withsplines">
+    <inputdef>&input_def_detvar_wiremodthetayz_withsplines;</inputdef>
+    <fcl>&fcl_selection;</fcl>
+    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/out</outdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines/log</logdir>
+    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines</workdir>
+    <datatier>selected</datatier>
+    <numjobs>1000</numjobs>
+</stage>
+
 
 </project>
 </job>
