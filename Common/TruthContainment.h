@@ -1,20 +1,16 @@
 #ifndef TRUTHCONTAINMENT_H
 #define TRUTHCONTAINMENT_H
 
-#include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-
 #include "larcore/Geometry/Geometry.h"
-
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-
-#include "lardataobj/MCBase/MCShower.h"
-#include "lardataobj/MCBase/MCTrack.h"
-#include "lardataobj/MCBase/MCStep.h"
-
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/FindManyInChainP.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "lardataobj/MCBase/MCShower.h"
+#include "lardataobj/MCBase/MCStep.h"
+#include "lardataobj/MCBase/MCTrack.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 
 namespace common {
 

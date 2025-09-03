@@ -1,54 +1,49 @@
 #ifndef TRUTHLABELCLASSIFIER_H
 #define TRUTHLABELCLASSIFIER_H
 
-#include <vector>
-#include <string>
-#include <map>
-#include <array>
-#include <algorithm>
-#include <memory>
-#include <unordered_map>
-#include <utility>
-#include <cmath>
-#include <limits>
-#include <optional>
-
-#include <TFile.h>
-#include <TTree.h>
-#include <TDirectoryFile.h>
-#include <TVector3.h>
-
 #include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Framework/Services/Optional/TFileService.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "canvas/Utilities/InputTag.h"
-#include "canvas/Persistency/Common/Ptr.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Persistency/Common/FindManyP.h"
-
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "canvas/Persistency/Common/Ptr.h"
+#include "canvas/Utilities/InputTag.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Wire.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/RecoBaseProxy/ProxyBase.h"
+#include "lardata/Utilities/FindManyInChainP.h"
+#include "lardata/Utilities/GeometryUtilities.h"
+#include "lardataobj/AnalysisBase/MVAOutput.h"
 #include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
-#include "lardataobj/AnalysisBase/MVAOutput.h"
-
-#include "larcorealg/Geometry/GeometryCore.h"
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/RecoBaseProxy/ProxyBase.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "lardata/Utilities/FindManyInChainP.h"
 
 #include "ImageTypes.h"
 #include "PandoraUtilities.h"
+#include <TDirectoryFile.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TVector3.h>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace analysis {
 class TruthLabelClassifier {

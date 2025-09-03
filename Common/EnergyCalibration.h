@@ -1,11 +1,12 @@
 #ifndef ENERGYCALIBRATION_H
 #define ENERGYCALIBRATION_H
 
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
+#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
+
 #include "SpaceChargeCorrections.h"
 
 namespace common {

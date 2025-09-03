@@ -1,18 +1,15 @@
 #ifndef BACKTRACKINGUTILITIES_H
 #define BACKTRACKINGUTILITIES_H
 
-#include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
-
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-
-#include "lardataobj/MCBase/MCShower.h"
-#include "lardataobj/MCBase/MCTrack.h"
-#include "lardataobj/MCBase/MCStep.h"
-
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/FindManyInChainP.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+#include "lardataobj/MCBase/MCShower.h"
+#include "lardataobj/MCBase/MCStep.h"
+#include "lardataobj/MCBase/MCTrack.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
 
 namespace common {
 void ApplyDetectorOffsets(const float _vtx_t, const float _vtx_x, const float _vtx_y, const float _vtx_z, float &_xtimeoffset, float &_xsceoffset, float &_ysceoffset, float &_zsceoffset) {

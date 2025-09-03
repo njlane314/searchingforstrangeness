@@ -1,11 +1,13 @@
 #ifndef ANALYSIS_SLICEPURCOMPL_CXX
 #define ANALYSIS_SLICEPURCOMPL_CXX
 
-#include <iostream>
-#include "AnalysisToolBase.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+
+#include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
+
+#include <iostream>
 
 namespace analysis {
 
