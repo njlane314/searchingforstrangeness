@@ -130,8 +130,7 @@ static inline bool is_pnfs(const std::string &s) {
       if (auto hit = find_file_nearby(work_dir, wf.filename().string(), 3))
         return *hit;
 
-      if (fetch_ifdh &&
-          (is_pnfs(weights_file) || is_remote_url(weights_file))) {
+      if (fetch_ifdh && is_pnfs(weights_file)) {
         fs::path dst =
             fs::path(scratch_dir) / (std::string("weights_") + model_name +
                                      "_" + wf.filename().string());
@@ -151,8 +150,7 @@ static inline bool is_pnfs(const std::string &s) {
           << "  scratch   : "
           << (fs::path(scratch_dir) / "weights" / wf.filename()) << "\n"
           << "  (set WeightsBaseDir or WEIGHTS_BASE_DIR, or provide absolute "
-             "path, "
-          << "or enable FetchWeightsWithIFDH and use PNFS/URL)";
+             "path, or enable FetchWeightsWithIFDH and use PNFS path)";
       throw art::Exception(art::errors::Configuration) << msg.str();
     }
 
