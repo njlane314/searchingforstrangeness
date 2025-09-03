@@ -21,7 +21,6 @@ microboone_antibdtfilter:
     VTXproducer: @local::standard_producers.VTXproducer
     BDT_branch: "bdt_global"
     BDT_cut: 9e-1
-    Verbose: false
     SelectionTool: {
         tool_type: "CC0piNpSelection"
         TrkShrscore: 0.5
