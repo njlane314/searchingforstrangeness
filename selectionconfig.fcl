@@ -100,7 +100,7 @@ ImageAnalysis: {
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    BadChannelFile: "badchannels.txt"
+    BadChannelFile: "ubana/data/badchannels.txt"
     WeightsBaseDir: "weights"
     imageWidth: 512
     imageHeight: 512
