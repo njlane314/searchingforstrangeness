@@ -49,7 +49,7 @@
 #include "lardata/Utilities/FindManyInChainP.h"
 
 #include "Image.h"
-#include "Common/Pandora.h"
+#include "Pandora.h"
 
 namespace analysis
 {

@@ -56,10 +56,10 @@
 #include "lardata/Utilities/GeometryUtilities.h"
 #include "lardata/Utilities/FindManyInChainP.h"
 #include "AnalysisToolBase.h"
-#include "../Common/Pandora.h"
-#include "../Common/Types.h"
-#include "../Common/Image.h"
-#include "../Common/ImageAlgorithm.h"
+#include "Common/Pandora.h"
+#include "Common/Types.h"
+#include "Common/Image.h"
+#include "Common/ImageAlgorithm.h"
 
 namespace fs = std::experimental::filesystem;
 
