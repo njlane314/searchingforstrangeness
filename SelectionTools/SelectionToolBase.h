@@ -1,13 +1,12 @@
 #ifndef SELECTION_TOOLBASE_H
 #define SELECTION_TOOLBASE_H
 
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
-
 #include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Principal/Event.h"
 
 #include "Common/ProxyTypes.h"
 

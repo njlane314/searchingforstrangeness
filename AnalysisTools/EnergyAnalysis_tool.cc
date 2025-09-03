@@ -1,19 +1,18 @@
 #ifndef ANALYSIS_ENERGY_CXX
 #define ANALYSIS_ENERGY_CXX
 
-#include <iostream>
-#include "AnalysisToolBase.h"
-
-#include "ubobj/CRT/CRTHit.hh"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardataobj/AnalysisBase/T0.h"
-
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/Utilities/FindManyInChainP.h"
+#include "lardataobj/AnalysisBase/T0.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "ubobj/CRT/CRTHit.hh"
 
+#include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
 #include "Common/TrackShowerScore.h"
+
+#include <iostream>
 
 namespace analysis {
 

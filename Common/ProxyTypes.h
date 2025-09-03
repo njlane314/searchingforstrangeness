@@ -2,22 +2,19 @@
 #define PROXYTYPES_H
 
 #include "art/Framework/Principal/Event.h"
-
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Slice.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/PCAxis.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
-
+#include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
-
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/PCAxis.h"
+#include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/PFParticleMetadata.h"
-#include "lardata/RecoBaseProxy/ProxyBase.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/Slice.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Vertex.h"
 
 namespace common {
 using ProxyPfpColl_t = decltype(proxy::getCollection<std::vector<recob::PFParticle>>(

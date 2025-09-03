@@ -1,13 +1,13 @@
 #ifndef PANDORAUTILITIES_H
 #define PANDORAUTILITIES_H
 
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
-#include "TVector3.h"
-#include <cmath>
-
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
+#include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+
+#include "TVector3.h"
+#include <cmath>
 
 namespace common {
 enum PandoraView { TPC_VIEW_U,

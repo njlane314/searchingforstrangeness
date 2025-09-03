@@ -1,16 +1,17 @@
 #ifndef ANALYSIS_FLASHANALYSIS_CXX
 #define ANALYSIS_FLASHANALYSIS_CXX
 
-#include "AnalysisToolBase.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "lardataobj/RecoBase/Slice.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/AnalysisBase/T0.h"
-#include "lardata/Utilities/AssociationUtil.h"
-#include "larcore/Geometry/Geometry.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Cluster.h"
 #include "canvas/Persistency/Common/Ptr.h"
+#include "larcore/Geometry/Geometry.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/AnalysisBase/T0.h"
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+#include "lardataobj/RecoBase/Slice.h"
+
+#include "AnalysisToolBase.h"
 
 namespace analysis {
 

@@ -1,8 +1,9 @@
 #ifndef SELECTION_EMPTYSELECTION_CXX
 #define SELECTION_EMPTYSELECTION_CXX
 
-#include <iostream>
 #include "SelectionToolBase.h"
+
+#include <iostream>
 
 namespace selection
 {    
