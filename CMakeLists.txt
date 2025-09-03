@@ -1,6 +1,9 @@
 include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
-include_directories( $ENV{SEARCH_TOP} )
+if(DEFINED ENV{SEARCH_TOP})
+  include_directories( $ENV{SEARCH_TOP} )
+endif()
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 
 
