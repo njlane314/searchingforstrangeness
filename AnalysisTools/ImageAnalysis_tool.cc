@@ -46,15 +46,8 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#if __has_include(<filesystem>)
 #include <filesystem>
 namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-#error "filesystem support not available"
-#endif
 #include <fstream>
 #include <iomanip>
 #include <limits.h>
