@@ -1,4 +1,5 @@
 #include "mcsfitproducer.fcl"
+#include "producers.fcl"
 
 BEGIN_PROLOG
 
@@ -16,29 +17,29 @@ microboone_antibdtfilter:
     module_type: "NeutrinoSelectionFilter"
     Filter: true
     IsData: true
-    CLSproducer: "pandora"
-    HITproducer: "pandora"
-    MCTproducer: "generator"
-    PCAproducer: "pandora"
-    PFPproducer: "pandora"
-    SHRproducer: "shrreco3d"
-    SLCproducer: "pandora"
-    TRKproducer: "pandora"
-    VTXproducer: "pandora"
+    CLSproducer: @local::standard_producers.CLSproducer
+    HITproducer: @local::standard_producers.HITproducer
+    MCTproducer: @local::standard_producers.MCTproducer
+    PCAproducer: @local::standard_producers.PCAproducer
+    PFPproducer: @local::standard_producers.PFPproducer
+    SHRproducer: @local::standard_producers.SHRproducer
+    SLCproducer: @local::standard_producers.SLCproducer
+    TRKproducer: @local::standard_producers.TRKproducer
+    VTXproducer: @local::standard_producers.VTXproducer
     BDT_branch: "bdt_global"
     BDT_cut: 9e-1
     Verbose: false
     SelectionTool: {
         tool_type: "CC0piNpSelection"
         TrkShrscore: 0.5
-        CLSproducer: "pandora"
-        TRKproducer: "pandora"
-        CALproducer: "pandoracali"
-        PIDproducer: "pandoracalipid"
+        CLSproducer: @local::standard_producers.CLSproducer
+        TRKproducer: @local::standard_producers.TRKproducer
+        CALproducer: @local::standard_producers.CALproducer
+        PIDproducer: @local::standard_producers.PIDproducer
         CALproducerTrkFit: "shrreco3dKalmanShowercali"
         TRKproducerTrkFit: "shrreco3dKalmanShower"
-        Clusterproducer: "pandora"
-        Hitproducer: "gaushit"
+        Clusterproducer: @local::standard_producers.CLSproducer
+        Hitproducer: @local::standard_producers.HITproducer
         mcsfitmu: @local::mcsfitproducer.fitter # @local::microboone_reco_data_producers.pandoraMCSMu.fitter
         LocaldEdx: false # use dQdx and convert to dEdx with fixed conversion
         # ADC to E conversion taken from reco2 production fhicl file
@@ -54,22 +55,22 @@ microboone_antibdtfilter:
     AnalysisTools: {
        cosmicip: {
           tool_type: "CosmicIP"
-          PFPproducer: "pandora"
-          SpacePointproducer: "pandora"
+          PFPproducer: @local::standard_producers.PFPproducer
+          SpacePointproducer: @local::standard_producers.PFPproducer
           TrkShrScore: 5e-1
        }
        default: {
             tool_type: "DefaultAnalysis"
-            CRTVetoproducer: ""
-            CLSproducer: "pandora"
-            MCTproducer: "generator"
-            MCFluxproducer: "generator"
-            Hproducer: "gaushit"
-            BacktrackTag: "gaushitTruthMatch"
-            MCRproducer: "mcreco"
-            SLCproducer: "pandora"
-            MCPproducer: "largeant"
-            PFPproducer: "pandora"
+            CRTproducer: @local::standard_producers.CRTproducer
+            CLSproducer: @local::standard_producers.CLSproducer
+            MCTproducer: @local::standard_producers.MCTproducer
+            MCFproducer: @local::standard_producers.MCFproducer
+            HITproducer: @local::standard_producers.HITproducer
+            BKTproducer: @local::standard_producers.BKTproducer
+            MCRproducer: @local::standard_producers.MCRproducer
+            SLCproducer: @local::standard_producers.SLCproducer
+            MCPproducer: @local::standard_producers.MCPproducer
+            PFPproducer: @local::standard_producers.PFPproducer
             ProtonThreshold: 0.04 # GeV
             fidvolXstart: @local::FidVol.Xstart
             fidvolXend:   @local::FidVol.Xend
