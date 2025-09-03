@@ -1,6 +1,10 @@
 include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
 include_directories( $ENV{SEARCH_TOP} )
+# Add the repository's root directory to the include search path so
+# headers in the "Common" directory (e.g. Common/ProxyTypes.h) are
+# found even when the SEARCH_TOP environment variable is unset.
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 # Ensure C++17 features (e.g. std::filesystem) are available
 set(CMAKE_CXX_STANDARD 17)
