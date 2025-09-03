@@ -6,8 +6,11 @@
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
 
+    <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
+    <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
+    <!ENTITY assets_tar "&tar_dir;/strangeness_assets.tar.gz">
     <!ENTITY jobsub_config "
-        -e STRANGENESS_DIR=$CONDOR_DIR_INPUT"
+        --tar_file_name=file://&assets_tar;"
     >
 
     <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
@@ -45,7 +48,7 @@
     <larsoft>
         <tag>&release;</tag>
         <qual>e17:prof</qual>
-        <local>/pnfs/uboone/scratch/users/nlane/tarballs/strangeness.tar</local>
+        <local>&larsoft_tar;</local>
     </larsoft>
     <check>1</check>
     <copy>0</copy>
