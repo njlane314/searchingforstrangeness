@@ -12,7 +12,6 @@ mkdir -p "${TAR_DIR}"
 LAR_TAR="${TAR_DIR}/strangeness.tar"
 ASSETS_TAR="${TAR_DIR}/strangeness_assets.tar.gz"
 
-# Package the local LArSoft build
 if [[ -d "${BUILD_ROOT}" ]]; then
   tar -C "${BUILD_ROOT}" -czf "${LAR_TAR}" . \
     --exclude='.git' --exclude='tmp' --exclude='*.root'
@@ -20,7 +19,6 @@ else
   echo "WARNING: build directory '${BUILD_ROOT}' not found" >&2
 fi
 
-# Package the assets directory
 if [[ -d "${ASSETS_ROOT}" ]]; then
   tar -C "${ASSETS_ROOT}" -czf "${ASSETS_TAR}" . \
     --exclude='.git' --exclude='__pycache__' --exclude='*.pyc'
