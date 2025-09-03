@@ -7,8 +7,7 @@
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
 
     <!ENTITY jobsub_config "
-        -e STRANGENESS_DIR=$CONDOR_DIR_INPUT 
-        -e FW_SEARCH_PATH=$CONDOR_DIR_INPUT/ubana/data:${FW_SEARCH_PATH}"
+        -e STRANGENESS_DIR=$CONDOR_DIR_INPUT"
     >
 
     <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
@@ -94,12 +93,17 @@
     <stage name="selection_numi_fhc_run1_beam_test">
         <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
         <fcl>&fcl_selection;</fcl>
+        <initsource>init_payload_paths.sh</initsource>
         <outdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/nlane/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/nlane/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
         <datatier>test</datatier>
         <numjobs>1</numjobs>
-        <jobsub>&jobsub_config;</jobsub>
+        <jobsub>
+            &jobsub_config;
+            --tar_file_name=dropbox:///dune/app/users/nlane/assets.tar.gz
+            -f /pnfs/uboone/scratch/users/nlane/init_payload_paths.sh
+        </jobsub>
     </stage>
 
     <stage name="reweight_numi_fhc_run1_strangeness">
