@@ -1,6 +1,7 @@
 #!/bin/bash
 
-input_definitions=(
+# Default definitions used when no input is supplied
+default_definitions=(
     "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2"
     "prod_strange_resample_fhc_run2_fhc_reco2_reco2"
     "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2"
@@ -23,6 +24,27 @@ input_definitions=(
     "prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2"
     "prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2"
 )
+
+usage() {
+    echo "Usage: $(basename "$0") [definition_file | def1 def2 ...]"
+    echo "Provide SAM dataset definitions via a file or command-line list."
+}
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    usage
+    exit 0
+fi
+
+# Determine input definitions from arguments or fall back to defaults
+if [[ $# -gt 0 ]]; then
+    if [[ -f "$1" ]]; then
+        mapfile -t input_definitions < "$1"
+    else
+        input_definitions=("$@")
+    fi
+else
+    input_definitions=("${default_definitions[@]}")
+fi
 
 echo "--- Samweb List Summary Definitions ---"
 echo ""
