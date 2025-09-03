@@ -66,7 +66,6 @@ namespace fs = std::experimental::filesystem;
 #include <set>
 #include <sstream>
 #include <string>
-#include <string_view>
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
@@ -74,10 +73,14 @@ namespace fs = std::experimental::filesystem;
 
 namespace analysis {
 
+static inline bool starts_with(const std::string &s,
+                               const std::string &prefix) {
+  return s.compare(0, prefix.size(), prefix) == 0;
+}
+
 static inline bool is_pnfs(const std::string &s) {
-  std::string_view sv{s};
-  return sv.starts_with("/pnfs/") || sv.starts_with("/eos/") ||
-         sv.starts_with("/stash/");
+  return starts_with(s, "/pnfs/") || starts_with(s, "/eos/") ||
+         starts_with(s, "/stash/");
 }
 
     static std::optional<std::string>
