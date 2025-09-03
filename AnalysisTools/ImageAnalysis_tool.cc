@@ -277,8 +277,16 @@ static inline bool starts_with(const std::string &s, const char *p) {
         }
         char cwd[PATH_MAX];
         if (getcwd(cwd, sizeof(cwd))) {
-          mf::LogInfo("ImageAnalysis") << "Job CWD: " << cwd;
-          std::system("ls -al");
+          mf::LogInfo log("ImageAnalysis");
+          log << "Job CWD: " << cwd << '\n';
+          try {
+            for (const auto &entry : fs::directory_iterator(cwd)) {
+              log << "  " << entry.path().filename().string() << '\n';
+            }
+          } catch (const fs::filesystem_error &e) {
+            mf::LogWarning("ImageAnalysis")
+                << "Unable to list directory contents: " << e.what();
+          }
         }
       }
       fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "");
