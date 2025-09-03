@@ -12,8 +12,8 @@
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardata/Utilities/FindManyInChainP.h"
 
-#include "../Common/BacktrackingFuncs.h"
-#include "../Common/TrackShowerScoreFuncs.h"
+#include "Common/BacktrackingFuncs.h"
+#include "Common/TrackShowerScoreFuncs.h"
 
 namespace analysis {
 
@@ -147,6 +147,6 @@ void EnergyAnalysis::resetTTree(TTree* _tree) {
 
 DEFINE_ART_CLASS_TOOL(EnergyAnalysis)
 
-} 
+}
 
 #endif
