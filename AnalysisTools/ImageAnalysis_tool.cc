@@ -70,10 +70,6 @@ static inline bool starts_with(const std::string &s, const char *p) {
   return s.rfind(p, 0) == 0;
 }
 
-    static inline bool is_remote_url(const std::string& s) {
-        return starts_with(s, "http:
-    }
-
     static inline bool is_pnfs(const std::string& s) {
       return starts_with(s, "/pnfs/") || starts_with(s, "/eos/") ||
              starts_with(s, "/stash/");
@@ -131,8 +127,7 @@ static inline bool starts_with(const std::string &s, const char *p) {
       if (auto hit = find_file_nearby(work_dir, wf.filename().string(), 3))
         return *hit;
 
-      if (fetch_ifdh &&
-          (is_pnfs(weights_file) || is_remote_url(weights_file))) {
+      if (fetch_ifdh && is_pnfs(weights_file)) {
         fs::path dst =
             fs::path(scratch_dir) / (std::string("weights_") + model_name +
                                      "_" + wf.filename().string());
@@ -152,8 +147,7 @@ static inline bool starts_with(const std::string &s, const char *p) {
           << "  scratch   : "
           << (fs::path(scratch_dir) / "weights" / wf.filename()) << "\n"
           << "  (set WeightsBaseDir or WEIGHTS_BASE_DIR, or provide absolute "
-             "path, "
-          << "or enable FetchWeightsWithIFDH and use PNFS/URL)";
+             "path, or enable FetchWeightsWithIFDH and use PNFS path)";
       throw art::Exception(art::errors::Configuration) << msg.str();
     }
 
