@@ -47,6 +47,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <dirent.h>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <limits.h>
@@ -61,6 +62,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+namespace fs = std::filesystem;
 
 namespace analysis {
 
