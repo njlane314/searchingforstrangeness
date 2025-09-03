@@ -11,8 +11,8 @@ unsetup_all || true
 source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
 setup uboonecode v08_00_00_82 -q e17:prof
 
+source /cvmfs/uboone.opensciencegrid.org/products/setup
 setup sam_web_client
-setup mrb
 
 export WRK_DIR=$(pwd)
 source ../../../../localProducts_*/setup
