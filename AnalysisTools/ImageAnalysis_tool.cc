@@ -461,13 +461,13 @@ static inline bool starts_with(const std::string &s, const char *p) {
       std::vector<Image<float>> detector_images;
       std::vector<Image<int>> semantic_images;
       this->constructPixelImages(event, neutrino_hits, properties,
-                                 detector_images, semantic_images, _is_data);
+                                 detector_images, semantic_images, is_data);
 
       std::vector<Image<float>> event_detector_images;
       std::vector<Image<int>> event_semantic_images;
       this->constructPixelImages(event, all_hits, properties,
                                  event_detector_images, event_semantic_images,
-                                 _is_data);
+                                 is_data);
 
       _detector_image_u = detector_images[0].data();
       _detector_image_v = detector_images[1].data();
@@ -488,7 +488,7 @@ static inline bool starts_with(const std::string &s, const char *p) {
       _event_adc_w = std::accumulate(_event_detector_image_w.begin(),
                                      _event_detector_image_w.end(), 0.0f);
 
-      if (!_is_data) {
+      if (!is_data) {
         for (size_t i = 0;
              i < TruthLabelClassifier::truth_primary_label_names.size(); ++i) {
           _slice_semantic_counts_u.push_back(std::count(
