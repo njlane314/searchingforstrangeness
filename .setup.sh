@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+set -x
+
 UBOONECODE_VERSION="${UBOONECODE_VERSION:-v08_00_00_82}"
 PYTHON_VERSION="${PYTHON_VERSION:-v2_7_14b}"
 
