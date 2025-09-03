@@ -1,12 +1,6 @@
 #ifndef ANALYSIS_IMAGE_CXX
 #define ANALYSIS_IMAGE_CXX
 
-#include "AnalysisToolBase.h"
-#include "Common/ImageTypes.h"
-#include "Common/TruthLabelClassifier.h"
-#include "Common/NpyUtils.h"
-#include "Common/PandoraUtilities.h"
-#include "Common/ProxyTypes.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -35,19 +29,27 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
+#include <cetlib/search_path.h>
+#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
+
+#include "AnalysisToolBase.h"
+#include "Common/ImageTypes.h"
+#include "Common/NpyUtils.h"
+#include "Common/PandoraUtilities.h"
+#include "Common/ProxyTypes.h"
+#include "Common/TruthLabelClassifier.h"
+
 #include <TDirectoryFile.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TVector3.h>
 #include <algorithm>
 #include <array>
-#include <cetlib/search_path.h>
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
-#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 #include <limits.h>
 #include <limits>
 #include <map>

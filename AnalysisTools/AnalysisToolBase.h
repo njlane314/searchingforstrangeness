@@ -1,13 +1,15 @@
 #ifndef ANALYSISTOOLBASE_H
 #define ANALYSISTOOLBASE_H
 
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "art/Utilities/ToolMacros.h"
 #include "art/Utilities/make_tool.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Principal/Event.h"
+
 #include "Common/ProxyTypes.h"
+
 #include "TTree.h"
 #include <limits>
 

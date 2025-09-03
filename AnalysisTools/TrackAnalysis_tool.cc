@@ -1,16 +1,18 @@
 #ifndef ANALYSIS_TRACKANALYSIS_CXX
 #define ANALYSIS_TRACKANALYSIS_CXX
 
+#include "lardataobj/RecoBase/SpacePoint.h"
+
+#include "AnalysisToolBase.h"
+#include "Common/BacktrackingUtilities.h"
+#include "Common/EnergyCalibration.h"
+#include "Common/GeometryUtils.h"
+#include "Common/ProxyTypes.h"
+#include "Common/SpaceChargeCorrections.h"
+#include "Common/TrackShowerScore.h"
+
 #include <iostream>
 #include <limits>
-#include "AnalysisToolBase.h"
-#include "Common/ProxyTypes.h"
-#include "Common/BacktrackingUtilities.h"
-#include "Common/TrackShowerScore.h"
-#include "Common/SpaceChargeCorrections.h"
-#include "Common/GeometryUtils.h"
-#include "Common/EnergyCalibration.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
 
 namespace analysis {
 

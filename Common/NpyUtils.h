@@ -1,13 +1,13 @@
 #ifndef COMMON_NPYUTILS_H
 #define COMMON_NPYUTILS_H
 
+#include "art/Utilities/Exception.h"
+
 #include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
-
-#include "art/Utilities/Exception.h"
 
 namespace common {
 

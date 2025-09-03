@@ -1,33 +1,35 @@
 #ifndef ANALYSIS_TRUTH_CXX
 #define ANALYSIS_TRUTH_CXX
 
-#include "AnalysisToolBase.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "fhiclcpp/ParameterSet.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/MCBase/MCShower.h"
+#include "lardataobj/MCBase/MCTrack.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/MCBase/MCTrack.h"
-#include "lardataobj/MCBase/MCShower.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larpandora/LArPandoraEventBuilding/LArPandoraSliceIdHelper.h"
-#include "TTree.h"
-#include <limits>
-#include <vector>
-#include <string>
-#include "TVector3.h"
-#include "TLorentzVector.h"
-#include <cmath>
+#include "nusimdata/SimulationBase/MCFlux.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+
+#include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
 #include "Common/GeometryUtils.h"
+#include "Common/ParticleScattering.h"
 #include "Common/SpaceChargeCorrections.h"
 #include "Common/TruthContainment.h"
-#include "Common/ParticleScattering.h"
+
+#include "TLorentzVector.h"
+#include "TTree.h"
+#include "TVector3.h"
+#include <cmath>
+#include <limits>
+#include <string>
+#include <vector>
 
 namespace analysis {
 

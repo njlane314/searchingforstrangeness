@@ -1,18 +1,19 @@
 #ifndef EVENTWEIGHT_ANALYSIS_CXX
 #define EVENTWEIGHT_ANALYSIS_CXX
 
-#include "AnalysisToolBase.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
+
+#include "AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
 
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <numeric>
 #include <string>
 #include <vector>
-#include <map>
-#include <limits>
-#include <iostream>
-#include <cassert>
-#include <algorithm>
-#include <numeric>
 
 namespace analysis {
 

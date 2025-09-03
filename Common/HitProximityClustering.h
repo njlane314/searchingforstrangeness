@@ -3,15 +3,15 @@
 #ifndef HITPROXIMITYCLUSTERING_H
 #define HITPROXIMITYCLUSTERING_H
 
-#include <map>
-
+#include "larcore/Geometry/Geometry.h"
+#include "larcorealg/Geometry/GeometryCore.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/Utilities/GeometryUtilities.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
-#include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/GeometryCore.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
+#include <map>
 
 namespace common {
 

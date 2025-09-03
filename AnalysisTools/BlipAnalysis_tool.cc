@@ -1,30 +1,26 @@
 #ifndef BLIP_ANALYSIS_CXX
 #define BLIP_ANALYSIS_CXX
 
-#include <iostream>
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
+#include "larreco/RecoAlg/TrajectoryMCSFitter.h"
+#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
+#include "ubreco/BlipReco/Alg/BlipRecoAlg.h"
+
 #include "AnalysisToolBase.h"
+#include "Common/BacktrackingUtilities.h"
+#include "Common/EnergyCalibration.h"
+#include "Common/GeometryUtils.h"
+#include "Common/LLRCorrectionLookup.h"
+#include "Common/LLRPIDCalculator.h"
+#include "Common/LLRProtonMuonLookup.h"
+#include "Common/ParticleIdentifierUtils.h"
+#include "Common/ProxyTypes.h"
+#include "Common/SpaceChargeCorrections.h"
+#include "Common/TrackShowerScore.h"
 
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
-
-#include "Common/ProxyTypes.h"
-
-#include "Common/BacktrackingUtilities.h"
-#include "Common/TrackShowerScore.h"
-#include "Common/ParticleIdentifierUtils.h"
-#include "Common/SpaceChargeCorrections.h"
-#include "Common/GeometryUtils.h"
-
-#include "Common/LLRPIDCalculator.h"
-#include "Common/LLRProtonMuonLookup.h"
-#include "Common/LLRCorrectionLookup.h"
-#include "Common/EnergyCalibration.h"
-
-#include "larreco/RecoAlg/TrajectoryMCSFitter.h"
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
-
-#include "ubreco/BlipReco/Alg/BlipRecoAlg.h"
+#include <iostream>
 
 namespace analysis {
 

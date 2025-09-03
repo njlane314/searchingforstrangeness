@@ -1,8 +1,8 @@
 #ifndef PARTICLESCATTERING_H
 #define PARTICLESCATTERING_H
 
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 namespace common {
 std::vector<art::Ptr<simb::MCParticle>> GetDaughters(const art::Ptr<simb::MCParticle> &particle, const std::map<int, art::Ptr<simb::MCParticle>> &mcParticleMap) {

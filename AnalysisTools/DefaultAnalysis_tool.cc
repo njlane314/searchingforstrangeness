@@ -1,31 +1,32 @@
 #ifndef DEFAULT_ANALYSIS_CXX
 #define DEFAULT_ANALYSIS_CXX
 
-#include <iostream>
-#include "AnalysisToolBase.h"
-
-#include "ubobj/CRT/CRTHit.hh"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "TDatabasePDG.h"
-#include "TParticlePDG.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
+#include "canvas/Persistency/Common/TriggerResults.h"
 #include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RawData/TriggerData.h"
+#include "lardataobj/RecoBase/OpFlash.h"
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "ubobj/CRT/CRTHit.hh"
+#include "ubobj/Optical/UbooneOpticalFilter.h"
+#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
+
+#include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
 #include "Common/GeometryUtils.h"
-#include "Common/SpaceChargeCorrections.h"
-#include "Common/TruthContainment.h"
-#include "Common/TrackShowerScore.h"
 #include "Common/HitProximityClustering.h"
 #include "Common/PFParticleDescendants.h"
-#include "Common/ParticleScattering.h"
 #include "Common/PandoraUtilities.h"
-#include "ubobj/Optical/UbooneOpticalFilter.h"
-#include "canvas/Persistency/Common/TriggerResults.h"
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "lardataobj/RawData/TriggerData.h"
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
+#include "Common/ParticleScattering.h"
+#include "Common/SpaceChargeCorrections.h"
+#include "Common/TrackShowerScore.h"
+#include "Common/TruthContainment.h"
+
+#include "TDatabasePDG.h"
+#include "TParticlePDG.h"
+#include <iostream>
 
 namespace analysis {
 
