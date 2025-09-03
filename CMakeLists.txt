@@ -2,6 +2,10 @@ include_directories( $ENV{PANDORA_INC} )
 include_directories( $ENV{LARPANDORACONTENT_INC} )
 include_directories( $ENV{SEARCH_TOP} )
 
+# Ensure C++17 features (e.g. std::filesystem) are available
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 
 
