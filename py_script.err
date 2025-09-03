@@ -1,0 +1,7 @@
+WARNING: While bind mounting '/cvmfs:/cvmfs': destination is already in the mount point list
+/usr/local/lib/python3.8/dist-packages/MinkowskiEngine/__init__.py:221: UserWarning: The MinkowskiEngine was compiled with CPU_ONLY flag. If you want to compile with CUDA support, make sure `torch.cuda.is_available()` is True when you install MinkowskiEngine.
+  warnings.warn(
+Traceback (most recent call last):
+  File "/exp/uboone/app/users/nlane/production/strangeness_mcc9/srcs/ubana/ubana/searchingforstrangeness/assets/scripts/run_inference.py", line 13, in <module>
+    from models import load_model
+ModuleNotFoundError: No module named 'models'

@@ -26,3 +26,5 @@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/cvmfs/larsoft.opensciencegrid.org/prod
 
 kx509
 voms-proxy-init -noregen -voms fermilab:/fermilab/uboone/Role=Analysis
+
+source scripts/init_payload_paths.sh
