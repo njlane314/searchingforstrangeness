@@ -68,11 +68,6 @@ namespace fs = std::filesystem;
 
 namespace analysis {
 
-static inline bool is_remote_url(const std::string &s) {
-  std::string_view sv{s};
-  return sv.starts_with("http:") || sv.starts_with("https:");
-}
-
 static inline bool is_pnfs(const std::string &s) {
   std::string_view sv{s};
   return sv.starts_with("/pnfs/") || sv.starts_with("/eos/") ||
