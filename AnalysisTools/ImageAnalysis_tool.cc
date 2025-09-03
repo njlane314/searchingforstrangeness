@@ -46,8 +46,7 @@
 #include <array>
 #include <cmath>
 #include <cstdlib>
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <dirent.h>
 #include <fstream>
 #include <iomanip>
 #include <limits.h>
@@ -174,13 +173,16 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
         if (getcwd(cwd, sizeof(cwd))) {
             mf::LogInfo log("ImageAnalysis");
             log << "Job CWD: " << cwd << '\n';
-            try {
-                for (const auto &entry : fs::directory_iterator(cwd)) {
-                    log << "  " << entry.path().filename().string() << '\n';
+            DIR *dir = opendir(cwd);
+            if (dir) {
+                struct dirent *entry;
+                while ((entry = readdir(dir)) != nullptr) {
+                    log << "  " << entry->d_name << '\n';
                 }
-            } catch (const fs::filesystem_error &e) {
+                closedir(dir);
+            } else {
                 mf::LogWarning("ImageAnalysis")
-                    << "Unable to list directory contents: " << e.what();
+                    << "Unable to list directory contents";
             }
         }
     }
