@@ -1,5 +1,5 @@
-#ifndef BACTRACKINGFUNCS_H
-#define BACTRACKINGFUNCS_H
+#ifndef BACKTRACKINGUTILITIES_H
+#define BACKTRACKINGUTILITIES_H
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -256,4 +256,4 @@ bool isHitBtMonteCarlo(const size_t hit_index,
 
 } // namespace common
 
-#endif
+#endif // BACKTRACKINGUTILITIES_H

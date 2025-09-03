@@ -1,5 +1,5 @@
-#ifndef COMMONDEFS_TYPEDEFS_H
-#define COMMONDEFS_TYPEDEFS_H
+#ifndef PROXYTYPES_H
+#define PROXYTYPES_H
 
 #include "art/Framework/Principal/Event.h"
 
@@ -54,4 +54,4 @@ using ProxyPIDColl_t = decltype(proxy::getCollection<std::vector<recob::Track>>(
 using ProxyPIDElem_t = ProxyPIDColl_t::element_proxy_t;
 } // namespace common
 
-#endif
+#endif // PROXYTYPES_H

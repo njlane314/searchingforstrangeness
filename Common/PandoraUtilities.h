@@ -1,5 +1,5 @@
-#ifndef PANDORAFUNCS_H
-#define PANDORAFUNCS_H
+#ifndef PANDORAUTILITIES_H
+#define PANDORAUTILITIES_H
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
@@ -70,4 +70,4 @@ TVector3 GetPandoraHitPosition(const art::Event &e, const art::Ptr<recob::Hit> h
 }
 } // namespace common
 
-#endif
+#endif // PANDORAUTILITIES_H

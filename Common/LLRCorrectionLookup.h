@@ -1,5 +1,5 @@
-#ifndef CORRECTION_LOOKUP_H
-#define CORRECTION_LOOKUP_H
+#ifndef LLRCORRECTIONLOOKUP_H
+#define LLRCORRECTIONLOOKUP_H
 #include <stdlib.h>
 #include <vector>
 
@@ -166,4 +166,4 @@ struct CorrectionLookUpParameters {
 };
 } // namespace common
 
-#endif
+#endif // LLRCORRECTIONLOOKUP_H

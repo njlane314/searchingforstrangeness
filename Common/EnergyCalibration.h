@@ -1,12 +1,12 @@
-#ifndef CALIBRATIONFUNCS_H
-#define CALIBRATIONFUNCS_H
+#ifndef ENERGYCALIBRATION_H
+#define ENERGYCALIBRATION_H
 
 #include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
 #include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "lardata/Utilities/AssociationUtil.h"
-#include "SCECorrections.h"
+#include "SpaceChargeCorrections.h"
 
 namespace common {
 
@@ -127,4 +127,4 @@ double ModBoxCorrection(const double dQdx, const float x, const float y, const f
 
 } // namespace common
 
-#endif
+#endif // ENERGYCALIBRATION_H

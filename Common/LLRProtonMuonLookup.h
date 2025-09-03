@@ -1,5 +1,5 @@
-#ifndef PROTON_MUON_LOOKUP_H
-#define PROTON_MUON_LOOKUP_H
+#ifndef LLRPROTONMUONLOOKUP_H
+#define LLRPROTONMUONLOOKUP_H
 #include <stdlib.h>
 #include <vector>
 
@@ -4637,4 +4637,4 @@ struct ProtonMuonLookUpParameters {
 };
 } // namespace common
 
-#endif
+#endif // LLRPROTONMUONLOOKUP_H

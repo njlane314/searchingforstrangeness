@@ -1,5 +1,5 @@
-#ifndef SCECORRECTIONSFUNCS_H
-#define SCECORRECTIONSFUNCS_H
+#ifndef SPACECHARGECORRECTIONS_H
+#define SPACECHARGECORRECTIONS_H
 
 #include "larevt/SpaceCharge/SpaceCharge.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
@@ -158,4 +158,4 @@ std::vector<float> GetdEdxfromdQdx(const std::vector<float> dqdx_v,
 
 } // namespace common
 
-#endif
+#endif // SPACECHARGECORRECTIONS_H

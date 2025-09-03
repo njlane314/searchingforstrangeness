@@ -1,5 +1,5 @@
-#ifndef TRACKSHOWERSCOREFUNCS_H
-#define TRACKSHOWERSCOREFUNCS_H
+#ifndef TRACKSHOWERSCORE_H
+#define TRACKSHOWERSCORE_H
 
 namespace common {
 
@@ -27,4 +27,4 @@ float GetTrackShowerScore(const ProxyPfpElem_t &pfp_pxy) {
 
 } // namespace common
 
-#endif
+#endif // TRACKSHOWERSCORE_H

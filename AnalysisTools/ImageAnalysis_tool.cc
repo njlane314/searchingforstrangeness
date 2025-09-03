@@ -2,11 +2,11 @@
 #define ANALYSIS_IMAGE_CXX
 
 #include "AnalysisToolBase.h"
-#include "Common/Image.h"
-#include "Common/ImageAlgorithm.h"
+#include "Common/ImageTypes.h"
+#include "Common/TruthLabelClassifier.h"
 #include "Common/NpyUtils.h"
-#include "Common/Pandora.h"
-#include "Common/Types.h"
+#include "Common/PandoraUtilities.h"
+#include "Common/ProxyTypes.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
