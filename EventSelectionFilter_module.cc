@@ -1,30 +1,39 @@
 #ifdef ClassDef
 #undef ClassDef
 #endif
+
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
+
+#include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 #include "lardataobj/MCBase/MCShower.h"
 #include "lardataobj/RecoBase/PFParticleMetadata.h"
 #include "larcoreobj/SummaryData/POTSummary.h"
-#include "lardata/RecoBaseProxy/ProxyBase.h"
-#include "SelectionTools/SelectionToolBase.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+
 #include "AnalysisTools/AnalysisToolBase.h"
-#include "art/Framework/Services/Optional/TFileService.h"
+#include "Common/Types.h"
+#include "SelectionTools/SelectionToolBase.h"
+
 #include "TTree.h"
 #include "TVector3.h"
-#include "Common/Types.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
-#include "larreco/Calorimetry/CalorimetryAlg.h"
 
 class EventSelectionFilter : public art::EDFilter {
 public:
