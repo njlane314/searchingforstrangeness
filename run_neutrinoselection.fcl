@@ -1,5 +1,7 @@
 #include "selectionconfig.fcl"
 
+is_data: false
+
 process_name: NeutrinoSelection
 
 services: {
@@ -46,7 +48,7 @@ physics: {
             BackTrackerLabel: @local::standard_producers.BKTproducer
             DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
             Verbose: false
-            IsData: true
+            IsData: @is_data
             IsFakeData: false
             Filter: true
             SelectionTool: @local::NeutrinoSelection

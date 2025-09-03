@@ -350,6 +350,12 @@ project.py --xml config.xml --stage analyse --submit
 `lar -c <fhicl_file> -s <input_file> -T <output_file>`**  
   Runs LArSoft with a FHiCL configuration.  
 
+To run the neutrino selection on data, enable the data flag:
+
+```bash
+lar -c run_neutrinoselection.fcl -a is_data:=true -s <input_file> -T <output_file>
+```
+
 `lar -c eventdump.fcl -s <your.root> | grep recob::Wire`**  
   Dumps event information from a `*.root` file and searches for `recob::Wire` objects.
 
