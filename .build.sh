@@ -1,8 +1,19 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
-export WRK_DIR=$(pwd)
+# Ensure required environment variables and commands are available
+if [[ -z "${MRB_TOP:-}" ]]; then
+  echo "MRB_TOP is not set; run .setup.sh before building." >&2
+  exit 1
+fi
+
+if ! command -v mrbsetenv >/dev/null 2>&1; then
+  echo "mrbsetenv not found; ensure the mrb environment is configured." >&2
+  exit 1
+fi
+
+WRK_DIR=$(pwd)
 cd "$MRB_TOP"
 
 mrbsetenv
