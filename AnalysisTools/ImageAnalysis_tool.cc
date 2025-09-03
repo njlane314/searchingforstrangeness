@@ -78,9 +78,7 @@ class ImageAnalysis : public AnalysisToolBase {
 
     void configure(const fhicl::ParameterSet &p) override;
     void analyseEvent(const art::Event &event, bool is_data) override {}
-    void analyseSlice(const art::Event &event,
-                      std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec,
-                      bool is_data, bool is_selected) override;
+    void analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec, bool is_data, bool is_selected) override;
     void setBranches(TTree *_tree) override;
     void resetTTree(TTree *_tree) override;
 
@@ -138,45 +136,12 @@ class ImageAnalysis : public AnalysisToolBase {
 
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event);
-    std::vector<art::Ptr<recob::Hit>>
-    collectSliceHits(const art::Event &event,
-                     const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec);
-    std::pair<double, double>
-    calculateChargeCentroid(const art::Event &event, common::PandoraView view,
-                            const std::vector<art::Ptr<recob::Hit>> &hits);
-    void fillDetectorImage(
-        const recob::Wire &wire, size_t wire_idx,
-        const std::vector<ImageProperties> &properties,
-        const art::FindManyP<recob::Hit> &wire_hit_assoc,
-        const std::set<art::Ptr<recob::Hit>> &hit_set,
-        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-            &mcp_bkth_assoc,
-        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-        const std::map<int, size_t> &trackid_to_index,
-        const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
-            &semantic_label_vector,
-        std::vector<Image<float>> &detector_images,
-        std::vector<Image<int>> &semantic_images, bool is_data,
-        bool has_mcps);
-    TruthLabelClassifier::TruthPrimaryLabel labelSemanticPixels(
-        const art::Ptr<recob::Hit> &matched_hit,
-        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-            &mcp_bkth_assoc,
-        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-        const std::map<int, size_t> &trackid_to_index,
-        const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
-            &semantic_label_vector,
-        bool has_mcps) const;
-    void constructPixelImages(const art::Event &event,
-                              const std::vector<art::Ptr<recob::Hit>> &hits,
-                              const std::vector<ImageProperties> &properties,
-                              std::vector<Image<float>> &detector_images,
-                              std::vector<Image<int>> &semantic_images,
-                              bool is_data);
-    float runInference(const std::vector<Image<float>> &detector_images,
-                       const std::string &absolute_scratch_dir,
-                       const std::string &work_dir, const std::string &arch,
-                       const std::string &weights_file);
+    std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event &event, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec);
+    std::pair<double, double> calculateChargeCentroid(const art::Event &event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>> &hits);
+    void fillDetectorImage(const recob::Wire &wire, size_t wire_idx, const std::vector<ImageProperties> &properties, const art::FindManyP<recob::Hit> &wire_hit_assoc, const std::set<art::Ptr<recob::Hit>> &hit_set, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps);
+    TruthLabelClassifier::TruthPrimaryLabel labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, bool has_mcps) const;
+    void constructPixelImages(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data);
+    float runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file);
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -356,10 +321,7 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
     }
 }
 
-void ImageAnalysis::analyseSlice(
-    const art::Event &event,
-    std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec, bool is_data,
-    bool is_selected) {
+void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec, bool is_data, bool is_selected) {
     for (const auto &pfp : pfp_pxy_vec) {
         if (pfp->IsPrimary()) {
             const auto &vtx = pfp.get<recob::Vertex>();
@@ -508,8 +470,7 @@ void ImageAnalysis::analyseSlice(
     }
 }
 
-std::vector<art::Ptr<recob::Hit>>
-ImageAnalysis::collectAllHits(const art::Event &event) {
+std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectAllHits(const art::Event &event) {
     std::vector<art::Ptr<recob::Hit>> all_hits;
     auto hit_handle =
         event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
@@ -519,9 +480,7 @@ ImageAnalysis::collectAllHits(const art::Event &event) {
     return all_hits;
 }
 
-std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(
-    const art::Event &event,
-    const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec) {
+std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Event &event, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec) {
     std::vector<art::Ptr<recob::Hit>> neutrino_hits;
     auto pfpHandle =
         event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
@@ -543,9 +502,7 @@ std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(
     return neutrino_hits;
 }
 
-std::pair<double, double> ImageAnalysis::calculateChargeCentroid(
-    const art::Event &event, common::PandoraView view,
-    const std::vector<art::Ptr<recob::Hit>> &hits) {
+std::pair<double, double> ImageAnalysis::calculateChargeCentroid(const art::Event &event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>> &hits) {
     double sum_charge = 0.0;
     double sum_wire = 0.0;
     double sum_drift = 0.0;
@@ -566,16 +523,7 @@ std::pair<double, double> ImageAnalysis::calculateChargeCentroid(
     return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
-TruthLabelClassifier::TruthPrimaryLabel
-ImageAnalysis::labelSemanticPixels(
-    const art::Ptr<recob::Hit> &matched_hit,
-    const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        &mcp_bkth_assoc,
-    const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-    const std::map<int, size_t> &trackid_to_index,
-    const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
-        &semantic_label_vector,
-    bool has_mcps) const {
+TruthLabelClassifier::TruthPrimaryLabel ImageAnalysis::labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, bool has_mcps) const {
     TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
         TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
     if (!has_mcps || !mcp_vector.isValid())
@@ -608,20 +556,7 @@ ImageAnalysis::labelSemanticPixels(
     return semantic_pixel_label;
 }
 
-void ImageAnalysis::fillDetectorImage(
-    const recob::Wire &wire, size_t wire_idx,
-    const std::vector<ImageProperties> &properties,
-    const art::FindManyP<recob::Hit> &wire_hit_assoc,
-    const std::set<art::Ptr<recob::Hit>> &hit_set,
-    const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        &mcp_bkth_assoc,
-    const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-    const std::map<int, size_t> &trackid_to_index,
-    const std::vector<TruthLabelClassifier::TruthPrimaryLabel>
-        &semantic_label_vector,
-    std::vector<Image<float>> &detector_images,
-    std::vector<Image<int>> &semantic_images, bool is_data,
-    bool has_mcps) {
+void ImageAnalysis::fillDetectorImage(const recob::Wire &wire, size_t wire_idx, const std::vector<ImageProperties> &properties, const art::FindManyP<recob::Hit> &wire_hit_assoc, const std::set<art::Ptr<recob::Hit>> &hit_set, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps) {
     auto ch_id = wire.Channel();
     if (fBadChannels.count(ch_id)) {
         return;
@@ -690,11 +625,7 @@ void ImageAnalysis::fillDetectorImage(
     }
 }
 
-void ImageAnalysis::constructPixelImages(
-    const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits,
-    const std::vector<ImageProperties> &properties,
-    std::vector<Image<float>> &detector_images,
-    std::vector<Image<int>> &semantic_images, bool is_data) {
+void ImageAnalysis::constructPixelImages(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data) {
     detector_images.clear();
     semantic_images.clear();
     for (const auto &prop : properties) {
@@ -741,10 +672,7 @@ void ImageAnalysis::constructPixelImages(
     }
 }
 
-float ImageAnalysis::runInference(
-    const std::vector<Image<float>> &detector_images,
-    const std::string &absolute_scratch_dir, const std::string &work_dir,
-    const std::string &arch, const std::string &weights_file) {
+float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file) {
     using std::string;
     string npy_in = absolute_scratch_dir + "/detector_images.npy";
     string temp_out = absolute_scratch_dir + "/temp_test_out.txt";
