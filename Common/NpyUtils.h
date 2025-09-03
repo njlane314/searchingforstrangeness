@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace common {
 
@@ -32,8 +33,7 @@ inline void save_npy_f32_1d(const std::string &path,
 
     std::ofstream ofs(path, std::ios::binary);
     if (!ofs)
-        throw art::Exception(art::errors::LogicError)
-            << "Cannot open " << path << " for writing";
+        throw std::runtime_error("Cannot open " + path + " for writing");
 
     ofs.write(magic, sizeof(magic) - 1);
     ofs.put(static_cast<char>(major));
@@ -43,21 +43,19 @@ inline void save_npy_f32_1d(const std::string &path,
     ofs.write(reinterpret_cast<const char *>(data.data()),
               static_cast<std::streamsize>(data.size() * sizeof(float)));
     if (!ofs)
-        throw art::Exception(art::errors::LogicError) << "Short write to " << path;
+        throw std::runtime_error("Short write to " + path);
 }
 
 inline void save_npy_f32_2d(const std::string &path,
                             const std::vector<std::vector<float>> &data) {
     if (data.empty())
-        throw art::Exception(art::errors::LogicError)
-            << "Cannot write empty array to " << path;
+        throw std::runtime_error("Cannot write empty array to " + path);
 
     size_t rows = data.size();
     size_t cols = data.front().size();
     for (const auto &row : data) {
         if (row.size() != cols)
-            throw art::Exception(art::errors::LogicError)
-                << "Inconsistent row size writing " << path;
+            throw std::runtime_error("Inconsistent row size writing " + path);
     }
 
     const char magic[] = "\x93NUMPY";
@@ -79,8 +77,7 @@ inline void save_npy_f32_2d(const std::string &path,
 
     std::ofstream ofs(path, std::ios::binary);
     if (!ofs)
-        throw art::Exception(art::errors::LogicError)
-            << "Cannot open " << path << " for writing";
+        throw std::runtime_error("Cannot open " + path + " for writing");
 
     ofs.write(magic, sizeof(magic) - 1);
     ofs.put(static_cast<char>(major));
@@ -93,7 +90,7 @@ inline void save_npy_f32_2d(const std::string &path,
                   static_cast<std::streamsize>(row.size() * sizeof(float)));
     }
     if (!ofs)
-        throw art::Exception(art::errors::LogicError) << "Short write to " << path;
+        throw std::runtime_error("Short write to " + path);
 }
 
 } // namespace common

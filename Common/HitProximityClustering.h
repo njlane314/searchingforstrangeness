@@ -289,5 +289,3 @@ bool cluster(const std::vector<art::Ptr<recob::Hit>> &hit_ptr_v,
 } // namespace common
 
 #endif // HITPROXIMITYCLUSTERING_H
-
-/

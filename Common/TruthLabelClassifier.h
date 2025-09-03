@@ -22,9 +22,7 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/Wire.h"
-#include "lardataobj/Simulation/SimChannel.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
