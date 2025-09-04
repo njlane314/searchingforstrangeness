@@ -9,9 +9,9 @@
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
-    <!ENTITY assets_tar "&tar_dir;/strangeness_assets.tar.gz">
+    <!ENTITY assets_tar "&tar_dir;/strangeness_assets.tar">
     <!ENTITY jobsub_config "
-        --tar_file_name=file://&assets_tar;"
+        --tar_file_name=dropbox://&assets_tar;"
     >
 
     <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">

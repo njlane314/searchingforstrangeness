@@ -12,9 +12,9 @@ cleanup() {
 trap cleanup EXIT
 
 LAR_TAR_LOCAL="${TMP_DIR}/strangeness.tar"
-ASSETS_TAR_LOCAL="${TMP_DIR}/strangeness_assets.tar.gz"
+ASSETS_TAR_LOCAL="${TMP_DIR}/strangeness_assets.tar"
 LAR_TAR="${TAR_DIR}/strangeness.tar"
-ASSETS_TAR="${TAR_DIR}/strangeness_assets.tar.gz"
+ASSETS_TAR="${TAR_DIR}/strangeness_assets.tar"
 
 tar -C "${BUILD_ROOT}" --exclude='.git' --exclude='tmp' --exclude='*.root' -czf "${LAR_TAR_LOCAL}" .
 tar -C "${ASSETS_ROOT}" --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' -czf "${ASSETS_TAR_LOCAL}" .
