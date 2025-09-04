@@ -5,14 +5,10 @@
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
-    <!ENTITY initsrc "scripts/initsrc.sh">
+    <!ENTITY initsrc "assets/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
-    <!ENTITY assets_tar "&tar_dir;/strangeness_assets.tar">
-    <!ENTITY jobsub_config "
-        --tar_file_name=dropbox://&assets_tar;"
-    >
 
     <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
     
@@ -59,7 +55,7 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="selection_numi_fhc_run1_ext">
+<stage name="selection_numi_fhc_run1_ext">
     <inputdef>&input_def_ext_numi_run1;</inputdef>
     <fcl>&fcl_selection; -a is_data:=true</fcl>
     <initsource>&initsrc;</initsource>
@@ -68,7 +64,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
     <datatier>selected</datatier>
     <numjobs>2000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -97,7 +92,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
     <datatier>selected</datatier>
     <numjobs>3500</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -110,7 +104,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
     <datatier>test</datatier>
     <numjobs>1</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -139,7 +132,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1500</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -152,7 +144,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>3000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -165,7 +156,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_rayleigh_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -178,7 +168,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_down_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -191,7 +180,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodx_sce_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -204,7 +192,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodyz_sce_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -217,7 +204,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremod_yz_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -230,7 +216,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremod_thetayz_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -243,7 +228,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_sce_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>5000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -256,7 +240,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_recomb2_strangeness</workdir>
     <datatier>selected</datatier>
     <numjobs>5000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -269,7 +252,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv</workdir>
     <datatier>selected</datatier>
     <numjobs>8000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -282,7 +264,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_suppression75attenuation8m</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -295,7 +276,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_ly_rayleigh</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -308,7 +288,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_lydown</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -321,7 +300,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_sce</workdir>
     <datatier>selected</datatier>
     <numjobs>5000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -334,7 +312,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_recomb2</workdir>
     <datatier>selected</datatier>
     <numjobs>5000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -347,7 +324,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodx</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -360,7 +336,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodyz</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -373,7 +348,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodthetaxz</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
@@ -386,7 +360,6 @@
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_wiremodthetayz_withsplines</workdir>
     <datatier>selected</datatier>
     <numjobs>1000</numjobs>
-    <jobsub>&jobsub_config;</jobsub>
 </stage>
 
 
