@@ -14,6 +14,7 @@ set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
 add_subdirectory(Common)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
+add_subdirectory(job)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
 message("Compiler: ${CMAKE_CXX_COMPILER}")
