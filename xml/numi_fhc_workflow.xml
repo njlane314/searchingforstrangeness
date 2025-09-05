@@ -50,7 +50,7 @@
     <check>1</check>
     <copy>0</copy>
     <version>prod_&release;</version>
-    <memory>4000</memory>
+    <memory>6000</memory>
     <disk>20GB</disk>
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
@@ -103,7 +103,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
     <datatier>test</datatier>
-    <numjobs>1</numjobs>
+    <numjobs>20</numjobs>
 </stage>
 
 

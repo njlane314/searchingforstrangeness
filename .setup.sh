@@ -25,6 +25,3 @@ htgettoken -a htvaultprod.fnal.gov -i uboone
 which jobsub_submit
 
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib"
-
-kx509
-htgettoken -a htvaultprod.fnal.gov -i uboone
