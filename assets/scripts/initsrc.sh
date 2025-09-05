@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 : "${ASSETS_BASE_DIR:=}"
 if [[ -n "${CONDOR_DIR_INPUT:-}" && -d "${CONDOR_DIR_INPUT}/strangeness/assets" ]]; then
   ASSETS_BASE_DIR="${CONDOR_DIR_INPUT}/strangeness/assets"

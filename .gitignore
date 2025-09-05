@@ -35,4 +35,6 @@
 
 *.pt
 *.npy
+*.err
+*.out
 *.tbz2
