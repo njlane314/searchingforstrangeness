@@ -13,6 +13,10 @@ fi
 
 export WEIGHTS_BASE_DIR="${WEIGHTS_BASE_DIR:-$ASSETS_BASE_DIR/weights}"
 export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/calib/badchannels.txt}"
+if [[ ! -f "$IA_BADCHANNELS" ]]; then
+  echo "ERROR: Missing badchannels file at $IA_BADCHANNELS" >&2
+  exit 1
+fi
 export IA_INFERENCE_WRAPPER="$THIS_DIR/run_strangeness_inference.sh"
 
 # Make sure Python will see our packages
