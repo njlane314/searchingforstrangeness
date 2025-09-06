@@ -60,7 +60,6 @@
 
 <stage name="selection_numi_fhc_run1_ext">
     <inputdef>&input_def_ext_numi_run1;</inputdef>
-    <fcl>&fcl_selection;</fcl>
     <fcl>&fcl_selection_data;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
