@@ -255,13 +255,6 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             _trk_llr_pid_v.push_back(0.0f);
             _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::quiet_NaN());
 
-            float trunk_by_hits[3] = { std::numeric_limits<float>::lowest(),
-                                       std::numeric_limits<float>::lowest(),
-                                       std::numeric_limits<float>::lowest() };
-            float trunk_by_rr[3]   = { std::numeric_limits<float>::lowest(),
-                                       std::numeric_limits<float>::lowest(),
-                                       std::numeric_limits<float>::lowest() };
-
             auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
             for (const auto& calo : calorimetry_objects) {
                 int plane = calo->PlaneID().Plane;
@@ -410,13 +403,13 @@ void TrackAnalysis::fill_default() {
     _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_nhits_u.push_back(std::numeric_limits<int>::lowest());
-    _track_nhits_v.push_back(std::numeric_limits<int>::lowest());
-    _track_nhits_y.push_back(std::numeric_limits<int>::lowest());
+    _track_nhits_u.push_back(-1);
+    _track_nhits_v.push_back(-1);
+    _track_nhits_y.push_back(-1);
     _track_avg_deflection_mean.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_avg_deflection_stdev.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_avg_deflection_separation_mean.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_end_spacepoints.push_back(std::numeric_limits<int>::lowest());
+    _track_end_spacepoints.push_back(-1);
     _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::quiet_NaN());
     _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::quiet_NaN());
     _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::quiet_NaN());

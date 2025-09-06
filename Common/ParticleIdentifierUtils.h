@@ -1,6 +1,7 @@
 #ifndef PARTICLEIDENTIFIERUTILS_H
 #define PARTICLEIDENTIFIERUTILS_H
 #include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
+#include <limits>
 
 namespace common {
 
@@ -29,7 +30,7 @@ double PID(art::Ptr<anab::ParticleID> selected_pid,
             }
         }
     }
-    return std::numeric_limits<double>::lowest();
+    return std::numeric_limits<double>::quiet_NaN();
 }
 } // namespace common
 

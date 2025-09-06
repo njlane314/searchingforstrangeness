@@ -512,7 +512,7 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
                 }
                 else {
                     _backtracked_energies.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_track_ids.push_back(std::numeric_limits<int>::lowest());
+                    _backtracked_track_ids.push_back(-1);
                     _backtracked_pdg_codes.push_back(0);
                     _backtracked_purities.push_back(std::numeric_limits<float>::quiet_NaN());
                     _backtracked_completenesses.push_back(std::numeric_limits<float>::quiet_NaN());
@@ -682,12 +682,12 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _backtracked_sce_start_wire_V.clear();
     _backtracked_sce_start_wire_Y.clear();
 
-    _event_total_hits = std::numeric_limits<int>::lowest();
-    _slice_pdg = std::numeric_limits<int>::lowest();
-    _slice_id = std::numeric_limits<int>::lowest();
+    _event_total_hits = -1;
+    _slice_pdg = 0;
+    _slice_id = -1;
     _topological_score = std::numeric_limits<float>::quiet_NaN();
     _slice_topological_scores.clear();
-    _slice_num_hits = std::numeric_limits<int>::lowest();
+    _slice_num_hits = -1;
     _pfp_pdg_codes.clear();
     _pfp_num_hits.clear();
     _pfp_num_plane_hits_U.clear();

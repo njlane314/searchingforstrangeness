@@ -364,15 +364,15 @@ void TruthAnalysis::setBranches(TTree* _tree) {
 }
 
 void TruthAnalysis::resetTTree(TTree* tree) {
-    _neutrino_pdg = std::numeric_limits<int>::lowest();
-    _interaction_ccnc = std::numeric_limits<int>::lowest();
-    _interaction_mode = std::numeric_limits<int>::lowest();
-    _interaction_type = std::numeric_limits<int>::lowest();
+    _neutrino_pdg = 0;
+    _interaction_ccnc = -1;
+    _interaction_mode = -1;
+    _interaction_type = -1;
     _neutrino_energy = std::numeric_limits<float>::quiet_NaN();
     _neutrino_theta = std::numeric_limits<float>::quiet_NaN();
     _neutrino_pt = std::numeric_limits<float>::quiet_NaN();
-    _target_nucleus_pdg = std::numeric_limits<int>::lowest();
-    _hit_nucleon_pdg = std::numeric_limits<int>::lowest();
+    _target_nucleus_pdg = 0;
+    _hit_nucleon_pdg = 0;
     _kinematic_W = std::numeric_limits<float>::quiet_NaN();
     _kinematic_X = std::numeric_limits<float>::quiet_NaN();
     _kinematic_Y = std::numeric_limits<float>::quiet_NaN();
@@ -395,19 +395,19 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _true_neutrino_momentum_y = std::numeric_limits<float>::quiet_NaN();
     _true_neutrino_momentum_z = std::numeric_limits<float>::quiet_NaN();
     _flux_path_length = std::numeric_limits<float>::quiet_NaN();
-    _flux_parent_pdg = std::numeric_limits<int>::lowest();
-    _flux_hadron_pdg = std::numeric_limits<int>::lowest();
-    _flux_decay_mode = std::numeric_limits<int>::lowest();
-    _flux_decay_vtx_x = std::numeric_limits<double>::lowest();
-    _flux_decay_vtx_y = std::numeric_limits<double>::lowest();
-    _flux_decay_vtx_z = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_x = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_y = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_z = std::numeric_limits<double>::lowest();
-    _numi_baseline = std::numeric_limits<double>::lowest();
-    _numi_off_axis_angle = -999.0;
-    _bnb_baseline = std::numeric_limits<double>::lowest();
-    _bnb_off_axis_angle = -999.0;
+    _flux_parent_pdg = 0;
+    _flux_hadron_pdg = 0;
+    _flux_decay_mode = -1;
+    _flux_decay_vtx_x = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_vtx_y = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_vtx_z = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_x = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_y = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_z = std::numeric_limits<double>::quiet_NaN();
+    _numi_baseline = std::numeric_limits<double>::quiet_NaN();
+    _numi_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
+    _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
+    _bnb_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
     _is_vertex_in_fiducial = false;
     _count_mu_minus = 0;
     _count_mu_plus = 0;
