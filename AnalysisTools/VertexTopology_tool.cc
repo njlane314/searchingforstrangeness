@@ -50,8 +50,6 @@ private:
   float fBackRMin;
   float fBackRMax;
   float fBackMargin;
-  float fBackQmax;
-  float fVtxQmax;
 
   float _vtx_backfrac_bnb;
   float _vtx_backfrac_numi;
@@ -90,8 +88,6 @@ private:
   float rho_term(const std::vector<float> &w) const;
 };
 
-
-
 VertexTopology::VertexTopology(const fhicl::ParameterSet &pset) {
   configure(pset);
 }
@@ -101,18 +97,14 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
   fSpacePointproducer =
       pset.get<art::InputTag>("SpacePointproducer", fPFPproducer);
 
-
-
   auto bnb = pset.get<std::vector<float>>("BNBBeamDir", {0.f, 0.f, 47000.f});
   if (bnb.size() == 3)
     fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
-
 
   auto numi =
       pset.get<std::vector<float>>("NuMIBeamDir", {5502.f, 7259.f, 67270.f});
   if (numi.size() == 3)
     fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
-
 
   fVtxRadius = pset.get<float>("VertexRadius", 5.f);
   float theta = pset.get<float>("ForwardAngleDeg", 25.f);
@@ -120,10 +112,6 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
   fBackRMin = pset.get<float>("BackwardRadiusMin", 3.f);
   fBackRMax = pset.get<float>("BackwardRadiusMax", 7.f);
   fBackMargin = pset.get<float>("BackwardCosMargin", 0.05f);
-  fBackQmax = pset.get<float>("BackwardMax", std::numeric_limits<float>::max());
-  fVtxQmax =
-      pset.get<float>("VertexResidualMax", std::numeric_limits<float>::max());
-
 
   fKernelR = pset.get<float>("KernelR", 25.f);
   fRhoRef = pset.get<float>("RhoRef", 50.f);
@@ -135,8 +123,6 @@ void VertexTopology::analyseEvent(const art::Event &, bool) {}
 void VertexTopology::analyseSlice(
     const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
     bool, bool) {
-
-
 
   TVector3 vtx;
   bool has_vtx = false;
@@ -156,7 +142,6 @@ void VertexTopology::analyseSlice(
   if (!has_vtx)
     return;
 
-
   auto const &pfp_h =
       event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
   art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event,
@@ -165,8 +150,6 @@ void VertexTopology::analyseSlice(
   auto const &sp_h =
       event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
   art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
-
-
 
   std::vector<TVector3> dirs;
   std::vector<float> weights;
@@ -201,13 +184,10 @@ void VertexTopology::analyseSlice(
     }
   }
 
-
   compute_back_off_fractions(dirs, weights, fBNBdir, _vtx_backfrac_bnb,
                              _vtx_offfrac_bnb);
   compute_back_off_fractions(dirs, weights, fNuMIdir, _vtx_backfrac_numi,
                              _vtx_offfrac_numi);
-
-
 
   std::vector<TVector3> u;
   u.reserve(dirs.size());
@@ -231,7 +211,6 @@ void VertexTopology::analyseSlice(
   _had_mu_parallel_bnb = compute_mu_parallel(u, wtilde, fBNBdir);
   _had_mu_parallel_numi = compute_mu_parallel(u, wtilde, fNuMIdir);
 }
-
 
 void VertexTopology::compute_back_off_fractions(
     const std::vector<TVector3> &dirs, const std::vector<float> &weights,
@@ -260,14 +239,9 @@ void VertexTopology::compute_back_off_fractions(
   }
 
   back_frac = (sum_ann > 0) ? sum_back / sum_ann : 0.f;
-  if (sum_back > fBackQmax)
-    back_frac = 1.f;
 
   off_frac = (sum_vtx > 0) ? sum_vtx_off / sum_vtx : 0.f;
-  if (sum_vtx_off > fVtxQmax)
-    off_frac = 1.f;
 }
-
 
 float VertexTopology::thrust_deficit(const std::vector<TVector3> &u,
                                      const std::vector<float> &w,
@@ -336,8 +310,7 @@ float VertexTopology::rho_term(const std::vector<float> &w) const {
   double sumW = 0.0;
   for (float wi : w)
     sumW += wi;
-  const double vol = (4.0 / 3.0) * TMath::Pi() *
-                     std::pow(fKernelR, 3);
+  const double vol = (4.0 / 3.0) * TMath::Pi() * std::pow(fKernelR, 3);
   const double rho = (vol > 0.0) ? (sumW / vol) : 0.0;
   const double term = (fRhoRef > 0.0) ? std::min(rho / fRhoRef, 1.0) : 0.0;
   return static_cast<float>(clamp01(term));
@@ -357,14 +330,12 @@ float VertexTopology::compute_mu_parallel(const std::vector<TVector3> &u,
   return (sumW > 0.0) ? static_cast<float>(sumWabs / sumW) : 0.f;
 }
 
-
 void VertexTopology::setBranches(TTree *t) {
 
   t->Branch("vtx_backfrac_bnb", &_vtx_backfrac_bnb, "vtx_backfrac_bnb/F");
   t->Branch("vtx_backfrac_numi", &_vtx_backfrac_numi, "vtx_backfrac_numi/F");
   t->Branch("vtx_offfrac_bnb", &_vtx_offfrac_bnb, "vtx_offfrac_bnb/F");
   t->Branch("vtx_offfrac_numi", &_vtx_offfrac_numi, "vtx_offfrac_numi/F");
-
 
   t->Branch("had_thrust_def", &_had_thrust_def, "had_thrust_def/F");
   t->Branch("had_sphericity", &_had_sphericity, "had_sphericity/F");
@@ -391,6 +362,6 @@ void VertexTopology::resetTTree(TTree *) {
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
 
-}
+} // namespace analysis
 
 #endif
