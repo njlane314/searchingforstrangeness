@@ -203,7 +203,7 @@ void VertexTopology::analyseSlice(const art::Event &event,
 
     // --- Get PFParticle -> SpacePoint associations and SpacePoint -> Hit ---
     auto const &pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fPFPproducer);
+    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fSpacePointproducer);
 
     auto const &sp_h = event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
     art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
