@@ -40,11 +40,11 @@ private:
     art::InputTag fPFPproducer;
     art::InputTag fSpacePointproducer;
     // ---------- Original "VertexCleanness" metrics ----------
-    void compute_vtx_scores(const std::vector<TVector3>& dirs,
-                            const std::vector<float>& weights,
-                            const TVector3& beam_dir,
-                            float& back_frac,
-                            float& off_frac);
+    void compute_back_off_fractions(const std::vector<TVector3>& dirs,
+                                    const std::vector<float>& weights,
+                                    const TVector3& beam_dir,
+                                    float& back_frac,
+                                    float& off_frac);
 
     TVector3 fBNBdir;
     TVector3 fNuMIdir;
@@ -201,10 +201,10 @@ void VertexTopology::analyseSlice(const art::Event &event,
     }
 
     // --- Original vertex-cleanness summaries (BNB / NuMI) ---
-    compute_vtx_scores(dirs, weights, fBNBdir,
-                       _vtx_backfrac_bnb, _vtx_offfrac_bnb);
-    compute_vtx_scores(dirs, weights, fNuMIdir,
-                       _vtx_backfrac_numi, _vtx_offfrac_numi);
+    compute_back_off_fractions(dirs, weights, fBNBdir,
+                               _vtx_backfrac_bnb, _vtx_offfrac_bnb);
+    compute_back_off_fractions(dirs, weights, fNuMIdir,
+                               _vtx_backfrac_numi, _vtx_offfrac_numi);
 
     // --- HadFlow+ primitives (make unit directions + kernel-weighted weights) ---
     std::vector<TVector3> u;        u.reserve(dirs.size());
@@ -239,11 +239,11 @@ void VertexTopology::analyseSlice(const art::Event &event,
 }
 
 // ---------- Original vertex-cleanness computation ----------
-void VertexTopology::compute_vtx_scores(const std::vector<TVector3>& dirs,
-                                        const std::vector<float>& weights,
-                                        const TVector3& beam_dir,
-                                        float& back_frac,
-                                        float& off_frac)
+void VertexTopology::compute_back_off_fractions(const std::vector<TVector3>& dirs,
+                                                const std::vector<float>& weights,
+                                                const TVector3& beam_dir,
+                                                float& back_frac,
+                                                float& off_frac)
 {
     float sum_ann = 0.f, sum_back = 0.f;
     float sum_vtx = 0.f, sum_vtx_off = 0.f;
