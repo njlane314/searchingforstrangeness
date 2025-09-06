@@ -340,9 +340,9 @@ void ImageAnalysis::setBranches(TTree *_tree) {
 }
 
 void ImageAnalysis::resetTTree(TTree *_tree) {
-    _reco_neutrino_vertex_x = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_y = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_z = std::numeric_limits<float>::lowest();
+    _reco_neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
     _detector_image_u.clear();
     _detector_image_v.clear();
     _detector_image_w.clear();
@@ -355,9 +355,9 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
     _event_semantic_image_u.clear();
     _event_semantic_image_v.clear();
     _event_semantic_image_w.clear();
-    _event_adc_u = std::numeric_limits<float>::lowest();
-    _event_adc_v = std::numeric_limits<float>::lowest();
-    _event_adc_w = std::numeric_limits<float>::lowest();
+    _event_adc_u = std::numeric_limits<float>::quiet_NaN();
+    _event_adc_v = std::numeric_limits<float>::quiet_NaN();
+    _event_adc_w = std::numeric_limits<float>::quiet_NaN();
     _slice_semantic_counts_u.clear();
     _slice_semantic_counts_v.clear();
     _slice_semantic_counts_w.clear();
@@ -494,7 +494,7 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
         _inference_scores[m.name] = score;
     }
 
-    if (_reco_neutrino_vertex_x != std::numeric_limits<float>::lowest()) {
+    if (!std::isnan(_reco_neutrino_vertex_x)) {
         TVector3 vtx_pos_3d(_reco_neutrino_vertex_x, _reco_neutrino_vertex_y,
                             _reco_neutrino_vertex_z);
         TVector3 vtx_proj_u = common::ProjectToWireView(

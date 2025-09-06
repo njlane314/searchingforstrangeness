@@ -21,6 +21,7 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 #include <iostream>
+#include <limits>
 
 namespace analysis {
 
@@ -117,14 +118,14 @@ void BlipAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pro
         _blip_dyz.push_back(blip_vec[i].dYZ);
         _blip_charge.push_back(blip_vec[i].Charge);
         _blip_lead_g4_id.push_back(blip_vec[i].truth.LeadG4ID);
-        int b_pdg = -999;
+        int b_pdg = 0;
         std::string b_process = "null";
-        float b_vx = -999;
-        float b_vy = -999;
-        float b_vz = -999;
-        float b_e = -999;
-        float b_mass = -999;
-        int b_tid = -999;
+        float b_vx = std::numeric_limits<float>::quiet_NaN();
+        float b_vy = std::numeric_limits<float>::quiet_NaN();
+        float b_vz = std::numeric_limits<float>::quiet_NaN();
+        float b_e = std::numeric_limits<float>::quiet_NaN();
+        float b_mass = std::numeric_limits<float>::quiet_NaN();
+        int b_tid = -1;
 
         if (!is_data) {
             b_pdg = blip_vec[i].truth.LeadG4PDG;
@@ -161,32 +162,32 @@ void BlipAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pro
 }
 
 void BlipAnalysis::fillDefault() {
-    _blip_id.push_back(std::numeric_limits<int>::lowest());
+    _blip_id.push_back(-1);
     _blip_is_valid.push_back(false);
-    _blip_tpc.push_back(std::numeric_limits<int>::lowest());
-    _blip_n_planes.push_back(std::numeric_limits<int>::lowest());
-    _blip_max_wire_span.push_back(std::numeric_limits<int>::lowest());
-    _blip_energy.push_back(std::numeric_limits<float>::lowest());
-    _blip_energy_estar.push_back(std::numeric_limits<float>::lowest());
-    _blip_time.push_back(std::numeric_limits<float>::lowest());
-    _blip_prox_trk_dist.push_back(std::numeric_limits<float>::lowest());
-    _blip_prox_trk_id.push_back(std::numeric_limits<int>::lowest());
+    _blip_tpc.push_back(-1);
+    _blip_n_planes.push_back(-1);
+    _blip_max_wire_span.push_back(-1);
+    _blip_energy.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_energy_estar.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_time.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_prox_trk_dist.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_prox_trk_id.push_back(-1);
     _blip_in_cylinder.push_back(false);
-    _blip_x.push_back(std::numeric_limits<float>::lowest());
-    _blip_y.push_back(std::numeric_limits<float>::lowest());
-    _blip_z.push_back(std::numeric_limits<float>::lowest());
-    _blip_sigma_yz.push_back(std::numeric_limits<float>::lowest());
-    _blip_dx.push_back(std::numeric_limits<float>::lowest());
-    _blip_dyz.push_back(std::numeric_limits<float>::lowest());
-    _blip_charge.push_back(std::numeric_limits<float>::lowest());
-    _blip_pdg.push_back(std::numeric_limits<int>::lowest());
+    _blip_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_sigma_yz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_dx.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_dyz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_charge.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_pdg.push_back(0);
     _blip_process.push_back("null");
-    _blip_vx.push_back(std::numeric_limits<float>::lowest());
-    _blip_vy.push_back(std::numeric_limits<float>::lowest());
-    _blip_vz.push_back(std::numeric_limits<float>::lowest());
-    _blip_e.push_back(std::numeric_limits<float>::lowest());
-    _blip_mass.push_back(std::numeric_limits<float>::lowest());
-    _blip_trk_id.push_back(std::numeric_limits<int>::lowest());
+    _blip_vx.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_vy.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_vz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_e.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_mass.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_trk_id.push_back(-1);
 }
 
 void BlipAnalysis::setBranches(TTree *_tree) {

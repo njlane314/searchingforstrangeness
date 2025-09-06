@@ -13,6 +13,7 @@
 #include "Common/TrackShowerScore.h"
 
 #include <iostream>
+#include <limits>
 
 namespace analysis {
 
@@ -136,12 +137,12 @@ void EnergyAnalysis::setBranches(TTree* _tree) {
 }
 
 void EnergyAnalysis::resetTTree(TTree* _tree) {
-    _neutrino_energy_0 = std::numeric_limits<float>::lowest();
-    _neutrino_energy_1 = std::numeric_limits<float>::lowest();
-    _neutrino_energy_2 = std::numeric_limits<float>::lowest();
-    _slice_calo_energy_0 = std::numeric_limits<float>::lowest();
-    _slice_calo_energy_1 = std::numeric_limits<float>::lowest();
-    _slice_calo_energy_2 = std::numeric_limits<float>::lowest();
+    _neutrino_energy_0 = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_energy_1 = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_energy_2 = std::numeric_limits<float>::quiet_NaN();
+    _slice_calo_energy_0 = std::numeric_limits<float>::quiet_NaN();
+    _slice_calo_energy_1 = std::numeric_limits<float>::quiet_NaN();
+    _slice_calo_energy_2 = std::numeric_limits<float>::quiet_NaN();
 }
 
 DEFINE_ART_CLASS_TOOL(EnergyAnalysis)

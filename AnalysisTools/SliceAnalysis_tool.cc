@@ -8,6 +8,7 @@
 #include "Common/BacktrackingUtilities.h"
 
 #include <iostream>
+#include <limits>
 
 namespace analysis {
 
@@ -398,37 +399,37 @@ void SliceAnalysis::setBranches(TTree *_tree) {
 }
 
 void SliceAnalysis::resetTTree(TTree *_tree) {
-    original_event_neutrino_hits = std::numeric_limits<int>::min();
-    event_neutrino_hits = std::numeric_limits<int>::min();
-    event_muon_hits = std::numeric_limits<int>::min();
-    event_electron_hits = std::numeric_limits<int>::min();
-    event_proton_hits = std::numeric_limits<int>::min();
-    event_charged_pion_hits = std::numeric_limits<int>::min();
-    event_neutral_pion_hits = std::numeric_limits<int>::min();
-    event_neutron_hits = std::numeric_limits<int>::min();
-    event_gamma_hits = std::numeric_limits<int>::min();
-    event_other_hits = std::numeric_limits<int>::min();
-    event_charged_kaon_hits = std::numeric_limits<int>::min();
-    event_neutral_kaon_hits = std::numeric_limits<int>::min();
-    event_lambda_hits = std::numeric_limits<int>::min();
-    event_charged_sigma_hits = std::numeric_limits<int>::min();
-    event_sigma_zero_hits = std::numeric_limits<int>::min();
-    event_cosmic_hits = std::numeric_limits<int>::min();
-    slice_neutrino_hits = std::numeric_limits<int>::min();
-    slice_muon_hits = std::numeric_limits<int>::min();
-    slice_electron_hits = std::numeric_limits<int>::min();
-    slice_proton_hits = std::numeric_limits<int>::min();
-    slice_charged_pion_hits = std::numeric_limits<int>::min();
-    slice_neutral_pion_hits = std::numeric_limits<int>::min();
-    slice_neutron_hits = std::numeric_limits<int>::min();
-    slice_gamma_hits = std::numeric_limits<int>::min();
-    slice_other_hits = std::numeric_limits<int>::min();
-    slice_charged_kaon_hits = std::numeric_limits<int>::min();
-    slice_neutral_kaon_hits = std::numeric_limits<int>::min();
-    slice_lambda_hits = std::numeric_limits<int>::min();
-    slice_charged_sigma_hits = std::numeric_limits<int>::min();
-    slice_sigma_zero_hits = std::numeric_limits<int>::min();
-    slice_cosmic_hits = std::numeric_limits<int>::min();
+    original_event_neutrino_hits = -1;
+    event_neutrino_hits = -1;
+    event_muon_hits = -1;
+    event_electron_hits = -1;
+    event_proton_hits = -1;
+    event_charged_pion_hits = -1;
+    event_neutral_pion_hits = -1;
+    event_neutron_hits = -1;
+    event_gamma_hits = -1;
+    event_other_hits = -1;
+    event_charged_kaon_hits = -1;
+    event_neutral_kaon_hits = -1;
+    event_lambda_hits = -1;
+    event_charged_sigma_hits = -1;
+    event_sigma_zero_hits = -1;
+    event_cosmic_hits = -1;
+    slice_neutrino_hits = -1;
+    slice_muon_hits = -1;
+    slice_electron_hits = -1;
+    slice_proton_hits = -1;
+    slice_charged_pion_hits = -1;
+    slice_neutral_pion_hits = -1;
+    slice_neutron_hits = -1;
+    slice_gamma_hits = -1;
+    slice_other_hits = -1;
+    slice_charged_kaon_hits = -1;
+    slice_neutral_kaon_hits = -1;
+    slice_lambda_hits = -1;
+    slice_charged_sigma_hits = -1;
+    slice_sigma_zero_hits = -1;
+    slice_cosmic_hits = -1;
     pfp_neutrino_hits.clear();
     pfp_muon_hits.clear();
     pfp_electron_hits.clear();
@@ -444,8 +445,8 @@ void SliceAnalysis::resetTTree(TTree *_tree) {
     pfp_charged_sigma_hits.clear();
     pfp_sigma_zero_hits.clear();
     pfp_cosmic_hits.clear();
-    neutrino_completeness_from_pfp = std::numeric_limits<float>::min();
-    neutrino_purity_from_pfp = std::numeric_limits<float>::min();
+    neutrino_completeness_from_pfp = std::numeric_limits<float>::quiet_NaN();
+    neutrino_purity_from_pfp = std::numeric_limits<float>::quiet_NaN();
 }
 
 void SliceAnalysis::incrementCounts(const std::vector<art::Ptr<recob::Hit>> &hits,

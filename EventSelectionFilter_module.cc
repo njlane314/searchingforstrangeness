@@ -237,9 +237,9 @@ void EventSelectionFilter::AddDaughters(const common::ProxyPfpElem_t &pfp_pxy, c
 
 void EventSelectionFilter::ResetTTree() {
     _selected = 0;
-    _run = std::numeric_limits<int>::lowest();
-    _sub = std::numeric_limits<int>::lowest();
-    _evt = std::numeric_limits<int>::lowest();
+    _run = -1;
+    _sub = -1;
+    _evt = -1;
     _selectionTool->resetTTree(_tree);
     for (size_t i = 0; i < _analysisToolsVec.size(); i++)
         _analysisToolsVec[i]->resetTTree(_tree);

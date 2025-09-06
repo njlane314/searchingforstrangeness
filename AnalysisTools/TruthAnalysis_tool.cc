@@ -364,50 +364,50 @@ void TruthAnalysis::setBranches(TTree* _tree) {
 }
 
 void TruthAnalysis::resetTTree(TTree* tree) {
-    _neutrino_pdg = std::numeric_limits<int>::lowest();
-    _interaction_ccnc = std::numeric_limits<int>::lowest();
-    _interaction_mode = std::numeric_limits<int>::lowest();
-    _interaction_type = std::numeric_limits<int>::lowest();
-    _neutrino_energy = std::numeric_limits<float>::lowest();
-    _neutrino_theta = std::numeric_limits<float>::lowest();
-    _neutrino_pt = std::numeric_limits<float>::lowest();
-    _target_nucleus_pdg = std::numeric_limits<int>::lowest();
-    _hit_nucleon_pdg = std::numeric_limits<int>::lowest();
-    _kinematic_W = std::numeric_limits<float>::lowest();
-    _kinematic_X = std::numeric_limits<float>::lowest();
-    _kinematic_Y = std::numeric_limits<float>::lowest();
-    _kinematic_Q_squared = std::numeric_limits<float>::lowest();
-    _neutrino_momentum_x = std::numeric_limits<float>::lowest();
-    _neutrino_momentum_y = std::numeric_limits<float>::lowest();
-    _neutrino_momentum_z = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_x = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_y = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_z = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_wire_u = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_wire_v = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_wire_w = std::numeric_limits<float>::lowest();
-    _neutrino_vertex_time = std::numeric_limits<float>::lowest();
-    _neutrino_sce_vertex_x = std::numeric_limits<float>::lowest();
-    _neutrino_sce_vertex_y = std::numeric_limits<float>::lowest();
-    _neutrino_sce_vertex_z = std::numeric_limits<float>::lowest();
-    _lepton_energy = std::numeric_limits<float>::lowest();
-    _true_neutrino_momentum_x = std::numeric_limits<float>::lowest();
-    _true_neutrino_momentum_y = std::numeric_limits<float>::lowest();
-    _true_neutrino_momentum_z = std::numeric_limits<float>::lowest();
-    _flux_path_length = std::numeric_limits<float>::lowest();
-    _flux_parent_pdg = std::numeric_limits<int>::lowest();
-    _flux_hadron_pdg = std::numeric_limits<int>::lowest();
-    _flux_decay_mode = std::numeric_limits<int>::lowest();
-    _flux_decay_vtx_x = std::numeric_limits<double>::lowest();
-    _flux_decay_vtx_y = std::numeric_limits<double>::lowest();
-    _flux_decay_vtx_z = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_x = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_y = std::numeric_limits<double>::lowest();
-    _flux_decay_mom_z = std::numeric_limits<double>::lowest();
-    _numi_baseline = std::numeric_limits<double>::lowest();
-    _numi_off_axis_angle = -999.0;
-    _bnb_baseline = std::numeric_limits<double>::lowest();
-    _bnb_off_axis_angle = -999.0;
+    _neutrino_pdg = 0;
+    _interaction_ccnc = -1;
+    _interaction_mode = -1;
+    _interaction_type = -1;
+    _neutrino_energy = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_theta = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_pt = std::numeric_limits<float>::quiet_NaN();
+    _target_nucleus_pdg = 0;
+    _hit_nucleon_pdg = 0;
+    _kinematic_W = std::numeric_limits<float>::quiet_NaN();
+    _kinematic_X = std::numeric_limits<float>::quiet_NaN();
+    _kinematic_Y = std::numeric_limits<float>::quiet_NaN();
+    _kinematic_Q_squared = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_momentum_x = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_momentum_y = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_momentum_z = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_wire_u = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_wire_v = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_wire_w = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex_time = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_sce_vertex_x = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_sce_vertex_y = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_sce_vertex_z = std::numeric_limits<float>::quiet_NaN();
+    _lepton_energy = std::numeric_limits<float>::quiet_NaN();
+    _true_neutrino_momentum_x = std::numeric_limits<float>::quiet_NaN();
+    _true_neutrino_momentum_y = std::numeric_limits<float>::quiet_NaN();
+    _true_neutrino_momentum_z = std::numeric_limits<float>::quiet_NaN();
+    _flux_path_length = std::numeric_limits<float>::quiet_NaN();
+    _flux_parent_pdg = 0;
+    _flux_hadron_pdg = 0;
+    _flux_decay_mode = -1;
+    _flux_decay_vtx_x = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_vtx_y = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_vtx_z = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_x = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_y = std::numeric_limits<double>::quiet_NaN();
+    _flux_decay_mom_z = std::numeric_limits<double>::quiet_NaN();
+    _numi_baseline = std::numeric_limits<double>::quiet_NaN();
+    _numi_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
+    _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
+    _bnb_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
     _is_vertex_in_fiducial = false;
     _count_mu_minus = 0;
     _count_mu_plus = 0;
@@ -706,8 +706,8 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _mc_end_vertex_x.push_back(mcp.EndX());
         _mc_end_vertex_y.push_back(mcp.EndY());
         _mc_end_vertex_z.push_back(mcp.EndZ());
-        _mc_completeness.push_back(std::numeric_limits<float>::lowest());
-        _mc_purity.push_back(std::numeric_limits<float>::lowest());
+        _mc_completeness.push_back(std::numeric_limits<float>::quiet_NaN());
+        _mc_purity.push_back(std::numeric_limits<float>::quiet_NaN());
 
         std::string final_state;
         if (mcp.NumberDaughters() > 0) {
@@ -823,8 +823,8 @@ void TruthAnalysis::CollectDescendants(const art::ValidHandle<std::vector<simb::
         }
         _mc_allchain_final_state.push_back(final_state);
 
-        _mc_allchain_completeness.push_back(std::numeric_limits<float>::lowest());
-        _mc_allchain_purity.push_back(std::numeric_limits<float>::lowest());
+        _mc_allchain_completeness.push_back(std::numeric_limits<float>::quiet_NaN());
+        _mc_allchain_purity.push_back(std::numeric_limits<float>::quiet_NaN());
 
         this->CollectDescendants(mcp_h, mcParticleMap, dau, primary_index);
     }
