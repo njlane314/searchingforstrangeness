@@ -5,8 +5,10 @@
 #include "Common/ProxyTypes.h"
 #include "canvas/Utilities/InputTag.h"
 
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
+#include "lardata/Utilities/AssociationUtil.h"
 
 #include "nusimdata/SimulationBase/MCFlux.h"
 
@@ -36,6 +38,8 @@ public:
     void resetTTree(TTree *tree) override;
 
 private:
+    art::InputTag fPFPproducer;
+    art::InputTag fSpacePointproducer;
     // ---------- Original "VertexCleanness" metrics ----------
     void compute_vtx_scores(const std::vector<TVector3>& dirs,
                             const std::vector<float>& weights,
@@ -113,6 +117,13 @@ VertexTopology::VertexTopology(const fhicl::ParameterSet &pset) { configure(pset
 
 void VertexTopology::configure(fhicl::ParameterSet const &pset)
 {
+    fPFPproducer        = pset.get<art::InputTag>("PFPproducer");
+    fSpacePointproducer = pset.get<art::InputTag>("SpacePointproducer", fPFPproducer);
+    // Beam directions
+    auto bnb = pset.get<std::vector<float>>("BNBBeamDir", {1,0,0});
+    if (bnb.size() == 3) fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
+    auto numi = pset.get<std::vector<float>>("NuMIBeamDir", {0,0,1});
+    if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
     // MCFlux producer for beam direction calculation
     fMCFproducer = pset.get<art::InputTag>("MCFproducer", "generator");
     // Default beam directions (will be overwritten with MC truth when available)
@@ -190,7 +201,14 @@ void VertexTopology::analyseSlice(const art::Event &event,
     }
     if (!has_vtx) return;
 
-    // --- Gather displacement vectors and weights (1.0 each; replace with charge if desired) ---
+    // --- Get PFParticle -> SpacePoint associations and SpacePoint -> Hit ---
+    auto const &pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fPFPproducer);
+
+    auto const &sp_h = event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
+    art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
+
+    // --- Gather displacement vectors and weights (sum charge of associated hits) ---
     std::vector<TVector3> dirs;
     std::vector<float>    weights;
     dirs.reserve(1024); weights.reserve(1024);
@@ -198,13 +216,21 @@ void VertexTopology::analyseSlice(const art::Event &event,
     for (auto const &pfp : slice_pfp_vec) {
         int pdg = std::abs(pfp->PdgCode());
         if (pdg == 12 || pdg == 14) continue; // skip neutrino PFP
-        auto sp_v = pfp.get<recob::SpacePoint>();
+        const std::vector<art::Ptr<recob::SpacePoint>>& sp_v = pfp_spacepoint_assn.at(pfp.index());
         for (auto const &sp : sp_v) {
             double xyz[3]; sp->XYZ(xyz);
             TVector3 r(xyz[0]-vtx.X(), xyz[1]-vtx.Y(), xyz[2]-vtx.Z());
             if (r.Mag() < 1e-6) continue;
+
+            float weight = 1.f;
+            const std::vector<art::Ptr<recob::Hit>>& hits = sp_hit_assn.at(sp.key());
+            if (!hits.empty()) {
+                weight = 0.f;
+                for (auto const& h : hits) weight += h->Integral();
+            }
+
             dirs.push_back(r);
-            weights.push_back(1.f); // TODO: sum associated hit charge instead, if available
+            weights.push_back(weight);
         }
     }
 
