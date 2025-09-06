@@ -177,14 +177,11 @@ void VertexTopology::analyseSlice(
             if (r.Mag() < 1e-6)
                 continue;
 
-            float weight = 1.f;
+            float weight = 0.f;
             const std::vector<art::Ptr<recob::Hit>> &hits =
                 sp_hit_assn.at(sp.key());
-            if (!hits.empty()) {
-                weight = 0.f;
-                for (auto const &h : hits)
-                    weight += h->Integral();
-            }
+            for (auto const &h : hits)
+                weight += h->Integral();
 
             dirs.push_back(r);
             weights.push_back(weight);
