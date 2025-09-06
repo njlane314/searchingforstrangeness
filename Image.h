@@ -1,5 +1,5 @@
-#ifndef IMAGETYPES_H
-#define IMAGETYPES_H
+#ifndef IMAGE_H
+#define IMAGE_H
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
@@ -106,4 +106,4 @@ class Image {
 };
 } // namespace analysis
 
-#endif // IMAGETYPES_H
+#endif // IMAGE_H

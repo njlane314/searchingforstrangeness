@@ -32,11 +32,13 @@
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "AnalysisToolBase.h"
-#include "Common/ImageTypes.h"
+#include "Image.h"
+#include "SemanticPixelClassifier.h"
+#include "ImageProducer.h"
+#include "InferenceEngine.h"
 #include "Common/NpyUtils.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
-#include "Common/TruthLabelClassifier.h"
 
 #include <TDirectoryFile.h>
 #include <TFile.h>
@@ -153,17 +155,13 @@ class ImageAnalysis : public AnalysisToolBase {
     bool _is_vtx_in_image_u;
     bool _is_vtx_in_image_v;
     bool _is_vtx_in_image_w;
-    std::unique_ptr<TruthLabelClassifier> _semantic_classifier;
+    std::unique_ptr<SemanticPixelClassifier> _semantic_classifier;
     std::unordered_map<std::string, float> _inference_scores;
 
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event);
     std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event &event, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec);
     std::pair<double, double> calculateChargeCentroid(const art::Event &event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>> &hits);
-    void fillDetectorImage(const recob::Wire &wire, size_t wire_idx, const std::vector<ImageProperties> &properties, const art::FindManyP<recob::Hit> &wire_hit_assoc, const std::set<art::Ptr<recob::Hit>> &hit_set, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps);
-    TruthLabelClassifier::TruthPrimaryLabel labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, bool has_mcps) const;
-    void constructPixelImages(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data);
-    float runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file);
     std::string resolveAssetPath(const std::string &relOrAbs, bool must_exist = true) const;
 };
 
@@ -244,7 +242,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     _wire_pitch_u = _geo->WirePitch(geo::kU);
     _wire_pitch_v = _geo->WirePitch(geo::kV);
     _wire_pitch_w = _geo->WirePitch(geo::kW);
-    _semantic_classifier = std::make_unique<TruthLabelClassifier>(fMCPproducer);
+    _semantic_classifier = std::make_unique<SemanticPixelClassifier>(fMCPproducer);
 }
 
 std::string ImageAnalysis::resolveAssetPath(const std::string &relOrAbs, bool must_exist) const {
@@ -410,14 +408,20 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
 
     std::vector<Image<float>> detector_images;
     std::vector<Image<int>> semantic_images;
-    this->constructPixelImages(event, neutrino_hits, properties,
-                               detector_images, semantic_images, is_data);
+    ImageProducer::constructPixelImages(event, neutrino_hits, properties,
+                                       detector_images, semantic_images, is_data,
+                                       fWIREproducer, fHITproducer, fMCPproducer,
+                                       fBKTproducer, _geo, _detp, _adc_image_threshold,
+                                       _semantic_classifier.get(), fBadChannels);
 
     std::vector<Image<float>> event_detector_images;
     std::vector<Image<int>> event_semantic_images;
-    this->constructPixelImages(event, all_hits, properties,
-                               event_detector_images, event_semantic_images,
-                               is_data);
+    ImageProducer::constructPixelImages(event, all_hits, properties,
+                                       event_detector_images, event_semantic_images,
+                                       is_data, fWIREproducer, fHITproducer,
+                                       fMCPproducer, fBKTproducer, _geo, _detp,
+                                       _adc_image_threshold, _semantic_classifier.get(),
+                                       fBadChannels);
 
     _detector_image_u = detector_images[0].data();
     _detector_image_v = detector_images[1].data();
@@ -440,7 +444,7 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
 
     if (!is_data) {
         for (size_t i = 0;
-             i < TruthLabelClassifier::truth_primary_label_names.size(); ++i) {
+             i < SemanticPixelClassifier::semantic_label_names.size(); ++i) {
             _slice_semantic_counts_u.push_back(std::count(
                 _semantic_image_u.begin(), _semantic_image_u.end(), i));
             _slice_semantic_counts_v.push_back(std::count(
@@ -489,8 +493,11 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
         }
         mf::LogInfo("ImageAnalysis")
             << "Model " << m.name << " using weights: " << wpath;
-        float score = this->runInference(detector_images, absolute_scratch_dir,
-                                         fWorkDir, m.arch, wpath);
+        float score = InferenceEngine::runInference(detector_images,
+                                                   absolute_scratch_dir,
+                                                   fWorkDir, m.arch, wpath,
+                                                   fInferenceWrapper,
+                                                   fAssetsBaseDir);
         _inference_scores[m.name] = score;
     }
 
@@ -568,258 +575,9 @@ std::pair<double, double> ImageAnalysis::calculateChargeCentroid(const art::Even
     return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
-TruthLabelClassifier::TruthPrimaryLabel ImageAnalysis::labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, bool has_mcps) const {
-    TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
-        TruthLabelClassifier::TruthPrimaryLabel::Cosmic;
-    if (!has_mcps || !mcp_vector.isValid())
-        return semantic_pixel_label;
-    std::vector<art::Ptr<simb::MCParticle>> mcp_particles_ass_to_hit;
-    std::vector<anab::BackTrackerHitMatchingData const *> bkth_data_ass_to_hit;
-    mcp_bkth_assoc.get(matched_hit.key(), mcp_particles_ass_to_hit,
-                       bkth_data_ass_to_hit);
-    if (!bkth_data_ass_to_hit.empty()) {
-        float max_ide_fraction = -1.0;
-        int best_match_track_id = -1;
-        for (size_t i_bkth = 0; i_bkth < bkth_data_ass_to_hit.size(); ++i_bkth) {
-            if (bkth_data_ass_to_hit[i_bkth] &&
-                bkth_data_ass_to_hit[i_bkth]->ideFraction > max_ide_fraction) {
-                max_ide_fraction = bkth_data_ass_to_hit[i_bkth]->ideFraction;
-                best_match_track_id = mcp_particles_ass_to_hit[i_bkth]->TrackId();
-            }
-        }
-        if (best_match_track_id != -1) {
-            auto it_trackid = trackid_to_index.find(best_match_track_id);
-            if (it_trackid != trackid_to_index.end()) {
-                size_t particle_mcp_idx = it_trackid->second;
-                if (particle_mcp_idx < semantic_label_vector.size()) {
-                    semantic_pixel_label =
-                        semantic_label_vector[particle_mcp_idx];
-                }
-            }
-        }
-    }
-    return semantic_pixel_label;
-}
 
-void ImageAnalysis::fillDetectorImage(const recob::Wire &wire, size_t wire_idx, const std::vector<ImageProperties> &properties, const art::FindManyP<recob::Hit> &wire_hit_assoc, const std::set<art::Ptr<recob::Hit>> &hit_set, const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc, const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, size_t> &trackid_to_index, const std::vector<TruthLabelClassifier::TruthPrimaryLabel> &semantic_label_vector, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps) {
-    auto ch_id = wire.Channel();
-    if (fBadChannels.count(ch_id)) {
-        return;
-    }
-    std::vector<geo::WireID> wire_ids = _geo->ChannelToWire(ch_id);
-    if (wire_ids.empty())
-        return;
-    geo::View_t view = _geo->View(wire_ids.front().planeID());
-    size_t view_idx = static_cast<size_t>(view);
-    const geo::WireGeo *wire_geo = _geo->WirePtr(wire_ids.front());
-    TVector3 center = wire_geo->GetCenter();
-    TVector3 wire_center(center.X(), center.Y(), center.Z());
-    double wire_coord =
-        (view == geo::kW)
-            ? wire_center.Z()
-        : (view == geo::kU)
-            ? (wire_center.Z() * std::cos(1.04719758034) -
-               wire_center.Y() * std::sin(1.04719758034))
-            : (wire_center.Z() * std::cos(-1.04719758034) -
-               wire_center.Y() * std::sin(-1.04719758034));
-    auto hits_for_wire = wire_hit_assoc.at(wire_idx);
-    std::vector<art::Ptr<recob::Hit>> filtered_hits;
-    for (const auto &hit : hits_for_wire) {
-        if (hit_set.count(hit)) {
-            filtered_hits.push_back(hit);
-        }
-    }
-    std::sort(filtered_hits.begin(), filtered_hits.end(),
-              [](const art::Ptr<recob::Hit> &a,
-                 const art::Ptr<recob::Hit> &b) {
-                  return a->StartTick() < b->StartTick();
-              });
-    size_t hit_index = 0;
-    for (const auto &range : wire.SignalROI().get_ranges()) {
-        const auto &adcs = range.data();
-        int start_tick = range.begin_index();
-        for (size_t adc_index = 0; adc_index < adcs.size(); ++adc_index) {
-            int tick = start_tick + adc_index;
-            double x_drift_pos = _detp->ConvertTicksToX(
-                static_cast<double>(tick), wire_ids.front().planeID());
-            size_t row = properties[view_idx].row(x_drift_pos);
-            size_t col = properties[view_idx].col(wire_coord);
-            if (row == static_cast<size_t>(-1) ||
-                col == static_cast<size_t>(-1))
-                continue;
-            while (hit_index < filtered_hits.size() &&
-                   filtered_hits[hit_index]->EndTick() <= tick) {
-                ++hit_index;
-            }
-            if (hit_index < filtered_hits.size() &&
-                filtered_hits[hit_index]->StartTick() <= tick &&
-                tick < filtered_hits[hit_index]->EndTick()) {
-                if (adcs[adc_index] > _adc_image_threshold) {
-                    detector_images[view_idx].set(row, col, adcs[adc_index]);
-                    if (!is_data) {
-                        TruthLabelClassifier::TruthPrimaryLabel semantic_pixel_label =
-                            labelSemanticPixels(filtered_hits[hit_index], mcp_bkth_assoc,
-                                                mcp_vector, trackid_to_index,
-                                                semantic_label_vector, has_mcps);
-                        semantic_images[view_idx].set(
-                            row, col, static_cast<int>(semantic_pixel_label), false);
-                    }
-                }
-            }
-        }
-    }
-}
 
-void ImageAnalysis::constructPixelImages(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties, std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images, bool is_data) {
-    detector_images.clear();
-    semantic_images.clear();
-    for (const auto &prop : properties) {
-        Image<float> detector_image(prop);
-        detector_image.clear(0.0);
-        detector_images.push_back(std::move(detector_image));
-        Image<int> semantic_image(prop);
-        semantic_image.clear(
-            static_cast<int>(TruthLabelClassifier::TruthPrimaryLabel::Empty));
-        semantic_images.push_back(std::move(semantic_image));
-    }
 
-    auto wire_vector =
-        event.getValidHandle<std::vector<recob::Wire>>(fWIREproducer);
-    auto hit_vector =
-        event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-    art::Handle<std::vector<simb::MCParticle>> mcp_vector;
-    bool has_mcps = event.getByLabel(fMCPproducer, mcp_vector);
-    art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event,
-                                              fHITproducer);
-    art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        mcp_bkth_assoc(hit_vector, event, fBKTproducer);
-
-    std::vector<TruthLabelClassifier::TruthPrimaryLabel>
-        semantic_label_vector;
-    if (!is_data && has_mcps && mcp_vector.isValid() &&
-        _semantic_classifier) {
-        semantic_label_vector = _semantic_classifier->classifyParticles(event);
-    }
-
-    std::map<int, size_t> trackid_to_index;
-    if (!is_data && has_mcps && mcp_vector.isValid()) {
-        for (size_t i = 0; i < mcp_vector->size(); ++i) {
-            trackid_to_index[mcp_vector->at(i).TrackId()] = i;
-        }
-    }
-
-    std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
-    for (size_t wire_idx = 0; wire_idx < wire_vector->size(); ++wire_idx) {
-        fillDetectorImage(wire_vector->at(wire_idx), wire_idx, properties,
-                          wire_hit_assoc, hit_set, mcp_bkth_assoc, mcp_vector,
-                          trackid_to_index, semantic_label_vector,
-                          detector_images, semantic_images, is_data, has_mcps);
-    }
-}
-
-float ImageAnalysis::runInference(const std::vector<Image<float>> &detector_images, const std::string &absolute_scratch_dir, const std::string &work_dir, const std::string &arch, const std::string &weights_file) {
-    using std::string;
-    (void)work_dir;
-    string npy_in = joinPath(absolute_scratch_dir, "detector_images.npy");
-    string temp_out = joinPath(absolute_scratch_dir, "temp_test_out.txt");
-    string script_stdout = joinPath(absolute_scratch_dir, "py_script.out");
-    string script_stderr = joinPath(absolute_scratch_dir, "py_script.err");
-
-    std::vector<std::vector<float>> images = {
-        detector_images[0].data(),
-        detector_images[1].data(),
-        detector_images[2].data()
-    };
-    common::save_npy_f32_2d(npy_in, images);
-
-    string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
-
-    // Determine assets directory for binding
-    std::string assets_dir = fAssetsBaseDir;
-    if (assets_dir.empty()) {
-        auto pos = fInferenceWrapper.rfind("/scripts/");
-        assets_dir = (pos == std::string::npos) ? std::string{} : fInferenceWrapper.substr(0, pos);
-    }
-
-    // Build bind list
-    std::vector<std::string> binds;
-    if (!assets_dir.empty())
-        binds.push_back(assets_dir);
-    binds.push_back(absolute_scratch_dir);
-
-    // Add /cvmfs if not already mounted
-    bool need_cvmfs = true;
-    if (const char *bind_env = std::getenv("APPTAINER_BINDPATH")) {
-        if (std::string(bind_env).find("/cvmfs") != std::string::npos)
-            need_cvmfs = false;
-    } else {
-        std::ifstream mounts("/proc/mounts");
-        std::string line;
-        while (std::getline(mounts, line)) {
-            if (line.find(" /cvmfs ") != std::string::npos) {
-                need_cvmfs = false;
-                break;
-            }
-        }
-    }
-    if (need_cvmfs)
-        binds.insert(binds.begin(), "/cvmfs");
-
-    std::ostringstream bind_csv;
-    for (size_t i = 0; i < binds.size(); ++i) {
-        if (i)
-            bind_csv << ",";
-        bind_csv << binds[i];
-    }
-
-    std::ostringstream cmd;
-    cmd << "apptainer exec --cleanenv --bind " << bind_csv.str() << " "
-        << container << " "
-        << "/bin/bash " << fInferenceWrapper << " "
-        << "--npy " << npy_in << " "
-        << "--output " << temp_out << " "
-        << "--arch " << arch << " "
-        << "--weights " << weights_file
-        << " > " << script_stdout << " 2> " << script_stderr;
-
-    mf::LogInfo("ImageAnalysis") << "Executing inference: " << cmd.str();
-
-    auto start = std::chrono::steady_clock::now();
-    int code = std::system(cmd.str().c_str());
-    auto end = std::chrono::steady_clock::now();
-    double duration = std::chrono::duration<double>(end - start).count();
-
-    struct stat temp_stat;
-    bool success = (code == 0) && (stat(temp_out.c_str(), &temp_stat) == 0);
-    if (!success) {
-        std::ifstream error_stream(script_stderr);
-        std::string error_message(
-            (std::istreambuf_iterator<char>(error_stream)), {});
-        throw art::Exception(art::errors::LogicError)
-            << "Inference script failed with exit code " << code
-            << "\n--- Script stderr ---\n"
-            << error_message << "\n--- End Script stderr ---";
-    }
-
-    std::ifstream result_stream(temp_out.c_str());
-    if (!result_stream) {
-        throw art::Exception(art::errors::LogicError)
-            << "Could not open temporary result file: " << temp_out;
-    }
-    float score;
-    result_stream >> score;
-
-    mf::LogInfo("ImageAnalysis")
-        << "Inference time: " << duration << " seconds";
-    mf::LogInfo("ImageAnalysis") << "Predicted score: " << score;
-
-    std::remove(npy_in.c_str());
-    std::remove(temp_out.c_str());
-    std::remove(script_stdout.c_str());
-    std::remove(script_stderr.c_str());
-
-    return score;
-}
 
 DEFINE_ART_CLASS_TOOL(ImageAnalysis)
 } // namespace analysis
