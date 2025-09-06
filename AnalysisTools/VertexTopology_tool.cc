@@ -23,7 +23,7 @@
 namespace analysis {
 
 class VertexTopology : public AnalysisToolBase {
-  private:
+  public:
     explicit VertexTopology(const fhicl::ParameterSet &pset);
     ~VertexTopology() {};
 
@@ -35,6 +35,7 @@ class VertexTopology : public AnalysisToolBase {
     void setBranches(TTree *tree) override;
     void resetTTree(TTree *tree) override;
 
+  private:
     art::InputTag fPFPproducer;
     art::InputTag fSpacePointproducer;
     void compute_back_off_fractions(const std::vector<TVector3> &dirs,
