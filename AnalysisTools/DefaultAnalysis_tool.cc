@@ -27,6 +27,8 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 #include <iostream>
+#include <limits>
+#include <cmath>
 
 namespace analysis {
 
@@ -196,7 +198,7 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
     }
 
     std::vector<float> temp_slice_topo_score_v(max_slice_id + 1);
-    fill(temp_slice_topo_score_v.begin(), temp_slice_topo_score_v.end(), std::numeric_limits<float>::lowest());
+    fill(temp_slice_topo_score_v.begin(), temp_slice_topo_score_v.end(), std::numeric_limits<float>::quiet_NaN());
     for (const common::ProxySliceElem_t &pfp : pfp_proxy) {
         auto metadata_pxy_v = pfp.get<larpandoraobj::PFParticleMetadata>();
         auto slice_pxy_v = pfp.get<recob::Slice>();
@@ -206,7 +208,7 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
                 for (unsigned int j = 0; j < metadata_pxy_v.size(); ++j) {
                     const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(metadata_pxy_v.at(j));
                     auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
-                    if (!pfParticlePropertiesMap.empty() && temp_slice_topo_score_v.at(pfp_slice_id) == std::numeric_limits<float>::lowest()) {
+                    if (!pfParticlePropertiesMap.empty() && std::isnan(temp_slice_topo_score_v.at(pfp_slice_id))) {
                         auto it = pfParticlePropertiesMap.begin();
                         while (it != pfParticlePropertiesMap.end()) {
                             if (it->first == "NuScore") {
@@ -397,9 +399,9 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
             _pfp_vertex_z.push_back(vertices.at(0)->position().Z());
         }
         else {
-            _pfp_vertex_x.push_back(std::numeric_limits<float>::lowest());
-            _pfp_vertex_y.push_back(std::numeric_limits<float>::lowest());
-            _pfp_vertex_z.push_back(std::numeric_limits<float>::lowest());
+            _pfp_vertex_x.push_back(std::numeric_limits<float>::quiet_NaN());
+            _pfp_vertex_y.push_back(std::numeric_limits<float>::quiet_NaN());
+            _pfp_vertex_z.push_back(std::numeric_limits<float>::quiet_NaN());
         }
         
         float track_shower_score = common::GetTrackShowerScore(pfp);
@@ -509,28 +511,28 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
                     _backtracked_sce_start_wire_Y.push_back(common::YZtoPlanecoordinate(reco_st[1], reco_st[2], 2));
                 }
                 else {
-                    _backtracked_energies.push_back(std::numeric_limits<float>::lowest());
+                    _backtracked_energies.push_back(std::numeric_limits<float>::quiet_NaN());
                     _backtracked_track_ids.push_back(std::numeric_limits<int>::lowest());
                     _backtracked_pdg_codes.push_back(0);
-                    _backtracked_purities.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_completenesses.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_overlay_purities.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_momentum_x.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_momentum_y.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_momentum_z.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_x.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_y.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_z.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_time.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_wire_U.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_wire_V.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_start_wire_Y.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_x.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_y.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_z.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_wire_U.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_wire_V.push_back(std::numeric_limits<float>::lowest());
-                    _backtracked_sce_start_wire_Y.push_back(std::numeric_limits<float>::lowest());
+                    _backtracked_purities.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_completenesses.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_overlay_purities.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_momentum_x.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_momentum_y.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_momentum_z.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_time.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_wire_U.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_wire_V.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_start_wire_Y.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_wire_U.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_wire_V.push_back(std::numeric_limits<float>::quiet_NaN());
+                    _backtracked_sce_start_wire_Y.push_back(std::numeric_limits<float>::quiet_NaN());
                 }
             }
         }
@@ -643,12 +645,12 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _selection_pass = 0;
     _optical_filter_pe_beam = 0.;
     _optical_filter_pe_veto = 0.;
-    _reco_neutrino_vertex_x = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_y = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_z = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_sce_x = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_sce_y = std::numeric_limits<float>::lowest();
-    _reco_neutrino_vertex_sce_z = std::numeric_limits<float>::lowest();
+    _reco_neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_sce_x = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_sce_y = std::numeric_limits<float>::quiet_NaN();
+    _reco_neutrino_vertex_sce_z = std::numeric_limits<float>::quiet_NaN();
     _num_slices = 0;
     _crt_veto = 0;
     _crt_hit_pe = 0;
@@ -683,7 +685,7 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _event_total_hits = std::numeric_limits<int>::lowest();
     _slice_pdg = std::numeric_limits<int>::lowest();
     _slice_id = std::numeric_limits<int>::lowest();
-    _topological_score = std::numeric_limits<float>::lowest();
+    _topological_score = std::numeric_limits<float>::quiet_NaN();
     _slice_topological_scores.clear();
     _slice_num_hits = std::numeric_limits<int>::lowest();
     _pfp_pdg_codes.clear();
@@ -704,7 +706,7 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _pfp_vertex_x.clear();
     _pfp_vertex_y.clear();
     _pfp_vertex_z.clear();
-    _slice_cluster_fraction = std::numeric_limits<float>::lowest();
+    _slice_cluster_fraction = std::numeric_limits<float>::quiet_NaN();
     _total_hits_U = 0;
     _total_hits_V = 0;
     _total_hits_Y = 0;

@@ -12,6 +12,7 @@
 #include "lardataobj/RecoBase/Slice.h"
 
 #include "AnalysisToolBase.h"
+#include <limits>
 
 namespace analysis {
 
@@ -67,17 +68,17 @@ void FlashAnalysis::setBranches(TTree* tree) {
 }
 
 void FlashAnalysis::resetTTree(TTree* tree) {
-    _t0 = std::numeric_limits<float>::lowest();
-    _flash_match_score = std::numeric_limits<float>::lowest();
-    _flash_total_pe = std::numeric_limits<float>::lowest();
-    _flash_time = std::numeric_limits<float>::lowest();
-    _flash_z_center = std::numeric_limits<float>::lowest();
-    _flash_z_width = std::numeric_limits<float>::lowest();
-    _slice_charge = std::numeric_limits<float>::lowest();
-    _slice_z_center = std::numeric_limits<float>::lowest();
-    _charge_light_ratio = std::numeric_limits<float>::lowest();
-    _flash_slice_z_dist = std::numeric_limits<float>::lowest();
-    _flash_pe_per_charge = std::numeric_limits<float>::lowest();
+    _t0 = std::numeric_limits<float>::quiet_NaN();
+    _flash_match_score = std::numeric_limits<float>::quiet_NaN();
+    _flash_total_pe = std::numeric_limits<float>::quiet_NaN();
+    _flash_time = std::numeric_limits<float>::quiet_NaN();
+    _flash_z_center = std::numeric_limits<float>::quiet_NaN();
+    _flash_z_width = std::numeric_limits<float>::quiet_NaN();
+    _slice_charge = std::numeric_limits<float>::quiet_NaN();
+    _slice_z_center = std::numeric_limits<float>::quiet_NaN();
+    _charge_light_ratio = std::numeric_limits<float>::quiet_NaN();
+    _flash_slice_z_dist = std::numeric_limits<float>::quiet_NaN();
+    _flash_pe_per_charge = std::numeric_limits<float>::quiet_NaN();
 }
 
 void FlashAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) {

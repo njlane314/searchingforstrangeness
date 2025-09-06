@@ -21,6 +21,7 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 #include <iostream>
+#include <limits>
 
 namespace analysis {
 
@@ -166,26 +167,26 @@ void BlipAnalysis::fillDefault() {
     _blip_tpc.push_back(std::numeric_limits<int>::lowest());
     _blip_n_planes.push_back(std::numeric_limits<int>::lowest());
     _blip_max_wire_span.push_back(std::numeric_limits<int>::lowest());
-    _blip_energy.push_back(std::numeric_limits<float>::lowest());
-    _blip_energy_estar.push_back(std::numeric_limits<float>::lowest());
-    _blip_time.push_back(std::numeric_limits<float>::lowest());
-    _blip_prox_trk_dist.push_back(std::numeric_limits<float>::lowest());
+    _blip_energy.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_energy_estar.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_time.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_prox_trk_dist.push_back(std::numeric_limits<float>::quiet_NaN());
     _blip_prox_trk_id.push_back(std::numeric_limits<int>::lowest());
     _blip_in_cylinder.push_back(false);
-    _blip_x.push_back(std::numeric_limits<float>::lowest());
-    _blip_y.push_back(std::numeric_limits<float>::lowest());
-    _blip_z.push_back(std::numeric_limits<float>::lowest());
-    _blip_sigma_yz.push_back(std::numeric_limits<float>::lowest());
-    _blip_dx.push_back(std::numeric_limits<float>::lowest());
-    _blip_dyz.push_back(std::numeric_limits<float>::lowest());
-    _blip_charge.push_back(std::numeric_limits<float>::lowest());
+    _blip_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_sigma_yz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_dx.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_dyz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_charge.push_back(std::numeric_limits<float>::quiet_NaN());
     _blip_pdg.push_back(std::numeric_limits<int>::lowest());
     _blip_process.push_back("null");
-    _blip_vx.push_back(std::numeric_limits<float>::lowest());
-    _blip_vy.push_back(std::numeric_limits<float>::lowest());
-    _blip_vz.push_back(std::numeric_limits<float>::lowest());
-    _blip_e.push_back(std::numeric_limits<float>::lowest());
-    _blip_mass.push_back(std::numeric_limits<float>::lowest());
+    _blip_vx.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_vy.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_vz.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_e.push_back(std::numeric_limits<float>::quiet_NaN());
+    _blip_mass.push_back(std::numeric_limits<float>::quiet_NaN());
     _blip_trk_id.push_back(std::numeric_limits<int>::lowest());
 }
 
