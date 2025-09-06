@@ -5,8 +5,8 @@
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
-    <!ENTITY fcl_selection_data "job/isdata.fcl">
-    <!ENTITY fcl_selection_inference "job/inferencemodels.fcl">
+    <!ENTITY fcl_selection_data "job/run_dataselection.fcl">
+    <!ENTITY fcl_selection_inference "job/run_inferenceselection.fcl">
     <!ENTITY initsrc "assets/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
@@ -62,13 +62,12 @@
     <inputdef>&input_def_ext_numi_run1;</inputdef>
     <fcl>&fcl_selection;</fcl>
     <fcl>&fcl_selection_data;</fcl>
-    <fcl>&fcl_selection_inference;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
     <datatier>selected</datatier>
-    <numjobs>20</numjobs>
+    <numjobs>3000</numjobs>
 </stage>
 
 
@@ -80,7 +79,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_dirt/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_dirt</workdir>
     <datatier>selected</datatier>
-    <numjobs>5000</numjobs>
+    <numjobs>4000</numjobs>
 </stage>
 
 <stage name="reweight_numi_fhc_run1_beam">
