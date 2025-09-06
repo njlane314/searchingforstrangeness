@@ -1,5 +1,5 @@
-#ifndef TRUTHLABELCLASSIFIER_H
-#define TRUTHLABELCLASSIFIER_H
+#ifndef SEMANTICPIXELCLASSIFIER_H
+#define SEMANTICPIXELCLASSIFIER_H
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Optional/TFileService.h"
@@ -27,7 +27,7 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
-#include "ImageTypes.h"
+#include "Image.h"
 #include "PandoraUtilities.h"
 #include <TDirectoryFile.h>
 #include <TFile.h>
@@ -46,9 +46,9 @@
 #include <vector>
 
 namespace analysis {
-class TruthLabelClassifier {
+class SemanticPixelClassifier {
     public:
-    enum class TruthPrimaryLabel {
+    enum class SemanticLabel {
         Empty = 0,
         Cosmic,
         Muon,
@@ -66,51 +66,51 @@ class TruthLabelClassifier {
         Other
     };
 
-    static inline const std::array<std::string, 15> truth_primary_label_names = {
+    static inline const std::array<std::string, 15> semantic_label_names = {
         "Empty", "Cosmic", "Muon", "Electron", "Photon",
         "ChargedPion", "NeutralPion", "Neutron", "Proton",
         "ChargedKaon", "NeutralKaon", "Lambda", "ChargedSigma",
         "NeutralSigma", "Other"};
 
-    explicit TruthLabelClassifier(const art::InputTag &MCPproducer)
+    explicit SemanticPixelClassifier(const art::InputTag &MCPproducer)
         : fMCPproducer(MCPproducer) {}
 
-    TruthPrimaryLabel getTruthPrimaryLabel(int pdg) const {
+    SemanticLabel getSemanticLabel(int pdg) const {
         pdg = std::abs(pdg);
         if (pdg == 13)
-            return TruthPrimaryLabel::Muon;
+            return SemanticLabel::Muon;
         if (pdg == 11)
-            return TruthPrimaryLabel::Electron;
+            return SemanticLabel::Electron;
         if (pdg == 22)
-            return TruthPrimaryLabel::Photon;
+            return SemanticLabel::Photon;
         if (pdg == 2112)
-            return TruthPrimaryLabel::Neutron;
+            return SemanticLabel::Neutron;
         if (pdg == 211)
-            return TruthPrimaryLabel::ChargedPion;
+            return SemanticLabel::ChargedPion;
         if (pdg == 111)
-            return TruthPrimaryLabel::NeutralPion;
+            return SemanticLabel::NeutralPion;
         if (pdg == 321)
-            return TruthPrimaryLabel::ChargedKaon;
+            return SemanticLabel::ChargedKaon;
         if (pdg == 311 || pdg == 130 || pdg == 310)
-            return TruthPrimaryLabel::NeutralKaon;
+            return SemanticLabel::NeutralKaon;
         if (pdg == 2212)
-            return TruthPrimaryLabel::Proton;
+            return SemanticLabel::Proton;
         if (pdg == 3122)
-            return TruthPrimaryLabel::Lambda;
+            return SemanticLabel::Lambda;
         if (pdg == 3222 || pdg == 3112)
-            return TruthPrimaryLabel::ChargedSigma;
+            return SemanticLabel::ChargedSigma;
         if (pdg == 3212)
-            return TruthPrimaryLabel::NeutralSigma;
+            return SemanticLabel::NeutralSigma;
 
-        return TruthPrimaryLabel::Other;
+        return SemanticLabel::Other;
     }
 
     void assignLabelToProgenyRecursively(
         size_t particle_index,
         const std::vector<simb::MCParticle> &particles,
-        std::vector<TruthPrimaryLabel> &particle_labels,
+        std::vector<SemanticLabel> &particle_labels,
         const std::unordered_map<int, size_t> &track_id_to_index,
-        TruthPrimaryLabel primary_label_to_assign) const {
+        SemanticLabel primary_label_to_assign) const {
         if (particle_index >= particles.size() || particle_index >= particle_labels.size()) {
             return;
         }
@@ -128,7 +128,7 @@ class TruthLabelClassifier {
         }
     }
 
-    std::vector<TruthPrimaryLabel> classifyParticles(
+    std::vector<SemanticLabel> classifyParticles(
         const art::Event &event) const {
         const auto particle_collection_handle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
         const auto &particles = *particle_collection_handle;
@@ -138,12 +138,12 @@ class TruthLabelClassifier {
             track_id_to_vector_index[particles[i].TrackId()] = i;
         }
 
-        std::vector<TruthPrimaryLabel> classified_particle_labels(particles.size(), TruthPrimaryLabel::Empty);
+        std::vector<SemanticLabel> classified_particle_labels(particles.size(), SemanticLabel::Empty);
 
         for (size_t i = 0; i < particles.size(); ++i) {
             if (particles[i].Mother() == 0) {
                 if (auto it = track_id_to_vector_index.find(particles[i].TrackId()); it != track_id_to_vector_index.end()) {
-                    TruthPrimaryLabel initial_label = getTruthPrimaryLabel(particles[i].PdgCode());
+                    SemanticLabel initial_label = getSemanticLabel(particles[i].PdgCode());
                     assignLabelToProgenyRecursively(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
                 }
             }
@@ -156,5 +156,5 @@ class TruthLabelClassifier {
 };
 } // namespace analysis
 
-#endif // TRUTHLABELCLASSIFIER_H
+#endif // SEMANTICPIXELCLASSIFIER_H
 
