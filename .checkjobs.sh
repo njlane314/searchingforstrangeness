@@ -31,7 +31,9 @@ check_specific_job() {
 
     if [[ -n "$job_id" ]]; then
         echo "-- Found job ID: ${job_id}"
-        echo "-- Link: https://landscape.fnal.gov/lens/view/job/${job_id}"
+        local campaign_id=$(echo "$job_id" | cut -d. -f1)
+        echo "-- Campaign Link: https://landscape.fnal.gov/lens/view/campaign/${campaign_id}"
+        echo "-- Job Link: https://landscape.fnal.gov/lens/view/job/${job_id}"
     else
         echo "Error: No job ID found in ${log_file}."
         return 1
@@ -48,9 +50,9 @@ check_all_jobs() {
     echo "-- Job queue output:"
     echo "${job_queue}"
 
-    echo "-- Generating detailed monitoring links for all jobs..."
-    echo "${job_queue}" | awk '/@/ {print $1}' | while read -r jobid; do
-        echo "-- Link: https://landscape.fnal.gov/lens/view/job/${jobid}"
+    echo "-- Generating campaign monitoring links..."
+    echo "${job_queue}" | awk '/@/ {print $1}' | cut -d. -f1 | sort -u | while read -r campaign; do
+        echo "-- Link: https://landscape.fnal.gov/lens/view/campaign/${campaign}"
     done
 
     echo "-- General job check complete!"
