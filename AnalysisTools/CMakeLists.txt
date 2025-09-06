@@ -1,6 +1,5 @@
 cet_enable_asserts()
 
-
 art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          lardataobj_Simulation
                          lardataobj_MCBase
@@ -44,7 +43,7 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ubreco_SelectionTool_OpT0FinderBase
                          ubreco_SelectionTool_OpT0FinderAlgorithms
                          ubevt_Utilities
-			                   larevt_CalibrationDBI_IOVData
+			             larevt_CalibrationDBI_IOVData
                          lardataobj_RawData
                          ubobj_Trigger
                          ubreco_BlipRecoAlg
