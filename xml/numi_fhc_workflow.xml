@@ -50,7 +50,7 @@
     <check>1</check>
     <copy>0</copy>
     <version>prod_&release;</version>
-    <memory>6000</memory>
+    <memory>4000</memory>
     <disk>20GB</disk>
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>

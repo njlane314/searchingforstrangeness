@@ -98,19 +98,8 @@ ImageAnalysis: {
     InferenceWrapper: "scripts/inference_wrapper.sh"
     imageWidth: 512
     imageHeight: 512
-    Models: [
-        {
-            name: "binary"
-            arch: "minkunet"
-            weights_file: "binary_classifier_resnet34.pth"
-        },
-        {
-            name: "binary_clone"
-            arch: "minkunet"
-            weights_file: "binary_classifier_resnet34.pth"
-        }
-    ]
-    ActiveModels: [ "binary", "binary_clone" ]  # env override: ACTIVE_MODELS
+    Models: []
+    ActiveModels: []  # env override: ACTIVE_MODELS
 }
 
 SliceAnalysis: {

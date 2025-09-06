@@ -145,7 +145,7 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     fContrastRb = pset.get<float>("ContrastRb", 25.f);
 }
 
-void VertexTopology::analyseEvent(const art::Event &, bool) { print(); }
+void VertexTopology::analyseEvent(const art::Event &, bool) { //print(); }
 
 void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool, bool) {
     TVector3 vtx;
@@ -164,7 +164,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
         }
     }
     if (!has_vtx) {
-        print();
+        //print();
         return;
     }
 
@@ -215,7 +215,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
         wtilde.emplace_back(k * weights[i]);
     }
     if (wtilde.empty()) {
-        print();
+        //print();
         return;
     }
 
@@ -235,7 +235,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
     _c_sphericity = clamp01(_had_sphericity);
     _c_rho = clamp01(_had_rho_term);
     _c_vtxdens = density_contrast(dirs, wtilde, fContrastRc, fContrastRa, fContrastRb);
-    print();
+    //print();
 }
 
 void VertexTopology::backward_off_axis_fractions(
