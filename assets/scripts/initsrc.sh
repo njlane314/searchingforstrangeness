@@ -8,7 +8,7 @@ elif [[ -z "${ASSETS_BASE_DIR}" ]]; then
   else
     THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     CAND="$(cd "$THIS_DIR/.." && pwd)"
-    if [[ -d "$CAND/calib" && -d "$CAND/weights" ]]; then
+    if [[ -f "$CAND/badchannels.txt" && -d "$CAND/weights" ]]; then
       ASSETS_BASE_DIR="$CAND"
     else
       echo "ERROR: Could not locate assets dir. Set ASSETS_BASE_DIR." >&2
@@ -18,8 +18,8 @@ elif [[ -z "${ASSETS_BASE_DIR}" ]]; then
 fi
 export ASSETS_BASE_DIR
 export WEIGHTS_BASE_DIR="${WEIGHTS_BASE_DIR:-$ASSETS_BASE_DIR/weights}"
-export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/calib/badchannels.txt}"
-export IA_INFERENCE_WRAPPER="${IA_INFERENCE_WRAPPER:-$ASSETS_BASE_DIR/scripts/run_strangeness_inference.sh}"
+export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/badchannels.txt}"
+export IA_INFERENCE_WRAPPER="${IA_INFERENCE_WRAPPER:-$ASSETS_BASE_DIR/scripts/inference_wrapper.sh}"
 echo
 echo ASSETS_BASE_DIR=$ASSETS_BASE_DIR
 echo WEIGHTS_BASE_DIR=$WEIGHTS_BASE_DIR
