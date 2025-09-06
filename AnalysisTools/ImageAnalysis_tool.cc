@@ -76,11 +76,6 @@ inline bool dirExists(const std::string &p) {
     struct stat sb;
     return ::stat(p.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode);
 }
-inline std::string joinPath(std::string a, const std::string &b) {
-    if (a.empty()) return b;
-    if (!a.empty() && a.back() != '/') a.push_back('/');
-    return a + b;
-}
 inline bool isAbs(const std::string &p) {
     return !p.empty() && p.front() == '/';
 }
