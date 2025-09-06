@@ -50,10 +50,8 @@ check_all_jobs() {
     echo "-- Job queue output:"
     echo "${job_queue}"
 
-    echo "-- Generating campaign monitoring links..."
-    echo "${job_queue}" | awk '/@/ {print $1}' | cut -d. -f1 | sort -u | while read -r campaign; do
-        echo "-- Link: https://landscape.fnal.gov/lens/view/campaign/${campaign}"
-    done
+    echo "-- Generating campaign monitoring links with one job example each..."
+    echo "${job_queue}" | awk '/@/ {job=$1; split(job, parts, "."); campaign=parts[1]; if (!seen[campaign]++) {print "-- Campaign Link: https://landscape.fnal.gov/lens/view/campaign/"campaign; print "-- Job Link: https://landscape.fnal.gov/lens/view/job/"job}}'
 
     echo "-- General job check complete!"
     return 0
