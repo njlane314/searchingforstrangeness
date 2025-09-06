@@ -181,8 +181,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
         if (pdg == 12 || pdg == 14) continue;
         const std::vector<art::Ptr<recob::SpacePoint>> &sp_v = pfp_spacepoint_assn.at(pfp.index());
         for (auto const &sp : sp_v) {
-            double xyz[3];
-            sp->XYZ(xyz);
+            const auto xyz = sp->XYZ();
             TVector3 r(xyz[0] - vtx.X(), xyz[1] - vtx.Y(), xyz[2] - vtx.Z());
             if (r.Mag() < 1e-6) continue;
             float weight = 0.f;
@@ -369,7 +368,10 @@ float VertexTopology::fwd_contrast(const std::vector<TVector3> &dirs,
     const double base = (cf<=1.0 && cf>=-1.0) ? (1.0 - cf)/2.0 : 0.0;
     double cval = (denom>0.0) ? (Win/denom) : 0.0;
     if (base < 1.0) cval = (cval - base) / (1.0 - base);
-    if (cval < 0.0) cval = 0.0; if (cval > 1.0) cval = 1.0;
+    if (cval < 0.0)
+        cval = 0.0;
+    else if (cval > 1.0)
+        cval = 1.0;
     return static_cast<float>(cval);
 }
 
