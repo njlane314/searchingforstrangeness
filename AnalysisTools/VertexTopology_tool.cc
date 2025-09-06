@@ -24,10 +24,9 @@
 namespace analysis {
 
 class VertexTopology : public AnalysisToolBase {
-public:
+private:
     explicit VertexTopology(const fhicl::ParameterSet &pset);
     ~VertexTopology() { };
-
     void configure(fhicl::ParameterSet const &pset) override;
     void analyseEvent(const art::Event &event, bool is_data) override;
     void analyseSlice(const art::Event &event,
@@ -35,11 +34,9 @@ public:
                       bool is_data, bool is_selected) override;
     void setBranches(TTree *tree) override;
     void resetTTree(TTree *tree) override;
-
-private:
     art::InputTag fPFPproducer;
     art::InputTag fSpacePointproducer;
-    // ---------- Original "VertexCleanness" metrics ----------
+
     void compute_back_off_fractions(const std::vector<TVector3>& dirs,
                                     const std::vector<float>& weights,
                                     const TVector3& beam_dir,
@@ -57,36 +54,31 @@ private:
     float fBackQmax;
     float fVtxQmax;
 
-    // Composite vertex score parameters removed; only primitives retained
+
     float _vtx_backfrac_bnb;
     float _vtx_backfrac_numi;
     float _vtx_offfrac_bnb;
     float _vtx_offfrac_numi;
 
 
-    // ---------- HadFlow+ event-shape around the vertex ----------
-    // Config
-    float fKernelR;       // cm, soft radial kernel scale
-    float fRhoRef;        // reference density for normalization
-    // Composite score parameters removed; downstream tuning expected
-    int   fThrustIters;   // iterations for thrust maximization
 
-    // Outputs (beam-independent primitives)
-    float _had_thrust_def;    // 1 - thrust
-    float _had_sphericity;    // sphericity
-    float _had_rho_term;      // normalized local activity
 
-    // Beam-dependent primitives
+    float fKernelR;
+    float fRhoRef;
+
+    int   fThrustIters;
+
+
+    float _had_thrust_def;
+    float _had_sphericity;
+    float _had_rho_term;
+
+
     float _had_mu_parallel_bnb;
     float _had_mu_parallel_numi;
-
-private:
-    // HadFlow core (only primitive, no composite score)
     float compute_mu_parallel(const std::vector<TVector3>& u,
                               const std::vector<float>& wtilde,
                               const TVector3& beam_dir) const;
-
-    // Helpers
     inline float kernel(float r) const {
         const float x = r / std::max(1e-6f, fKernelR);
         return std::exp(-x*x);
@@ -94,18 +86,15 @@ private:
     static inline float clamp01(float x) {
         return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x);
     }
-
     float thrust_deficit(const std::vector<TVector3>& u,
                          const std::vector<float>& w,
                          int iters) const;
-
     float sphericity(const std::vector<TVector3>& u,
                      const std::vector<float>& w) const;
-
     float rho_term(const std::vector<float>& w) const;
 };
 
-// ===== Implementation =====
+
 
 VertexTopology::VertexTopology(const fhicl::ParameterSet &pset) { configure(pset); }
 
@@ -114,16 +103,16 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset)
     fPFPproducer        = pset.get<art::InputTag>("PFPproducer");
     fSpacePointproducer = pset.get<art::InputTag>("SpacePointproducer", fPFPproducer);
 
-    // Beam directions can be provided via FHiCL; otherwise use fixed defaults
-    // Nominal BNB beam direction from target to detector
+
+
     auto bnb = pset.get<std::vector<float>>("BNBBeamDir", {0.f, 0.f, 47000.f});
     if (bnb.size() == 3) fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
 
-    // Nominal NuMI beam direction from target to detector
+
     auto numi = pset.get<std::vector<float>>("NuMIBeamDir", {5502.f, 7259.f, 67270.f});
     if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
 
-    // --- Original cleanness defaults ---
+
     fVtxRadius = pset.get<float>("VertexRadius", 5.f);
     float theta = pset.get<float>("ForwardAngleDeg", 25.f);
     fFwdCos = std::cos(theta * TMath::DegToRad());
@@ -133,9 +122,9 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset)
     fBackQmax = pset.get<float>("BackwardMax", std::numeric_limits<float>::max());
     fVtxQmax = pset.get<float>("VertexResidualMax", std::numeric_limits<float>::max());
 
-    // --- HadFlow+ defaults (primitives only) ---
-    fKernelR     = pset.get<float>("KernelR",        25.f);   // cm
-    fRhoRef      = pset.get<float>("RhoRef",         50.f);   // tune on sidebands
+
+    fKernelR     = pset.get<float>("KernelR",        25.f);
+    fRhoRef      = pset.get<float>("RhoRef",         50.f);
     fThrustIters = pset.get<int>("ThrustIters",       6);
 }
 
@@ -143,11 +132,10 @@ void VertexTopology::analyseEvent(const art::Event &, bool) { }
 
 void VertexTopology::analyseSlice(const art::Event &event,
                                   std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-                                  bool /*is_data*/, bool)
+                                  bool is_data, bool is_selected)
 {
-    // Beam directions are supplied by configuration; no per-event recalculation
-
-    // --- Locate neutrino vertex (same as your original) ---
+    (void)is_data;
+    (void)is_selected;
     TVector3 vtx;
     bool has_vtx = false;
     for (auto const &pfp : slice_pfp_vec) {
@@ -164,24 +152,24 @@ void VertexTopology::analyseSlice(const art::Event &event,
     }
     if (!has_vtx) return;
 
-    // --- Get PFParticle -> SpacePoint associations and SpacePoint -> Hit ---
+
     auto const &pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
     art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fSpacePointproducer);
 
     auto const &sp_h = event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
     art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
 
-    // --- Gather displacement vectors and weights (sum charge of associated hits) ---
+
     std::vector<TVector3> dirs;
     std::vector<float>    weights;
-    // Reserve enough space for all space points in the event
+
     size_t nspacepoints = sp_h->size();
     dirs.reserve(nspacepoints);
     weights.reserve(nspacepoints);
 
     for (auto const &pfp : slice_pfp_vec) {
         int pdg = std::abs(pfp->PdgCode());
-        if (pdg == 12 || pdg == 14) continue; // skip neutrino PFP
+        if (pdg == 12 || pdg == 14) continue;
         const std::vector<art::Ptr<recob::SpacePoint>>& sp_v = pfp_spacepoint_assn.at(pfp.index());
         for (auto const &sp : sp_v) {
             double xyz[3]; sp->XYZ(xyz);
@@ -200,13 +188,13 @@ void VertexTopology::analyseSlice(const art::Event &event,
         }
     }
 
-    // --- Original vertex-cleanness summaries (BNB / NuMI) ---
+
     compute_back_off_fractions(dirs, weights, fBNBdir,
                                _vtx_backfrac_bnb, _vtx_offfrac_bnb);
     compute_back_off_fractions(dirs, weights, fNuMIdir,
                                _vtx_backfrac_numi, _vtx_offfrac_numi);
 
-    // --- HadFlow+ primitives (make unit directions + kernel-weighted weights) ---
+
     std::vector<TVector3> u;        u.reserve(dirs.size());
     std::vector<float>    wtilde;   wtilde.reserve(dirs.size());
 
@@ -215,7 +203,7 @@ void VertexTopology::analyseSlice(const art::Event &event,
         const double R = r.Mag();
         const float  k = kernel(R);
         u.emplace_back(r.Unit());
-        // multiply by any upstream weight (currently 1.f)
+
         wtilde.emplace_back(k * weights[i]);
     }
 
@@ -233,12 +221,12 @@ void VertexTopology::analyseSlice(const art::Event &event,
     _had_sphericity = sphericity(u, wtilde);
     _had_rho_term   = rho_term(wtilde);
 
-    // Beam-aware HadFlow primitive
+
     _had_mu_parallel_bnb  = compute_mu_parallel(u, wtilde, fBNBdir);
     _had_mu_parallel_numi = compute_mu_parallel(u, wtilde, fNuMIdir);
 }
 
-// ---------- Original vertex-cleanness computation ----------
+
 void VertexTopology::compute_back_off_fractions(const std::vector<TVector3>& dirs,
                                                 const std::vector<float>& weights,
                                                 const TVector3& beam_dir,
@@ -273,7 +261,7 @@ void VertexTopology::compute_back_off_fractions(const std::vector<TVector3>& dir
     if (sum_vtx_off > fVtxQmax) off_frac = 1.f;
 }
 
-// ---------- HadFlow helpers ----------
+
 float VertexTopology::thrust_deficit(const std::vector<TVector3>& u,
                                      const std::vector<float>& w,
                                      int iters) const
@@ -318,11 +306,11 @@ float VertexTopology::sphericity(const std::vector<TVector3>& u,
     M *= (1.0 / sumW);
 
     TMatrixDSymEigen eig(M);
-    TVectorD vals = eig.GetEigenValues(); // ascending
+    TVectorD vals = eig.GetEigenValues();
     std::array<double,3> lam{vals[0], vals[1], vals[2]};
     std::sort(lam.begin(), lam.end(), std::greater<double>());
 
-    const double S = 1.5 * (lam[1] + lam[2]); // [0,1]
+    const double S = 1.5 * (lam[1] + lam[2]);
     return static_cast<float>(clamp01(S));
 }
 
@@ -330,7 +318,7 @@ float VertexTopology::rho_term(const std::vector<float>& w) const
 {
     double sumW = 0.0;
     for (float wi : w) sumW += wi;
-    const double vol = (4.0/3.0) * TMath::Pi() * std::pow(fKernelR, 3); // effective ball volume at scale R
+    const double vol = (4.0/3.0) * TMath::Pi() * std::pow(fKernelR, 3);
     const double rho = (vol > 0.0) ? (sumW / vol) : 0.0;
     const double term = (fRhoRef > 0.0) ? std::min(rho / fRhoRef, 1.0) : 0.0;
     return static_cast<float>(clamp01(term));
@@ -350,16 +338,16 @@ float VertexTopology::compute_mu_parallel(const std::vector<TVector3>& u,
     return (sumW > 0.0) ? static_cast<float>(sumWabs / sumW) : 0.f;
 }
 
-// ---------- I/O ----------
+
 void VertexTopology::setBranches(TTree *t)
 {
-    // Original cleanness (kept for compatibility)
+
     t->Branch("vtx_backfrac_bnb",  &_vtx_backfrac_bnb,  "vtx_backfrac_bnb/F");
     t->Branch("vtx_backfrac_numi", &_vtx_backfrac_numi, "vtx_backfrac_numi/F");
     t->Branch("vtx_offfrac_bnb",   &_vtx_offfrac_bnb,   "vtx_offfrac_bnb/F");
     t->Branch("vtx_offfrac_numi",  &_vtx_offfrac_numi,  "vtx_offfrac_numi/F");
 
-    // HadFlow+ primitives
+
     t->Branch("had_thrust_def",      &_had_thrust_def,      "had_thrust_def/F");
     t->Branch("had_sphericity",      &_had_sphericity,      "had_sphericity/F");
     t->Branch("had_rho_term",        &_had_rho_term,        "had_rho_term/F");
@@ -380,21 +368,11 @@ void VertexTopology::resetTTree(TTree *)
     _had_rho_term = std::numeric_limits<float>::quiet_NaN();
     _had_mu_parallel_bnb = std::numeric_limits<float>::quiet_NaN();
     _had_mu_parallel_numi = std::numeric_limits<float>::quiet_NaN();
-
-    _had_fwd_penalty_bnb = std::numeric_limits<float>::quiet_NaN();
-    _had_fwd_penalty_numi = std::numeric_limits<float>::quiet_NaN();
-    _hadflow_bnb = std::numeric_limits<float>::quiet_NaN();
-    _hadflow_numi = std::numeric_limits<float>::quiet_NaN();
-
-    _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
-    _bnb_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
-    _numi_baseline = std::numeric_limits<double>::quiet_NaN();
-    _numi_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
 
-} // namespace analysis
+}
 
 #endif
 
