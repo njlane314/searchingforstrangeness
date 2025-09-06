@@ -58,7 +58,7 @@
 <stage name="selection_numi_fhc_run1_ext">
     <inputdef>&input_def_ext_numi_run1;</inputdef>
     <fcl>&fcl_selection;</fcl>
-    <args>-a 'is_data:=true'</args>
+    <args>-c 'is_data:=true'</args>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>

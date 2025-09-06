@@ -35,7 +35,7 @@
     <stage name="selection_detvar_cv">
         <inputdef>&input_def_detvar_cv;</inputdef>
         <fcl>&fcl_selection;</fcl>
-        <args>-a 'NeutrinoSelectionFilter.AnalysisTools.image.ActiveModels: []'</args>
+        <args>-c "physics.filters.nuselection.AnalysisTools.image.ActiveModels: []"</args>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/log</logdir>
