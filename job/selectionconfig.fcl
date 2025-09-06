@@ -153,6 +153,7 @@ TruthAnalysis: {
 VertexTopology: {
     tool_type: "VertexTopology"
     PFPproducer: @local::standard_producers.PFPproducer
+    BackwardAngleDeg: 10
 }
 
 EventSelectionFilter: {
