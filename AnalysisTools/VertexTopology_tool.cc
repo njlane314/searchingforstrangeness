@@ -167,7 +167,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
     art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fSPproducer);
 
     auto const &sp_h =
-        event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
+        event.getValidHandle<std::vector<recob::SpacePoint>>(fSPproducer);
     art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSPproducer);
 
     std::vector<TVector3> dirs;
