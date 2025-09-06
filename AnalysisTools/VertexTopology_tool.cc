@@ -3,11 +3,14 @@
 
 #include "AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
+#include "canvas/Utilities/InputTag.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardata/Utilities/AssociationUtil.h"
+
+#include "nusimdata/SimulationBase/MCFlux.h"
 
 #include "TVector3.h"
 #include "TMath.h"
@@ -42,11 +45,11 @@ private:
                             const std::vector<float>& weights,
                             const TVector3& beam_dir,
                             float& back_frac,
-                            float& off_frac,
-                            float& score);
+                            float& off_frac);
 
     TVector3 fBNBdir;
     TVector3 fNuMIdir;
+    art::InputTag fMCFproducer;
 
     float fVtxRadius;
     float fFwdCos;
@@ -55,25 +58,23 @@ private:
     float fBackMargin;
     float fBackQmax;
     float fVtxQmax;
-    float fAlpha;
-    float fBeta;
 
-    float _vtx_score_bnb;
-    float _vtx_score_numi;
+    // Composite vertex score parameters removed; only primitives retained
     float _vtx_backfrac_bnb;
     float _vtx_backfrac_numi;
     float _vtx_offfrac_bnb;
     float _vtx_offfrac_numi;
 
+    double _bnb_baseline;
+    double _bnb_off_axis_angle;
+    double _numi_baseline;
+    double _numi_off_axis_angle;
+
     // ---------- HadFlow+ event-shape around the vertex ----------
     // Config
     float fKernelR;       // cm, soft radial kernel scale
     float fRhoRef;        // reference density for normalization
-    float fMuParTarget;   // target <|cosθ|> before penalizing (≈0.4)
-    float fFwdLambda;     // penalty strength (≈0.2)
-    float fWThrust;       // weight for thrust deficit (≈0.35)
-    float fWSpher;        // weight for sphericity (≈0.35)
-    float fWRho;          // weight for density term (≈0.30)
+    // Composite score parameters removed; downstream tuning expected
     int   fThrustIters;   // iterations for thrust maximization
 
     // Outputs (beam-independent primitives)
@@ -81,22 +82,15 @@ private:
     float _had_sphericity;    // sphericity
     float _had_rho_term;      // normalized local activity
 
-    // Beam-dependent pieces and final scores
+    // Beam-dependent primitives
     float _had_mu_parallel_bnb;
     float _had_mu_parallel_numi;
-    float _had_fwd_penalty_bnb;
-    float _had_fwd_penalty_numi;
-    float _hadflow_bnb;
-    float _hadflow_numi;
 
 private:
-    // HadFlow core
-    void compute_hadflow(const std::vector<TVector3>& u,
-                         const std::vector<float>& wtilde,
-                         const TVector3& beam_dir,
-                         float& mu_parallel,
-                         float& fwd_penalty,
-                         float& score) const;
+    // HadFlow core (only primitive, no composite score)
+    float compute_mu_parallel(const std::vector<TVector3>& u,
+                              const std::vector<float>& wtilde,
+                              const TVector3& beam_dir) const;
 
     // Helpers
     inline float kernel(float r) const {
@@ -130,6 +124,11 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset)
     if (bnb.size() == 3) fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
     auto numi = pset.get<std::vector<float>>("NuMIBeamDir", {0,0,1});
     if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
+    // MCFlux producer for beam direction calculation
+    fMCFproducer = pset.get<art::InputTag>("MCFproducer", "generator");
+    // Default beam directions (will be overwritten with MC truth when available)
+    fBNBdir  = TVector3(0,0,1);
+    fNuMIdir = TVector3(0,0,1);
 
     // --- Original cleanness defaults ---
     fVtxRadius = pset.get<float>("VertexRadius", 5.f);
@@ -140,17 +139,10 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset)
     fBackMargin = pset.get<float>("BackwardCosMargin", 0.05f);
     fBackQmax = pset.get<float>("BackwardMax", std::numeric_limits<float>::max());
     fVtxQmax = pset.get<float>("VertexResidualMax", std::numeric_limits<float>::max());
-    fAlpha = pset.get<float>("Alpha", 1.f);
-    fBeta  = pset.get<float>("Beta",  1.f);
 
-    // --- HadFlow+ defaults ---
+    // --- HadFlow+ defaults (primitives only) ---
     fKernelR     = pset.get<float>("KernelR",        25.f);   // cm
     fRhoRef      = pset.get<float>("RhoRef",         50.f);   // tune on sidebands
-    fMuParTarget = pset.get<float>("MuParTarget",     0.4f);  // ⟨|cosθ|⟩ target
-    fFwdLambda   = pset.get<float>("FwdLambda",       0.2f);  // penalty strength
-    fWThrust     = pset.get<float>("WThrust",         0.35f);
-    fWSpher      = pset.get<float>("WSpher",          0.35f);
-    fWRho        = pset.get<float>("WRho",            0.30f);
     fThrustIters = pset.get<int>("ThrustIters",       6);
 }
 
@@ -158,8 +150,40 @@ void VertexTopology::analyseEvent(const art::Event &, bool) { }
 
 void VertexTopology::analyseSlice(const art::Event &event,
                                   std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-                                  bool, bool)
+                                  bool is_data, bool)
 {
+    if (!is_data) {
+        auto const& mcflux_h = event.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
+        if (mcflux_h.isValid() && !mcflux_h->empty()) {
+            auto const& flux = mcflux_h->at(0);
+
+            TVector3 decay_position(flux.fvx, flux.fvy, flux.fvz);
+
+            TVector3 numi_target_to_detector_beam(5502, 7259, 67270);
+            TVector3 numi_baseline_vector = numi_target_to_detector_beam - decay_position;
+            _numi_baseline = numi_baseline_vector.Mag() / 100.0;
+            _numi_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+            if (numi_baseline_vector.Mag() > 0) {
+                fNuMIdir = numi_baseline_vector.Unit();
+                _numi_off_axis_angle = std::acos(numi_baseline_vector.Unit().Dot(numi_target_to_detector_beam.Unit())) * 180.0 / TMath::Pi();
+            }
+
+            TVector3 bnb_target_to_detector_beam(0.0, 0.0, 47000.0);
+            TVector3 bnb_baseline_vector = bnb_target_to_detector_beam - decay_position;
+            _bnb_baseline = bnb_baseline_vector.Mag() / 100.0;
+            _bnb_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+            if (bnb_baseline_vector.Mag() > 0) {
+                fBNBdir = bnb_baseline_vector.Unit();
+                _bnb_off_axis_angle = std::acos(bnb_baseline_vector.Unit().Dot(bnb_target_to_detector_beam.Unit())) * 180.0 / TMath::Pi();
+            }
+        }
+    } else {
+        TVector3 numi_target_to_detector_beam(5502, 7259, 67270);
+        fNuMIdir = numi_target_to_detector_beam.Unit();
+        TVector3 bnb_target_to_detector_beam(0.0, 0.0, 47000.0);
+        fBNBdir = bnb_target_to_detector_beam.Unit();
+    }
+
     // --- Locate neutrino vertex (same as your original) ---
     TVector3 vtx;
     bool has_vtx = false;
@@ -212,9 +236,9 @@ void VertexTopology::analyseSlice(const art::Event &event,
 
     // --- Original vertex-cleanness summaries (BNB / NuMI) ---
     compute_vtx_scores(dirs, weights, fBNBdir,
-                       _vtx_backfrac_bnb, _vtx_offfrac_bnb, _vtx_score_bnb);
+                       _vtx_backfrac_bnb, _vtx_offfrac_bnb);
     compute_vtx_scores(dirs, weights, fNuMIdir,
-                       _vtx_backfrac_numi, _vtx_offfrac_numi, _vtx_score_numi);
+                       _vtx_backfrac_numi, _vtx_offfrac_numi);
 
     // --- HadFlow+ primitives (make unit directions + kernel-weighted weights) ---
     std::vector<TVector3> u;        u.reserve(dirs.size());
@@ -236,10 +260,6 @@ void VertexTopology::analyseSlice(const art::Event &event,
 
         _had_mu_parallel_bnb  = 0.f;
         _had_mu_parallel_numi = 0.f;
-        _had_fwd_penalty_bnb  = 0.f;
-        _had_fwd_penalty_numi = 0.f;
-        _hadflow_bnb = 0.f;
-        _hadflow_numi = 0.f;
         return;
     }
 
@@ -247,11 +267,9 @@ void VertexTopology::analyseSlice(const art::Event &event,
     _had_sphericity = sphericity(u, wtilde);
     _had_rho_term   = rho_term(wtilde);
 
-    // Beam-aware HadFlow scores
-    compute_hadflow(u, wtilde, fBNBdir,
-                    _had_mu_parallel_bnb, _had_fwd_penalty_bnb, _hadflow_bnb);
-    compute_hadflow(u, wtilde, fNuMIdir,
-                    _had_mu_parallel_numi, _had_fwd_penalty_numi, _hadflow_numi);
+    // Beam-aware HadFlow primitive
+    _had_mu_parallel_bnb  = compute_mu_parallel(u, wtilde, fBNBdir);
+    _had_mu_parallel_numi = compute_mu_parallel(u, wtilde, fNuMIdir);
 }
 
 // ---------- Original vertex-cleanness computation ----------
@@ -259,8 +277,7 @@ void VertexTopology::compute_vtx_scores(const std::vector<TVector3>& dirs,
                                         const std::vector<float>& weights,
                                         const TVector3& beam_dir,
                                         float& back_frac,
-                                        float& off_frac,
-                                        float& score)
+                                        float& off_frac)
 {
     float sum_ann = 0.f, sum_back = 0.f;
     float sum_vtx = 0.f, sum_vtx_off = 0.f;
@@ -288,8 +305,6 @@ void VertexTopology::compute_vtx_scores(const std::vector<TVector3>& dirs,
 
     off_frac = (sum_vtx > 0) ? sum_vtx_off / sum_vtx : 0.f;
     if (sum_vtx_off > fVtxQmax) off_frac = 1.f;
-
-    score = fAlpha * back_frac + fBeta * off_frac;
 }
 
 // ---------- HadFlow helpers ----------
@@ -355,74 +370,65 @@ float VertexTopology::rho_term(const std::vector<float>& w) const
     return static_cast<float>(clamp01(term));
 }
 
-void VertexTopology::compute_hadflow(const std::vector<TVector3>& u,
-                                     const std::vector<float>& wtilde,
-                                     const TVector3& beam_dir,
-                                     float& mu_parallel,
-                                     float& fwd_penalty,
-                                     float& score) const
+float VertexTopology::compute_mu_parallel(const std::vector<TVector3>& u,
+                                          const std::vector<float>& wtilde,
+                                          const TVector3& beam_dir) const
 {
-    if (wtilde.empty()) {
-        mu_parallel = fwd_penalty = score = 0.f;
-        return;
-    }
+    if (wtilde.empty()) return 0.f;
     double sumW = 0.0, sumWabs = 0.0;
     for (size_t i = 0; i < u.size(); ++i) {
         const double wi = wtilde[i];
         sumW += wi;
         sumWabs += wi * std::abs(u[i].Dot(beam_dir));
     }
-    mu_parallel = (sumW > 0.0) ? static_cast<float>(sumWabs / sumW) : 0.f;
-
-    const float P = std::max(0.f, mu_parallel - fMuParTarget);
-    fwd_penalty = P;
-
-    const float raw =
-        fWThrust * _had_thrust_def +
-        fWSpher  * _had_sphericity +
-        fWRho    * _had_rho_term -
-        fFwdLambda * fwd_penalty;
-
-    score = clamp01(raw);
+    return (sumW > 0.0) ? static_cast<float>(sumWabs / sumW) : 0.f;
 }
 
 // ---------- I/O ----------
 void VertexTopology::setBranches(TTree *t)
 {
     // Original cleanness (kept for compatibility)
-    t->Branch("vtx_score_bnb",     &_vtx_score_bnb,     "vtx_score_bnb/F");
-    t->Branch("vtx_score_numi",    &_vtx_score_numi,    "vtx_score_numi/F");
     t->Branch("vtx_backfrac_bnb",  &_vtx_backfrac_bnb,  "vtx_backfrac_bnb/F");
     t->Branch("vtx_backfrac_numi", &_vtx_backfrac_numi, "vtx_backfrac_numi/F");
     t->Branch("vtx_offfrac_bnb",   &_vtx_offfrac_bnb,   "vtx_offfrac_bnb/F");
     t->Branch("vtx_offfrac_numi",  &_vtx_offfrac_numi,  "vtx_offfrac_numi/F");
 
-    // HadFlow+ primitives and scores
+    // HadFlow+ primitives
     t->Branch("had_thrust_def",      &_had_thrust_def,      "had_thrust_def/F");
     t->Branch("had_sphericity",      &_had_sphericity,      "had_sphericity/F");
     t->Branch("had_rho_term",        &_had_rho_term,        "had_rho_term/F");
 
     t->Branch("had_mu_parallel_bnb", &_had_mu_parallel_bnb, "had_mu_parallel_bnb/F");
     t->Branch("had_mu_parallel_numi",&_had_mu_parallel_numi,"had_mu_parallel_numi/F");
+
     t->Branch("had_fwd_penalty_bnb", &_had_fwd_penalty_bnb, "had_fwd_penalty_bnb/F");
     t->Branch("had_fwd_penalty_numi",&_had_fwd_penalty_numi,"had_fwd_penalty_numi/F");
 
     t->Branch("hadflow_bnb",         &_hadflow_bnb,         "hadflow_bnb/F");
     t->Branch("hadflow_numi",        &_hadflow_numi,        "hadflow_numi/F");
+
+    t->Branch("bnb_baseline",        &_bnb_baseline,        "bnb_baseline/D");
+    t->Branch("bnb_off_axis_angle",  &_bnb_off_axis_angle,  "bnb_off_axis_angle/D");
+    t->Branch("numi_baseline",       &_numi_baseline,       "numi_baseline/D");
+    t->Branch("numi_off_axis_angle", &_numi_off_axis_angle, "numi_off_axis_angle/D");
 }
 
 void VertexTopology::resetTTree(TTree *)
 {
     const float NaN = std::numeric_limits<float>::quiet_NaN();
 
-    _vtx_score_bnb = NaN;   _vtx_score_numi = NaN;
     _vtx_backfrac_bnb = NaN; _vtx_backfrac_numi = NaN;
     _vtx_offfrac_bnb = NaN;  _vtx_offfrac_numi = NaN;
 
     _had_thrust_def = NaN; _had_sphericity = NaN; _had_rho_term = NaN;
     _had_mu_parallel_bnb = NaN; _had_mu_parallel_numi = NaN;
+
     _had_fwd_penalty_bnb = NaN; _had_fwd_penalty_numi = NaN;
     _hadflow_bnb = NaN; _hadflow_numi = NaN;
+
+    const double DNaN = std::numeric_limits<double>::quiet_NaN();
+    _bnb_baseline = DNaN; _bnb_off_axis_angle = DNaN;
+    _numi_baseline = DNaN; _numi_off_axis_angle = DNaN;
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
