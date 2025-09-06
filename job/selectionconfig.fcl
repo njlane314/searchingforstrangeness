@@ -150,8 +150,9 @@ TruthAnalysis: {
     CLSproducer: @local::standard_producers.CLSproducer
 }
 
-InferenceTest: {
-    tool_type: "InferenceTest"
+VertexTopology: {
+    tool_type: "VertexTopology"
+    PFPproducer: @local::standard_producers.PFPproducer
 }
 
 EventSelectionFilter: {
@@ -193,5 +194,6 @@ NeutrinoSelectionFilter: {
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
+        vertex: @local::VertexTopology
     }
 }
