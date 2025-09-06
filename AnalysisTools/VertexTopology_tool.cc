@@ -50,8 +50,6 @@ class VertexTopology : public AnalysisToolBase {
     float fBackRMin;
     float fBackRMax;
     float fBackMargin;
-    float fBackQmax;
-    float fVtxQmax;
 
     float _vtx_backfrac_bnb;
     float _vtx_backfrac_numi;
@@ -114,10 +112,6 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     fBackRMin = pset.get<float>("BackwardRadiusMin", 3.f);
     fBackRMax = pset.get<float>("BackwardRadiusMax", 7.f);
     fBackMargin = pset.get<float>("BackwardCosMargin", 0.05f);
-    fBackQmax =
-        pset.get<float>("BackwardMax", std::numeric_limits<float>::max());
-    fVtxQmax =
-        pset.get<float>("VertexResidualMax", std::numeric_limits<float>::max());
 
     fKernelR = pset.get<float>("KernelR", 25.f);
     fRhoRef = pset.get<float>("RhoRef", 50.f);
@@ -243,12 +237,7 @@ void VertexTopology::compute_back_off_fractions(
     }
 
     back_frac = (sum_ann > 0) ? sum_back / sum_ann : 0.f;
-    if (sum_back > fBackQmax)
-        back_frac = 1.f;
-
     off_frac = (sum_vtx > 0) ? sum_vtx_off / sum_vtx : 0.f;
-    if (sum_vtx_off > fVtxQmax)
-        off_frac = 1.f;
 }
 
 float VertexTopology::thrust_deficit(const std::vector<TVector3> &u,
