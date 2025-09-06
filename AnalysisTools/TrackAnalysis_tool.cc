@@ -217,11 +217,11 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             track_vertex -= neutrino_vertex;
             _track_distance_to_vertex.push_back(track_vertex.Mag());
 
-            _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::lowest());
-            _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::lowest());
-            _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::quiet_NaN());
+            _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::quiet_NaN());
+            _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::quiet_NaN());
             _trk_llr_pid_v.push_back(0.0f);
-            _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::quiet_NaN());
 
             auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
             for (const auto& calo : calorimetry_objects) {
@@ -305,46 +305,46 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
 
 void TrackAnalysis::fill_default() {
     _track_pfp_ids.push_back(std::numeric_limits<size_t>::max());
-    _track_start_x.push_back(std::numeric_limits<float>::lowest());
-    _track_start_y.push_back(std::numeric_limits<float>::lowest());
-    _track_start_z.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_start_x.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_start_y.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_start_z.push_back(std::numeric_limits<float>::lowest());
-    _track_end_x.push_back(std::numeric_limits<float>::lowest());
-    _track_end_y.push_back(std::numeric_limits<float>::lowest());
-    _track_end_z.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_end_x.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_end_y.push_back(std::numeric_limits<float>::lowest());
-    _track_sce_end_z.push_back(std::numeric_limits<float>::lowest());
-    _track_direction_x.push_back(std::numeric_limits<float>::lowest());
-    _track_direction_y.push_back(std::numeric_limits<float>::lowest());
-    _track_direction_z.push_back(std::numeric_limits<float>::lowest());
-    _track_distance_to_vertex.push_back(std::numeric_limits<float>::lowest());
-    _track_theta.push_back(std::numeric_limits<float>::lowest());
-    _track_phi.push_back(std::numeric_limits<float>::lowest());
-    _track_length.push_back(std::numeric_limits<float>::lowest());
-    _track_calo_energy_u.push_back(std::numeric_limits<float>::lowest());
-    _track_calo_energy_v.push_back(std::numeric_limits<float>::lowest());
-    _track_calo_energy_y.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_dedx_u.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_dedx_v.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_dedx_y.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::lowest());
-    _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::lowest());
+    _track_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_end_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_end_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_end_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_end_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_end_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_sce_end_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_direction_x.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_direction_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_direction_z.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_distance_to_vertex.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_theta.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_phi.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_length.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_calo_energy_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_calo_energy_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_calo_energy_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_nhits_u.push_back(std::numeric_limits<int>::lowest());
     _track_nhits_v.push_back(std::numeric_limits<int>::lowest());
     _track_nhits_y.push_back(std::numeric_limits<int>::lowest());
-    _track_avg_deflection_mean.push_back(std::numeric_limits<float>::lowest());
-    _track_avg_deflection_stdev.push_back(std::numeric_limits<float>::lowest());
-    _track_avg_deflection_separation_mean.push_back(std::numeric_limits<float>::lowest());
+    _track_avg_deflection_mean.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_avg_deflection_stdev.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_avg_deflection_separation_mean.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_end_spacepoints.push_back(std::numeric_limits<int>::lowest());
-    _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::lowest());
-    _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::lowest());
-    _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::lowest());
-    _trk_llr_pid_v.push_back(std::numeric_limits<float>::lowest());
-    _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::lowest());
+    _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _trk_llr_pid_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::quiet_NaN());
 }
 
 void TrackAnalysis::setBranches(TTree* tree) {
@@ -441,7 +441,7 @@ float TrackAnalysis::calculate_track_trunk_dedx_by_hits(const std::vector<float>
     int last_hit_index = static_cast<int>(hit_count - (hit_count / 3)) - 1;
 
     if (first_hit_index - last_hit_index < 5) {
-        return std::numeric_limits<float>::lowest();
+        return std::numeric_limits<float>::quiet_NaN();
     }
 
     std::vector<float> trunk_dedx_values;
@@ -482,11 +482,11 @@ float TrackAnalysis::calculate_track_trunk_dedx_by_range(const std::vector<float
     const float length_fraction = 1.0f / 3.0f;
 
     if (residual_range_values.size() <= hits_to_skip) {
-        return std::numeric_limits<float>::lowest();
+        return std::numeric_limits<float>::quiet_NaN();
     }
 
     std::vector<std::pair<float, unsigned int>> residual_range_indices;
-    float max_residual_range = std::numeric_limits<float>::lowest();
+    float max_residual_range = std::numeric_limits<float>::quiet_NaN();
     for (unsigned int i = 0; i < residual_range_values.size(); ++i) {
         max_residual_range = std::max(max_residual_range, residual_range_values[i]);
         residual_range_indices.emplace_back(residual_range_values[i], i);
@@ -503,7 +503,7 @@ float TrackAnalysis::calculate_track_trunk_dedx_by_range(const std::vector<float
     }
 
     if (dedx_at_start.empty()) {
-        return std::numeric_limits<float>::lowest();
+        return std::numeric_limits<float>::quiet_NaN();
     }
 
     std::sort(dedx_at_start.begin(), dedx_at_start.end());
@@ -526,7 +526,7 @@ float TrackAnalysis::calculate_track_trunk_dedx_by_range(const std::vector<float
         }
     }
 
-    return (truncated_hit_count == 0) ? std::numeric_limits<float>::lowest() 
+    return (truncated_hit_count == 0) ? std::numeric_limits<float>::quiet_NaN() 
                                    : truncated_total / static_cast<float>(truncated_hit_count);
 }
 
@@ -544,9 +544,9 @@ void TrackAnalysis::calculate_track_deflections(const art::Ptr<recob::Track>& tr
     }
 
     if (valid_points.size() < 3) {
-        mean_deflections.push_back(std::numeric_limits<float>::lowest());
-        stdev_deflections.push_back(std::numeric_limits<float>::lowest());
-        mean_separation.push_back(std::numeric_limits<float>::lowest());
+        mean_deflections.push_back(std::numeric_limits<float>::quiet_NaN());
+        stdev_deflections.push_back(std::numeric_limits<float>::quiet_NaN());
+        mean_separation.push_back(std::numeric_limits<float>::quiet_NaN());
         return;
     }
 
