@@ -93,9 +93,9 @@ ImageAnalysis: {
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    BadChannelFile: "calib/badchannels.txt"
+    BadChannelFile: "badchannels.txt"
     WeightsBaseDir: "weights"         # env override: WEIGHTS_BASE_DIR
-    InferenceWrapper: "scripts/run_strangeness_inference.sh"
+    InferenceWrapper: "scripts/inference_wrapper.sh"
     imageWidth: 512
     imageHeight: 512
     Models: [

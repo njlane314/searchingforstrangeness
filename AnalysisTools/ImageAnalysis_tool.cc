@@ -182,7 +182,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     if (!fAssetsBaseDir.empty() && !isAbs(fAssetsBaseDir))
         fAssetsBaseDir = joinPath(fWorkDir, fAssetsBaseDir);
 
-    std::string badRel = p.get<std::string>("BadChannelFile", "calib/badchannels.txt");
+    std::string badRel = p.get<std::string>("BadChannelFile", "badchannels.txt");
     if (const char *env = std::getenv("IA_BADCHANNELS"))
         badRel = env;
     fBadChannelFile = resolveAssetPath(badRel, true);
@@ -200,7 +200,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     }
     mf::LogInfo("ImageAnalysis") << "Weights base dir: " << fWeightsBaseDir;
 
-    std::string wrapperRel = p.get<std::string>("InferenceWrapper", "scripts/run_strangeness_inference.sh");
+    std::string wrapperRel = p.get<std::string>("InferenceWrapper", "scripts/inference_wrapper.sh");
     if (const char *env = std::getenv("IA_INFERENCE_WRAPPER"))
         wrapperRel = env;
     fInferenceWrapper = resolveAssetPath(wrapperRel, true);

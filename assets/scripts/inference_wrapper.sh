@@ -5,19 +5,19 @@ set -euo pipefail
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${ASSETS_BASE_DIR:="$(cd "$THIS_DIR/.." && pwd)"}"
 
-# Sanity check the expected subdirs
-if [[ ! -d "$ASSETS_BASE_DIR/calib" || ! -d "$ASSETS_BASE_DIR/weights" ]]; then
+# Sanity check the expected resources
+if [[ ! -f "$ASSETS_BASE_DIR/badchannels.txt" || ! -d "$ASSETS_BASE_DIR/weights" ]]; then
   echo "ERROR: ASSETS_BASE_DIR invalid: $ASSETS_BASE_DIR" >&2
   exit 1
 fi
 
 export WEIGHTS_BASE_DIR="${WEIGHTS_BASE_DIR:-$ASSETS_BASE_DIR/weights}"
-export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/calib/badchannels.txt}"
+export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/badchannels.txt}"
 if [[ ! -f "$IA_BADCHANNELS" ]]; then
   echo "ERROR: Missing badchannels file at $IA_BADCHANNELS" >&2
   exit 1
 fi
-export IA_INFERENCE_WRAPPER="$THIS_DIR/run_strangeness_inference.sh"
+export IA_INFERENCE_WRAPPER="$THIS_DIR/inference_wrapper.sh"
 
 # Make sure Python will see our packages
 export PYTHONPATH="$ASSETS_BASE_DIR:$ASSETS_BASE_DIR/models:$ASSETS_BASE_DIR/scripts${PYTHONPATH:+:$PYTHONPATH}"
@@ -29,4 +29,4 @@ echo "[init] ASSETS_BASE_DIR=$ASSETS_BASE_DIR"
 echo "[init] PYTHONPATH=$PYTHONPATH"
 
 cd "$ASSETS_BASE_DIR"
-exec python3 -u "$ASSETS_BASE_DIR/scripts/run_inference.py" "$@"
+exec python3 -u "$ASSETS_BASE_DIR/scripts/run_binary_inference.py" "$@"
