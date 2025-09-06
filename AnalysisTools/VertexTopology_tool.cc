@@ -132,11 +132,11 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
     
     fVtxRadius = pset.get<float>("VertexRadius", 5.f);
-    float theta = pset.get<float>("ForwardAngleDeg", 25.f);
+    float theta = pset.get<float>("ForwardAngleDeg", 30.f);
     fFwdCos = std::cos(theta * TMath::DegToRad());
     fBackRMin = pset.get<float>("BackwardRadiusMin", 3.f);
-    fBackRMax = pset.get<float>("BackwardRadiusMax", 7.f);
-    fBackMargin = pset.get<float>("BackwardCosMargin", 0.05f);
+    fBackRMax = pset.get<float>("BackwardRadiusMax", 10.f);
+    fBackMargin = pset.get<float>("BackwardCosMargin", 0.08f);
     fKernelR = pset.get<float>("KernelR", 25.f);
     fThrustIters = pset.get<int>("ThrustIters", 6);
     fContrastRc = pset.get<float>("ContrastRc", 5.f);
