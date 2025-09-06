@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <cstdio>
 #include <cetlib_except/exception.h>
-#include "art/Utilities/Exception.h"
+#include <canvas/Utilities/Exception.h>
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
 namespace analysis {
