@@ -21,6 +21,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <iostream>
 
 namespace analysis {
 
@@ -35,6 +36,7 @@ public:
                       bool is_data, bool is_selected) override;
     void setBranches(TTree *tree) override;
     void resetTTree(TTree *tree) override;
+    void print() const;
 
 private:
     art::InputTag fPFPproducer;
@@ -142,7 +144,7 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     fContrastRb = pset.get<float>("ContrastRb", 25.f);
 }
 
-void VertexTopology::analyseEvent(const art::Event &, bool) {}
+void VertexTopology::analyseEvent(const art::Event &, bool) { print(); }
 
 void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool, bool) {
     TVector3 vtx;
@@ -160,7 +162,10 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
             break;
         }
     }
-    if (!has_vtx) return;
+    if (!has_vtx) {
+        print();
+        return;
+    }
 
     auto const &pfp_h =
         event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
@@ -209,7 +214,10 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
         u.emplace_back(r.Unit());
         wtilde.emplace_back(k * weights[i]);
     }
-    if (wtilde.empty()) return;
+    if (wtilde.empty()) {
+        print();
+        return;
+    }
 
     _had_thrust_def = thrust_deficit(u, wtilde, fThrustIters);
     _had_sphericity = sphericity(u, wtilde);
@@ -227,6 +235,7 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
     _c_sphericity = clamp01(_had_sphericity);
     _c_rho = clamp01(_had_rho_term);
     _c_vtxdens = density_contrast(dirs, wtilde, fContrastRc, fContrastRa, fContrastRb);
+    print();
 }
 
 void VertexTopology::backward_off_axis_fractions(
@@ -434,6 +443,29 @@ void VertexTopology::resetTTree(TTree *) {
     _c_sphericity = std::numeric_limits<float>::quiet_NaN();
     _c_rho = std::numeric_limits<float>::quiet_NaN();
     _c_vtxdens = std::numeric_limits<float>::quiet_NaN();
+}
+
+void VertexTopology::print() const {
+    std::cout << "Branch values:\n"
+              << "  vtx_backfrac_bnb: " << _vtx_backfrac_bnb << '\n'
+              << "  vtx_backfrac_numi: " << _vtx_backfrac_numi << '\n'
+              << "  vtx_offfrac_bnb: " << _vtx_offfrac_bnb << '\n'
+              << "  vtx_offfrac_numi: " << _vtx_offfrac_numi << '\n'
+              << "  had_thrust_def: " << _had_thrust_def << '\n'
+              << "  had_sphericity: " << _had_sphericity << '\n'
+              << "  had_rho_term: " << _had_rho_term << '\n'
+              << "  had_mu_parallel_bnb: " << _had_mu_parallel_bnb << '\n'
+              << "  had_mu_parallel_numi: " << _had_mu_parallel_numi << '\n'
+              << "  c_fb_bnb: " << _c_fb_bnb << '\n'
+              << "  c_fb_numi: " << _c_fb_numi << '\n'
+              << "  c_fwd_bnb: " << _c_fwd_bnb << '\n'
+              << "  c_fwd_numi: " << _c_fwd_numi << '\n'
+              << "  c_mu_bnb: " << _c_mu_bnb << '\n'
+              << "  c_mu_numi: " << _c_mu_numi << '\n'
+              << "  c_thrust: " << _c_thrust << '\n'
+              << "  c_sphericity: " << _c_sphericity << '\n'
+              << "  c_rho: " << _c_rho << '\n'
+              << "  c_vtxdens: " << _c_vtxdens << std::endl;
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
