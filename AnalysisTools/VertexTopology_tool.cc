@@ -145,7 +145,9 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     fContrastRb = pset.get<float>("ContrastRb", 25.f);
 }
 
-void VertexTopology::analyseEvent(const art::Event &, bool) { //print(); }
+void VertexTopology::analyseEvent(const art::Event &, bool) {
+    //print();
+}
 
 void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool, bool) {
     TVector3 vtx;
