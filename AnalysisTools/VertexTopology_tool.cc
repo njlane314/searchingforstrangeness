@@ -418,20 +418,26 @@ void VertexTopology::setBranches(TTree *t)
 
 void VertexTopology::resetTTree(TTree *)
 {
-    const float NaN = std::numeric_limits<float>::quiet_NaN();
+    _vtx_backfrac_bnb = std::numeric_limits<float>::quiet_NaN();
+    _vtx_backfrac_numi = std::numeric_limits<float>::quiet_NaN();
+    _vtx_offfrac_bnb = std::numeric_limits<float>::quiet_NaN();
+    _vtx_offfrac_numi = std::numeric_limits<float>::quiet_NaN();
 
-    _vtx_backfrac_bnb = NaN; _vtx_backfrac_numi = NaN;
-    _vtx_offfrac_bnb = NaN;  _vtx_offfrac_numi = NaN;
+    _had_thrust_def = std::numeric_limits<float>::quiet_NaN();
+    _had_sphericity = std::numeric_limits<float>::quiet_NaN();
+    _had_rho_term = std::numeric_limits<float>::quiet_NaN();
+    _had_mu_parallel_bnb = std::numeric_limits<float>::quiet_NaN();
+    _had_mu_parallel_numi = std::numeric_limits<float>::quiet_NaN();
 
-    _had_thrust_def = NaN; _had_sphericity = NaN; _had_rho_term = NaN;
-    _had_mu_parallel_bnb = NaN; _had_mu_parallel_numi = NaN;
+    _had_fwd_penalty_bnb = std::numeric_limits<float>::quiet_NaN();
+    _had_fwd_penalty_numi = std::numeric_limits<float>::quiet_NaN();
+    _hadflow_bnb = std::numeric_limits<float>::quiet_NaN();
+    _hadflow_numi = std::numeric_limits<float>::quiet_NaN();
 
-    _had_fwd_penalty_bnb = NaN; _had_fwd_penalty_numi = NaN;
-    _hadflow_bnb = NaN; _hadflow_numi = NaN;
-
-    const double DNaN = std::numeric_limits<double>::quiet_NaN();
-    _bnb_baseline = DNaN; _bnb_off_axis_angle = DNaN;
-    _numi_baseline = DNaN; _numi_off_axis_angle = DNaN;
+    _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
+    _bnb_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+    _numi_baseline = std::numeric_limits<double>::quiet_NaN();
+    _numi_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
