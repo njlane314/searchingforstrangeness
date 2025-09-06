@@ -3,9 +3,12 @@
 
 #include "AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
+#include "canvas/Utilities/InputTag.h"
 
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
+
+#include "nusimdata/SimulationBase/MCFlux.h"
 
 #include "TVector3.h"
 #include "TMath.h"
@@ -42,6 +45,7 @@ private:
 
     TVector3 fBNBdir;
     TVector3 fNuMIdir;
+    art::InputTag fMCFproducer;
 
     float fVtxRadius;
     float fFwdCos;
@@ -56,6 +60,11 @@ private:
     float _vtx_backfrac_numi;
     float _vtx_offfrac_bnb;
     float _vtx_offfrac_numi;
+
+    double _bnb_baseline;
+    double _bnb_off_axis_angle;
+    double _numi_baseline;
+    double _numi_off_axis_angle;
 
     // ---------- HadFlow+ event-shape around the vertex ----------
     // Config
@@ -104,11 +113,11 @@ VertexTopology::VertexTopology(const fhicl::ParameterSet &pset) { configure(pset
 
 void VertexTopology::configure(fhicl::ParameterSet const &pset)
 {
-    // Beam directions
-    auto bnb = pset.get<std::vector<float>>("BNBBeamDir", {1,0,0});
-    if (bnb.size() == 3) fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
-    auto numi = pset.get<std::vector<float>>("NuMIBeamDir", {0,0,1});
-    if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
+    // MCFlux producer for beam direction calculation
+    fMCFproducer = pset.get<art::InputTag>("MCFproducer", "generator");
+    // Default beam directions (will be overwritten with MC truth when available)
+    fBNBdir  = TVector3(0,0,1);
+    fNuMIdir = TVector3(0,0,1);
 
     // --- Original cleanness defaults ---
     fVtxRadius = pset.get<float>("VertexRadius", 5.f);
@@ -128,10 +137,42 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset)
 
 void VertexTopology::analyseEvent(const art::Event &, bool) { }
 
-void VertexTopology::analyseSlice(const art::Event &,
+void VertexTopology::analyseSlice(const art::Event &event,
                                   std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-                                  bool, bool)
+                                  bool is_data, bool)
 {
+    if (!is_data) {
+        auto const& mcflux_h = event.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
+        if (mcflux_h.isValid() && !mcflux_h->empty()) {
+            auto const& flux = mcflux_h->at(0);
+
+            TVector3 decay_position(flux.fvx, flux.fvy, flux.fvz);
+
+            TVector3 numi_target_to_detector_beam(5502, 7259, 67270);
+            TVector3 numi_baseline_vector = numi_target_to_detector_beam - decay_position;
+            _numi_baseline = numi_baseline_vector.Mag() / 100.0;
+            _numi_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+            if (numi_baseline_vector.Mag() > 0) {
+                fNuMIdir = numi_baseline_vector.Unit();
+                _numi_off_axis_angle = std::acos(numi_baseline_vector.Unit().Dot(numi_target_to_detector_beam.Unit())) * 180.0 / TMath::Pi();
+            }
+
+            TVector3 bnb_target_to_detector_beam(0.0, 0.0, 47000.0);
+            TVector3 bnb_baseline_vector = bnb_target_to_detector_beam - decay_position;
+            _bnb_baseline = bnb_baseline_vector.Mag() / 100.0;
+            _bnb_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+            if (bnb_baseline_vector.Mag() > 0) {
+                fBNBdir = bnb_baseline_vector.Unit();
+                _bnb_off_axis_angle = std::acos(bnb_baseline_vector.Unit().Dot(bnb_target_to_detector_beam.Unit())) * 180.0 / TMath::Pi();
+            }
+        }
+    } else {
+        TVector3 numi_target_to_detector_beam(5502, 7259, 67270);
+        fNuMIdir = numi_target_to_detector_beam.Unit();
+        TVector3 bnb_target_to_detector_beam(0.0, 0.0, 47000.0);
+        fBNBdir = bnb_target_to_detector_beam.Unit();
+    }
+
     // --- Locate neutrino vertex (same as your original) ---
     TVector3 vtx;
     bool has_vtx = false;
@@ -333,6 +374,17 @@ void VertexTopology::setBranches(TTree *t)
 
     t->Branch("had_mu_parallel_bnb", &_had_mu_parallel_bnb, "had_mu_parallel_bnb/F");
     t->Branch("had_mu_parallel_numi",&_had_mu_parallel_numi,"had_mu_parallel_numi/F");
+
+    t->Branch("had_fwd_penalty_bnb", &_had_fwd_penalty_bnb, "had_fwd_penalty_bnb/F");
+    t->Branch("had_fwd_penalty_numi",&_had_fwd_penalty_numi,"had_fwd_penalty_numi/F");
+
+    t->Branch("hadflow_bnb",         &_hadflow_bnb,         "hadflow_bnb/F");
+    t->Branch("hadflow_numi",        &_hadflow_numi,        "hadflow_numi/F");
+
+    t->Branch("bnb_baseline",        &_bnb_baseline,        "bnb_baseline/D");
+    t->Branch("bnb_off_axis_angle",  &_bnb_off_axis_angle,  "bnb_off_axis_angle/D");
+    t->Branch("numi_baseline",       &_numi_baseline,       "numi_baseline/D");
+    t->Branch("numi_off_axis_angle", &_numi_off_axis_angle, "numi_off_axis_angle/D");
 }
 
 void VertexTopology::resetTTree(TTree *)
@@ -344,6 +396,13 @@ void VertexTopology::resetTTree(TTree *)
 
     _had_thrust_def = NaN; _had_sphericity = NaN; _had_rho_term = NaN;
     _had_mu_parallel_bnb = NaN; _had_mu_parallel_numi = NaN;
+
+    _had_fwd_penalty_bnb = NaN; _had_fwd_penalty_numi = NaN;
+    _hadflow_bnb = NaN; _hadflow_numi = NaN;
+
+    const double DNaN = std::numeric_limits<double>::quiet_NaN();
+    _bnb_baseline = DNaN; _bnb_off_axis_angle = DNaN;
+    _numi_baseline = DNaN; _numi_off_axis_angle = DNaN;
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
