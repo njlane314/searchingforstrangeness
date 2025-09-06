@@ -166,7 +166,7 @@ void VertexTopology::analyseSlice(const art::Event &event,
 
     // --- Get PFParticle -> SpacePoint associations and SpacePoint -> Hit ---
     auto const &pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fPFPproducer);
+    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fSpacePointproducer);
 
     auto const &sp_h = event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
     art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
@@ -174,7 +174,10 @@ void VertexTopology::analyseSlice(const art::Event &event,
     // --- Gather displacement vectors and weights (sum charge of associated hits) ---
     std::vector<TVector3> dirs;
     std::vector<float>    weights;
-    dirs.reserve(1024); weights.reserve(1024);
+    // Reserve enough space for all space points in the event
+    size_t nspacepoints = sp_h->size();
+    dirs.reserve(nspacepoints);
+    weights.reserve(nspacepoints);
 
     for (auto const &pfp : slice_pfp_vec) {
         int pdg = std::abs(pfp->PdgCode());
@@ -367,13 +370,26 @@ void VertexTopology::setBranches(TTree *t)
 
 void VertexTopology::resetTTree(TTree *)
 {
-    const float NaN = std::numeric_limits<float>::quiet_NaN();
+    _vtx_backfrac_bnb = std::numeric_limits<float>::quiet_NaN();
+    _vtx_backfrac_numi = std::numeric_limits<float>::quiet_NaN();
+    _vtx_offfrac_bnb = std::numeric_limits<float>::quiet_NaN();
+    _vtx_offfrac_numi = std::numeric_limits<float>::quiet_NaN();
 
-    _vtx_backfrac_bnb = NaN; _vtx_backfrac_numi = NaN;
-    _vtx_offfrac_bnb = NaN;  _vtx_offfrac_numi = NaN;
+    _had_thrust_def = std::numeric_limits<float>::quiet_NaN();
+    _had_sphericity = std::numeric_limits<float>::quiet_NaN();
+    _had_rho_term = std::numeric_limits<float>::quiet_NaN();
+    _had_mu_parallel_bnb = std::numeric_limits<float>::quiet_NaN();
+    _had_mu_parallel_numi = std::numeric_limits<float>::quiet_NaN();
 
-    _had_thrust_def = NaN; _had_sphericity = NaN; _had_rho_term = NaN;
-    _had_mu_parallel_bnb = NaN; _had_mu_parallel_numi = NaN;
+    _had_fwd_penalty_bnb = std::numeric_limits<float>::quiet_NaN();
+    _had_fwd_penalty_numi = std::numeric_limits<float>::quiet_NaN();
+    _hadflow_bnb = std::numeric_limits<float>::quiet_NaN();
+    _hadflow_numi = std::numeric_limits<float>::quiet_NaN();
+
+    _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
+    _bnb_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
+    _numi_baseline = std::numeric_limits<double>::quiet_NaN();
+    _numi_off_axis_angle = std::numeric_limits<double>::quiet_NaN();
 }
 
 DEFINE_ART_CLASS_TOOL(VertexTopology)
