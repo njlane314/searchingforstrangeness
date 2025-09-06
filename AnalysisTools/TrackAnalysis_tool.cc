@@ -2,15 +2,21 @@
 #define ANALYSIS_TRACKANALYSIS_CXX
 
 #include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardata/Utilities/AssociationUtil.h"
 
 #include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
 #include "Common/EnergyCalibration.h"
 #include "Common/GeometryUtils.h"
+#include "Common/LLRProtonMuonLookup.h"
+#include "Common/LLRCorrectionLookup.h"
+#include "Common/LLRPIDCalculator.h"
 #include "Common/ProxyTypes.h"
 #include "Common/SpaceChargeCorrections.h"
 #include "Common/TrackShowerScore.h"
 
+#include <cmath>
 #include <iostream>
 #include <limits>
 
@@ -41,6 +47,10 @@ private:
 
     std::vector<float> fADCtoE;
     float fEndSpacepointDistance;
+    bool fRecalibrateHits;
+    float fEnergyThresholdForMCHits;
+
+    common::LLRPID llr_pid_calculator;
 
     int _run;
     int _sbr;
@@ -82,6 +92,12 @@ private:
     std::vector<float> _track_avg_deflection_stdev;
     std::vector<float> _track_avg_deflection_separation_mean;
     std::vector<int> _track_end_spacepoints;
+
+    std::vector<float> _trk_llr_pid_u_v;
+    std::vector<float> _trk_llr_pid_v_v;
+    std::vector<float> _trk_llr_pid_y_v;
+    std::vector<float> _trk_llr_pid_v;
+    std::vector<float> _trk_llr_pid_score_v;
 };
 
 TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet& parameter_set) {
@@ -93,6 +109,31 @@ TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet& parameter_set) {
 
     fADCtoE = parameter_set.get<std::vector<float>>("ADCtoE");
     fEndSpacepointDistance = parameter_set.get<float>("EndSpacepointDistance", 5.0);
+    fRecalibrateHits = parameter_set.get<bool>("RecalibrateHits", true);
+    fEnergyThresholdForMCHits = parameter_set.get<float>("EnergyThresholdForMCHits", 0.1);
+
+    common::ProtonMuonLookUpParameters protonmuon_parameters;
+    llr_pid_calculator.set_dedx_binning(0, protonmuon_parameters.dedx_edges_pl_0);
+    llr_pid_calculator.set_par_binning(0, protonmuon_parameters.parameters_edges_pl_0);
+    llr_pid_calculator.set_lookup_tables(0, protonmuon_parameters.dedx_pdf_pl_0);
+
+    llr_pid_calculator.set_dedx_binning(1, protonmuon_parameters.dedx_edges_pl_1);
+    llr_pid_calculator.set_par_binning(1, protonmuon_parameters.parameters_edges_pl_1);
+    llr_pid_calculator.set_lookup_tables(1, protonmuon_parameters.dedx_pdf_pl_1);
+
+    llr_pid_calculator.set_dedx_binning(2, protonmuon_parameters.dedx_edges_pl_2);
+    llr_pid_calculator.set_par_binning(2, protonmuon_parameters.parameters_edges_pl_2);
+    llr_pid_calculator.set_lookup_tables(2, protonmuon_parameters.dedx_pdf_pl_2);
+
+    if (fRecalibrateHits) {
+        common::CorrectionLookUpParameters correction_parameters;
+        llr_pid_calculator.set_corr_par_binning(0, correction_parameters.parameter_correction_edges_pl_0);
+        llr_pid_calculator.set_correction_tables(0, correction_parameters.correction_table_pl_0);
+        llr_pid_calculator.set_corr_par_binning(1, correction_parameters.parameter_correction_edges_pl_1);
+        llr_pid_calculator.set_correction_tables(1, correction_parameters.correction_table_pl_1);
+        llr_pid_calculator.set_corr_par_binning(2, correction_parameters.parameter_correction_edges_pl_2);
+        llr_pid_calculator.set_correction_tables(2, correction_parameters.correction_table_pl_2);
+    }
 }
 
 void TrackAnalysis::configure(const fhicl::ParameterSet& parameter_set) {}
@@ -107,6 +148,12 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
                                   bool is_data, bool is_selected) {
     const auto& calorimetry_proxy = proxy::getCollection<std::vector<recob::Track>>(
         event, fTRKproducer, proxy::withAssociated<anab::Calorimetry>(fCALproducer));
+
+    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
+    if (!is_data) {
+        auto inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+        assocMCPart = std::make_unique<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(inputHits, event, fBKTproducer);
+    }
 
     TVector3 neutrino_vertex;
     for (const auto& pfp : slice_pfp_vec) {
@@ -170,6 +217,12 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             track_vertex -= neutrino_vertex;
             _track_distance_to_vertex.push_back(track_vertex.Mag());
 
+            _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::lowest());
+            _trk_llr_pid_v.push_back(0.0f);
+            _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::lowest());
+
             auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
             for (const auto& calo : calorimetry_objects) {
                 int plane = calo->PlaneID().Plane;
@@ -180,38 +233,56 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
                 const auto& pitch_values = calo->TrkPitchVec();
                 const auto& xyz_values = calo->XYZ();
 
+                std::vector<float> dqdx_values_corrected;
+                if (is_data || !fRecalibrateHits) {
+                    dqdx_values_corrected = dqdx_values;
+                } else {
+                    dqdx_values_corrected = llr_pid_calculator.correct_many_hits_one_plane(calo, *track, assocMCPart, fRecalibrateHits, fEnergyThresholdForMCHits, false);
+                }
+
                 float calo_energy = 0.0f;
-                std::vector<float> corrected_dedx_values;
-                for (size_t i = 0; i < dqdx_values.size(); ++i) {
-                    float dedx = common::ModBoxCorrection(dqdx_values[i] * fADCtoE[plane], 
+                std::vector<float> dedx_values_corrected;
+                for (size_t i = 0; i < dqdx_values_corrected.size(); ++i) {
+                    float dedx = common::ModBoxCorrection(dqdx_values_corrected[i] * fADCtoE[plane],
                                                          xyz_values[i].X(), xyz_values[i].Y(), xyz_values[i].Z());
-                    corrected_dedx_values.push_back(dedx);
+                    dedx_values_corrected.push_back(dedx);
                     calo_energy += dedx * pitch_values[i];
                 }
 
-                int hit_count = dqdx_values.size();
-                float trunk_dedx = calculate_track_trunk_dedx_by_hits(corrected_dedx_values);
-                float trunk_rr_dedx = calculate_track_trunk_dedx_by_range(corrected_dedx_values, residual_range);
+                float trk_nhits = static_cast<float>(dedx_values_corrected.size());
+                float trunk_dedx = calculate_track_trunk_dedx_by_hits(dedx_values_corrected);
+                float trunk_rr_dedx = calculate_track_trunk_dedx_by_range(dedx_values_corrected, residual_range);
+
+                std::vector<std::vector<float>> par_values;
+                par_values.push_back(residual_range);
+                par_values.push_back(pitch_values);
+                float llr_pid = llr_pid_calculator.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
 
                 if (plane == 0) {
+                    _trk_llr_pid_u_v.back() = llr_pid;
                     _track_calo_energy_u.push_back(calo_energy);
-                    _track_nhits_u.push_back(hit_count);
+                    _track_nhits_u.push_back(trk_nhits);
                     _track_trunk_dedx_u.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_u.push_back(trunk_rr_dedx);
                 } else if (plane == 1) {
+                    _trk_llr_pid_v_v.back() = llr_pid;
                     _track_calo_energy_v.push_back(calo_energy);
-                    _track_nhits_v.push_back(hit_count);
+                    _track_nhits_v.push_back(trk_nhits);
                     _track_trunk_dedx_v.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_v.push_back(trunk_rr_dedx);
                 } else if (plane == 2) {
+                    _trk_llr_pid_y_v.back() = llr_pid;
                     _track_calo_energy_y.push_back(calo_energy);
-                    _track_nhits_y.push_back(hit_count);
+                    _track_nhits_y.push_back(trk_nhits);
                     _track_trunk_dedx_y.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_y.push_back(trunk_rr_dedx);
                 }
+                _trk_llr_pid_v.back() += llr_pid;
             }
 
-            calculate_track_deflections(track, _track_avg_deflection_mean, _track_avg_deflection_stdev, 
+            _trk_llr_pid_score_v.back() = atan(_trk_llr_pid_v.back() / 100.f) * 2 / 3.14159266f;
+
+            calculate_track_deflections(track, _track_avg_deflection_mean, _track_avg_deflection_stdev,
                                        _track_avg_deflection_separation_mean);
 
             int end_spacepoint_count = 0;
@@ -269,6 +340,11 @@ void TrackAnalysis::fill_default() {
     _track_avg_deflection_stdev.push_back(std::numeric_limits<float>::lowest());
     _track_avg_deflection_separation_mean.push_back(std::numeric_limits<float>::lowest());
     _track_end_spacepoints.push_back(std::numeric_limits<int>::lowest());
+    _trk_llr_pid_u_v.push_back(std::numeric_limits<float>::lowest());
+    _trk_llr_pid_v_v.push_back(std::numeric_limits<float>::lowest());
+    _trk_llr_pid_y_v.push_back(std::numeric_limits<float>::lowest());
+    _trk_llr_pid_v.push_back(std::numeric_limits<float>::lowest());
+    _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::lowest());
 }
 
 void TrackAnalysis::setBranches(TTree* tree) {
@@ -308,6 +384,11 @@ void TrackAnalysis::setBranches(TTree* tree) {
     tree->Branch("track_avg_deflection_stdev", "std::vector<float>", &_track_avg_deflection_stdev);
     tree->Branch("track_avg_deflection_separation_mean", "std::vector<float>", &_track_avg_deflection_separation_mean);
     tree->Branch("track_end_spacepoints", "std::vector<int>", &_track_end_spacepoints);
+    tree->Branch("trk_llr_pid_u", "std::vector<float>", &_trk_llr_pid_u_v);
+    tree->Branch("trk_llr_pid_v", "std::vector<float>", &_trk_llr_pid_v_v);
+    tree->Branch("trk_llr_pid_y", "std::vector<float>", &_trk_llr_pid_y_v);
+    tree->Branch("trk_llr_pid", "std::vector<float>", &_trk_llr_pid_v);
+    tree->Branch("trk_llr_pid_score", "std::vector<float>", &_trk_llr_pid_score_v);
 }
 
 void TrackAnalysis::resetTTree(TTree* tree) {
@@ -347,6 +428,11 @@ void TrackAnalysis::resetTTree(TTree* tree) {
     _track_avg_deflection_stdev.clear();
     _track_avg_deflection_separation_mean.clear();
     _track_end_spacepoints.clear();
+    _trk_llr_pid_u_v.clear();
+    _trk_llr_pid_v_v.clear();
+    _trk_llr_pid_y_v.clear();
+    _trk_llr_pid_v.clear();
+    _trk_llr_pid_score_v.clear();
 }
 
 float TrackAnalysis::calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values) {
