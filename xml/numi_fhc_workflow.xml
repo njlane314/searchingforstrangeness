@@ -5,6 +5,8 @@
     <!ENTITY user "nlane">
     <!ENTITY name "nl_numi_fhc_run1_strangeness">
     <!ENTITY fcl_selection "run_neutrinoselection.fcl">
+    <!ENTITY fcl_selection_data "run_neutrinoselection_data.fcl">
+    <!ENTITY fcl_selection_inference "run_neutrinoselection_inference.fcl">
     <!ENTITY initsrc "assets/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
@@ -59,7 +61,7 @@
 <stage name="selection_numi_fhc_run1_ext">
     <inputdef>&input_def_ext_numi_run1;</inputdef>
     <fcl>&fcl_selection;</fcl>
-    <args>-c 'is_data:=true'</args>
+    <fcl>&fcl_selection_data;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
