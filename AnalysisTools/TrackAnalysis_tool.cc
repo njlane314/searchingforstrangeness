@@ -256,6 +256,15 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             _trk_llr_pid_score_v.push_back(std::numeric_limits<float>::quiet_NaN());
 
             auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
+
+            // Store trunk dE/dx estimates per plane to later compute a track-level metric
+            float trunk_by_hits[3];
+            float trunk_by_rr[3];
+            for (int i = 0; i < 3; ++i) {
+                trunk_by_hits[i] = std::numeric_limits<float>::lowest();
+                trunk_by_rr[i]   = std::numeric_limits<float>::lowest();
+            }
+
             for (const auto& calo : calorimetry_objects) {
                 int plane = calo->PlaneID().Plane;
                 if (plane < 0 || plane > 2) continue;
