@@ -83,14 +83,15 @@ private:
         return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x);
     }
 
-    void compute_back_off_fractions(const std::vector<TVector3> &dirs,
-                                    const std::vector<float> &weights,
-                                    const TVector3 &beam_dir, float &back_frac,
-                                    float &off_frac);
+    void backward_off_axis_fractions(const std::vector<TVector3> &dirs,
+                                     const std::vector<float> &weights,
+                                     const TVector3 &beam_dir,
+                                     float &backward_frac,
+                                     float &off_axis_frac);
 
-    float compute_mu_parallel(const std::vector<TVector3> &u,
-                              const std::vector<float> &wtilde,
-                              const TVector3 &beam_dir) const;
+    float mu_parallel(const std::vector<TVector3> &u,
+                      const std::vector<float> &wtilde,
+                      const TVector3 &beam_dir) const;
 
     float thrust_deficit(const std::vector<TVector3> &u,
                          const std::vector<float> &w, int iters) const;
@@ -192,8 +193,10 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
         }
     }
 
-    compute_back_off_fractions(dirs, weights, fBNBdir, _vtx_backfrac_bnb, _vtx_offfrac_bnb);
-    compute_back_off_fractions(dirs, weights, fNuMIdir, _vtx_backfrac_numi, _vtx_offfrac_numi);
+    backward_off_axis_fractions(dirs, weights, fBNBdir, _vtx_backfrac_bnb,
+                                _vtx_offfrac_bnb);
+    backward_off_axis_fractions(dirs, weights, fNuMIdir, _vtx_backfrac_numi,
+                                _vtx_offfrac_numi);
 
     std::vector<TVector3> u;
     u.reserve(dirs.size());
@@ -211,8 +214,8 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
     _had_thrust_def = thrust_deficit(u, wtilde, fThrustIters);
     _had_sphericity = sphericity(u, wtilde);
     _had_rho_term   = rho_contrast(wtilde);
-    _had_mu_parallel_bnb  = compute_mu_parallel(u, wtilde, fBNBdir);
-    _had_mu_parallel_numi = compute_mu_parallel(u, wtilde, fNuMIdir);
+    _had_mu_parallel_bnb  = mu_parallel(u, wtilde, fBNBdir);
+    _had_mu_parallel_numi = mu_parallel(u, wtilde, fNuMIdir);
 
     _c_fb_bnb   = fb_contrast(dirs, weights, fBNBdir, fBackRMin, fBackRMax, fBackMargin);
     _c_fb_numi  = fb_contrast(dirs, weights, fNuMIdir, fBackRMin, fBackRMax, fBackMargin);
@@ -226,9 +229,10 @@ void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::P
     _c_vtxdens = density_contrast(dirs, wtilde, fContrastRc, fContrastRa, fContrastRb);
 }
 
-void VertexTopology::compute_back_off_fractions(
+void VertexTopology::backward_off_axis_fractions(
     const std::vector<TVector3> &dirs, const std::vector<float> &weights,
-    const TVector3 &beam_dir, float &back_frac, float &off_frac) {
+    const TVector3 &beam_dir, float &backward_frac,
+    float &off_axis_frac) {
     float sum_ann = 0.f, sum_back = 0.f;
     float sum_vtx = 0.f, sum_vtx_off = 0.f;
     for (size_t i = 0; i < dirs.size(); ++i) {
@@ -246,8 +250,8 @@ void VertexTopology::compute_back_off_fractions(
             if (proj < fFwdCos) sum_vtx_off += w;
         }
     }
-    back_frac = (sum_ann > 0) ? sum_back / sum_ann : 0.f;
-    off_frac  = (sum_vtx > 0) ? sum_vtx_off / sum_vtx : 0.f;
+    backward_frac = (sum_ann > 0) ? sum_back / sum_ann : 0.f;
+    off_axis_frac = (sum_vtx > 0) ? sum_vtx_off / sum_vtx : 0.f;
 }
 
 float VertexTopology::thrust_deficit(const std::vector<TVector3> &u,
@@ -374,9 +378,9 @@ float VertexTopology::mu_contrast(float mu) const {
     return clamp01(v);
 }
 
-float VertexTopology::compute_mu_parallel(const std::vector<TVector3> &u,
-                                          const std::vector<float> &wtilde,
-                                          const TVector3 &beam_dir) const {
+float VertexTopology::mu_parallel(const std::vector<TVector3> &u,
+                                  const std::vector<float> &wtilde,
+                                  const TVector3 &beam_dir) const {
     if (wtilde.empty()) return 0.f;
     double sumW = 0.0, sumWabs = 0.0;
     for (size_t i = 0; i < u.size(); ++i) {
