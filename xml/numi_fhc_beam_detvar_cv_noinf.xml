@@ -27,7 +27,7 @@
     <check>1</check>
     <copy>0</copy>
     <version>prod_&release;</version>
-    <memory>6000</memory>
+    <memory>4000</memory>
     <disk>20GB</disk>
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
@@ -40,7 +40,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv</workdir>
         <datatier>selected</datatier>
-        <numjobs>8000</numjobs>
+	<numjobs>20</numjobs>
     </stage>
 
 </project>
