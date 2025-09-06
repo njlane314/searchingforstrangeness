@@ -64,7 +64,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
     <datatier>selected</datatier>
-    <numjobs>2000</numjobs>
+    <numjobs>20</numjobs>
 </stage>
 
 
