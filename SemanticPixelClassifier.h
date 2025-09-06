@@ -28,7 +28,7 @@
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "Image.h"
-#include "PandoraUtilities.h"
+#include "Common/PandoraUtilities.h"
 #include <TDirectoryFile.h>
 #include <TFile.h>
 #include <TTree.h>
