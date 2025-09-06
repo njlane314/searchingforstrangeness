@@ -211,7 +211,10 @@ void VertexTopology::analyseSlice(const art::Event &event,
     // --- Gather displacement vectors and weights (sum charge of associated hits) ---
     std::vector<TVector3> dirs;
     std::vector<float>    weights;
-    dirs.reserve(1024); weights.reserve(1024);
+    // Reserve enough space for all space points in the event
+    size_t nspacepoints = sp_h->size();
+    dirs.reserve(nspacepoints);
+    weights.reserve(nspacepoints);
 
     for (auto const &pfp : slice_pfp_vec) {
         int pdg = std::abs(pfp->PdgCode());
