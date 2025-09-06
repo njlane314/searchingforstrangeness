@@ -3,15 +3,18 @@
 
 #include "AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
+
 #include "canvas/Utilities/InputTag.h"
 #include "lardata/Utilities/AssociationUtil.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/Vertex.h"
+
 #include "TMath.h"
 #include "TMatrixDSym.h"
 #include "TMatrixDSymEigen.h"
 #include "TVector3.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -35,7 +38,7 @@ public:
 
 private:
     art::InputTag fPFPproducer;
-    art::InputTag fSpacePointproducer;
+    art::InputTag fSPproducer;
     TVector3 fBNBdir;
     TVector3 fNuMIdir;
     float fVtxRadius;
@@ -71,6 +74,15 @@ private:
     float _c_rho;
     float _c_vtxdens;
 
+    inline float kernel(float r) const {
+        const float x = r / std::max(1e-6f, fKernelR);
+        return std::exp(-x * x);
+    }
+
+    static inline float clamp01(float x) {
+        return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x);
+    }
+
     void compute_back_off_fractions(const std::vector<TVector3> &dirs,
                                     const std::vector<float> &weights,
                                     const TVector3 &beam_dir, float &back_frac,
@@ -79,14 +91,6 @@ private:
     float compute_mu_parallel(const std::vector<TVector3> &u,
                               const std::vector<float> &wtilde,
                               const TVector3 &beam_dir) const;
-
-    inline float kernel(float r) const {
-        const float x = r / std::max(1e-6f, fKernelR);
-        return std::exp(-x * x);
-    }
-    static inline float clamp01(float x) {
-        return (x < 0.f) ? 0.f : (x > 1.f ? 1.f : x);
-    }
 
     float thrust_deficit(const std::vector<TVector3> &u,
                          const std::vector<float> &w, int iters) const;
@@ -117,11 +121,13 @@ VertexTopology::VertexTopology(const fhicl::ParameterSet &pset) { configure(pset
 
 void VertexTopology::configure(fhicl::ParameterSet const &pset) {
     fPFPproducer = pset.get<art::InputTag>("PFPproducer");
-    fSpacePointproducer = pset.get<art::InputTag>("SpacePointproducer", fPFPproducer);
+    fSPproducer = pset.get<art::InputTag>("SPproducer", fPFPproducer);
+    
     auto bnb = pset.get<std::vector<float>>("BNBBeamDir", {0.f, 0.f, 47000.f});
     if (bnb.size() == 3) fBNBdir = TVector3(bnb[0], bnb[1], bnb[2]).Unit();
     auto numi = pset.get<std::vector<float>>("NuMIBeamDir", {5502.f, 7259.f, 67270.f});
     if (numi.size() == 3) fNuMIdir = TVector3(numi[0], numi[1], numi[2]).Unit();
+    
     fVtxRadius = pset.get<float>("VertexRadius", 5.f);
     float theta = pset.get<float>("ForwardAngleDeg", 25.f);
     fFwdCos = std::cos(theta * TMath::DegToRad());
@@ -137,9 +143,7 @@ void VertexTopology::configure(fhicl::ParameterSet const &pset) {
 
 void VertexTopology::analyseEvent(const art::Event &, bool) {}
 
-void VertexTopology::analyseSlice(
-    const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-    bool, bool) {
+void VertexTopology::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool, bool) {
     TVector3 vtx;
     bool has_vtx = false;
     for (auto const &pfp : slice_pfp_vec) {
@@ -159,12 +163,11 @@ void VertexTopology::analyseSlice(
 
     auto const &pfp_h =
         event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event,
-                                                          fSpacePointproducer);
+    art::FindManyP<recob::SpacePoint> pfp_spacepoint_assn(pfp_h, event, fSPproducer);
 
     auto const &sp_h =
         event.getValidHandle<std::vector<recob::SpacePoint>>(fSpacePointproducer);
-    art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSpacePointproducer);
+    art::FindManyP<recob::Hit> sp_hit_assn(sp_h, event, fSPproducer);
 
     std::vector<TVector3> dirs;
     std::vector<float> weights;
@@ -175,8 +178,7 @@ void VertexTopology::analyseSlice(
     for (auto const &pfp : slice_pfp_vec) {
         int pdg = std::abs(pfp->PdgCode());
         if (pdg == 12 || pdg == 14) continue;
-        const std::vector<art::Ptr<recob::SpacePoint>> &sp_v =
-            pfp_spacepoint_assn.at(pfp.index());
+        const std::vector<art::Ptr<recob::SpacePoint>> &sp_v = pfp_spacepoint_assn.at(pfp.index());
         for (auto const &sp : sp_v) {
             double xyz[3];
             sp->XYZ(xyz);
