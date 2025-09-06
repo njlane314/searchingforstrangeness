@@ -1,7 +1,5 @@
 #include "selectionconfig.fcl"
 
-is_data: false
-
 process_name: NeutrinoSelection
 
 services: {
@@ -34,9 +32,10 @@ physics: {
     filters: {
         nuselection: {
             @table::NeutrinoSelectionFilter
-            IsData: @local::is_data
         }
     }
     path1: [ nuselection ]
     trigger_paths: [ path1 ]
 }
+
+physics.filters.nuselection.AnalysisTools.image.ActiveModels: []
