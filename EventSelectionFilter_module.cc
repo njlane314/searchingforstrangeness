@@ -61,6 +61,7 @@ private:
     bool _verbose;
     bool _data;
     bool _fake_data;
+    bool _numi;
     bool _filter;
 
     TTree *_tree;
@@ -103,6 +104,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _verbose = p.get<bool>("Verbose", false);
     _data = p.get<bool>("IsData", false);
     _fake_data = p.get<bool>("IsFakeData", false);
+    _numi = p.get<bool>("IsNuMI", false);
     _filter = p.get<bool>("Filter", false);
 
     art::ServiceHandle<art::TFileService> tfs;
@@ -114,6 +116,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _tree->Branch("evt", &_evt, "evt/I");
     _tree->Branch("is_data", &_data, "is_data/O");
     _tree->Branch("is_fake_data", &_fake_data, "is_fake_data/O");
+    _tree->Branch("is_numi", &_numi, "is_numi/O");
 
     _subrun_tree = tfs->make<TTree>("SubRun", "SubRun TTree");
     _subrun_tree->Branch("run", &_run_sr, "run/I");
