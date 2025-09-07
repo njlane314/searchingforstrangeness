@@ -53,7 +53,7 @@
     <fcl>&fcl_selection;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/irt/log</logdir>
+    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt</workdir>
     <datatier>selected</datatier>
     <numjobs>100</numjobs>
