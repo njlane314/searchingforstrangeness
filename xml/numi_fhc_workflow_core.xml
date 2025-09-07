@@ -83,16 +83,5 @@
     <numjobs>100</numjobs>
 </stage>
 
-<stage name="selection_detvar_cv">
-    <inputdef>&input_detvar_cv;</inputdef>
-    <fcl>&fcl_selection;</fcl>
-    <script>&initsrc;</script>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv</workdir>
-    <datatier>selected</datatier>
-    <numjobs>100</numjobs>
-</stage>
-
 </project>
 </job>
