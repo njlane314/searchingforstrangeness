@@ -5,6 +5,8 @@
 #include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/TriggerData.h"
 #include "lardataobj/RecoBase/OpFlash.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 #include "nusimdata/SimulationBase/MCFlux.h"
@@ -148,6 +150,8 @@ private:
     unsigned int _total_hits_U;
     unsigned int _total_hits_V;
     unsigned int _total_hits_Y;
+    unsigned int _hits_outfv;
+    float _contained_fraction;
 };
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
@@ -332,6 +336,8 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
         btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
     }
 
+    unsigned int contained_hits = 0;
+    _hits_outfv = 0;
     size_t pfpidx = 0;
     _num_pfps = 0;
     for (auto pfp : slice_pfp_vec) {
@@ -473,6 +479,35 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
         }
         _pfp_num_hits.push_back(hit_v.size());
 
+        bool is_contained = true;
+        if ((track_shower_score >= 0) && (track_shower_score >= fTrkShrScore)) {
+            auto tracks = pfp.get<recob::Track>();
+            if (tracks.size() > 0) {
+                double start[3] = {tracks[0]->Start().X(), tracks[0]->Start().Y(), tracks[0]->Start().Z()};
+                double end[3] = {tracks[0]->End().X(), tracks[0]->End().Y(), tracks[0]->End().Z()};
+                if (!common::isFiducial(start, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend) ||
+                    !common::isFiducial(end, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend)) {
+                    is_contained = false;
+                }
+            }
+        }
+        else if ((track_shower_score >= 0) && (track_shower_score < fTrkShrScore)) {
+            auto showers = pfp.get<recob::Shower>();
+            if (showers.size() > 0) {
+                double vtx[3] = {showers[0]->ShowerStart().X(), showers[0]->ShowerStart().Y(), showers[0]->ShowerStart().Z()};
+                if (!common::isFiducial(vtx, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend)) {
+                    is_contained = false;
+                }
+            }
+        }
+
+        if (is_contained) {
+            contained_hits += hit_v.size();
+        }
+        else {
+            _hits_outfv += hit_v.size();
+        }
+
         if (!is_data) {
             if (clus_pxy_v.size() != 0) {
                 float purity = 0., completeness = 0., overlay_purity = 0.;
@@ -536,6 +571,10 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
                 }
             }
         }
+    }
+
+    if (contained_hits + _hits_outfv > 0) {
+        _contained_fraction = static_cast<float>(contained_hits) / (contained_hits + _hits_outfv);
     }
 
     if (_slice_num_hits > 0) {
@@ -624,6 +663,7 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("total_hits_U", &_total_hits_U, "total_hits_U/i");
     _tree->Branch("total_hits_V", &_total_hits_V, "total_hits_V/i");
     _tree->Branch("total_hits_Y", &_total_hits_Y, "total_hits_Y/i");
+    _tree->Branch("contained_fraction", &_contained_fraction, "contained_fraction/F");
     _tree->Branch("slice_id", &_slice_id, "slice_id/i");
     _tree->Branch("slice_topological_scores", "std::vector<float>", &_slice_topological_scores);
     _tree->Branch("topological_score", &_topological_score, "topological_score/F");
@@ -710,6 +750,8 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _total_hits_U = 0;
     _total_hits_V = 0;
     _total_hits_Y = 0;
+    _hits_outfv = 0;
+    _contained_fraction = 0;
 }
 
 DEFINE_ART_CLASS_TOOL(DefaultAnalysis)
