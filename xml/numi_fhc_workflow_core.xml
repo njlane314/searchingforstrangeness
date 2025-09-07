@@ -60,7 +60,7 @@
 </stage>
 
 <stage name="selection_beam">
-    <inputstage>&input_beam;</inputstage>
+    <inputdef>&input_beam;</inputdef>
     <fcl>&fcl_selection;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/out</outdir>
@@ -71,7 +71,7 @@
 </stage>
 
 <stage name="selection_strangeness">
-    <inputstage>&input_strangeness;</inputstage>
+    <inputdef>&input_strangeness;</inputdef>
     <fcl>&fcl_selection;</fcl>
     <initsource>&initsrc;</initsource>
     <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/out</outdir>
