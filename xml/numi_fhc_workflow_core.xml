@@ -16,8 +16,6 @@
     <!ENTITY input_strangeness "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
     <!ENTITY input_ext "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
     <!ENTITY input_dirt "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all">  
-
-    <!ENTITY input_detvar_cv "prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2">
 ]>
 
 <job>
