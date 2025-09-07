@@ -12,10 +12,6 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!ENTITY input_def_ext_numi_run1 "nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000">
-    <!ENTITY input_def_dirt_numi_fhc_run1 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all">
-    
-    <!ENTITY input_def_strangeness_numi_fhc_run1 "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
     <!ENTITY input_def_strangeness_detvar_cv "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2">
     <!ENTITY input_def_strangeness_detvar_ly_rayleigh "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2">
     <!ENTITY input_def_strangeness_detvar_ly_down "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2">
@@ -26,7 +22,6 @@
     <!ENTITY input_def_strangeness_detvar_sce "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2">
     <!ENTITY input_def_strangeness_detvar_recomb2 "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2">
 
-    <!ENTITY input_def_beam_numi_fhc_run1 "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2">
     <!ENTITY input_def_detvar_cv "prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2">
     <!ENTITY input_def_detvar_ly_suppression75attenuation8m "prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2">
     <!ENTITY input_def_detvar_ly_rayleigh "prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2">
@@ -57,97 +52,6 @@
     <disk>20GB</disk>
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
-
-<stage name="selection_numi_fhc_run1_ext">
-    <inputdef>&input_def_ext_numi_run1;</inputdef>
-    <fcl>&fcl_selection_data;</fcl>
-    <initsource>&initsrc;</initsource>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_ext/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_ext</workdir>
-    <datatier>selected</datatier>
-    <numjobs>3000</numjobs>
-</stage>
-
-
-<stage name="selection_numi_fhc_run1_dirt">
-    <inputdef>&input_def_dirt_numi_fhc_run1;</inputdef>
-    <fcl>&fcl_selection;</fcl>
-    <initsource>&initsrc;</initsource>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_dirt/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_dirt/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_dirt</workdir>
-    <datatier>selected</datatier>
-    <numjobs>4000</numjobs>
-</stage>
-
-<stage name="reweight_numi_fhc_run1_beam">
-    <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
-    <fcl>run_eventweight_microboone_sep24.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam/reweights</workdir>
-    <datatier>eventweight</datatier>
-    <numjobs>3500</numjobs>
-</stage>
-
-
-<stage name="selection_numi_fhc_run1_beam">
-    <inputstage>reweight_numi_fhc_run1_beam</inputstage>
-    <fcl>&fcl_selection;</fcl>
-    <initsource>&initsrc;</initsource>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam</workdir>
-    <datatier>selected</datatier>
-    <numjobs>3500</numjobs>
-</stage>
-
-
-<stage name="selection_numi_fhc_run1_beam_test">
-    <inputdef>&input_def_beam_numi_fhc_run1;</inputdef>
-    <fcl>&fcl_selection;</fcl>
-    <initsource>&initsrc;</initsource>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam_test/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_beam_test/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_beam_test</workdir>
-    <datatier>test</datatier>
-    <numjobs>20</numjobs>
-</stage>
-
-
-<stage name="reweight_numi_fhc_run1_strangeness">
-    <inputdef>&input_def_strangeness_numi_fhc_run1;</inputdef>
-    <fcl>run_eventweight_microboone_sep24.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_1.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_2.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_3.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_4.fcl</fcl>
-    <fcl>run_eventweight_microboone_sep24_extragenieall_5.fcl</fcl>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness/reweights</workdir>
-    <datatier>eventweight</datatier>
-    <numjobs>1500</numjobs>
-</stage>
-
-
-<stage name="selection_numi_fhc_run1_strangeness">
-    <inputstage>reweight_numi_fhc_run1_strangeness</inputstage>
-    <fcl>&fcl_selection;</fcl>
-    <initsource>&initsrc;</initsource>
-    <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/out</outdir>
-    <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/numi_fhc_run1_strangeness/log</logdir>
-    <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/numi_fhc_run1_strangeness</workdir>
-    <datatier>selected</datatier>
-    <numjobs>1500</numjobs>
-</stage>
-
 
 <stage name="selection_detvar_cv_strangeness">
     <inputdef>&input_def_strangeness_detvar_cv;</inputdef>
