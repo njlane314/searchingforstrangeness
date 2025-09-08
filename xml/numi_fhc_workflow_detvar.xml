@@ -42,7 +42,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/detvar_cv/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/detvar_cv</workdir>
     <datatier>selected</datatier>
-    <numjobs>100</numjobs>
+    <numjobs>4000</numjobs>
 </stage>
 
 </project>

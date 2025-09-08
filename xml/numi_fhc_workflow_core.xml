@@ -45,7 +45,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext</workdir>
     <datatier>selected</datatier>
-    <numjobs>100</numjobs>
+    <numjobs>4000</numjobs>
 </stage>
 
 <stage name="selection_dirt">
@@ -56,7 +56,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt</workdir>
     <datatier>selected</datatier>
-    <numjobs>100</numjobs>
+    <numjobs>3000</numjobs>
 </stage>
 
 <stage name="selection_beam">
@@ -67,7 +67,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam</workdir>
     <datatier>selected</datatier>
-    <numjobs>100</numjobs>
+    <numjobs>1700</numjobs>
 </stage>
 
 <stage name="selection_strangeness">
@@ -78,7 +78,7 @@
     <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/log</logdir>
     <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/strangeness</workdir>
     <datatier>selected</datatier>
-    <numjobs>100</numjobs>
+    <numjobs>1700</numjobs>
 </stage>
 
 </project>
