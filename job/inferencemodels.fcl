@@ -5,4 +5,6 @@ physics.filters.nuselection.AnalysisTools.image.Models: [
     arch: "minkunet"
   }
 ]
-physics.filters.nuselection.AnalysisTools.image.ActiveModels: ["binary"]
+physics.filters.nuselection.AnalysisTools.image.ActiveModels: [
+  "binary"
+]
