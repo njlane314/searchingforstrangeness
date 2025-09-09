@@ -1,4 +1,8 @@
 physics.filters.nuselection.AnalysisTools.image.Models: [
-  { name: "binary", weights_file: "binary_classifier_resnet34.pth", arch: "minkunet" }
+  {
+    name: "binary"
+    weights_file: "binary_classifier_resnet34.pth"
+    arch: "minkunet"
+  }
 ]
 physics.filters.nuselection.AnalysisTools.image.ActiveModels: ["binary"]
