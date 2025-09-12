@@ -109,34 +109,40 @@
 
 For each view, detector and semantic images are centered on the charge-weighted
 centroid of hits associated with the slice. Given hits with wire coordinates
-\(z_i\), drift coordinates \(x_i\) and charges \(q_i\), the algorithm is
-\[
-  r_{\text{keep}} = \frac{\pi}{8} \approx 0.39 ,
-\]
-and computes the weighted medians \(z_0\) and \(x_0\). Distances
-\(d_i = \sqrt{(z_i - z_0)^2 + (x_i - x_0)^2}\) are sorted, and the smallest
-radius \(d_{\text{cut}}\) is chosen so that \(\sum_{d_i \le d_{\text{cut}}}
-q_i = r_{\text{keep}} \sum_i q_i\).
-The image centre is then
-\[
-  (\bar{z},\bar{x}) = \left(
+
+$z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps a
+fraction
+
+$$
+r_{\text{keep}} = \frac{\pi}{8} \approx 0.39
+$$
+
+and computes the weighted medians $z_0$ and $x_0$. Distances
+$d_i = \sqrt{(z_i - z_0)^2 + (x_i - x_0)^2}$ are sorted, and the smallest
+radius $d_{\text{cut}}$ is chosen so that $\sum_{d_i \le d_{\text{cut}}} q_i
+= r_{\text{keep}} \sum_i q_i$. The image centre is then
+
+$$
+(\bar{z},\bar{x}) = \left(
     \frac{\sum_{d_i \le d_{\text{cut}}} q_i z_i}{\sum_{d_i \le d_{\text{cut}}} q_i},
     \frac{\sum_{d_i \le d_{\text{cut}}} q_i x_i}{\sum_{d_i \le d_{\text{cut}}} q_i}
-  \right) .
-\]
-An image of width \(W\) and height \(H\) with wire and drift pixel sizes
-\(\Delta z\) and \(\Delta x\) spans
-\[
-  z \in [\bar{z} - \tfrac{W\Delta z}{2}, \bar{z} + \tfrac{W\Delta z}{2}),
-  \qquad
-  x \in [\bar{x} - \tfrac{H\Delta x}{2}, \bar{x} + \tfrac{H\Delta x}{2}),
-\]
+\right).
+$$
+
+An image of width $W$ and height $H$ with wire and drift pixel sizes $\Delta z$
+and $\Delta x$ spans
+
+$$
+z \in [\bar{z} - \tfrac{W\Delta z}{2}, \bar{z} + \tfrac{W\Delta z}{2}),\qquad
+x \in [\bar{x} - \tfrac{H\Delta x}{2}, \bar{x} + \tfrac{H\Delta x}{2}),
+$$
+
 with column and row indices
-\[
-  \text{col} = \left\lfloor \frac{z - (\bar{z} - \tfrac{W\Delta z}{2})}{\Delta z} \right\rfloor,
-  \qquad
-  \text{row} = \left\lfloor \frac{x - (\bar{x} - \tfrac{H\Delta x}{2})}{\Delta x} \right\rfloor .
-\]
+
+$$
+\text{col} = \left\lfloor \frac{z - (\bar{z} - \tfrac{W\Delta z}{2})}{\Delta z} \right\rfloor,\qquad
+\text{row} = \left\lfloor \frac{x - (\bar{x} - \tfrac{H\Delta x}{2})}{\Delta x} \right\rfloor.
+$$
 
 ## Processing Files
 
