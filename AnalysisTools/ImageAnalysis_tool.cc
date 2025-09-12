@@ -32,10 +32,9 @@
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "AnalysisToolBase.h"
-#include "Image.h"
-#include "SemanticPixelClassifier.h"
-#include "ImageProducer.h"
-#include "InferenceEngine.h"
+#include "Imaging/Image.h"
+#include "Imaging/SemanticPixelClassifier.h"
+#include "Imaging/ImageAlgo.h"
 #include "Common/NpyUtils.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
@@ -80,12 +79,6 @@ inline bool isAbs(const std::string &p) {
     return !p.empty() && p.front() == '/';
 }
 } // namespace
-
-struct ModelConfig {
-    std::string name;
-    std::string weights_file;
-    std::string arch;
-};
 
 class ImageAnalysis : public AnalysisToolBase {
   public:
@@ -151,6 +144,7 @@ class ImageAnalysis : public AnalysisToolBase {
     bool _is_vtx_in_image_v;
     bool _is_vtx_in_image_w;
     std::unique_ptr<SemanticPixelClassifier> _semantic_classifier;
+    std::unique_ptr<ImageAlgo> _image_algo;
     std::unordered_map<std::string, float> _inference_scores;
 
     void loadBadChannels(const std::string &filename);
@@ -238,6 +232,12 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     _wire_pitch_v = _geo->WirePitch(geo::kV);
     _wire_pitch_w = _geo->WirePitch(geo::kW);
     _semantic_classifier = std::make_unique<SemanticPixelClassifier>(fMCPproducer);
+    _image_algo = std::make_unique<ImageAlgo>(fWIREproducer, fHITproducer,
+                                             fMCPproducer, fBKTproducer,
+                                             _adc_image_threshold, fWeightsBaseDir,
+                                             fInferenceWrapper, fAssetsBaseDir,
+                                             fModels, fActiveModels, _geo, _detp,
+                                             fWorkDir);
 }
 
 std::string ImageAnalysis::resolveAssetPath(const std::string &relOrAbs, bool must_exist) const {
@@ -403,20 +403,15 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
 
     std::vector<Image<float>> detector_images;
     std::vector<Image<int>> semantic_images;
-    ImageProducer::constructPixelImages(event, neutrino_hits, properties,
-                                       detector_images, semantic_images, is_data,
-                                       fWIREproducer, fHITproducer, fMCPproducer,
-                                       fBKTproducer, _geo, _detp, _adc_image_threshold,
-                                       _semantic_classifier.get(), fBadChannels);
+    _image_algo->produceImages(event, neutrino_hits, properties, is_data,
+                              _semantic_classifier.get(), fBadChannels,
+                              detector_images, semantic_images);
 
     std::vector<Image<float>> event_detector_images;
     std::vector<Image<int>> event_semantic_images;
-    ImageProducer::constructPixelImages(event, all_hits, properties,
-                                       event_detector_images, event_semantic_images,
-                                       is_data, fWIREproducer, fHITproducer,
-                                       fMCPproducer, fBKTproducer, _geo, _detp,
-                                       _adc_image_threshold, _semantic_classifier.get(),
-                                       fBadChannels);
+    _image_algo->produceImages(event, all_hits, properties, is_data,
+                              _semantic_classifier.get(), fBadChannels,
+                              event_detector_images, event_semantic_images);
 
     _detector_image_u = detector_images[0].data();
     _detector_image_v = detector_images[1].data();
@@ -467,33 +462,9 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
     realpath(scratch_dir.c_str(), scratch_path_buffer);
     std::string absolute_scratch_dir(scratch_path_buffer);
 
-    std::vector<ModelConfig> todo;
-    if (fActiveModels.empty())
-        todo = fModels;
-    else {
-        std::set<std::string> want(fActiveModels.begin(), fActiveModels.end());
-        for (auto const &m : fModels)
-            if (want.count(m.name))
-                todo.push_back(m);
-    }
-
-    for (auto const &m : todo) {
-        std::string wpath = isAbs(m.weights_file)
-                                ? m.weights_file
-                                : joinPath(fWeightsBaseDir, m.weights_file);
-        if (!fileExists(wpath)) {
-            throw art::Exception(art::errors::Configuration)
-                << "Weights file not found for model '" << m.name
-                << "': " << wpath;
-        }
-        mf::LogInfo("ImageAnalysis")
-            << "Model " << m.name << " using weights: " << wpath;
-        float score = InferenceEngine::runInference(detector_images,
-                                                   absolute_scratch_dir,
-                                                   fWorkDir, m.arch, wpath,
-                                                   fInferenceWrapper,
-                                                   fAssetsBaseDir);
-        _inference_scores[m.name] = score;
+    auto scores = _image_algo->runInference(detector_images, absolute_scratch_dir);
+    for (auto const &kv : scores) {
+        _inference_scores[kv.first] = kv.second;
     }
 
     if (!std::isnan(_reco_neutrino_vertex_x)) {
