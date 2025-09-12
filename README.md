@@ -112,7 +112,7 @@ For each view, detector and semantic images are centered on the charge-weighted
 centroid of hits associated with the slice. Given hits with wire coordinates
 
 $z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps hits
-within a radial distance $R$ (configurable, default $50\,\text{cm}$) of the
+within a radial distance $R$ of the
 reconstructed neutrino interaction vertex $(z_v, x_v)$. Distances
 $d_i = \sqrt{(z_i - z_v)^2 + (x_i - x_v)^2}$ are
 compared to $R$, and the fraction of charge retained is
@@ -130,6 +130,25 @@ $$
   \sum_{d_i \le R} q_i}
 \right).
 $$
+
+With 512\,px images at 3\,mm per pixel, this radius is fixed at
+$R = 76.8\,\text{cm}$ so that all hits within that circle fit inside the
+square image.
+
+If no interaction vertex is available, a robust seed at the
+charge-weighted median of the wire and drift coordinates is used instead.
+Hits are sorted by distance to this seed, and the closest geometry-informed
+fraction of charge is retained before recomputing the centroid.  For a
+512$\times$512 image the half-diagonal is $D_{\text{px}}=\sqrt{256^2+256^2}
+\approx 362\,\text{px}$.  Using a core radius of $R_{\text{px}}=D_{\text{px}}/2
+\approx 180\,\text{px}$ (about $54\,\text{cm}$ at $3\,\text{mm/px}$) gives
+
+$$
+r \simeq \frac{\pi R_{\text{px}}^2}{512^2} \approx \frac{\pi}{8} \approx 0.39,
+$$
+
+meaning the centroid is computed from the nearest $\sim 39\%$ of the total
+charge.
 
 An image of width $W$ and height $H$ with wire and drift pixel sizes $\Delta z$
 and $\Delta x$ spans

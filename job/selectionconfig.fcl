@@ -98,7 +98,6 @@ ImageAnalysis: {
     InferenceWrapper: "scripts/inference_wrapper.sh"
     imageWidth: 512
     imageHeight: 512
-    centroidRadius: 50
     Models: []
     ActiveModels: []  # env override: ACTIVE_MODELS
 }

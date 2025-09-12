@@ -80,10 +80,12 @@ inline bool isAbs(const std::string &p) {
 }
 
 static double geometryInformedChargeFraction(int width_px, int height_px) {
-  const double Dx = std::hypot(width_px / 2.0, height_px / 2.0);
-  const double R_px = 0.5 * Dx;
-  const double lambda = std::min(1.0, R_px / Dx);
-  return std::min(1.0, 0.5 * M_PI * lambda * lambda);
+  const double half_diag = std::hypot(width_px / 2.0, height_px / 2.0);
+  const double core_radius = 0.5 * half_diag; // ~180 px for 512x512 images
+  const double area_disk = M_PI * core_radius * core_radius;
+  const double area_square = static_cast<double>(width_px) * height_px;
+  // For 512x512 at 3 mm/px: r ≈ π/8 ≈ 0.39, matching a ~54 cm core radius.
+  return std::min(1.0, area_disk / area_square);
 }
 
 static std::pair<double, double>
@@ -353,7 +355,13 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   _wire_pitch_u = _geo->WirePitch(geo::kU);
   _wire_pitch_v = _geo->WirePitch(geo::kV);
   _wire_pitch_w = _geo->WirePitch(geo::kW);
-  _centroid_radius = p.get<float>("centroidRadius", 50.0);
+  // Images are 512x512 pixels at 3 mm resolution. Derive a fixed
+  // centroid radius from the image geometry rather than a configurable
+  // parameter. The radius corresponds to half the image width (or
+  // height) in centimetres so that all hits within this circle fit
+  // inside the square image.
+  const float pixel_size_cm = 0.3f; // 3 mm per pixel
+  _centroid_radius = 0.5f * std::min(_image_width, _image_height) * pixel_size_cm;
   _semantic_classifier =
       std::make_unique<SemanticPixelClassifier>(fMCPproducer);
   _image_algo = std::make_unique<ImageAlgo>(
