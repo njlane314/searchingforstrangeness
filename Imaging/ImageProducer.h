@@ -104,8 +104,13 @@ inline SemanticPixelClassifier::SemanticLabel ImageProducer::labelSemanticPixels
             if (it_trackid != trackid_to_index.end()) {
                 size_t particle_mcp_idx = it_trackid->second;
                 if (particle_mcp_idx < semantic_label_vector.size()) {
-                    semantic_pixel_label =
-                        semantic_label_vector[particle_mcp_idx];
+                    if (max_ide_fraction <= 0.5f) {
+                        semantic_pixel_label =
+                            SemanticPixelClassifier::SemanticLabel::Ambiguous;
+                    } else {
+                        semantic_pixel_label =
+                            semantic_label_vector[particle_mcp_idx];
+                    }
                 }
             }
         }
