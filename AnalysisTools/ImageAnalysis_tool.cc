@@ -78,6 +78,94 @@ inline bool dirExists(const std::string &p) {
 inline bool isAbs(const std::string &p) {
     return !p.empty() && p.front() == '/';
 }
+
+static double geometryInformedChargeFraction(int width_px, int height_px) {
+    const double Dx = std::hypot(width_px / 2.0, height_px / 2.0);
+    const double R_px = 0.5 * Dx;
+    const double lambda = std::min(1.0, R_px / Dx);
+    return std::min(1.0, 0.5 * M_PI * lambda * lambda);
+}
+
+static std::pair<double, double> centroidClosestRCharge(
+    const art::Event &event, common::PandoraView view,
+    const std::vector<art::Ptr<recob::Hit>> &hits, double r_keep,
+    const std::set<unsigned int> &bad_channels) {
+    struct P {
+        double Z, X, q;
+    };
+    std::vector<P> pts;
+    pts.reserve(hits.size());
+    std::vector<std::pair<double, double>> Zw, Xw;
+    Zw.reserve(hits.size());
+    Xw.reserve(hits.size());
+
+    for (auto const &h : hits) {
+        if (bad_channels.count(h->Channel()))
+            continue;
+        if (common::GetPandoraView(h) != view)
+            continue;
+        double q = std::max(0.f, h->Integral());
+        if (q <= 0)
+            continue;
+        TVector3 p = common::GetPandoraHitPosition(event, h, view);
+        pts.push_back({p.Z(), p.X(), q});
+        Zw.emplace_back(p.Z(), q);
+        Xw.emplace_back(p.X(), q);
+    }
+    if (pts.empty())
+        return {0.0, 0.0};
+
+    auto wmedian = [](std::vector<std::pair<double, double>> v) {
+        std::sort(v.begin(), v.end(),
+                  [](auto &a, auto &b) { return a.first < b.first; });
+        double W = 0;
+        for (auto &t : v)
+            W += t.second;
+        double acc = 0;
+        for (auto &t : v) {
+            acc += t.second;
+            if (acc >= 0.5 * W)
+                return t.first;
+        }
+        return v.back().first;
+    };
+
+    const double z0 = wmedian(Zw), x0 = wmedian(Xw);
+
+    struct DW {
+        double d, w;
+    };
+    std::vector<DW> dw;
+    dw.reserve(pts.size());
+    double Wtot = 0;
+    for (auto const &p : pts) {
+        double d = std::hypot(p.Z - z0, p.X - x0);
+        dw.push_back({d, p.q});
+        Wtot += p.q;
+    }
+
+    std::sort(dw.begin(), dw.end(),
+              [](auto &a, auto &b) { return a.d < b.d; });
+    double target = r_keep * Wtot, acc = 0;
+    size_t k = 0;
+    for (; k < dw.size() && acc < target; ++k)
+        acc += dw[k].w;
+
+    double W = 0, Zs = 0, Xs = 0;
+    const double d_cut = (k == 0 ? 0.0 : dw[k - 1].d);
+    for (auto const &p : pts) {
+        double d = std::hypot(p.Z - z0, p.X - x0);
+        if (d <= d_cut) {
+            W += p.q;
+            Zs += p.q * p.Z;
+            Xs += p.q * p.X;
+        }
+    }
+    if (W == 0)
+        return {z0, x0};
+    return {Zs / W, Xs / W};
+}
+
 } // namespace
 
 class ImageAnalysis : public AnalysisToolBase {
@@ -150,7 +238,6 @@ class ImageAnalysis : public AnalysisToolBase {
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event);
     std::vector<art::Ptr<recob::Hit>> collectSliceHits(const art::Event &event, const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec);
-    std::pair<double, double> calculateChargeCentroid(const art::Event &event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>> &hits);
     std::string resolveAssetPath(const std::string &relOrAbs, bool must_exist = true) const;
 };
 
@@ -384,12 +471,15 @@ void ImageAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
     std::vector<art::Ptr<recob::Hit>> neutrino_hits =
         this->collectSliceHits(event, pfp_pxy_vec);
 
-    auto [centroid_wire_u, centroid_drift_u] = this->calculateChargeCentroid(
-        event, common::TPC_VIEW_U, neutrino_hits);
-    auto [centroid_wire_v, centroid_drift_v] = this->calculateChargeCentroid(
-        event, common::TPC_VIEW_V, neutrino_hits);
-    auto [centroid_wire_w, centroid_drift_w] = this->calculateChargeCentroid(
-        event, common::TPC_VIEW_W, neutrino_hits);
+    const double r_keep = geometryInformedChargeFraction(
+        _image_width, _image_height);
+
+    auto [centroid_wire_u, centroid_drift_u] = centroidClosestRCharge(
+        event, common::TPC_VIEW_U, neutrino_hits, r_keep, fBadChannels);
+    auto [centroid_wire_v, centroid_drift_v] = centroidClosestRCharge(
+        event, common::TPC_VIEW_V, neutrino_hits, r_keep, fBadChannels);
+    auto [centroid_wire_w, centroid_drift_w] = centroidClosestRCharge(
+        event, common::TPC_VIEW_W, neutrino_hits, r_keep, fBadChannels);
 
     std::vector<ImageProperties> properties;
     properties.emplace_back(centroid_wire_u, centroid_drift_u, _image_width,
@@ -519,27 +609,6 @@ std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(const art::Eve
         neutrino_hits.push_back(hit);
     }
     return neutrino_hits;
-}
-
-std::pair<double, double> ImageAnalysis::calculateChargeCentroid(const art::Event &event, common::PandoraView view, const std::vector<art::Ptr<recob::Hit>> &hits) {
-    double sum_charge = 0.0;
-    double sum_wire = 0.0;
-    double sum_drift = 0.0;
-    for (const auto &hit : hits) {
-        if (fBadChannels.count(hit->Channel())) {
-            continue;
-        }
-        if (common::GetPandoraView(hit) != view)
-            continue;
-        double charge = hit->Integral();
-        TVector3 hit_pos = common::GetPandoraHitPosition(event, hit, view);
-        sum_charge += charge;
-        sum_wire += hit_pos.Z() * charge;
-        sum_drift += hit_pos.X() * charge;
-    }
-    if (sum_charge == 0.0)
-        return {0.0, 0.0};
-    return {sum_wire / sum_charge, sum_drift / sum_charge};
 }
 
 
