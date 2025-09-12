@@ -109,6 +109,7 @@
 
 For each view, detector and semantic images are centered on the charge-weighted
 centroid of hits associated with the slice. Given hits with wire coordinates
+
 $z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps a
 fraction
 
