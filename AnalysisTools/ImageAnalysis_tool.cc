@@ -79,20 +79,11 @@ inline bool isAbs(const std::string &p) {
   return !p.empty() && p.front() == '/';
 }
 
-static double geometryInformedChargeFraction(int width_px, int height_px) {
-  const double half_diag = std::hypot(width_px / 2.0, height_px / 2.0);
-  const double core_radius = 0.5 * half_diag; // ~180 px for 512x512 images
-  const double area_disk = M_PI * core_radius * core_radius;
-  const double area_square = static_cast<double>(width_px) * height_px;
-  // For 512x512 at 3 mm/px: r ≈ π/8 ≈ 0.39, matching a ~54 cm core radius.
-  return std::min(1.0, area_disk / area_square);
-}
-
-static std::pair<double, double>
-centroidWithinRadius(const art::Event &event, common::PandoraView view,
-                     const std::vector<art::Ptr<recob::Hit>> &hits,
-                     double radius, const std::set<unsigned int> &bad_channels,
-                     double vtx_z, double vtx_x) {
+  static std::pair<double, double>
+  centroidWithinRadius(const art::Event &event, common::PandoraView view,
+                       const std::vector<art::Ptr<recob::Hit>> &hits,
+                       double radius, const std::set<unsigned int> &bad_channels,
+                       double vtx_z, double vtx_x) {
   double W = 0.0, Zs = 0.0, Xs = 0.0;
   for (auto const &h : hits) {
     if (bad_channels.count(h->Channel()))
@@ -112,86 +103,6 @@ centroidWithinRadius(const art::Event &event, common::PandoraView view,
   }
   if (W == 0.0)
     return {vtx_z, vtx_x};
-  return {Zs / W, Xs / W};
-}
-
-static std::pair<double, double>
-centroidClosestRCharge(const art::Event &event, common::PandoraView view,
-                       const std::vector<art::Ptr<recob::Hit>> &hits,
-                       double r_keep,
-                       const std::set<unsigned int> &bad_channels) {
-  struct P {
-    double Z, X, q;
-  };
-  std::vector<P> pts;
-  pts.reserve(hits.size());
-  std::vector<std::pair<double, double>> Zw, Xw;
-  Zw.reserve(hits.size());
-  Xw.reserve(hits.size());
-
-  for (auto const &h : hits) {
-    if (bad_channels.count(h->Channel()))
-      continue;
-    if (common::GetPandoraView(h) != view)
-      continue;
-    double q = std::max(0.f, h->Integral());
-    if (q <= 0)
-      continue;
-    TVector3 p = common::GetPandoraHitPosition(event, h, view);
-    pts.push_back({p.Z(), p.X(), q});
-    Zw.emplace_back(p.Z(), q);
-    Xw.emplace_back(p.X(), q);
-  }
-  if (pts.empty())
-    return {0.0, 0.0};
-
-  auto wmedian = [](std::vector<std::pair<double, double>> v) {
-    std::sort(v.begin(), v.end(),
-              [](auto &a, auto &b) { return a.first < b.first; });
-    double W = 0;
-    for (auto &t : v)
-      W += t.second;
-    double acc = 0;
-    for (auto &t : v) {
-      acc += t.second;
-      if (acc >= 0.5 * W)
-        return t.first;
-    }
-    return v.back().first;
-  };
-
-  const double z0 = wmedian(Zw), x0 = wmedian(Xw);
-
-  struct DW {
-    double d, w;
-  };
-  std::vector<DW> dw;
-  dw.reserve(pts.size());
-  double Wtot = 0;
-  for (auto const &p : pts) {
-    double d = std::hypot(p.Z - z0, p.X - x0);
-    dw.push_back({d, p.q});
-    Wtot += p.q;
-  }
-
-  std::sort(dw.begin(), dw.end(), [](auto &a, auto &b) { return a.d < b.d; });
-  double target = r_keep * Wtot, acc = 0;
-  size_t k = 0;
-  for (; k < dw.size() && acc < target; ++k)
-    acc += dw[k].w;
-
-  double W = 0, Zs = 0, Xs = 0;
-  const double d_cut = (k == 0 ? 0.0 : dw[k - 1].d);
-  for (auto const &p : pts) {
-    double d = std::hypot(p.Z - z0, p.X - x0);
-    if (d <= d_cut) {
-      W += p.q;
-      Zs += p.q * p.Z;
-      Xs += p.q * p.X;
-    }
-  }
-  if (W == 0)
-    return {z0, x0};
   return {Zs / W, Xs / W};
 }
 
@@ -517,38 +428,24 @@ void ImageAnalysis::analyseSlice(
   std::vector<art::Ptr<recob::Hit>> all_hits = this->collectAllHits(event);
   std::vector<art::Ptr<recob::Hit>> neutrino_hits =
       this->collectSliceHits(event, pfp_pxy_vec);
-  bool have_vertex = !std::isnan(_reco_neutrino_vertex_x) &&
-                     !std::isnan(_reco_neutrino_vertex_y) &&
-                     !std::isnan(_reco_neutrino_vertex_z);
   std::pair<double, double> c_u, c_v, c_w;
-  if (have_vertex) {
-    TVector3 vtx_pos_3d(_reco_neutrino_vertex_x, _reco_neutrino_vertex_y,
-                        _reco_neutrino_vertex_z);
-    TVector3 vtx_proj_u = common::ProjectToWireView(
-        vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_U);
-    TVector3 vtx_proj_v = common::ProjectToWireView(
-        vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
-    TVector3 vtx_proj_w = common::ProjectToWireView(
-        vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
-    c_u = centroidWithinRadius(event, common::TPC_VIEW_U, neutrino_hits,
-                               _centroid_radius, fBadChannels, vtx_proj_u.Z(),
-                               vtx_proj_u.X());
-    c_v = centroidWithinRadius(event, common::TPC_VIEW_V, neutrino_hits,
-                               _centroid_radius, fBadChannels, vtx_proj_v.Z(),
-                               vtx_proj_v.X());
-    c_w = centroidWithinRadius(event, common::TPC_VIEW_W, neutrino_hits,
-                               _centroid_radius, fBadChannels, vtx_proj_w.Z(),
-                               vtx_proj_w.X());
-  } else {
-    const double r_keep =
-        geometryInformedChargeFraction(_image_width, _image_height);
-    c_u = centroidClosestRCharge(event, common::TPC_VIEW_U, neutrino_hits,
-                                 r_keep, fBadChannels);
-    c_v = centroidClosestRCharge(event, common::TPC_VIEW_V, neutrino_hits,
-                                 r_keep, fBadChannels);
-    c_w = centroidClosestRCharge(event, common::TPC_VIEW_W, neutrino_hits,
-                                 r_keep, fBadChannels);
-  }
+  TVector3 vtx_pos_3d(_reco_neutrino_vertex_x, _reco_neutrino_vertex_y,
+                      _reco_neutrino_vertex_z);
+  TVector3 vtx_proj_u = common::ProjectToWireView(
+      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_U);
+  TVector3 vtx_proj_v = common::ProjectToWireView(
+      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
+  TVector3 vtx_proj_w = common::ProjectToWireView(
+      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
+  c_u = centroidWithinRadius(event, common::TPC_VIEW_U, neutrino_hits,
+                             _centroid_radius, fBadChannels, vtx_proj_u.Z(),
+                             vtx_proj_u.X());
+  c_v = centroidWithinRadius(event, common::TPC_VIEW_V, neutrino_hits,
+                             _centroid_radius, fBadChannels, vtx_proj_v.Z(),
+                             vtx_proj_v.X());
+  c_w = centroidWithinRadius(event, common::TPC_VIEW_W, neutrino_hits,
+                             _centroid_radius, fBadChannels, vtx_proj_w.Z(),
+                             vtx_proj_w.X());
   auto [centroid_wire_u, centroid_drift_u] = c_u;
   auto [centroid_wire_v, centroid_drift_v] = c_v;
   auto [centroid_wire_w, centroid_drift_w] = c_w;
