@@ -221,7 +221,8 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
 
     _image_width = 512;
     _image_height = 512;
-    _adc_image_threshold = 1.0;
+    // Set the default ADC threshold for image production
+    _adc_image_threshold = 4.0;
     _geo = art::ServiceHandle<geo::Geometry>()->provider();
     _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
     auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
