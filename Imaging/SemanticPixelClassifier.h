@@ -63,14 +63,15 @@ class SemanticPixelClassifier {
         Lambda,
         ChargedSigma,
         NeutralSigma,
-        Other
+        Other,
+        Ambiguous
     };
 
-    static inline const std::array<std::string, 15> semantic_label_names = {
-        "Empty", "Cosmic", "Muon", "Electron", "Photon",
-        "ChargedPion", "NeutralPion", "Neutron", "Proton",
-        "ChargedKaon", "NeutralKaon", "Lambda", "ChargedSigma",
-        "NeutralSigma", "Other"};
+    static inline const std::array<std::string, 16> semantic_label_names = {
+        "Empty",    "Cosmic",        "Muon",       "Electron",
+        "Photon",   "ChargedPion",   "NeutralPion", "Neutron",
+        "Proton",   "ChargedKaon",   "NeutralKaon", "Lambda",
+        "ChargedSigma", "NeutralSigma", "Other", "Ambiguous"};
 
     explicit SemanticPixelClassifier(const art::InputTag &MCPproducer)
         : fMCPproducer(MCPproducer) {}
