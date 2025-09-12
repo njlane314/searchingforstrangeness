@@ -1,4 +1,4 @@
-# **searchingforstrangeness**
+#** searchingforstrangeness **
 
 1. **Set up the environment:**
 
@@ -46,13 +46,13 @@
    ```bash
    cd srcs/ubana
    vim CMakeLists.txt
-   # Modify the compiler flags as such 
+#Modify the compiler flags as such 
    cet_set_compiler_flags(DIAGS CAUTIOUS
-   #WERROR
+#WERROR
    NO_UNDEFINED
    ALLOW_DEPRECATIONS
-   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs -Wno-expansion-to-defined -Wno-variadic-macros -Wno-pedantic 
-   #-Wno-error=unused-variable 
+   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs -Wno-expansion-to-defined -Wno-variadic-macros -Wno-pedantic
+#- Wno - error = unused - variable 
    )
    ```
 
@@ -70,7 +70,8 @@
 5. **Modify CMakeLists.txt:**
 
    ```bash
-   # Add the following line to CMakeLists.txt to include searchingforstrangeness in the build 
+#Add the following line to CMakeLists.txt to include searchingforstrangeness   \
+    in the build 
    cd ../../ # back to src/ubana/ubana
    echo "add_subdirectory(searchingforstrangeness)" >> CMakeLists.txt
    ```
@@ -110,22 +111,23 @@
 For each view, detector and semantic images are centered on the charge-weighted
 centroid of hits associated with the slice. Given hits with wire coordinates
 
-$z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps a
-fraction
+$z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps hits
+within a radial distance $R$ (configurable, default $50\,\text{cm}$) of the
+reconstructed neutrino interaction vertex $(z_v, x_v)$. Distances
+$d_i = \sqrt{(z_i - z_v)^2 + (x_i - x_v)^2}$ are
+compared to $R$, and the fraction of charge retained is
 
 $$
-r_{\text{keep}} = \frac{\pi}{8} \approx 0.39
+r_{\text{keep}} = \frac{\sum_{d_i \le R} q_i}{\sum_i q_i}.
 $$
 
-and computes the weighted medians $z_0$ and $x_0$. Distances
-$d_i = \sqrt{(z_i - z_0)^2 + (x_i - x_0)^2}$ are sorted, and the smallest
-radius $d_{\text{cut}}$ is chosen so that $\sum_{d_i \le d_{\text{cut}}} q_i
-= r_{\text{keep}} \sum_i q_i$. The image centre is then
+The image centre is then
 
 $$
 (\bar{z},\bar{x}) = \left(
-    \frac{\sum_{d_i \le d_{\text{cut}}} q_i z_i}{\sum_{d_i \le d_{\text{cut}}} q_i},
-    \frac{\sum_{d_i \le d_{\text{cut}}} q_i x_i}{\sum_{d_i \le d_{\text{cut}}} q_i}
+    \frac{\sum_{d_i \le R} q_i z_i}{\sum_{d_i \le R} q_i},
+    \frac{\sum_{d_i \le R} q_i x_i}{
+  \sum_{d_i \le R} q_i}
 \right).
 $$
 
@@ -140,8 +142,10 @@ $$
 with column and row indices
 
 $$
-\text{col} = \left\lfloor \frac{z - (\bar{z} - \tfrac{W\Delta z}{2})}{\Delta z} \right\rfloor,\qquad
-\text{row} = \left\lfloor \frac{x - (\bar{x} - \tfrac{H\Delta x}{2})}{\Delta x} \right\rfloor.
+\text{col} = \left\lfloor \frac{z - (\bar{z} - \tfrac{W\Delta z}{2})}{
+  \Delta z} \right\rfloor,\qquad
+\text{row} = \left\lfloor \frac{x - (\bar{x} - \tfrac{H\Delta x}{2})}{
+  \Delta x} \right\rfloor.
 $$
 
 ## Processing Files
@@ -195,23 +199,23 @@ To process ROOT files locally, you can manually run a series of commands to fetc
 
 #### Example: Process Several Files Locally
 ```bash
-# Fetch 3 files from the dataset
+#Fetch 3 files from the dataset
 files=$(samweb list-files defname:my_dataset | head -n 3)
 
-# Process each file
+#Process each file
 counter=1
 for file in $files; do
     filedir=$(samweb locate-file $file | grep -o '/pnfs/.*' | head -n 1)
     filepath="${filedir}/${file}"
-    # Aftering configuring the ficl properly 
+#Aftering configuring the ficl properly 
     lar -c run_eventselectionfilter.fcl -s $filepath -T output_$counter.root
     counter=$((counter + 1))
 done
 
-# Combine outputs
+#Combine outputs
 hadd -f combined_output.root output_*.root
 
-# Clean up
+#Clean up
 rm output_*.root
 ```
 
@@ -283,17 +287,17 @@ The project uses XML files to define grid jobs, modify these where necessary:
 
 #### Example: Submit Jobs to the Grid
 ```bash
-# Create and copy tarball 
+#Create and copy tarball 
 make_tar_uboone.sh my_tarball.tar
 cp -f my_tarball.tar /pnfs/uboone/resilient/users/myuser/
 
-# Authenticate
+#Authenticate
 htgettoken -a htvaultprod.fnal.gov -i uboone
 
-# Submit jobs
+#Submit jobs
 project.py --xml config.xml --stage analyse --submit
 
-# If it fails, clean and retry
+#If it fails, clean and retry
 project.py --xml config.xml --stage analyse --clean
 project.py --xml config.xml --stage analyse --submit
 ```
@@ -420,17 +424,18 @@ nl_numi_fhc_ext_run1_reco2_6000
    samweb create-definition nl_numi_fhc_beam_run1_reco2_training_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with limit 250"   
    samweb create-definition nl_numi_fhc_beam_run1_reco2_validation_250 "defname: New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2 with offset 250 with limit 250" 
    samweb list-files --summary "defname: nl_numi_fhc_beam_run1_reco2_validation_250"
-   # The output
+#The output
    File count:	250
    Total size:	427206702740
    Event count:	71153
    samweb list-files --summary "defname: nl_numi_fhc_beam_run1_reco2_training_250"
-   # The output
+#The output
    File count:	250
    Total size:	423907381578
    Event count:	70649
-   # Even check user's list
-   samweb list-definitions --user=${USER}
+#Even check user's list
+   samweb list-definitions --user=${
+  USER}
    ```
 
    ```bash
