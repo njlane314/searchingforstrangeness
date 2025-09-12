@@ -27,7 +27,7 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
-#include "Image.h"
+#include "Imaging/Image.h"
 #include "Common/PandoraUtilities.h"
 #include <TDirectoryFile.h>
 #include <TFile.h>

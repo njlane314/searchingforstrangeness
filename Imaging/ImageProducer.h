@@ -1,8 +1,8 @@
 #ifndef IMAGEPRODUCER_H
 #define IMAGEPRODUCER_H
 
-#include "Image.h"
-#include "SemanticPixelClassifier.h"
+#include "Imaging/Image.h"
+#include "Imaging/SemanticPixelClassifier.h"
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"

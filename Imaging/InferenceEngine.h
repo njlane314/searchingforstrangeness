@@ -1,7 +1,7 @@
 #ifndef INFERENCEENGINE_H
 #define INFERENCEENGINE_H
 
-#include "Image.h"
+#include "Imaging/Image.h"
 #include "Common/NpyUtils.h"
 
 #include <chrono>
