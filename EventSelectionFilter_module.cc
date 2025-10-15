@@ -22,10 +22,9 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
-// for counting gates via swtrigger and (optionally) optical filter
 #include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 #include "ubobj/Optical/UbooneOpticalFilter.h"
-#include "Rtypes.h" // Long64_t
+#include "Rtypes.h"
 #include "AnalysisTools/AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
@@ -78,29 +77,27 @@ private:
     TTree *_subrun_tree;
     int _run_sr;
     int _sub_sr;
-    double _pot; // now always written, for both data & MC
+    double _pot;
 
     std::map<unsigned int, unsigned int> _pfpmap;
 
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
-    // ---- Normalization / counting config ----
-    std::string _swtrig_proc;                   // process name for swtrigger
-    std::vector<std::string> _beam_gate_algos;  // OR of these defines "beam gate"
-    std::vector<std::string> _ext_gate_algos;   // OR of these defines "EXT gate"
-    bool _count_with_opfilter;                  // also require optical filter when counting?
-    std::string _opfilter_proc;                 // process name for opfiltercommon
-    float _op_pe_beam_min;                      // PE_Beam >= this
-    float _op_pe_veto_max;                      // PE_Veto <= this
-    art::InputTag _pot_prod_data;               // SubRun POT producer (data)
-    art::InputTag _pot_prod_mc;                 // SubRun POT producer (MC)
+    std::string _swtrig_proc;
+    std::vector<std::string> _beam_gate_algos;
+    std::vector<std::string> _ext_gate_algos;
+    bool _count_with_opfilter;
+    std::string _opfilter_proc;
+    float _op_pe_beam_min;
+    float _op_pe_veto_max;
+    art::InputTag _pot_prod_data;
+    art::InputTag _pot_prod_mc;
 
-    // ---- Per-subrun counters / derived ----
-    Long64_t _n_beam_gates_sr = 0;              // beam gate count in this subrun
-    Long64_t _n_ext_gates_sr  = 0;              // EXT gate count in this subrun
-    double _pot_per_gate_sr   = -1.0;           // POT / beam_gates (if both known)
-    double _ext_equiv_pot_sr  = -1.0;           // POT_per_gate * n_ext_gates
+    Long64_t _n_beam_gates_sr = 0;
+    Long64_t _n_ext_gates_sr  = 0;
+    double _pot_per_gate_sr   = -1.0;
+    double _ext_equiv_pot_sr  = -1.0;
 
     void BuildPFPMap(const common::ProxyPfpColl_t &pfp_pxy_col);
     template <typename T>
@@ -129,7 +126,6 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _numi = p.get<bool>("IsNuMI", false);
     _filter = p.get<bool>("Filter", false);
 
-    // --- new normalization config (with sensible defaults) ---
     _swtrig_proc         = p.get<std::string>("BeamSWTrigProcName", "DataOverlayOptical");
     _beam_gate_algos     = p.get<std::vector<std::string>>("BeamGateAlgoNames", {});
     _ext_gate_algos      = p.get<std::vector<std::string>>("ExtGateAlgoNames", {});
@@ -140,7 +136,6 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _pot_prod_data       = art::InputTag(p.get<std::string>("POTProducerData", "beamdata"));
     _pot_prod_mc         = art::InputTag(p.get<std::string>("POTProducerMC",  "generator"));
 
-    // per-subrun counters (explicit init)
     _n_beam_gates_sr = 0;
     _n_ext_gates_sr  = 0;
     _pot_per_gate_sr = -1.0;
@@ -160,7 +155,6 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _subrun_tree = tfs->make<TTree>("SubRun", "SubRun TTree");
     _subrun_tree->Branch("run", &_run_sr, "run/I");
     _subrun_tree->Branch("subRun", &_sub_sr, "subRun/I");
-    // Always persist POT (data or MC) plus gate counters and derived quantities
     _subrun_tree->Branch("pot", &_pot, "pot/D");
     _subrun_tree->Branch("n_beam_gates", &_n_beam_gates_sr, "n_beam_gates/L");
     _subrun_tree->Branch("n_ext_gates",  &_n_ext_gates_sr,  "n_ext_gates/L");
@@ -184,7 +178,6 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
 
 bool EventSelectionFilter::beginSubRun(art::SubRun &)
 {
-    // reset per-subrun counters/derived values
     _n_beam_gates_sr = 0;
     _n_ext_gates_sr  = 0;
     _pot_per_gate_sr = -1.0;
@@ -201,7 +194,6 @@ bool EventSelectionFilter::filter(art::Event &e) {
     _sub = e.subRun();
     _run = e.run();
 
-    // -------- Count gates (software trigger; optionally optical filter) --------
     bool pass_beam_gate = false;
     bool pass_ext_gate  = false;
     try {
@@ -218,7 +210,6 @@ bool EventSelectionFilter::filter(art::Event &e) {
         pass_beam_gate = has_any(_beam_gate_algos);
         pass_ext_gate  = has_any(_ext_gate_algos);
     } catch (...) {
-        // missing swtrigger product => leave as false
     }
     bool op_ok = true;
     if (_count_with_opfilter) {
@@ -232,13 +223,11 @@ bool EventSelectionFilter::filter(art::Event &e) {
                 op_ok = (pe_beam >= _op_pe_beam_min) && (pe_veto <= _op_pe_veto_max);
             }
         } catch (...) {
-            // if required but missing, keep op_ok=true to avoid accidental zeroing
             op_ok = true;
         }
     }
     if (pass_beam_gate && op_ok) ++_n_beam_gates_sr;
     if (pass_ext_gate  && op_ok) ++_n_ext_gates_sr;
-    // --------------------------------------------------------------------------
 
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
@@ -339,7 +328,6 @@ void EventSelectionFilter::ResetTTree() {
 }
 
 bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
-    // Try to read data POT first; if absent, fall back to MC POT
     _pot = -1.0;
     {
         art::Handle<sumdata::POTSummary> h;
@@ -350,7 +338,6 @@ bool EventSelectionFilter::endSubRun(art::SubRun &subrun) {
         }
     }
 
-    // Derived per-subrun quantities
     _pot_per_gate_sr = (_n_beam_gates_sr > 0 && _pot > 0.0)
                          ? (_pot / static_cast<double>(_n_beam_gates_sr))
                          : -1.0;
