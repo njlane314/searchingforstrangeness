@@ -275,6 +275,7 @@ bool EventSelectionFilter::filter(art::Event &e) {
             }
 
             for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
+                if (_analysisToolsVec[i]->isEventDriven()) continue;
                 _analysisToolsVec[i]->analyseSlice(e, neutrino_slice, _data, selected);
             }
         }
