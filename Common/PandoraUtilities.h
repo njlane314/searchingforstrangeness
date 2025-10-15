@@ -3,7 +3,6 @@
 
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/Utilities/GeometryUtilities.h"
-#include "larpandora/LArPandoraInterface/LArPandoraGeometry.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
 #include "TVector3.h"
@@ -19,7 +18,7 @@ constexpr size_t N_VIEWS = 3;
 PandoraView GetPandoraView(const art::Ptr<recob::Hit> &hit) {
     const geo::WireID hit_wire(hit->WireID());
     const geo::View_t hit_view(hit->View());
-    const geo::View_t pandora_view(lar_pandora::LArPandoraGeometry::GetGlobalView(hit_wire.Cryostat, hit_wire.TPC, hit_view));
+    const geo::View_t pandora_view(hit_view);
 
     if (pandora_view == geo::kW || pandora_view == geo::kY)
         return TPC_VIEW_W;
