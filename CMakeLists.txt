@@ -12,7 +12,7 @@ set(PYTHON_LIB_DIR /cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/L
 set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
 
 add_subdirectory(Common)
-add_subdirectory(Analysis)
+add_subdirectory(DataProducts)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(Imaging)

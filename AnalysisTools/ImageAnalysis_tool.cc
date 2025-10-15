@@ -29,8 +29,8 @@
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "AnalysisToolBase.h"
-#include "Analysis/ImageProducts.h"
-#include "Analysis/SegmentationProducts.h"
+#include "DataProducts/ImageProducts.h"
+#include "DataProducts/SegmentationProducts.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
 #include "Imaging/SemanticPixelClassifier.h"
