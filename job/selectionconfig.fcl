@@ -133,6 +133,10 @@ ImageAnalysis: {
     ActiveModels: []  # env override: ACTIVE_MODELS
 }
 
+MetaAnalysis: {
+    tool_type: "MetaAnalysis"
+}
+
 SliceAnalysis: {
     tool_type: "SliceAnalysis"
     CLSproducer: @local::standard_producers.CLSproducer
@@ -219,5 +223,6 @@ NeutrinoSelectionFilter: {
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
+        meta: @local::MetaAnalysis
     }
 }
