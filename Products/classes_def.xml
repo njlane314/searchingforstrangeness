@@ -4,4 +4,7 @@
   <class name="analysis::InferenceScores"/>
   <class name="analysis::PlaneSegmentation"/>
   <class name="std::vector<analysis::PlaneSegmentation>"/>
+  <class name="analysis::ModelPerf"/>
+  <class name="std::vector<analysis::ModelPerf>"/>
+  <class name="analysis::InferencePerfProduct"/>
 </lcgdict>

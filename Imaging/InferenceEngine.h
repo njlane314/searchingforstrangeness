@@ -22,11 +22,24 @@
 namespace analysis {
 class InferenceEngine {
   public:
+    struct Perf {
+      double t_write_req_ms{0.0};
+      double t_exec_total_ms{0.0};
+      double t_read_resp_ms{0.0};
+      double t_child_total_ms{0.0};
+      double t_child_setup_ms{0.0};
+      double t_child_infer_ms{0.0};
+      double t_child_post_ms{0.0};
+      double child_max_rss_mb{0.0};
+      double child_cuda_mem_mb{0.0};
+    };
+
     struct Result {
       std::vector<float> cls;
       uint32_t segW{0}, segH{0};
       std::vector<uint8_t> seg_u, seg_v, seg_w;
       std::vector<float> conf_u, conf_v, conf_w;
+      Perf perf;
     };
 
     static Result runInferenceDetailed(const std::vector<Image<float>> &detector_images,
@@ -102,13 +115,16 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
 
     string req_bin       = joinPath(absolute_scratch_dir, base.str() + "_planes.bin");
     string result_bin    = joinPath(absolute_scratch_dir, base.str() + "_results.bin");
+    string meta_txt      = result_bin + ".meta";
     string script_stdout = joinPath(absolute_scratch_dir, base.str() + "_py_script.out");
     string script_stderr = joinPath(absolute_scratch_dir, base.str() + "_py_script.err");
 
+    auto t0 = std::chrono::steady_clock::now();
     const auto& U = detector_images[0].data();
     const auto& V = detector_images[1].data();
     const auto& W = detector_images[2].data();
     _binary_io::write_chw_f32(req_bin, U, V, W);
+    auto t1 = std::chrono::steady_clock::now();
 
     string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
 
@@ -153,6 +169,7 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
         << "/bin/bash " << inference_wrapper << " "
         << "--in " << req_bin << " "
         << "--out " << result_bin << " "
+        << "--metrics " << meta_txt << " "
         << "--W " << detector_images[0].width() << " "
         << "--H " << detector_images[0].height() << " "
         << "--arch " << arch << " "
@@ -180,6 +197,7 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
             << error_message << "\n--- End Script stderr ---";
     }
 
+    auto t2 = std::chrono::steady_clock::now();
     Result out;
     std::ifstream ifs(result_bin, std::ios::binary);
     if (!ifs) {
@@ -219,15 +237,55 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
       }
     }
 
+    auto t3 = std::chrono::steady_clock::now();
+
+    out.perf.t_write_req_ms  = std::chrono::duration<double, std::milli>(t1 - t0).count();
+    out.perf.t_exec_total_ms = duration * 1000.0;
+    out.perf.t_read_resp_ms  = std::chrono::duration<double, std::milli>(t3 - t2).count();
+
+    {
+      std::ifstream m(meta_txt);
+      if (m) {
+        std::string line;
+        while (std::getline(m, line)) {
+          auto eq = line.find('=');
+          if (eq == std::string::npos) continue;
+          std::string key = line.substr(0, eq);
+          std::string val = line.substr(eq + 1);
+          double d = 0.0;
+          const char *cstr = val.c_str();
+          char *endp = nullptr;
+          d = std::strtod(cstr, &endp);
+          if (endp == cstr) continue;
+          if (key == "t_total_ms")      out.perf.t_child_total_ms = d;
+          else if (key == "t_setup_ms") out.perf.t_child_setup_ms = d;
+          else if (key == "t_infer_ms") out.perf.t_child_infer_ms = d;
+          else if (key == "t_post_ms")  out.perf.t_child_post_ms  = d;
+          else if (key == "max_rss_mb") out.perf.child_max_rss_mb = d;
+          else if (key == "cuda_mem_mb")out.perf.child_cuda_mem_mb = d;
+        }
+      }
+    }
+
     mf::LogInfo("InferenceEngine")
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
       mf::LogInfo("InferenceEngine") << "First class score: " << out.cls.front();
+    mf::LogInfo("InferenceEngine")
+        << "t_write_req_ms=" << out.perf.t_write_req_ms
+        << " t_exec_total_ms=" << out.perf.t_exec_total_ms
+        << " t_read_resp_ms=" << out.perf.t_read_resp_ms
+        << " child(total/setup/infer/post)_ms="
+        << out.perf.t_child_total_ms << "/"
+        << out.perf.t_child_setup_ms << "/"
+        << out.perf.t_child_infer_ms << "/"
+        << out.perf.t_child_post_ms;
 
     std::remove(req_bin.c_str());
     std::remove(result_bin.c_str());
     std::remove(script_stdout.c_str());
     std::remove(script_stderr.c_str());
+    std::remove(meta_txt.c_str());
 
     return out;
 }
