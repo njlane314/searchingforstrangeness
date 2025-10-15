@@ -46,7 +46,7 @@ public:
     EventSelectionFilter(EventSelectionFilter &&) = delete;
     EventSelectionFilter &operator=(EventSelectionFilter const &) = delete;
     EventSelectionFilter &operator=(EventSelectionFilter &&) = delete;
-    void beginSubRun(art::SubRun &subrun) override;
+    bool beginSubRun(art::SubRun &subrun) override;
     bool filter(art::Event &e) override;
     bool endSubRun(art::SubRun &subrun) override;
     using ProxyPfpColl_t = common::ProxyPfpColl_t;
@@ -184,13 +184,14 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
         _analysisToolsVec[i]->setBranches(_tree);
 }
 
-void EventSelectionFilter::beginSubRun(art::SubRun &)
+bool EventSelectionFilter::beginSubRun(art::SubRun &)
 {
     // reset per-subrun counters/derived values
     _n_beam_gates_sr = 0;
     _n_ext_gates_sr  = 0;
     _pot_per_gate_sr = -1.0;
     _ext_equiv_pot_sr= -1.0;
+    return true;
 }
 
 bool EventSelectionFilter::filter(art::Event &e) {
