@@ -45,7 +45,7 @@
 #include <utility>
 #include <vector>
 
-namespace analysis {
+namespace image {
 class SemanticPixelClassifier {
     public:
     enum class SemanticLabel {
@@ -155,7 +155,7 @@ class SemanticPixelClassifier {
     private:
     art::InputTag fMCPproducer;
 };
-} // namespace analysis
+} // namespace image
 
 #endif // SEMANTICPIXELCLASSIFIER_H
 

@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace analysis {
+namespace image {
 class ImageProperties {
     public:
     ImageProperties() = default;
@@ -104,6 +104,6 @@ class Image {
     ImageProperties prop_;
     std::vector<T> pixels_;
 };
-} // namespace analysis
+} // namespace image
 
 #endif // IMAGE_H

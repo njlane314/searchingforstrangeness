@@ -19,7 +19,7 @@
 #include <canvas/Utilities/Exception.h>
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
-namespace analysis {
+namespace image {
 class InferenceEngine {
   public:
     struct Perf {

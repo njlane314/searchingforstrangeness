@@ -6,7 +6,7 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
-namespace analysis {
+namespace image {
 
 struct PlaneSegmentation {
   int view{static_cast<int>(geo::kUnknown)};
@@ -17,6 +17,6 @@ struct PlaneSegmentation {
   std::vector<float> confidence;
 };
 
-} // namespace analysis
+} // namespace image
 
 #endif // DATAPRODUCTS_SEGMENTATION_PRODUCTS_H

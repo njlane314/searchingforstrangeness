@@ -39,7 +39,7 @@
 #include <vector>
 #include <limits.h>
 
-using namespace analysis;
+using namespace image;
 
 namespace {
 static std::pair<double, double> centroidWithinRadius(const art::Event &event,
@@ -175,7 +175,7 @@ ImageProducerED::ImageProducerED(fhicl::ParameterSet const &p) {
   produces<std::vector<PlaneImage>>("event");
   produces<InferenceScores>();
   produces<std::vector<PlaneSegmentation>>("seg");
-  produces<analysis::InferencePerfProduct>("perf");
+  produces<InferencePerfProduct>("perf");
 }
 
 void ImageProducerED::loadBadChannels(const std::string &filename) {
@@ -340,10 +340,10 @@ void ImageProducerED::produce(art::Event &event) {
     sc->scores.push_back(kv.second);
   }
 
-  auto perf_prod = std::make_unique<analysis::InferencePerfProduct>();
+  auto perf_prod = std::make_unique<InferencePerfProduct>();
   perf_prod->per_model.reserve(inf_out.perfs.size());
   for (auto const &kv : inf_out.perfs) {
-    analysis::ModelPerf mp;
+    ModelPerf mp;
     mp.model = kv.first;
     mp.t_write_req_ms   = static_cast<float>(kv.second.t_write_req_ms);
     mp.t_exec_total_ms  = static_cast<float>(kv.second.t_exec_total_ms);

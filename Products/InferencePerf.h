@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace analysis {
+namespace image {
 
 struct ModelPerf {
   std::string model;
@@ -26,6 +26,6 @@ struct InferencePerfProduct {
   std::vector<ModelPerf> per_model;
 };
 
-} // namespace analysis
+} // namespace image
 
 #endif // ANALYSIS_INFERENCE_PERF_H
