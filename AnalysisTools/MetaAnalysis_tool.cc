@@ -204,8 +204,18 @@ private:
     if (!prov) return false;
     auto const& desc = prov->productDescription();
     out_label = desc.moduleLabel();
-    out_pset_id = desc.parameterSetID().to_string();
-    if (out_release) *out_release = desc.processConfiguration().releaseVersion();
+
+    out_pset_id.clear();
+    auto const& pset_ids = prov->parameterSetIDs();
+    if (!pset_ids.empty()) out_pset_id = pset_ids.front().to_string();
+
+    if (out_release) {
+      if (auto const* pc = prov->processConfiguration()) {
+        *out_release = pc->releaseVersion();
+      } else {
+        out_release->clear();
+      }
+    }
 
     try {
       fhicl::ParameterSet ptmp;

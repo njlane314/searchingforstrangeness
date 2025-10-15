@@ -9,8 +9,8 @@ art_make(
     lardata_RecoObjects
     larsim_MCCheater_BackTrackerService_service
     larsim_MCCheater_ParticleInventoryService_service
-    lardata_DetectorInfoServices_DetectorPropertiesService_service
-    lardata_DetectorInfoServices_DetectorClocksService_service
+    lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+    lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
     nusimdata_SimulationBase
     ubreco_SelectionTool_OpT0FinderBase
     ubreco_SelectionTool_OpT0FinderAlgorithms
