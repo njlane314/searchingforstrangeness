@@ -85,6 +85,14 @@ bool algorithmPassed(Trigger const &trigger, std::string const &name) {
         return false;
     }
 }
+
+template <>
+bool algorithmPassed<raw::ubdaqSoftwareTriggerData>(raw::ubdaqSoftwareTriggerData const &trigger,
+                                                    std::string const &name)
+{
+    auto const passed = trigger.getListOfPassedAlgorithms();
+    return std::find(passed.begin(), passed.end(), name) != passed.end();
+}
 } // namespace
 
 class EventSelectionFilter : public art::EDFilter {
