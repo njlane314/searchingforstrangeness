@@ -28,9 +28,10 @@
 
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <limits>
-#include <cmath>
 
 namespace analysis {
 
@@ -267,8 +268,9 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             const auto& triggerHandle = event.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
             auto const& trigger = *triggerHandle;
+            auto const passedNames = trigger.getListOfPassedAlgorithms();
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
-                const bool passed = trigger.passedAlgo(triggerName[j]);
+                const bool passed = std::find(passedNames.begin(), passedNames.end(), triggerName[j]) != passedNames.end();
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {
                     _software_trigger_pre_ext = passed;
                 }
@@ -285,7 +287,7 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
                     continue;
                 }
                 std::cout << triggerName[j] << ": ";
-                std::cout << trigger.passedAlgo(triggerName[j]) << std::endl;
+                std::cout << passed << std::endl;
             }
         }
     }

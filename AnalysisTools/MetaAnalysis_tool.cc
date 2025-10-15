@@ -165,7 +165,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
 {
   // --- generator info from MCTruth::MCGeneratorInfo (first available) ---
   {
-    auto mct_handles = e.getMany<std::vector<simb::MCTruth>>();
+    std::vector<art::Handle<std::vector<simb::MCTruth>>> mct_handles;
+    e.getManyByType(mct_handles);
     for (auto const& hmct : mct_handles) {
       if (!hmct.isValid()) continue;
       for (auto const& mct : *hmct) {
@@ -184,7 +185,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
 
   // --- GEANT4 provenance (from first MCParticle collection) ---
   {
-    auto g4_handles = e.getMany<std::vector<simb::MCParticle>>();
+    std::vector<art::Handle<std::vector<simb::MCParticle>>> g4_handles;
+    e.getManyByType(g4_handles);
     for (auto const& hg4 : g4_handles) {
       if (!hg4.isValid()) continue;
       if (fillProvInfo_(hg4, _g4_module_label, _g4_process_name, _g4_release_version, _g4_pset_id)) break;
@@ -193,7 +195,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
 
   // --- PANDORA provenance (from first PFParticle collection) ---
   {
-    auto pfp_handles = e.getMany<std::vector<recob::PFParticle>>();
+    std::vector<art::Handle<std::vector<recob::PFParticle>>> pfp_handles;
+    e.getManyByType(pfp_handles);
     for (auto const& hpfp : pfp_handles) {
       if (!hpfp.isValid()) continue;
       if (fillProvInfo_(hpfp, _pandora_module_label, _pandora_process_name, _pandora_release_version, _pandora_pset_id)) break;
@@ -204,7 +207,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
   {
     _pandora_metadata_keys.clear();
     std::set<std::string> allkeys;
-    auto md_handles = e.getMany<std::vector<larpandoraobj::PFParticleMetadata>>();
+    std::vector<art::Handle<std::vector<larpandoraobj::PFParticleMetadata>>> md_handles;
+    e.getManyByType(md_handles);
     for (auto const& hmd : md_handles) {
       if (!hmd.isValid()) continue;
       for (auto const& md : *hmd) {
