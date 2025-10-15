@@ -7,9 +7,9 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
-namespace analysis {
+namespace image {
 
-struct PlaneImage {
+struct PixelImage {
   int view{static_cast<int>(geo::kUnknown)};
   uint32_t width{0};
   uint32_t height{0};
@@ -26,6 +26,6 @@ struct InferenceScores {
   std::vector<float> scores;
 };
 
-} // namespace analysis
+} // namespace image
 
 #endif // DATAPRODUCTS_IMAGE_PRODUCTS_H

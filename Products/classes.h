@@ -3,5 +3,5 @@
 #include "Products/SegmentationProducts.h"
 #include <vector>
 
-template class std::vector<analysis::PlaneImage>;
-template class std::vector<analysis::PlaneSegmentation>;
+template class std::vector<image::PixelImage>;
+template class std::vector<image::Segmentation>;

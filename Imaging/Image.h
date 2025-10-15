@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace analysis {
+namespace image {
 class ImageProperties {
     public:
     ImageProperties() = default;
@@ -73,7 +73,7 @@ class ImageProperties {
 
 template <typename T>
 class Image {
-    public:
+  public:
     Image() = default;
     Image(const ImageProperties &prop)
         : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
@@ -100,10 +100,10 @@ class Image {
     size_t height() const { return prop_.height(); }
     size_t width() const { return prop_.width(); }
 
-    private:
+  private:
     ImageProperties prop_;
     std::vector<T> pixels_;
 };
-} // namespace analysis
+} // namespace image
 
 #endif // IMAGE_H

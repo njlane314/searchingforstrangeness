@@ -38,7 +38,7 @@
 #include <vector>
 #include <limits.h>
 
-using namespace analysis;
+using namespace image;
 
 namespace {
 static std::pair<double, double> centroidWithinRadius(const art::Event &event,
@@ -170,10 +170,10 @@ ImageProducerED::ImageProducerED(fhicl::ParameterSet const &p) {
                                       fADCThresh, fWeightsBaseDir, fInferenceWrapper, fAssetsBaseDir,
                                       fModels, fActiveModels, fGeo, fDetp, ".");
 
-  produces<std::vector<PlaneImage>>("slice");
-  produces<std::vector<PlaneImage>>("event");
+  produces<std::vector<PixelImage>>("slice");
+  produces<std::vector<PixelImage>>("event");
   produces<InferenceScores>();
-  produces<std::vector<PlaneSegmentation>>("seg");
+  produces<std::vector<Segmentation>>("seg");
 }
 
 void ImageProducerED::loadBadChannels(const std::string &filename) {
@@ -299,7 +299,7 @@ void ImageProducerED::produce(art::Event &event) {
   fAlgo->produceImages(event, all_hits, props, fIsData, fSemantic.get(), fBadChannels, det_event, sem_event);
 
   auto pack_plane = [](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem) {
-    PlaneImage out;
+    PixelImage out;
     out.view = static_cast<int>(p.view());
     out.width = static_cast<uint32_t>(p.width());
     out.height = static_cast<uint32_t>(p.height());
@@ -315,8 +315,8 @@ void ImageProducerED::produce(art::Event &event) {
     return out;
   };
 
-  auto out_slice = std::make_unique<std::vector<PlaneImage>>();
-  auto out_event = std::make_unique<std::vector<PlaneImage>>();
+  auto out_slice = std::make_unique<std::vector<PixelImage>>();
+  auto out_event = std::make_unique<std::vector<PixelImage>>();
   out_slice->reserve(3);
   out_event->reserve(3);
   for (size_t i = 0; i < 3; ++i) {
@@ -338,12 +338,12 @@ void ImageProducerED::produce(art::Event &event) {
     sc->scores.push_back(kv.second);
   }
 
-  std::unique_ptr<std::vector<PlaneSegmentation>> seg_prod;
+  std::unique_ptr<std::vector<Segmentation>> seg_prod;
   if (inf_out.has_segmentation) {
-    seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
+    seg_prod = std::make_unique<std::vector<Segmentation>>();
     seg_prod->reserve(3);
     auto make_plane = [&](int v, const std::vector<uint8_t> &lbl, const std::vector<float> &conf) {
-      PlaneSegmentation p;
+      Segmentation p;
       p.view = v;
       p.width = inf_out.segW;
       p.height = inf_out.segH;

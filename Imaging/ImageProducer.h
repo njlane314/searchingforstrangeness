@@ -20,7 +20,7 @@
 #include <set>
 #include <vector>
 
-namespace analysis {
+namespace image {
 class ImageProducer {
   public:
     static void constructPixelImages(const art::Event &event,
@@ -255,6 +255,6 @@ inline void ImageProducer::constructPixelImages(
     }
 }
 
-} // namespace analysis
+} // namespace image
 
 #endif // IMAGEPRODUCER_H

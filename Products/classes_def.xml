@@ -1,7 +1,7 @@
 <lcgdict>
-  <class name="analysis::PlaneImage"/>
-  <class name="std::vector<analysis::PlaneImage>"/>
-  <class name="analysis::InferenceScores"/>
-  <class name="analysis::PlaneSegmentation"/>
-  <class name="std::vector<analysis::PlaneSegmentation>"/>
+  <class name="image::PixelImage"/>
+  <class name="std::vector<image::PixelImage>"/>
+  <class name="image::InferenceScores"/>
+  <class name="image::Segmentation"/>
+  <class name="std::vector<image::Segmentation>"/>
 </lcgdict>

@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-namespace analysis {
+namespace image {
 
 struct BinaryInferenceOutput {
     std::unordered_map<std::string, float> scores;
@@ -198,6 +198,6 @@ inline BinaryInferenceOutput ImageAlgo::runInferenceBinary(
     return out;
 }
 
-}
+} // namespace image
 
 #endif
