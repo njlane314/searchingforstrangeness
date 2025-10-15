@@ -31,6 +31,7 @@
 #include "AnalysisToolBase.h"
 #include "Products/ImageProducts.h"
 #include "Products/SegmentationProducts.h"
+#include "Products/InferencePerf.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
 #include "Imaging/ImageAlgo.h"
@@ -83,6 +84,7 @@ private:
   art::InputTag fImagesEventTag;
   art::InputTag fScoresTag;
   art::InputTag fSegmentationTag;
+  art::InputTag fPerfTag;
   std::vector<ModelConfig> fModels;
   std::vector<std::string> fActiveModels;
   float _reco_neutrino_vertex_x;
@@ -119,6 +121,16 @@ private:
   std::vector<int> _pred_semantic_counts_v;
   std::vector<int> _pred_semantic_counts_w;
   std::unordered_map<std::string, float> _inference_scores;
+  std::vector<std::string> _perf_model;
+  std::vector<float> _perf_t_write_req_ms;
+  std::vector<float> _perf_t_exec_total_ms;
+  std::vector<float> _perf_t_read_resp_ms;
+  std::vector<float> _perf_t_child_total_ms;
+  std::vector<float> _perf_t_child_setup_ms;
+  std::vector<float> _perf_t_child_infer_ms;
+  std::vector<float> _perf_t_child_post_ms;
+  std::vector<float> _perf_child_max_rss_mb;
+  std::vector<float> _perf_child_cuda_mem_mb;
 
   static std::vector<int> countLabels(const std::vector<int> &labels, size_t nlabels);
 };
@@ -140,6 +152,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fImagesEventTag = p.get<art::InputTag>("ImagesEventTag", art::InputTag{"ImageProducerED", "event"});
   fScoresTag = p.get<art::InputTag>("ScoresTag", art::InputTag{"ImageProducerED"});
   fSegmentationTag = p.get<art::InputTag>("SegmentationTag", art::InputTag{"ImageProducerED", "seg"});
+  fPerfTag = p.get<art::InputTag>("PerfTag", art::InputTag{"ImageProducerED", "perf"});
 
   fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
   if (const char *am = std::getenv("ACTIVE_MODELS")) {
@@ -205,6 +218,16 @@ void ImageAnalysis::setBranches(TTree *_tree) {
   _tree->Branch("pred_semantic_counts_u", &_pred_semantic_counts_u);
   _tree->Branch("pred_semantic_counts_v", &_pred_semantic_counts_v);
   _tree->Branch("pred_semantic_counts_w", &_pred_semantic_counts_w);
+  _tree->Branch("perf_model", &_perf_model);
+  _tree->Branch("perf_t_write_req_ms", &_perf_t_write_req_ms);
+  _tree->Branch("perf_t_exec_total_ms", &_perf_t_exec_total_ms);
+  _tree->Branch("perf_t_read_resp_ms", &_perf_t_read_resp_ms);
+  _tree->Branch("perf_t_child_total_ms", &_perf_t_child_total_ms);
+  _tree->Branch("perf_t_child_setup_ms", &_perf_t_child_setup_ms);
+  _tree->Branch("perf_t_child_infer_ms", &_perf_t_child_infer_ms);
+  _tree->Branch("perf_t_child_post_ms", &_perf_t_child_post_ms);
+  _tree->Branch("perf_child_max_rss_mb", &_perf_child_max_rss_mb);
+  _tree->Branch("perf_child_cuda_mem_mb", &_perf_child_cuda_mem_mb);
   for (const auto &model : fModels) {
     _tree->Branch(("inference_score_" + model.name).c_str(),
                   &_inference_scores[model.name], "score/F");
@@ -245,6 +268,16 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _pred_semantic_counts_u.clear();
   _pred_semantic_counts_v.clear();
   _pred_semantic_counts_w.clear();
+  _perf_model.clear();
+  _perf_t_write_req_ms.clear();
+  _perf_t_exec_total_ms.clear();
+  _perf_t_read_resp_ms.clear();
+  _perf_t_child_total_ms.clear();
+  _perf_t_child_setup_ms.clear();
+  _perf_t_child_infer_ms.clear();
+  _perf_t_child_post_ms.clear();
+  _perf_child_max_rss_mb.clear();
+  _perf_child_cuda_mem_mb.clear();
   for (auto &kv : _inference_scores) {
     kv.second = std::numeric_limits<float>::quiet_NaN();
   }
@@ -335,6 +368,22 @@ void ImageAnalysis::analyseSlice(
   auto scoresH = event.getValidHandle<analysis::InferenceScores>(fScoresTag);
   for (size_t i = 0; i < scoresH->names.size() && i < scoresH->scores.size(); ++i) {
     _inference_scores[scoresH->names[i]] = scoresH->scores[i];
+  }
+
+  art::Handle<analysis::InferencePerfProduct> perfH;
+  if (event.getByLabel(fPerfTag, perfH) && perfH.isValid()) {
+    for (auto const &mp : perfH->per_model) {
+      _perf_model.push_back(mp.model);
+      _perf_t_write_req_ms.push_back(mp.t_write_req_ms);
+      _perf_t_exec_total_ms.push_back(mp.t_exec_total_ms);
+      _perf_t_read_resp_ms.push_back(mp.t_read_resp_ms);
+      _perf_t_child_total_ms.push_back(mp.t_child_total_ms);
+      _perf_t_child_setup_ms.push_back(mp.t_child_setup_ms);
+      _perf_t_child_infer_ms.push_back(mp.t_child_infer_ms);
+      _perf_t_child_post_ms.push_back(mp.t_child_post_ms);
+      _perf_child_max_rss_mb.push_back(mp.child_max_rss_mb);
+      _perf_child_cuda_mem_mb.push_back(mp.child_cuda_mem_mb);
+    }
   }
 
   art::Handle<std::vector<analysis::PlaneSegmentation>> segH;

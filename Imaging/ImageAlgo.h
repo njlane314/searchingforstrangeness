@@ -22,6 +22,7 @@ namespace analysis {
 
 struct BinaryInferenceOutput {
     std::unordered_map<std::string, float> scores;
+    std::unordered_map<std::string, InferenceEngine::Perf> perfs;
     bool has_segmentation{false};
     uint32_t segW{0}, segH{0};
     std::vector<uint8_t> seg_u, seg_v, seg_w;
@@ -188,6 +189,7 @@ inline BinaryInferenceOutput ImageAlgo::runInferenceBinary(
         if (want_cls && !r.cls.empty()) {
             out.scores[m.name] = r.cls.front();
         }
+        out.perfs[m.name] = r.perf;
         if (ask_seg && r.segW && r.segH && !took_seg) {
             out.has_segmentation = true; out.segW = r.segW; out.segH = r.segH;
             out.seg_u = std::move(r.seg_u); out.seg_v = std::move(r.seg_v); out.seg_w = std::move(r.seg_w);

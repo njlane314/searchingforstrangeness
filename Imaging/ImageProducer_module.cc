@@ -18,6 +18,7 @@
 
 #include "Products/ImageProducts.h"
 #include "Products/SegmentationProducts.h"
+#include "Products/InferencePerf.h"
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageAlgo.h"
@@ -174,6 +175,7 @@ ImageProducerED::ImageProducerED(fhicl::ParameterSet const &p) {
   produces<std::vector<PlaneImage>>("event");
   produces<InferenceScores>();
   produces<std::vector<PlaneSegmentation>>("seg");
+  produces<analysis::InferencePerfProduct>("perf");
 }
 
 void ImageProducerED::loadBadChannels(const std::string &filename) {
@@ -338,6 +340,23 @@ void ImageProducerED::produce(art::Event &event) {
     sc->scores.push_back(kv.second);
   }
 
+  auto perf_prod = std::make_unique<analysis::InferencePerfProduct>();
+  perf_prod->per_model.reserve(inf_out.perfs.size());
+  for (auto const &kv : inf_out.perfs) {
+    analysis::ModelPerf mp;
+    mp.model = kv.first;
+    mp.t_write_req_ms   = static_cast<float>(kv.second.t_write_req_ms);
+    mp.t_exec_total_ms  = static_cast<float>(kv.second.t_exec_total_ms);
+    mp.t_read_resp_ms   = static_cast<float>(kv.second.t_read_resp_ms);
+    mp.t_child_total_ms = static_cast<float>(kv.second.t_child_total_ms);
+    mp.t_child_setup_ms = static_cast<float>(kv.second.t_child_setup_ms);
+    mp.t_child_infer_ms = static_cast<float>(kv.second.t_child_infer_ms);
+    mp.t_child_post_ms  = static_cast<float>(kv.second.t_child_post_ms);
+    mp.child_max_rss_mb = static_cast<float>(kv.second.child_max_rss_mb);
+    mp.child_cuda_mem_mb= static_cast<float>(kv.second.child_cuda_mem_mb);
+    perf_prod->per_model.push_back(std::move(mp));
+  }
+
   std::unique_ptr<std::vector<PlaneSegmentation>> seg_prod;
   if (inf_out.has_segmentation) {
     seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
@@ -361,6 +380,7 @@ void ImageProducerED::produce(art::Event &event) {
   event.put(std::move(out_event), "event");
   event.put(std::move(sc));
   if (seg_prod) event.put(std::move(seg_prod), "seg");
+  event.put(std::move(perf_prod), "perf");
 }
 
 DEFINE_ART_MODULE(ImageProducerED)
