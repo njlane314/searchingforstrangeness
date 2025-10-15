@@ -190,6 +190,16 @@ EventSelectionFilter: {
     filter: true
     IsData: false
     IsFakeData: false
+
+    BeamSWTrigProcName: "DataOverlayOptical"
+    BeamGateAlgoNames:  ["NUMI_FEMBeamTriggerAlgo", "NUMI_2018May_FEMBeamTriggerAlgo"]   # or BNB equivalents
+    ExtGateAlgoNames:   ["EXT_NUMIwin_FEMBeamTriggerAlgo", "EXT_NUMIwin_2018May_FEMBeamTriggerAlgo"]
+    CountWithOpFilter:  true
+    OpFilterProcName:   "DataStage1Optical"
+    OpFilterPEBeamMin:  0.0
+    OpFilterPEVetoMax:  1.0e9
+    POTProducerData:    "beamdata"
+    POTProducerMC:      "generator"
 }
 
 NeutrinoSelection: {
