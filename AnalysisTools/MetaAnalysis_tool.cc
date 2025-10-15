@@ -4,38 +4,24 @@
 #include "AnalysisTools/AnalysisToolBase.h"
 
 #include "art/Framework/Principal/Handle.h"
+#include "canvas/Persistency/Provenance/Provenance.h"
 #include "canvas/Persistency/Provenance/BranchDescription.h"
 #include "canvas/Persistency/Provenance/ProcessHistory.h"
-#include "canvas/Persistency/Provenance/ProcessConfiguration.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "fhiclcpp/ParameterSetRegistry.h"
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
 
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-
-#include "ubobj/CRT/CRTHit.hh"
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
-#include "ubobj/Optical/UbooneOpticalFilter.h"
-
-#include "larsim/EventWeight/Base/MCEventWeight.h"
+#include "lardataobj/RecoBase/PFParticleMetadata.h" // larpandoraobj::PFParticleMetadata
 
 #include "TTree.h"
 
-#include <cctype>
-#include <cstdint>
-#include <initializer_list>
 #include <limits>
 #include <set>
 #include <string>
-#include <utility>
+#include <type_traits>
 #include <vector>
 
 namespace analysis {
@@ -46,486 +32,195 @@ public:
   ~MetaAnalysis_tool() override = default;
 
   void configure(const fhicl::ParameterSet&) override {}
-  bool isEventDriven() const override { return true; }
   void analyseEvent(const art::Event& event, bool is_data) override;
   void analyseSlice(const art::Event&, std::vector<common::ProxyPfpElem_t>&, bool, bool) override {}
   void setBranches(TTree* tree) override;
   void resetTTree(TTree* tree) override;
 
 private:
-  bool _is_data = false;
-  int _run = -1;
-  int _sub = -1;
-  int _evt = -1;
-  uint64_t _event_time_value = 0ULL;
+  // ---- generator (from MCTruth::MCGeneratorInfo) ----
+  std::string _gen_name;
+  std::string _gen_version;
+  std::string _gen_tune;
 
-  std::vector<std::string> _process_names;
-  std::vector<std::string> _process_release_versions;
-  std::vector<std::string> _process_pset_ids;
-
-  std::string _generator_module_label;
-  std::string _fhicl_pset_id_generator;
-  std::string _genie_version;
-  std::string _genie_tune;
-  std::string _genie_knobs_fcl;
-
-  std::string _flux_module_label;
-  std::string _fhicl_pset_id_flux;
-  std::string _flux_tag;
-  std::string _flux_release;
-  std::string _flux_hist_version;
-  float _horn_current = std::numeric_limits<float>::quiet_NaN();
-  std::string _beam_mode;
-  float _beam_energy_nominal_GeV = std::numeric_limits<float>::quiet_NaN();
-
+  // ---- GEANT4 / largeant provenance (from MCParticle product) ----
   std::string _g4_module_label;
-  std::string _fhicl_pset_id_g4;
-  std::string _geant4_release;
-  std::string _physics_list;
+  std::string _g4_process_name;
+  std::string _g4_release_version;
+  std::string _g4_pset_id;
 
-  std::string _reco_pfp_module_label;
-  std::string _fhicl_pset_id_reco;
-  std::string _pandora_version;
-  std::string _pandora_settings_tag;
+  // ---- PANDORA / reco provenance (from PFParticle product) ----
+  std::string _pandora_module_label;
+  std::string _pandora_process_name;
+  std::string _pandora_release_version;
+  std::string _pandora_pset_id;
 
-  std::vector<std::string> _swtrigger_algo_names;
-  std::vector<int> _swtrigger_algo_passed;
-  float _opfilter_pe_beam = std::numeric_limits<float>::quiet_NaN();
-  float _opfilter_pe_veto = std::numeric_limits<float>::quiet_NaN();
+  // Union of metadata keys from PFParticleMetadata objects found in the event
+  std::vector<std::string> _pandora_metadata_keys;
 
-  std::vector<std::string> _mc_weight_names;
+  // ---------- helpers for MCGeneratorInfo (guard for LArSoft variations) ----------
+  template <typename T, typename = void>
+  struct has_GeneratorInfo : std::false_type {};
+  template <typename T>
+  struct has_GeneratorInfo<T, std::void_t<decltype(std::declval<const T&>().GeneratorInfo())>> : std::true_type {};
 
-  int _mc_nu_pdg = 0;
-  int _mc_ccnc = -1;
-  int _mc_mode = -1;
+  template <typename GI, typename = void>
+  struct has_GI_GeneratorName : std::false_type {};
+  template <typename GI>
+  struct has_GI_GeneratorName<GI, std::void_t<decltype(std::declval<const GI&>().GeneratorName())>> : std::true_type {};
 
-  std::vector<std::string> _hit_producers;
-  std::vector<int> _hit_counts;
+  template <typename GI, typename = void>
+  struct has_GI_Generator : std::false_type {};
+  template <typename GI>
+  struct has_GI_Generator<GI, std::void_t<decltype(std::declval<const GI&>().Generator())>> : std::true_type {};
 
-  std::vector<std::string> _slice_producers;
-  std::vector<int> _slice_counts;
+  template <typename GI, typename = void>
+  struct has_GI_Version : std::false_type {};
+  template <typename GI>
+  struct has_GI_Version<GI, std::void_t<decltype(std::declval<const GI&>().Version())>> : std::true_type {};
 
-  std::vector<std::string> _pfp_producers;
-  std::vector<int> _pfp_counts;
+  template <typename GI, typename = void>
+  struct has_GI_GeneratorVersion : std::false_type {};
+  template <typename GI>
+  struct has_GI_GeneratorVersion<GI, std::void_t<decltype(std::declval<const GI&>().GeneratorVersion())>> : std::true_type {};
 
-  std::vector<std::string> _track_producers;
-  std::vector<int> _track_counts;
+  template <typename GI, typename = void>
+  struct has_GI_Tune : std::false_type {};
+  template <typename GI>
+  struct has_GI_Tune<GI, std::void_t<decltype(std::declval<const GI&>().Tune())>> : std::true_type {};
 
-  std::vector<std::string> _shower_producers;
-  std::vector<int> _shower_counts;
+  template <typename GI, typename = void>
+  struct has_GI_TuneName : std::false_type {};
+  template <typename GI>
+  struct has_GI_TuneName<GI, std::void_t<decltype(std::declval<const GI&>().TuneName())>> : std::true_type {};
 
-  std::vector<std::string> _opflash_producers;
-  std::vector<int> _opflash_counts;
-
-  std::vector<std::string> _crt_producers;
-  std::vector<int> _crt_counts;
-
-  template <class VecT>
-  void collectCounts(const art::Event& e,
-                     std::vector<std::string>& producers,
-                     std::vector<int>& counts) {
-    producers.clear();
-    counts.clear();
-    std::vector<art::Handle<VecT>> handles;
-    e.getManyByType(handles);
-    producers.reserve(handles.size());
-    counts.reserve(handles.size());
-    for (auto const& h : handles) {
-      auto const* prov = h.provenance();
-      std::string label = prov ? prov->productDescription().moduleLabel() : std::string{};
-      producers.push_back(label);
-      int n = static_cast<int>(h->size());
-      counts.push_back(n);
-    }
-  }
-
-  static std::string compactFcl(const fhicl::ParameterSet& ps) {
-    std::string s = ps.to_string();
-    std::string out;
-    out.reserve(s.size());
-    bool ws = false;
-    for (char c : s) {
-      if (c == '\n' || c == '\t' || c == '\r') {
-        if (!ws) {
-          out.push_back(' ');
-          ws = true;
-        }
-        continue;
-      }
-      if (std::isspace(static_cast<unsigned char>(c))) {
-        if (!ws) {
-          out.push_back(' ');
-          ws = true;
-        }
-      } else {
-        out.push_back(c);
-        ws = false;
-      }
-    }
-    return out;
-  }
-
-  static bool get_if_present_str(const fhicl::ParameterSet& ps,
-                                 std::initializer_list<const char*> keys,
-                                 std::string& out) {
-    for (auto k : keys) {
-      if (ps.has_key(k)) {
-        try {
-          out = ps.get<std::string>(k);
-          return true;
-        } catch (...) {
-        }
-      }
-    }
-    return false;
-  }
-
-  static bool get_if_present_f(const fhicl::ParameterSet& ps,
-                               std::initializer_list<const char*> keys,
-                               float& out) {
-    for (auto k : keys) {
-      if (ps.has_key(k)) {
-        try {
-          out = ps.get<float>(k);
-          return true;
-        } catch (...) {
-        }
-      }
-    }
-    return false;
+  template <typename GI>
+  void extractGI_(const GI& gi, std::string& name, std::string& ver, std::string& tune) {
+    if constexpr (has_GI_GeneratorName<GI>::value) name = gi.GeneratorName();
+    else if constexpr (has_GI_Generator<GI>::value) name = std::to_string(static_cast<int>(gi.Generator()));
+    if constexpr (has_GI_GeneratorVersion<GI>::value) ver = std::to_string(static_cast<int>(gi.GeneratorVersion()));
+    else if constexpr (has_GI_Version<GI>::value)     ver = std::to_string(static_cast<int>(gi.Version()));
+    if constexpr (has_GI_TuneName<GI>::value)         tune = gi.TuneName();
+    else if constexpr (has_GI_Tune<GI>::value)        tune = std::to_string(static_cast<int>(gi.Tune()));
   }
 
   template <class CollT>
-  bool fillModulePSetInfo_(const art::Handle<CollT>& h,
-                           std::string& out_label,
-                           std::string& out_pset_id,
-                           fhicl::ParameterSet& out_pset,
-                           std::string* out_release = nullptr) {
+  static bool fillProvInfo_(const art::Handle<CollT>& h,
+                            std::string& module_label,
+                            std::string& process_name,
+                            std::string& release_version,
+                            std::string& pset_id)
+  {
     auto const* prov = h.provenance();
     if (!prov) return false;
-    auto const& desc = prov->productDescription();
-    out_label = desc.moduleLabel();
-
-    out_pset_id.clear();
-    auto const pset_id = prov->parameterSetID();
-    if (pset_id.isValid()) out_pset_id = pset_id.to_string();
-
-    if (out_release) {
-      out_release->clear();
-    }
-
-    try {
-      fhicl::ParameterSet ptmp;
-      if (!out_pset_id.empty() &&
-          fhicl::ParameterSetRegistry::get(fhicl::ParameterSetID{out_pset_id}, ptmp)) {
-        out_pset = std::move(ptmp);
-        return true;
-      }
-    } catch (...) {
-    }
-    return false;
+    module_label   = prov->branchDescription().moduleLabel();
+    process_name   = prov->processName();
+    release_version= prov->processConfiguration().releaseVersion();
+    pset_id        = prov->parameterSetID().to_string(); // ID only; not reading FHiCL
+    return true;
   }
 };
 
+// ---------------- setBranches: only new fields ----------------
 void MetaAnalysis_tool::setBranches(TTree* t)
 {
-  t->Branch("is_data", &_is_data, "is_data/O");
-  t->Branch("run", &_run, "run/I");
-  t->Branch("sub", &_sub, "sub/I");
-  t->Branch("evt", &_evt, "evt/I");
-  t->Branch("event_time_value", &_event_time_value, "event_time_value/l");
+  // Generator info (from MCTruth::MCGeneratorInfo)
+  t->Branch("gen_name",    &_gen_name);
+  t->Branch("gen_version", &_gen_version);
+  t->Branch("gen_tune",    &_gen_tune);
 
-  t->Branch("process_names", "std::vector<std::string>", &_process_names);
-  t->Branch("process_release_versions", "std::vector<std::string>", &_process_release_versions);
-  t->Branch("process_pset_ids", "std::vector<std::string>", &_process_pset_ids);
+  // GEANT4 provenance (largeant / MCParticle producer)
+  t->Branch("g4_module_label",   &_g4_module_label);
+  t->Branch("g4_process_name",   &_g4_process_name);
+  t->Branch("g4_release_version",&_g4_release_version);
+  t->Branch("g4_pset_id",        &_g4_pset_id);
 
-  t->Branch("generator_module_label", &_generator_module_label);
-  t->Branch("fhicl_pset_id_generator", &_fhicl_pset_id_generator);
-  t->Branch("genie_version", &_genie_version);
-  t->Branch("genie_tune", &_genie_tune);
-  t->Branch("genie_knobs_fcl", &_genie_knobs_fcl);
+  // PANDORA provenance (PFParticle producer)
+  t->Branch("pandora_module_label",   &_pandora_module_label);
+  t->Branch("pandora_process_name",   &_pandora_process_name);
+  t->Branch("pandora_release_version",&_pandora_release_version);
+  t->Branch("pandora_pset_id",        &_pandora_pset_id);
 
-  t->Branch("flux_module_label", &_flux_module_label);
-  t->Branch("fhicl_pset_id_flux", &_fhicl_pset_id_flux);
-  t->Branch("flux_tag", &_flux_tag);
-  t->Branch("flux_release", &_flux_release);
-  t->Branch("flux_hist_version", &_flux_hist_version);
-  t->Branch("horn_current", &_horn_current, "horn_current/F");
-  t->Branch("beam_mode", &_beam_mode);
-  t->Branch("beam_energy_nominal_GeV", &_beam_energy_nominal_GeV, "beam_energy_nominal_GeV/F");
-
-  t->Branch("g4_module_label", &_g4_module_label);
-  t->Branch("fhicl_pset_id_g4", &_fhicl_pset_id_g4);
-  t->Branch("geant4_release", &_geant4_release);
-  t->Branch("physics_list", &_physics_list);
-
-  t->Branch("reco_pfp_module_label", &_reco_pfp_module_label);
-  t->Branch("fhicl_pset_id_reco", &_fhicl_pset_id_reco);
-  t->Branch("pandora_version", &_pandora_version);
-  t->Branch("pandora_settings_tag", &_pandora_settings_tag);
-
-  t->Branch("swtrigger_algo_names", "std::vector<std::string>", &_swtrigger_algo_names);
-  t->Branch("swtrigger_algo_passed", "std::vector<int>", &_swtrigger_algo_passed);
-  t->Branch("opfilter_pe_beam", &_opfilter_pe_beam, "opfilter_pe_beam/F");
-  t->Branch("opfilter_pe_veto", &_opfilter_pe_veto, "opfilter_pe_veto/F");
-
-  t->Branch("mc_weight_names", "std::vector<std::string>", &_mc_weight_names);
-
-  t->Branch("mc_nu_pdg", &_mc_nu_pdg, "mc_nu_pdg/I");
-  t->Branch("mc_ccnc", &_mc_ccnc, "mc_ccnc/I");
-  t->Branch("mc_mode", &_mc_mode, "mc_mode/I");
-
-  t->Branch("hit_producers", "std::vector<std::string>", &_hit_producers);
-  t->Branch("hit_counts", "std::vector<int>", &_hit_counts);
-  t->Branch("slice_producers", "std::vector<std::string>", &_slice_producers);
-  t->Branch("slice_counts", "std::vector<int>", &_slice_counts);
-  t->Branch("pfp_producers", "std::vector<std::string>", &_pfp_producers);
-  t->Branch("pfp_counts", "std::vector<int>", &_pfp_counts);
-  t->Branch("track_producers", "std::vector<std::string>", &_track_producers);
-  t->Branch("track_counts", "std::vector<int>", &_track_counts);
-  t->Branch("shower_producers", "std::vector<std::string>", &_shower_producers);
-  t->Branch("shower_counts", "std::vector<int>", &_shower_counts);
-  t->Branch("opflash_producers", "std::vector<std::string>", &_opflash_producers);
-  t->Branch("opflash_counts", "std::vector<int>", &_opflash_counts);
-  t->Branch("crt_producers", "std::vector<std::string>", &_crt_producers);
-  t->Branch("crt_counts", "std::vector<int>", &_crt_counts);
+  // Pandora object-level metadata keys present in the file
+  t->Branch("pandora_metadata_keys", "std::vector<std::string>", &_pandora_metadata_keys);
 }
 
+// ---------------- reset ----------------
 void MetaAnalysis_tool::resetTTree(TTree*)
 {
-  _is_data = false;
-  _run = _sub = _evt = -1;
-  _event_time_value = 0ULL;
-
-  _process_names.clear();
-  _process_release_versions.clear();
-  _process_pset_ids.clear();
-
-  _generator_module_label.clear();
-  _fhicl_pset_id_generator.clear();
-  _genie_version.clear();
-  _genie_tune.clear();
-  _genie_knobs_fcl.clear();
-
-  _flux_module_label.clear();
-  _fhicl_pset_id_flux.clear();
-  _flux_tag.clear();
-  _flux_release.clear();
-  _flux_hist_version.clear();
-  _horn_current = std::numeric_limits<float>::quiet_NaN();
-  _beam_mode.clear();
-  _beam_energy_nominal_GeV = std::numeric_limits<float>::quiet_NaN();
+  _gen_name.clear(); _gen_version.clear(); _gen_tune.clear();
 
   _g4_module_label.clear();
-  _fhicl_pset_id_g4.clear();
-  _geant4_release.clear();
-  _physics_list.clear();
+  _g4_process_name.clear();
+  _g4_release_version.clear();
+  _g4_pset_id.clear();
 
-  _reco_pfp_module_label.clear();
-  _fhicl_pset_id_reco.clear();
-  _pandora_version.clear();
-  _pandora_settings_tag.clear();
+  _pandora_module_label.clear();
+  _pandora_process_name.clear();
+  _pandora_release_version.clear();
+  _pandora_pset_id.clear();
 
-  _swtrigger_algo_names.clear();
-  _swtrigger_algo_passed.clear();
-  _opfilter_pe_beam = std::numeric_limits<float>::quiet_NaN();
-  _opfilter_pe_veto = std::numeric_limits<float>::quiet_NaN();
-
-  _mc_weight_names.clear();
-
-  _mc_nu_pdg = 0;
-  _mc_ccnc = -1;
-  _mc_mode = -1;
-
-  _hit_producers.clear();
-  _hit_counts.clear();
-  _slice_producers.clear();
-  _slice_counts.clear();
-  _pfp_producers.clear();
-  _pfp_counts.clear();
-  _track_producers.clear();
-  _track_counts.clear();
-  _shower_producers.clear();
-  _shower_counts.clear();
-  _opflash_producers.clear();
-  _opflash_counts.clear();
-  _crt_producers.clear();
-  _crt_counts.clear();
+  _pandora_metadata_keys.clear();
 }
 
-void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
+// ---------------- analyseEvent ----------------
+void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
 {
-  _is_data = is_data;
-  _run = static_cast<int>(e.run());
-  _sub = static_cast<int>(e.subRun());
-  _evt = static_cast<int>(e.event());
-  try {
-    _event_time_value = e.time().value();
-  } catch (...) {
-    _event_time_value = 0ULL;
-  }
-
+  // --- generator info from MCTruth::MCGeneratorInfo (first available) ---
   {
-    _process_names.clear();
-    _process_release_versions.clear();
-    _process_pset_ids.clear();
-    auto const& ph = e.processHistory();
-    _process_names.reserve(ph.size());
-    _process_release_versions.reserve(ph.size());
-    _process_pset_ids.reserve(ph.size());
-    for (auto const& pc : ph) {
-      _process_names.emplace_back(pc.processName());
-      _process_release_versions.emplace_back(pc.releaseVersion());
-      _process_pset_ids.emplace_back(pc.parameterSetID().to_string());
-    }
-  }
-
-  {
-    std::vector<art::Handle<std::vector<simb::MCTruth>>> gens;
-    e.getManyByType(gens);
-    for (auto const& h : gens) {
-      fhicl::ParameterSet gps;
-      std::string pset_id;
-      std::string rel;
-      if (!fillModulePSetInfo_(h, _generator_module_label, _fhicl_pset_id_generator, gps, &rel)) continue;
-
-      get_if_present_str(gps, {"GenieVersion", "GENIEVersion", "genie_version"}, _genie_version);
-      get_if_present_str(gps, {"TuneName", "tune_name", "GenieTune", "genie_tune", "tune"}, _genie_tune);
-      if (gps.has_key("genie")) {
-        try {
-          auto g = gps.get<fhicl::ParameterSet>("genie");
-          get_if_present_str(g, {"version", "GenieVersion"}, _genie_version);
-          get_if_present_str(g, {"tune", "TuneName", "tune_name"}, _genie_tune);
-          if (g.has_key("reweight")) {
-            auto rw = g.get<fhicl::ParameterSet>("reweight");
-            _genie_knobs_fcl = compactFcl(rw);
-          }
-        } catch (...) {
+    auto mct_handles = e.getMany<std::vector<simb::MCTruth>>();
+    for (auto const& hmct : mct_handles) {
+      if (!hmct.isValid()) continue;
+      for (auto const& mct : *hmct) {
+        if constexpr (has_GeneratorInfo<simb::MCTruth>::value) {
+          try {
+            auto const& gi = mct.GeneratorInfo();
+            extractGI_(gi, _gen_name, _gen_version, _gen_tune);
+            if (!_gen_name.empty() || !_gen_version.empty() || !_gen_tune.empty())
+              break;
+          } catch (...) {}
         }
       }
+      if (!_gen_name.empty() || !_gen_version.empty() || !_gen_tune.empty()) break;
+    }
+  }
 
-      if (!_mc_nu_pdg && !h->empty()) {
-        for (auto const& mct : *h) {
-          if (!mct.NeutrinoSet()) continue;
-          auto const& nu = mct.GetNeutrino();
-          _mc_nu_pdg = nu.Nu().PdgCode();
-          _mc_ccnc = nu.CCNC();
-          _mc_mode = nu.Mode();
-          break;
-        }
+  // --- GEANT4 provenance (from first MCParticle collection) ---
+  {
+    auto g4_handles = e.getMany<std::vector<simb::MCParticle>>();
+    for (auto const& hg4 : g4_handles) {
+      if (!hg4.isValid()) continue;
+      if (fillProvInfo_(hg4, _g4_module_label, _g4_process_name, _g4_release_version, _g4_pset_id)) break;
+    }
+  }
+
+  // --- PANDORA provenance (from first PFParticle collection) ---
+  {
+    auto pfp_handles = e.getMany<std::vector<recob::PFParticle>>();
+    for (auto const& hpfp : pfp_handles) {
+      if (!hpfp.isValid()) continue;
+      if (fillProvInfo_(hpfp, _pandora_module_label, _pandora_process_name, _pandora_release_version, _pandora_pset_id)) break;
+    }
+  }
+
+  // --- Pandora object-level metadata keys (union across products) ---
+  {
+    _pandora_metadata_keys.clear();
+    std::set<std::string> allkeys;
+    auto md_handles = e.getMany<std::vector<larpandoraobj::PFParticleMetadata>>();
+    for (auto const& hmd : md_handles) {
+      if (!hmd.isValid()) continue;
+      for (auto const& md : *hmd) {
+        auto const& m = md.GetPropertiesMap();
+        for (auto const& kv : m) allkeys.insert(kv.first);
       }
-
-      break;
     }
+    _pandora_metadata_keys.assign(allkeys.begin(), allkeys.end());
   }
-
-  {
-    std::vector<art::Handle<std::vector<simb::MCFlux>>> fluxes;
-    e.getManyByType(fluxes);
-    for (auto const& h : fluxes) {
-      fhicl::ParameterSet fps;
-      std::string pset_id;
-      std::string rel;
-      if (!fillModulePSetInfo_(h, _flux_module_label, _fhicl_pset_id_flux, fps, &rel)) continue;
-
-      get_if_present_str(fps, {"flux_tag", "FluxTag"}, _flux_tag);
-      get_if_present_str(fps, {"flux_release", "FluxRelease"}, _flux_release);
-      get_if_present_str(fps, {"flux_hist_version", "FluxHistVersion"}, _flux_hist_version);
-      get_if_present_str(fps, {"BeamMode", "beam_mode", "nu_mode"}, _beam_mode);
-      get_if_present_f(fps, {"HornCurrent", "horn_current_kA", "horncurrent"}, _horn_current);
-      get_if_present_f(fps, {"BeamEnergyGeV", "beam_energy_GeV", "ProtonMomentumGeV"}, _beam_energy_nominal_GeV);
-      break;
-    }
-  }
-
-  {
-    std::vector<art::Handle<std::vector<simb::MCParticle>>> g4s;
-    e.getManyByType(g4s);
-    for (auto const& h : g4s) {
-      fhicl::ParameterSet g4ps;
-      std::string pset_id;
-      std::string rel;
-      if (!fillModulePSetInfo_(h, _g4_module_label, _fhicl_pset_id_g4, g4ps, &rel)) continue;
-      _geant4_release = rel;
-      get_if_present_str(g4ps, {"PhysicsList", "physics_list", "G4PhysList", "Geant4PhysList"}, _physics_list);
-      break;
-    }
-  }
-
-  {
-    std::vector<art::Handle<std::vector<recob::PFParticle>>> pfps;
-    e.getManyByType(pfps);
-    for (auto const& h : pfps) {
-      fhicl::ParameterSet rps;
-      std::string pset_id;
-      std::string rel;
-      if (!fillModulePSetInfo_(h, _reco_pfp_module_label, _fhicl_pset_id_reco, rps, &rel)) continue;
-      get_if_present_str(rps, {"PandoraVersion", "pandora_version", "Version"}, _pandora_version);
-      get_if_present_str(rps, {"PandoraSettings", "PandoraSettingsTag", "ConfigFile", "settings_file"}, _pandora_settings_tag);
-      break;
-    }
-  }
-
-  {
-    _swtrigger_algo_names.clear();
-    _swtrigger_algo_passed.clear();
-    std::vector<art::Handle<raw::ubdaqSoftwareTriggerData>> trigHandles;
-    e.getManyByType(trigHandles);
-    for (auto const& h : trigHandles) {
-      auto names = h->getListOfAlgorithms();
-      _swtrigger_algo_names.assign(names.begin(), names.end());
-      _swtrigger_algo_passed.reserve(_swtrigger_algo_names.size());
-      for (auto const& nm : _swtrigger_algo_names) {
-        int pass = 0;
-        try {
-          pass = h->passedAlgo(nm) ? 1 : 0;
-        } catch (...) {
-          pass = 0;
-        }
-        _swtrigger_algo_passed.push_back(pass);
-      }
-      break;
-    }
-  }
-
-  {
-    std::vector<art::Handle<uboone::UbooneOpticalFilter>> oph;
-    e.getManyByType(oph);
-    for (auto const& h : oph) {
-      _opfilter_pe_beam = h->PE_Beam();
-      _opfilter_pe_veto = h->PE_Veto();
-      break;
-    }
-  }
-
-  {
-    _mc_weight_names.clear();
-    std::set<std::string> names;
-    std::vector<art::Handle<std::vector<evwgh::MCEventWeight>>> wgh;
-    e.getManyByType(wgh);
-    for (auto const& h : wgh) {
-      for (auto const& w : *h) {
-        try {
-          for (auto const& kv : w.fWeight) names.insert(kv.first);
-        } catch (...) {
-        }
-      }
-      if (!names.empty()) break;
-    }
-    _mc_weight_names.assign(names.begin(), names.end());
-  }
-
-  collectCounts<std::vector<recob::Hit>>(e, _hit_producers, _hit_counts);
-  collectCounts<std::vector<recob::Slice>>(e, _slice_producers, _slice_counts);
-  collectCounts<std::vector<recob::PFParticle>>(e, _pfp_producers, _pfp_counts);
-  collectCounts<std::vector<recob::Track>>(e, _track_producers, _track_counts);
-  collectCounts<std::vector<recob::Shower>>(e, _shower_producers, _shower_counts);
-  collectCounts<std::vector<recob::OpFlash>>(e, _opflash_producers, _opflash_counts);
-  collectCounts<std::vector<crt::CRTHit>>(e, _crt_producers, _crt_counts);
 }
 
-}
+} // namespace analysis
 
 DEFINE_ART_CLASS_TOOL(analysis::MetaAnalysis_tool)
 
-#endif
+#endif // METAANALYSIS_TOOL_CXX
