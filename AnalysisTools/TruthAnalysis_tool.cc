@@ -27,7 +27,6 @@
 #include "TTree.h"
 #include "TVector3.h"
 #include <cmath>
-#include <unordered_map>
 #include <limits>
 #include <string>
 #include <vector>
@@ -59,16 +58,6 @@ private:
     float fFidvolYend;
     float fFidvolZstart;
     float fFidvolZend;
-
-    struct InclusiveStrangenessResult {
-        bool has_inclusive_strangeness = false;
-        int n_phi = 0;
-        bool has_phi_daughter = false;
-        bool has_heavy_feeddown = false;
-    };
-
-    bool HasInclusiveStrangeness(const std::vector<simb::MCParticle>& parts,
-                                 InclusiveStrangenessResult* out = nullptr) const;
 
     int _neutrino_pdg;
     int _interaction_ccnc;
@@ -186,10 +175,6 @@ private:
     float _true_total_momentum;
     float _true_visible_total_momentum;
     float _true_visible_energy;
-    bool _has_inclusive_strangeness;
-    int _n_phi;
-    bool _has_phi_daughter;
-    bool _has_heavy_feeddown;
 
     void CollectDescendants(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h, const std::map<int, art::Ptr<simb::MCParticle>>& mcParticleMap, const art::Ptr<simb::MCParticle>& part, int primary_index);
 };
@@ -333,10 +318,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("true_total_momentum", &_true_total_momentum, "true_total_momentum/F");
     _tree->Branch("true_visible_total_momentum", &_true_visible_total_momentum, "true_visible_total_momentum/F");
     _tree->Branch("true_visible_energy", &_true_visible_energy, "true_visible_energy/F");
-    _tree->Branch("has_inclusive_strangeness", &_has_inclusive_strangeness, "has_inclusive_strangeness/O");
-    _tree->Branch("n_phi", &_n_phi, "n_phi/I");
-    _tree->Branch("has_phi_daughter", &_has_phi_daughter, "has_phi_daughter/O");
-    _tree->Branch("has_heavy_feeddown", &_has_heavy_feeddown, "has_heavy_feeddown/O");
 }
 
 void TruthAnalysis::resetTTree(TTree* tree) {
@@ -456,10 +437,6 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _true_total_momentum = 0;
     _true_visible_total_momentum = 0;
     _true_visible_energy = 0;
-    _has_inclusive_strangeness = false;
-    _n_phi = 0;
-    _has_phi_daughter = false;
-    _has_heavy_feeddown = false;
 }
 
 void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) {
@@ -539,84 +516,6 @@ void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             _mc_allchain_completeness[j] = 0.0;
         }
     }
-}
-
-bool TruthAnalysis::HasInclusiveStrangeness(const std::vector<simb::MCParticle>& parts,
-                                            InclusiveStrangenessResult* out) const {
-    const auto is_phi = [](int pdg) { return std::abs(pdg) == 333; };
-    const auto is_kaon = [](int pdg) {
-        int a = std::abs(pdg);
-        return a == 321 || a == 311 || a == 310 || a == 130;
-    };
-    const auto is_s_baryon = [](int pdg) {
-        switch (std::abs(pdg)) {
-            case 3122:
-            case 3112:
-            case 3212:
-            case 3222:
-            case 3312:
-            case 3322:
-            case 3334:
-                return true;
-            default:
-                return false;
-        }
-    };
-    const auto is_charm_hadron = [](int pdg) {
-        int a = std::abs(pdg);
-        return ((400 < a && a < 500 && a != 441 && a != 443 && a != 445) ||
-                (4000 < a && a < 5000));
-    };
-    const auto is_tau = [](int pdg) { return std::abs(pdg) == 15; };
-
-    InclusiveStrangenessResult res;
-    std::unordered_map<int, const simb::MCParticle*> lookup;
-    std::vector<int> fs_ids;
-    for (auto const& p : parts) {
-        lookup[p.TrackId()] = &p;
-        if (!(p.StatusCode() == 1 && p.Process() == "primary")) continue;
-        fs_ids.push_back(p.TrackId());
-        if (is_phi(p.PdgCode())) ++res.n_phi;
-    }
-
-    for (int id : fs_ids) {
-        auto const& h = *lookup[id];
-        int pdg = h.PdgCode();
-        if (!(is_kaon(pdg) || is_s_baryon(pdg))) continue;
-
-        if (is_kaon(pdg)) {
-            auto it = lookup.find(h.Mother());
-            if (it != lookup.end()) {
-                auto const* m = it->second;
-                if (m->StatusCode() == 1 && m->Process() == "primary" && is_phi(m->PdgCode())) {
-                    res.has_phi_daughter = true;
-                    continue;
-                }
-            }
-        }
-
-        const simb::MCParticle* cur = &h;
-        bool drop = false;
-        for (int step = 0; step < 16; ++step) {
-            auto it = lookup.find(cur->Mother());
-            if (it == lookup.end()) break;
-            cur = it->second;
-            int mPdg = cur->PdgCode();
-            if (is_charm_hadron(mPdg) || is_tau(mPdg)) {
-                res.has_heavy_feeddown = true;
-                drop = true;
-                break;
-            }
-            if (cur->StatusCode() == 1 && cur->Process() == "primary") break;
-        }
-        if (drop) continue;
-
-        res.has_inclusive_strangeness = true;
-        break;
-    }
-
-    if (out) *out = res;
-    return res.has_inclusive_strangeness;
 }
 
 void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
@@ -713,11 +612,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _true_visible_energy = total_visible_momentum.E();
 
     auto const& mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
-    InclusiveStrangenessResult strangeness;
-    _has_inclusive_strangeness = HasInclusiveStrangeness(*mcp_h, &strangeness);
-    _n_phi = strangeness.n_phi;
-    _has_phi_daughter = strangeness.has_phi_daughter;
-    _has_heavy_feeddown = strangeness.has_heavy_feeddown;
     std::map<int, art::Ptr<simb::MCParticle>> mcParticleMap;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         mcParticleMap[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
