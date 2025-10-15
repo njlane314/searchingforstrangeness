@@ -30,6 +30,9 @@
 #include <limits>
 #include <string>
 #include <vector>
+// Explicit STL deps used below
+#include <map>
+#include <algorithm>
 
 namespace analysis {
 
@@ -149,34 +152,11 @@ private:
     std::vector<std::vector<float>> _mc_daughter_vtx_x;
     std::vector<std::vector<float>> _mc_daughter_vtx_y;
     std::vector<std::vector<float>> _mc_daughter_vtx_z;
-    std::vector<int> _mc_allchain_primary_index;
-    std::vector<int> _mc_allchain_trackid;
-    std::vector<int> _mc_allchain_pdg;
-    std::vector<float> _mc_allchain_energy;
-    std::vector<uint> _mc_allchain_elastic_scatters;
-    std::vector<uint> _mc_allchain_inelastic_scatters;
-    std::vector<float> _mc_allchain_momentum_x;
-    std::vector<float> _mc_allchain_momentum_y;
-    std::vector<float> _mc_allchain_momentum_z;
-    std::vector<float> _mc_allchain_end_momentum;
-    std::vector<float> _mc_allchain_start_vertex_x;
-    std::vector<float> _mc_allchain_start_vertex_y;
-    std::vector<float> _mc_allchain_start_vertex_z;
-    std::vector<float> _mc_allchain_end_vertex_x;
-    std::vector<float> _mc_allchain_end_vertex_y;
-    std::vector<float> _mc_allchain_end_vertex_z;
-    std::vector<int> _mc_allchain_parent_trackid;
-    std::vector<std::string> _mc_allchain_process;
-    std::vector<std::string> _mc_allchain_final_state;
-    std::vector<float> _mc_allchain_completeness;
-    std::vector<float> _mc_allchain_purity;
     float _true_transverse_momentum;
     float _true_visible_transverse_momentum;
     float _true_total_momentum;
     float _true_visible_total_momentum;
     float _true_visible_energy;
-
-    void CollectDescendants(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h, const std::map<int, art::Ptr<simb::MCParticle>>& mcParticleMap, const art::Ptr<simb::MCParticle>& part, int primary_index);
 };
 
 TruthAnalysis::TruthAnalysis(fhicl::ParameterSet const& p) {
@@ -202,122 +182,124 @@ void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
 }
 
 void TruthAnalysis::setBranches(TTree* _tree) {
-    _tree->Branch("neutrino_pdg", &_neutrino_pdg, "neutrino_pdg/I");
-    _tree->Branch("interaction_ccnc", &_interaction_ccnc, "interaction_ccnc/I");
-    _tree->Branch("interaction_mode", &_interaction_mode, "interaction_mode/I");
-    _tree->Branch("interaction_type", &_interaction_type, "interaction_type/I");
-    _tree->Branch("neutrino_energy", &_neutrino_energy, "neutrino_energy/F");
-    _tree->Branch("neutrino_theta", &_neutrino_theta, "neutrino_theta/F");
-    _tree->Branch("neutrino_pt", &_neutrino_pt, "neutrino_pt/F");
-    _tree->Branch("target_nucleus_pdg", &_target_nucleus_pdg, "target_nucleus_pdg/I");
-    _tree->Branch("hit_nucleon_pdg", &_hit_nucleon_pdg, "hit_nucleon_pdg/I");
-    _tree->Branch("kinematic_W", &_kinematic_W, "kinematic_W/F");
-    _tree->Branch("kinematic_X", &_kinematic_X, "kinematic_X/F");
-    _tree->Branch("kinematic_Y", &_kinematic_Y, "kinematic_Y/F");
-    _tree->Branch("kinematic_Q_squared", &_kinematic_Q_squared, "kinematic_Q_squared/F");
-    _tree->Branch("neutrino_momentum_x", &_neutrino_momentum_x, "neutrino_momentum_x/F");
-    _tree->Branch("neutrino_momentum_y", &_neutrino_momentum_y, "neutrino_momentum_y/F");
-    _tree->Branch("neutrino_momentum_z", &_neutrino_momentum_z, "neutrino_momentum_z/F");
-    _tree->Branch("neutrino_vertex_x", &_neutrino_vertex_x, "neutrino_vertex_x/F");
-    _tree->Branch("neutrino_vertex_y", &_neutrino_vertex_y, "neutrino_vertex_y/F");
-    _tree->Branch("neutrino_vertex_z", &_neutrino_vertex_z, "neutrino_vertex_z/F");
-    _tree->Branch("neutrino_vertex_wire_u", &_neutrino_vertex_wire_u, "neutrino_vertex_wire_u/F");
-    _tree->Branch("neutrino_vertex_wire_v", &_neutrino_vertex_wire_v, "neutrino_vertex_wire_v/F");
-    _tree->Branch("neutrino_vertex_wire_w", &_neutrino_vertex_wire_w, "neutrino_vertex_wire_w/F");
-    _tree->Branch("neutrino_vertex_time", &_neutrino_vertex_time, "neutrino_vertex_time/F");
-    _tree->Branch("neutrino_sce_vertex_x", &_neutrino_sce_vertex_x, "neutrino_sce_vertex_x/F");
-    _tree->Branch("neutrino_sce_vertex_y", &_neutrino_sce_vertex_y, "neutrino_sce_vertex_y/F");
-    _tree->Branch("neutrino_sce_vertex_z", &_neutrino_sce_vertex_z, "neutrino_sce_vertex_z/F");
-    _tree->Branch("lepton_energy", &_lepton_energy, "lepton_energy/F");
-    _tree->Branch("true_neutrino_momentum_x", &_true_neutrino_momentum_x, "true_neutrino_momentum_x/F");
-    _tree->Branch("true_neutrino_momentum_y", &_true_neutrino_momentum_y, "true_neutrino_momentum_y/F");
-    _tree->Branch("true_neutrino_momentum_z", &_true_neutrino_momentum_z, "true_neutrino_momentum_z/F");
-    _tree->Branch("flux_path_length", &_flux_path_length, "flux_path_length/F");
-    _tree->Branch("flux_parent_pdg", &_flux_parent_pdg, "flux_parent_pdg/I");
-    _tree->Branch("flux_hadron_pdg", &_flux_hadron_pdg, "flux_hadron_pdg/I");
-    _tree->Branch("flux_decay_mode", &_flux_decay_mode, "flux_decay_mode/I");
-    _tree->Branch("flux_decay_vtx_x", &_flux_decay_vtx_x, "flux_decay_vtx_x/D");
-    _tree->Branch("flux_decay_vtx_y", &_flux_decay_vtx_y, "flux_decay_vtx_y/D");
-    _tree->Branch("flux_decay_vtx_z", &_flux_decay_vtx_z, "flux_decay_vtx_z/D");
-    _tree->Branch("flux_decay_mom_x", &_flux_decay_mom_x, "flux_decay_mom_x/D");
-    _tree->Branch("flux_decay_mom_y", &_flux_decay_mom_y, "flux_decay_mom_y/D");
-    _tree->Branch("flux_decay_mom_z", &_flux_decay_mom_z, "flux_decay_mom_z/D");
-    _tree->Branch("numi_baseline", &_numi_baseline, "numi_baseline/D");
-    _tree->Branch("numi_off_axis_angle", &_numi_off_axis_angle, "numi_off_axis_angle/F");
-    _tree->Branch("bnb_baseline", &_bnb_baseline, "bnb_baseline/D");
-    _tree->Branch("bnb_off_axis_angle", &_bnb_off_axis_angle, "bnb_off_axis_angle/F");
-    _tree->Branch("is_vertex_in_fiducial", &_is_vertex_in_fiducial, "is_vertex_in_fiducial/O");
-    _tree->Branch("count_mu_minus", &_count_mu_minus, "count_mu_minus/I");
-    _tree->Branch("count_mu_plus", &_count_mu_plus, "count_mu_plus/I");
-    _tree->Branch("count_e_minus", &_count_e_minus, "count_e_minus/I");
-    _tree->Branch("count_e_plus", &_count_e_plus, "count_e_plus/I");
-    _tree->Branch("count_pi_zero", &_count_pi_zero, "count_pi_zero/I");
-    _tree->Branch("count_pi_plus", &_count_pi_plus, "count_pi_plus/I");
-    _tree->Branch("count_pi_minus", &_count_pi_minus, "count_pi_minus/I");
-    _tree->Branch("count_kaon_plus", &_count_kaon_plus, "count_kaon_plus/I");
-    _tree->Branch("count_kaon_minus", &_count_kaon_minus, "count_kaon_minus/I");
-    _tree->Branch("count_kaon_zero", &_count_kaon_zero, "count_kaon_zero/I");
-    _tree->Branch("count_proton", &_count_proton, "count_proton/I");
-    _tree->Branch("count_neutron", &_count_neutron, "count_neutron/I");
-    _tree->Branch("count_gamma", &_count_gamma, "count_gamma/I");
-    _tree->Branch("count_lambda", &_count_lambda, "count_lambda/I");
-    _tree->Branch("count_sigma_plus", &_count_sigma_plus, "count_sigma_plus/I");
-    _tree->Branch("count_sigma_zero", &_count_sigma_zero, "count_sigma_zero/I");
-    _tree->Branch("count_sigma_minus", &_count_sigma_minus, "count_sigma_minus/I");
-    _tree->Branch("mc_particle_pdg", "std::vector<int>", &_mc_particle_pdg);
-    _tree->Branch("mc_particle_trackid", "std::vector<int>", &_mc_particle_trackid);
-    _tree->Branch("mc_particle_energy", "std::vector<float>", &_mc_particle_energy);
-    _tree->Branch("mc_elastic_scatters", "std::vector<uint>", &_mc_elastic_scatters);
-    _tree->Branch("mc_inelastic_scatters", "std::vector<uint>", &_mc_inelastic_scatters);
-    _tree->Branch("mc_momentum_x", "std::vector<float>", &_mc_momentum_x);
-    _tree->Branch("mc_momentum_y", "std::vector<float>", &_mc_momentum_y);
-    _tree->Branch("mc_momentum_z", "std::vector<float>", &_mc_momentum_z);
-    _tree->Branch("mc_end_momentum", "std::vector<float>", &_mc_end_momentum);
-    _tree->Branch("mc_start_vertex_x", "std::vector<float>", &_mc_start_vertex_x);
-    _tree->Branch("mc_start_vertex_y", "std::vector<float>", &_mc_start_vertex_y);
-    _tree->Branch("mc_start_vertex_z", "std::vector<float>", &_mc_start_vertex_z);
-    _tree->Branch("mc_end_vertex_x", "std::vector<float>", &_mc_end_vertex_x);
-    _tree->Branch("mc_end_vertex_y", "std::vector<float>", &_mc_end_vertex_y);
-    _tree->Branch("mc_end_vertex_z", "std::vector<float>", &_mc_end_vertex_z);
-    _tree->Branch("mc_particle_final_state", "std::vector<std::string>", &_mc_particle_final_state);
-    _tree->Branch("mc_completeness", "std::vector<float>", &_mc_completeness);
-    _tree->Branch("mc_purity", "std::vector<float>", &_mc_purity);
-    _tree->Branch("mc_daughter_pdg", "std::vector<std::vector<int>>", &_mc_daughter_pdg);
-    _tree->Branch("mc_daughter_energy", "std::vector<std::vector<float>>", &_mc_daughter_energy);
-    _tree->Branch("mc_daughter_process_flat", "std::vector<std::string>", &_mc_daughter_process_flat);
-    _tree->Branch("mc_daughter_process_idx", "std::vector<size_t>", &_mc_daughter_process_idx);
-    _tree->Branch("mc_daughter_mom_x", "std::vector<std::vector<float>>", &_mc_daughter_mom_x);
-    _tree->Branch("mc_daughter_mom_y", "std::vector<std::vector<float>>", &_mc_daughter_mom_y);
-    _tree->Branch("mc_daughter_mom_z", "std::vector<std::vector<float>>", &_mc_daughter_mom_z);
-    _tree->Branch("mc_daughter_vtx_x", "std::vector<std::vector<float>>", &_mc_daughter_vtx_x);
-    _tree->Branch("mc_daughter_vtx_y", "std::vector<std::vector<float>>", &_mc_daughter_vtx_y);
-    _tree->Branch("mc_daughter_vtx_z", "std::vector<std::vector<float>>", &_mc_daughter_vtx_z);
-    _tree->Branch("mc_allchain_primary_index", "std::vector<int>", &_mc_allchain_primary_index);
-    _tree->Branch("mc_allchain_trackid", "std::vector<int>", &_mc_allchain_trackid);
-    _tree->Branch("mc_allchain_pdg", "std::vector<int>", &_mc_allchain_pdg);
-    _tree->Branch("mc_allchain_energy", "std::vector<float>", &_mc_allchain_energy);
-    _tree->Branch("mc_allchain_elastic_scatters", "std::vector<uint>", &_mc_allchain_elastic_scatters);
-    _tree->Branch("mc_allchain_inelastic_scatters", "std::vector<uint>", &_mc_allchain_inelastic_scatters);
-    _tree->Branch("mc_allchain_momentum_x", "std::vector<float>", &_mc_allchain_momentum_x);
-    _tree->Branch("mc_allchain_momentum_y", "std::vector<float>", &_mc_allchain_momentum_y);
-    _tree->Branch("mc_allchain_momentum_z", "std::vector<float>", &_mc_allchain_momentum_z);
-    _tree->Branch("mc_allchain_end_momentum", "std::vector<float>", &_mc_allchain_end_momentum);
-    _tree->Branch("mc_allchain_start_vertex_x", "std::vector<float>", &_mc_allchain_start_vertex_x);
-    _tree->Branch("mc_allchain_start_vertex_y", "std::vector<float>", &_mc_allchain_start_vertex_y);
-    _tree->Branch("mc_allchain_start_vertex_z", "std::vector<float>", &_mc_allchain_start_vertex_z);
-    _tree->Branch("mc_allchain_end_vertex_x", "std::vector<float>", &_mc_allchain_end_vertex_x);
-    _tree->Branch("mc_allchain_end_vertex_y", "std::vector<float>", &_mc_allchain_end_vertex_y);
-    _tree->Branch("mc_allchain_end_vertex_z", "std::vector<float>", &_mc_allchain_end_vertex_z);
-    _tree->Branch("mc_allchain_parent_trackid", "std::vector<int>", &_mc_allchain_parent_trackid);
-    _tree->Branch("mc_allchain_process", "std::vector<std::string>", &_mc_allchain_process);
-    _tree->Branch("mc_allchain_final_state", "std::vector<std::string>", &_mc_allchain_final_state);
-    _tree->Branch("mc_allchain_completeness", "std::vector<float>", &_mc_allchain_completeness);
-    _tree->Branch("mc_allchain_purity", "std::vector<float>", &_mc_allchain_purity);
-    _tree->Branch("true_transverse_momentum", &_true_transverse_momentum, "true_transverse_momentum/F");
-    _tree->Branch("true_visible_transverse_momentum", &_true_visible_transverse_momentum, "true_visible_transverse_momentum/F");
-    _tree->Branch("true_total_momentum", &_true_total_momentum, "true_total_momentum/F");
-    _tree->Branch("true_visible_total_momentum", &_true_visible_total_momentum, "true_visible_total_momentum/F");
-    _tree->Branch("true_visible_energy", &_true_visible_energy, "true_visible_energy/F");
+    // ---- Interaction & neutrino summary ----
+    _tree->Branch("nu_pdg",              &_neutrino_pdg,          "nu_pdg/I");
+    _tree->Branch("int_ccnc",            &_interaction_ccnc,      "int_ccnc/I");
+    _tree->Branch("int_mode",            &_interaction_mode,      "int_mode/I");
+    _tree->Branch("int_type",            &_interaction_type,      "int_type/I");
+    _tree->Branch("nu_E",                &_neutrino_energy,       "nu_E/F");
+    _tree->Branch("nu_theta",            &_neutrino_theta,        "nu_theta/F");
+    _tree->Branch("nu_pt",               &_neutrino_pt,           "nu_pt/F");
+    _tree->Branch("tgt_pdg",             &_target_nucleus_pdg,    "tgt_pdg/I");
+    _tree->Branch("struck_nucleon_pdg",  &_hit_nucleon_pdg,       "struck_nucleon_pdg/I");
+
+    _tree->Branch("kin_W",               &_kinematic_W,           "kin_W/F");
+    _tree->Branch("bjorken_x",           &_kinematic_X,           "bjorken_x/F");
+    _tree->Branch("inelasticity_y",      &_kinematic_Y,           "inelasticity_y/F");
+    _tree->Branch("Q2",                  &_kinematic_Q_squared,   "Q2/F");
+
+    // ---- Neutrino 4-mom + vertex ----
+    _tree->Branch("nu_px",               &_neutrino_momentum_x,   "nu_px/F");
+    _tree->Branch("nu_py",               &_neutrino_momentum_y,   "nu_py/F");
+    _tree->Branch("nu_pz",               &_neutrino_momentum_z,   "nu_pz/F");
+
+    _tree->Branch("nu_vtx_x",            &_neutrino_vertex_x,     "nu_vtx_x/F");
+    _tree->Branch("nu_vtx_y",            &_neutrino_vertex_y,     "nu_vtx_y/F");
+    _tree->Branch("nu_vtx_z",            &_neutrino_vertex_z,     "nu_vtx_z/F");
+    _tree->Branch("nu_vtx_wire_u",       &_neutrino_vertex_wire_u,"nu_vtx_wire_u/F");
+    _tree->Branch("nu_vtx_wire_v",       &_neutrino_vertex_wire_v,"nu_vtx_wire_v/F");
+    _tree->Branch("nu_vtx_wire_w",       &_neutrino_vertex_wire_w,"nu_vtx_wire_w/F");
+    _tree->Branch("nu_vtx_t",            &_neutrino_vertex_time,  "nu_vtx_t/F");
+
+    _tree->Branch("nu_vtx_sce_x",        &_neutrino_sce_vertex_x, "nu_vtx_sce_x/F");
+    _tree->Branch("nu_vtx_sce_y",        &_neutrino_sce_vertex_y, "nu_vtx_sce_y/F");
+    _tree->Branch("nu_vtx_sce_z",        &_neutrino_sce_vertex_z, "nu_vtx_sce_z/F");
+
+    _tree->Branch("lep_E",               &_lepton_energy,         "lep_E/F");
+
+    // (kept) duplicate of nu_p{xyz} for backward compat, renamed clearly
+    _tree->Branch("nu_true_px",          &_true_neutrino_momentum_x, "nu_true_px/F");
+    _tree->Branch("nu_true_py",          &_true_neutrino_momentum_y, "nu_true_py/F");
+    _tree->Branch("nu_true_pz",          &_true_neutrino_momentum_z, "nu_true_pz/F");
+
+    // ---- Flux / beam geometry ----
+    _tree->Branch("flux_path_len",       &_flux_path_length,      "flux_path_len/F");
+    _tree->Branch("flux_parent_pdg",     &_flux_parent_pdg,       "flux_parent_pdg/I");
+    _tree->Branch("flux_hadron_pdg",     &_flux_hadron_pdg,       "flux_hadron_pdg/I");
+    _tree->Branch("flux_decay_mode",     &_flux_decay_mode,       "flux_decay_mode/I");
+    _tree->Branch("flux_decay_vtx_x",    &_flux_decay_vtx_x,      "flux_decay_vtx_x/D");
+    _tree->Branch("flux_decay_vtx_y",    &_flux_decay_vtx_y,      "flux_decay_vtx_y/D");
+    _tree->Branch("flux_decay_vtx_z",    &_flux_decay_vtx_z,      "flux_decay_vtx_z/D");
+    _tree->Branch("flux_decay_px",       &_flux_decay_mom_x,      "flux_decay_px/D");
+    _tree->Branch("flux_decay_py",       &_flux_decay_mom_y,      "flux_decay_py/D");
+    _tree->Branch("flux_decay_pz",       &_flux_decay_mom_z,      "flux_decay_pz/D");
+
+    _tree->Branch("numi_L",              &_numi_baseline,         "numi_L/D");
+    _tree->Branch("numi_offaxis_deg",    &_numi_off_axis_angle,   "numi_offaxis_deg/F");
+    _tree->Branch("bnb_L",               &_bnb_baseline,          "bnb_L/D");
+    _tree->Branch("bnb_offaxis_deg",     &_bnb_off_axis_angle,    "bnb_offaxis_deg/F");
+
+    _tree->Branch("nu_vtx_in_fv",        &_is_vertex_in_fiducial, "nu_vtx_in_fv/O");
+
+    // ---- Final-state counts (threshold-free) ----
+    _tree->Branch("n_mu_minus",          &_count_mu_minus,   "n_mu_minus/I");
+    _tree->Branch("n_mu_plus",           &_count_mu_plus,    "n_mu_plus/I");
+    _tree->Branch("n_e_minus",           &_count_e_minus,    "n_e_minus/I");
+    _tree->Branch("n_e_plus",            &_count_e_plus,     "n_e_plus/I");
+    _tree->Branch("n_pi0",               &_count_pi_zero,    "n_pi0/I");
+    _tree->Branch("n_pi_plus",           &_count_pi_plus,    "n_pi_plus/I");
+    _tree->Branch("n_pi_minus",          &_count_pi_minus,   "n_pi_minus/I");
+    _tree->Branch("n_K_plus",            &_count_kaon_plus,  "n_K_plus/I");
+    _tree->Branch("n_K_minus",           &_count_kaon_minus, "n_K_minus/I");
+    _tree->Branch("n_K0",                &_count_kaon_zero,  "n_K0/I");
+    _tree->Branch("n_p",                 &_count_proton,     "n_p/I");
+    _tree->Branch("n_n",                 &_count_neutron,    "n_n/I");
+    _tree->Branch("n_gamma",             &_count_gamma,      "n_gamma/I");
+    _tree->Branch("n_lambda",            &_count_lambda,     "n_lambda/I");
+    _tree->Branch("n_sigma_plus",        &_count_sigma_plus, "n_sigma_plus/I");
+    _tree->Branch("n_sigma0",            &_count_sigma_zero, "n_sigma0/I");
+    _tree->Branch("n_sigma_minus",       &_count_sigma_minus,"n_sigma_minus/I");
+
+    // ---- Primary particles ----
+    _tree->Branch("prim_pdg",            "std::vector<int>",               &_mc_particle_pdg);
+    _tree->Branch("prim_track_id",       "std::vector<int>",               &_mc_particle_trackid);
+    _tree->Branch("prim_E",              "std::vector<float>",             &_mc_particle_energy);
+    _tree->Branch("prim_n_scat_elastic", "std::vector<uint>",              &_mc_elastic_scatters);
+    _tree->Branch("prim_n_scat_inelastic","std::vector<uint>",             &_mc_inelastic_scatters);
+    _tree->Branch("prim_px",             "std::vector<float>",             &_mc_momentum_x);
+    _tree->Branch("prim_py",             "std::vector<float>",             &_mc_momentum_y);
+    _tree->Branch("prim_pz",             "std::vector<float>",             &_mc_momentum_z);
+    _tree->Branch("prim_p_end",          "std::vector<float>",             &_mc_end_momentum);
+    _tree->Branch("prim_vx",             "std::vector<float>",             &_mc_start_vertex_x);
+    _tree->Branch("prim_vy",             "std::vector<float>",             &_mc_start_vertex_y);
+    _tree->Branch("prim_vz",             "std::vector<float>",             &_mc_start_vertex_z);
+    _tree->Branch("prim_end_x",          "std::vector<float>",             &_mc_end_vertex_x);
+    _tree->Branch("prim_end_y",          "std::vector<float>",             &_mc_end_vertex_y);
+    _tree->Branch("prim_end_z",          "std::vector<float>",             &_mc_end_vertex_z);
+    _tree->Branch("prim_final_state",    "std::vector<std::string>",       &_mc_particle_final_state);
+
+    // Backtracking metrics
+    _tree->Branch("prim_bt_completeness","std::vector<float>",             &_mc_completeness);
+    _tree->Branch("prim_bt_purity",      "std::vector<float>",             &_mc_purity);
+
+    // ---- Direct daughters ----
+    _tree->Branch("prim_dau_pdg",        "std::vector<std::vector<int>>",  &_mc_daughter_pdg);
+    _tree->Branch("prim_dau_E",          "std::vector<std::vector<float>>",&_mc_daughter_energy);
+    _tree->Branch("prim_dau_process_flat","std::vector<std::string>",      &_mc_daughter_process_flat);
+    _tree->Branch("prim_dau_process_idx","std::vector<size_t>",            &_mc_daughter_process_idx);
+    _tree->Branch("prim_dau_px",         "std::vector<std::vector<float>>",&_mc_daughter_mom_x);
+    _tree->Branch("prim_dau_py",         "std::vector<std::vector<float>>",&_mc_daughter_mom_y);
+    _tree->Branch("prim_dau_pz",         "std::vector<std::vector<float>>",&_mc_daughter_mom_z);
+    _tree->Branch("prim_dau_vx",         "std::vector<std::vector<float>>",&_mc_daughter_vtx_x);
+    _tree->Branch("prim_dau_vy",         "std::vector<std::vector<float>>",&_mc_daughter_vtx_y);
+    _tree->Branch("prim_dau_vz",         "std::vector<std::vector<float>>",&_mc_daughter_vtx_z);
+
+    // ---- Event-level vector sums ----
+    _tree->Branch("sum_pt_true",         &_true_transverse_momentum,        "sum_pt_true/F");
+    _tree->Branch("sum_pt_vis",          &_true_visible_transverse_momentum,"sum_pt_vis/F");
+    _tree->Branch("sum_p_true",          &_true_total_momentum,             "sum_p_true/F");
+    _tree->Branch("sum_p_vis",           &_true_visible_total_momentum,     "sum_p_vis/F");
+    _tree->Branch("sum_E_vis",           &_true_visible_energy,             "sum_E_vis/F");
 }
 
 void TruthAnalysis::resetTTree(TTree* tree) {
@@ -411,27 +393,6 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _mc_daughter_vtx_x.clear();
     _mc_daughter_vtx_y.clear();
     _mc_daughter_vtx_z.clear();
-    _mc_allchain_primary_index.clear();
-    _mc_allchain_trackid.clear();
-    _mc_allchain_pdg.clear();
-    _mc_allchain_energy.clear();
-    _mc_allchain_elastic_scatters.clear();
-    _mc_allchain_inelastic_scatters.clear();
-    _mc_allchain_momentum_x.clear();
-    _mc_allchain_momentum_y.clear();
-    _mc_allchain_momentum_z.clear();
-    _mc_allchain_end_momentum.clear();
-    _mc_allchain_start_vertex_x.clear();
-    _mc_allchain_start_vertex_y.clear();
-    _mc_allchain_start_vertex_z.clear();
-    _mc_allchain_end_vertex_x.clear();
-    _mc_allchain_end_vertex_y.clear();
-    _mc_allchain_end_vertex_z.clear();
-    _mc_allchain_parent_trackid.clear();
-    _mc_allchain_process.clear();
-    _mc_allchain_final_state.clear();
-    _mc_allchain_completeness.clear();
-    _mc_allchain_purity.clear();
     _true_transverse_momentum = 0;
     _true_visible_transverse_momentum = 0;
     _true_total_momentum = 0;
@@ -505,17 +466,6 @@ void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
         }
     }
 
-    for (size_t j = 0; j < _mc_allchain_pdg.size(); ++j) {
-        float purity = 0.0;
-        float completeness = 0.0;
-        if (computeMetrics(_mc_allchain_trackid[j], purity, completeness)) {
-            _mc_allchain_purity[j] = purity;
-            _mc_allchain_completeness[j] = completeness;
-        } else {
-            _mc_allchain_purity[j] = 0.0;
-            _mc_allchain_completeness[j] = 0.0;
-        }
-    }
 }
 
 void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
@@ -734,69 +684,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _mc_daughter_vtx_y.push_back(daughter_vtxs_y);
         _mc_daughter_vtx_z.push_back(daughter_vtxs_z);
 
-        this->CollectDescendants(mcp_h, mcParticleMap, mcp_ptr, p);
-    }
-}
-
-void TruthAnalysis::CollectDescendants(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h, const std::map<int, art::Ptr<simb::MCParticle>>& mcParticleMap, const art::Ptr<simb::MCParticle>& part, int primary_index) {
-    for (int i = 0; i < part->NumberDaughters(); ++i) {
-        int dau_tid = part->Daughter(i);
-        if (!mcParticleMap.count(dau_tid)) continue;
-
-        auto const& dau = mcParticleMap.at(dau_tid);
-
-        _mc_allchain_primary_index.push_back(primary_index);
-        _mc_allchain_trackid.push_back(dau_tid);
-        _mc_allchain_pdg.push_back(dau->PdgCode());
-        _mc_allchain_energy.push_back(dau->E());
-        _mc_allchain_momentum_x.push_back(dau->Px());
-        _mc_allchain_momentum_y.push_back(dau->Py());
-        _mc_allchain_momentum_z.push_back(dau->Pz());
-        _mc_allchain_start_vertex_x.push_back(dau->Vx());
-        _mc_allchain_start_vertex_y.push_back(dau->Vy());
-        _mc_allchain_start_vertex_z.push_back(dau->Vz());
-        _mc_allchain_end_vertex_x.push_back(dau->EndX());
-        _mc_allchain_end_vertex_y.push_back(dau->EndY());
-        _mc_allchain_end_vertex_z.push_back(dau->EndZ());
-        _mc_allchain_parent_trackid.push_back(part->TrackId());
-        _mc_allchain_process.push_back(dau->Process());
-
-        auto n_elastic = 0u;
-        auto n_inelastic = 0u;
-        art::Ptr<simb::MCParticle> final_scattered;
-        common::GetNScatters(mcp_h, dau, final_scattered, n_elastic, n_inelastic);
-        _mc_allchain_elastic_scatters.push_back(n_elastic);
-        _mc_allchain_inelastic_scatters.push_back(n_inelastic);
-        _mc_allchain_end_momentum.push_back(final_scattered->Momentum(std::max(0u, final_scattered->NumberTrajectoryPoints() - 2)).Vect().Mag());
-
-        std::string final_state;
-        if (dau->NumberDaughters() > 0) {
-            bool has_same_daughter = false;
-            for (int j = 0; j < dau->NumberDaughters(); ++j) {
-                if (mcParticleMap.count(dau->Daughter(j))) {
-                    const auto& grand_daughter = *(mcParticleMap.at(dau->Daughter(j)));
-                    if (grand_daughter.PdgCode() == dau->PdgCode()) {
-                        has_same_daughter = true;
-                        break;
-                    }
-                }
-            }
-            if (dau->EndProcess() == "Decay" && !has_same_daughter) {
-                final_state = "decayed";
-            } else {
-                final_state = "interacted";
-            }
-        } else if (_mc_allchain_end_momentum.back() < 1e-3) {
-            final_state = "stopped";
-        } else {
-            final_state = "escaped";
-        }
-        _mc_allchain_final_state.push_back(final_state);
-
-        _mc_allchain_completeness.push_back(std::numeric_limits<float>::quiet_NaN());
-        _mc_allchain_purity.push_back(std::numeric_limits<float>::quiet_NaN());
-
-        this->CollectDescendants(mcp_h, mcParticleMap, dau, primary_index);
+        // NOTE: recursive all-chain collection removed.
     }
 }
 
