@@ -4,6 +4,6 @@
 #include "Products/InferencePerf.h"
 #include <vector>
 
-template class std::vector<analysis::PlaneImage>;
-template class std::vector<analysis::PlaneSegmentation>;
-template class std::vector<analysis::ModelPerf>;
+template class std::vector<image::PlaneImage>;
+template class std::vector<image::PlaneSegmentation>;
+template class std::vector<image::ModelPerf>;

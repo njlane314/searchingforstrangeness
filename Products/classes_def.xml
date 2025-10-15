@@ -1,10 +1,10 @@
 <lcgdict>
-  <class name="analysis::PlaneImage"/>
-  <class name="std::vector<analysis::PlaneImage>"/>
-  <class name="analysis::InferenceScores"/>
-  <class name="analysis::PlaneSegmentation"/>
-  <class name="std::vector<analysis::PlaneSegmentation>"/>
-  <class name="analysis::ModelPerf"/>
-  <class name="std::vector<analysis::ModelPerf>"/>
-  <class name="analysis::InferencePerfProduct"/>
+  <class name="image::PlaneImage"/>
+  <class name="std::vector<image::PlaneImage>"/>
+  <class name="image::InferenceScores"/>
+  <class name="image::PlaneSegmentation"/>
+  <class name="std::vector<image::PlaneSegmentation>"/>
+  <class name="image::ModelPerf"/>
+  <class name="std::vector<image::ModelPerf>"/>
+  <class name="image::InferencePerfProduct"/>
 </lcgdict>
