@@ -268,9 +268,8 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             const auto& triggerHandle = event.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
             auto const& trigger = *triggerHandle;
-            auto const passedNames = trigger.getListOfPassedAlgorithms();
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
-                const bool passed = std::find(passedNames.begin(), passedNames.end(), triggerName[j]) != passedNames.end();
+                const bool passed = trigger.passedAlgo(triggerName[j]);
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {
                     _software_trigger_pre_ext = passed;
                 }
