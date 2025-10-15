@@ -112,6 +112,12 @@ private:
     std::vector<float> _lambda_dist_to_nu_vtx;
     std::vector<int>   _lambda_decay_in_fid;
 
+    std::vector<unsigned int> _lambda_origin_bits;
+    std::vector<int>          _lambda_from_sigma0;
+    std::vector<int>          _lambda_heavy_feed;
+    std::vector<int>          _lambda_parent_pdg;
+    std::vector<int>          _lambda_grandparent_pdg;
+
     std::vector<int>   _lambda_proton_trackid;
     std::vector<int>   _lambda_pion_trackid;
     std::vector<float> _proton_energy, _pion_energy;
@@ -133,6 +139,12 @@ private:
     float _sel_lambda_len, _sel_lambda_ct;
     float _sel_lambda_dist_to_nu_vtx;
     bool  _sel_lambda_decay_in_fid;
+
+    bool  _sel_lambda_from_sigma0;
+    bool  _sel_lambda_heavy_feed;
+    int   _sel_lambda_parent_pdg;
+    int   _sel_lambda_grandparent_pdg;
+
     int   _sel_proton_trackid, _sel_pion_trackid;
     float _sel_proton_energy, _sel_pion_energy;
     float _sel_proton_px, _sel_proton_py, _sel_proton_pz;
@@ -163,6 +175,12 @@ private:
     float _pr_mu_purity, _pr_mu_completeness;
     float _pr_p_purity,  _pr_p_completeness;
     float _pr_pi_purity, _pr_pi_completeness;
+
+    int  _n_sigma0_truth;
+    int  _n_kshort_truth;
+    bool _has_sigma0_truth;
+    bool _has_kshort_truth;
+    int  _n_lambda_from_heavy;
 
     template <class T> static T nan() { return std::numeric_limits<T>::quiet_NaN(); }
     static float ThreeDistance(float x1,float y1,float z1,float x2,float y2,float z2) {
@@ -266,6 +284,12 @@ void LambdaSignalAnalysis::setBranches(TTree* t) {
     t->Branch("lambda_dist_to_nu_vtx","std::vector<float>", &_lambda_dist_to_nu_vtx);
     t->Branch("lambda_decay_in_fid",  "std::vector<int>",   &_lambda_decay_in_fid);
 
+    t->Branch("lambda_origin_bits",     "std::vector<unsigned int>", &_lambda_origin_bits);
+    t->Branch("lambda_from_sigma0",     "std::vector<int>",           &_lambda_from_sigma0);
+    t->Branch("lambda_heavy_feed",      "std::vector<int>",           &_lambda_heavy_feed);
+    t->Branch("lambda_parent_pdg",      "std::vector<int>",           &_lambda_parent_pdg);
+    t->Branch("lambda_grandparent_pdg", "std::vector<int>",           &_lambda_grandparent_pdg);
+
     t->Branch("lambda_proton_trackid","std::vector<int>",   &_lambda_proton_trackid);
     t->Branch("lambda_pion_trackid",  "std::vector<int>",   &_lambda_pion_trackid);
     t->Branch("proton_energy",        "std::vector<float>", &_proton_energy);
@@ -303,6 +327,11 @@ void LambdaSignalAnalysis::setBranches(TTree* t) {
     t->Branch("sel_lambda_ct",        &_sel_lambda_ct,        "sel_lambda_ct/F");
     t->Branch("sel_lambda_dist_to_nu_vtx",&_sel_lambda_dist_to_nu_vtx,"sel_lambda_dist_to_nu_vtx/F");
     t->Branch("sel_lambda_decay_in_fid",&_sel_lambda_decay_in_fid,"sel_lambda_decay_in_fid/O");
+
+    t->Branch("sel_lambda_from_sigma0",&_sel_lambda_from_sigma0,"sel_lambda_from_sigma0/O");
+    t->Branch("sel_lambda_heavy_feed", &_sel_lambda_heavy_feed, "sel_lambda_heavy_feed/O");
+    t->Branch("sel_lambda_parent_pdg", &_sel_lambda_parent_pdg, "sel_lambda_parent_pdg/I");
+    t->Branch("sel_lambda_grandparent_pdg",&_sel_lambda_grandparent_pdg,"sel_lambda_grandparent_pdg/I");
 
     t->Branch("sel_proton_trackid",   &_sel_proton_trackid,   "sel_proton_trackid/I");
     t->Branch("sel_pion_trackid",     &_sel_pion_trackid,     "sel_pion_trackid/I");
@@ -361,6 +390,12 @@ void LambdaSignalAnalysis::setBranches(TTree* t) {
     t->Branch("pr_pi_nhits_T",   &_pr_pi_nhits_T,   "pr_pi_nhits_T/I");
     t->Branch("pr_pi_purity",    &_pr_pi_purity,    "pr_pi_purity/F");
     t->Branch("pr_pi_completeness",&_pr_pi_completeness,"pr_pi_completeness/F");
+
+    t->Branch("n_sigma0_truth",  &_n_sigma0_truth,  "n_sigma0_truth/I");
+    t->Branch("has_sigma0_truth",&_has_sigma0_truth,"has_sigma0_truth/O");
+    t->Branch("n_kshort_truth",  &_n_kshort_truth,  "n_kshort_truth/I");
+    t->Branch("has_kshort_truth",&_has_kshort_truth,"has_kshort_truth/O");
+    t->Branch("n_lambda_from_heavy",&_n_lambda_from_heavy,"n_lambda_from_heavy/I");
 }
 
 void LambdaSignalAnalysis::resetTTree(TTree*) {
@@ -382,6 +417,12 @@ void LambdaSignalAnalysis::resetTTree(TTree*) {
     _lambda_len.clear(); _lambda_ct.clear(); _lambda_dist_to_nu_vtx.clear();
     _lambda_decay_in_fid.clear();
 
+    _lambda_origin_bits.clear();
+    _lambda_from_sigma0.clear();
+    _lambda_heavy_feed.clear();
+    _lambda_parent_pdg.clear();
+    _lambda_grandparent_pdg.clear();
+
     _lambda_proton_trackid.clear(); _lambda_pion_trackid.clear();
     _proton_energy.clear(); _pion_energy.clear();
     _proton_px.clear(); _proton_py.clear(); _proton_pz.clear();
@@ -398,6 +439,11 @@ void LambdaSignalAnalysis::resetTTree(TTree*) {
     _sel_lambda_endx = nan<float>(); _sel_lambda_endy = nan<float>(); _sel_lambda_endz = nan<float>();
     _sel_lambda_len = nan<float>(); _sel_lambda_ct = nan<float>(); _sel_lambda_dist_to_nu_vtx = nan<float>();
     _sel_lambda_decay_in_fid = false;
+
+    _sel_lambda_from_sigma0 = false;
+    _sel_lambda_heavy_feed  = false;
+    _sel_lambda_parent_pdg = 0;
+    _sel_lambda_grandparent_pdg = 0;
 
     _sel_proton_trackid = -1; _sel_pion_trackid = -1;
     _sel_proton_energy = nan<float>(); _sel_pion_energy = nan<float>();
@@ -424,6 +470,12 @@ void LambdaSignalAnalysis::resetTTree(TTree*) {
     _pr_mu_purity = 0.f; _pr_mu_completeness = 0.f;
     _pr_p_purity  = 0.f; _pr_p_completeness  = 0.f;
     _pr_pi_purity = 0.f; _pr_pi_completeness = 0.f;
+
+    _n_sigma0_truth = 0;
+    _n_kshort_truth = 0;
+    _has_sigma0_truth = false;
+    _has_kshort_truth = false;
+    _n_lambda_from_heavy = 0;
 }
 
 LambdaSignalAnalysis::DecayMatch
@@ -485,6 +537,11 @@ void LambdaSignalAnalysis::SelectBestCandidate() {
     _sel_lambda_ct      = _lambda_ct[i];
     _sel_lambda_dist_to_nu_vtx = _lambda_dist_to_nu_vtx[i];
     _sel_lambda_decay_in_fid   = (_lambda_decay_in_fid[i] != 0);
+
+    _sel_lambda_from_sigma0      = (_lambda_from_sigma0[i] != 0);
+    _sel_lambda_heavy_feed       = (_lambda_heavy_feed[i]  != 0);
+    _sel_lambda_parent_pdg       = _lambda_parent_pdg[i];
+    _sel_lambda_grandparent_pdg  = _lambda_grandparent_pdg[i];
 
     _sel_proton_trackid = _lambda_proton_trackid[i];
     _sel_pion_trackid   = _lambda_pion_trackid[i];
@@ -591,6 +648,22 @@ void LambdaSignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     for (size_t i = 0; i < mcp_h->size(); ++i)
         mp[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
 
+    _n_sigma0_truth = 0;
+    _n_kshort_truth = 0;
+    for (size_t i = 0; i < mcp_h->size(); ++i) {
+        const auto& p = mcp_h->at(i);
+        const int apdg = std::abs(p.PdgCode());
+        if (apdg == 3212) ++_n_sigma0_truth;
+        if (p.PdgCode() == 310) ++_n_kshort_truth;
+    }
+    _has_sigma0_truth = (_n_sigma0_truth > 0);
+    _has_kshort_truth = (_n_kshort_truth > 0);
+
+    auto isSigma0 = [](int pdg){ return std::abs(pdg) == 3212; };
+    auto isHeavyStrangeBaryon = [](int pdg){ int a=std::abs(pdg); return (a==3312 || a==3322 || a==3334); };
+    auto isCharmHadron = [](int pdg){ int a=std::abs(pdg); return ((a>400 && a<500) || (a>4000 && a<5000)); };
+    auto isTau = [](int pdg){ return std::abs(pdg)==15; };
+
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         const auto lam_ptr = art::Ptr<simb::MCParticle>(mcp_h, i);
         const auto& lam    = *lam_ptr;
@@ -639,6 +712,50 @@ void LambdaSignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _lambda_ct.push_back(ct);
         _lambda_dist_to_nu_vtx.push_back(dist2nu);
         _lambda_decay_in_fid.push_back(decay_in_fid ? 1 : 0);
+
+        unsigned int bits = 0u;
+        if (lam.Process() == "primary") bits |= (1u<<0); else bits |= (1u<<1);
+
+        bool from_sigma0 = false;
+        bool heavy_feed  = false;
+        int  parent_pdg = 0;
+        int  grandparent_pdg = 0;
+
+        if (mp.count(lam.Mother())) {
+            auto cur = mp.at(lam.Mother());
+            parent_pdg = cur->PdgCode();
+
+            if (isSigma0(parent_pdg)) {
+                from_sigma0 = true;
+                bits |= (1u<<2);
+            }
+
+            int steps = 0;
+            while (cur && steps < fMaxAncestorSteps) {
+                if (steps == 0) {
+                } else if (steps == 1) {
+                    grandparent_pdg = cur->PdgCode();
+                }
+
+                const int a = cur->PdgCode();
+                if (isHeavyStrangeBaryon(a) || isCharmHadron(a) || isTau(a)) {
+                    heavy_feed = true;
+                    bits |= (1u<<3);
+                }
+
+                if (!mp.count(cur->Mother())) break;
+                cur = mp.at(cur->Mother());
+                ++steps;
+            }
+        }
+
+        _lambda_origin_bits.push_back(bits);
+        _lambda_from_sigma0.push_back(from_sigma0 ? 1 : 0);
+        _lambda_heavy_feed.push_back(heavy_feed ? 1 : 0);
+        _lambda_parent_pdg.push_back(parent_pdg);
+        _lambda_grandparent_pdg.push_back(grandparent_pdg);
+
+        if (heavy_feed) ++_n_lambda_from_heavy;
 
         _lambda_proton_trackid.push_back(dm.p_trkid);
         _lambda_pion_trackid.push_back(dm.pi_trkid);
