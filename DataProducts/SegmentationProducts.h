@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_SEGMENTATION_PRODUCTS_H
-#define ANALYSIS_SEGMENTATION_PRODUCTS_H
+#ifndef DATAPRODUCTS_SEGMENTATION_PRODUCTS_H
+#define DATAPRODUCTS_SEGMENTATION_PRODUCTS_H
 
 #include <cstdint>
 #include <vector>
@@ -19,4 +19,4 @@ struct PlaneSegmentationProduct {
 
 } // namespace analysis
 
-#endif // ANALYSIS_SEGMENTATION_PRODUCTS_H
+#endif // DATAPRODUCTS_SEGMENTATION_PRODUCTS_H

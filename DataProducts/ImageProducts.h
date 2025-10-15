@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_IMAGE_PRODUCTS_H
-#define ANALYSIS_IMAGE_PRODUCTS_H
+#ifndef DATAPRODUCTS_IMAGE_PRODUCTS_H
+#define DATAPRODUCTS_IMAGE_PRODUCTS_H
 
 #include <cstdint>
 #include <string>
@@ -28,4 +28,4 @@ struct InferenceScoresProduct {
 
 } // namespace analysis
 
-#endif // ANALYSIS_IMAGE_PRODUCTS_H
+#endif // DATAPRODUCTS_IMAGE_PRODUCTS_H
