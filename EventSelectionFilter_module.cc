@@ -28,6 +28,8 @@
 #include "AnalysisTools/AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
+#include <type_traits>
+#include <utility>
 
 #include "TTree.h"
 #include "TVector3.h"
@@ -36,6 +38,54 @@
 #include <memory>
 #include <string>
 #include <vector>
+
+namespace {
+template <typename...>
+using void_t = void;
+
+template <typename T, typename = void>
+struct has_getListOfPassedAlgorithms : std::false_type {};
+
+template <typename T>
+struct has_getListOfPassedAlgorithms<
+    T,
+    void_t<decltype(std::declval<T const &>().getListOfPassedAlgorithms())>> : std::true_type {};
+
+template <typename T, typename = void>
+struct has_passedAlgo : std::false_type {};
+
+template <typename T>
+struct has_passedAlgo<
+    T,
+    void_t<decltype(std::declval<T const &>().passedAlgo(std::declval<std::string const &>()))>> : std::true_type {};
+
+template <typename T, typename = void>
+struct has_isPassed : std::false_type {};
+
+template <typename T>
+struct has_isPassed<
+    T,
+    void_t<decltype(std::declval<T const &>().isPassed(std::declval<std::string const &>()))>> : std::true_type {};
+
+template <typename T>
+inline constexpr bool dependent_false_v = false;
+
+template <typename Trigger>
+bool algorithmPassed(Trigger const &trigger, std::string const &name) {
+    if constexpr (has_passedAlgo<Trigger>::value) {
+        return trigger.passedAlgo(name);
+    } else if constexpr (has_isPassed<Trigger>::value) {
+        return trigger.isPassed(name);
+    } else if constexpr (has_getListOfPassedAlgorithms<Trigger>::value) {
+        auto const passed = trigger.getListOfPassedAlgorithms();
+        return std::find(passed.begin(), passed.end(), name) != passed.end();
+    } else {
+        static_assert(dependent_false_v<Trigger>,
+                      "ubdaqSoftwareTriggerData does not provide access to algorithm pass information");
+        return false;
+    }
+}
+} // namespace
 
 class EventSelectionFilter : public art::EDFilter {
 public:
@@ -201,11 +251,9 @@ bool EventSelectionFilter::filter(art::Event &e) {
         art::InputTag trigTag("swtrigger", "", _swtrig_proc);
         const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
         auto const& trigger = *trigH;
-        auto const passedNames = trigger.getListOfPassedAlgorithms();
-        auto has_any = [&](const std::vector<std::string>& wanted) -> bool {
+        auto const has_any = [&](const std::vector<std::string>& wanted) {
             for (auto const& name : wanted) {
-                if (std::find(passedNames.begin(), passedNames.end(), name) != passedNames.end())
-                    return true;
+                if (algorithmPassed(trigger, name)) return true;
             }
             return false;
         };
