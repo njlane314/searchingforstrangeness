@@ -268,22 +268,22 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {
-                    _software_trigger_pre_ext = triggerHandle->passedAlgo(triggerName[j]);
+                    _software_trigger_pre_ext = triggerHandle->passedAlgo(triggerName[j].c_str());
                 }
                 else if (triggerName[j] == "EXT_NUMIwin_2018May_FEMBeamTriggerAlgo") {
-                    _software_trigger_post_ext = triggerHandle->passedAlgo(triggerName[j]);
+                    _software_trigger_post_ext = triggerHandle->passedAlgo(triggerName[j].c_str());
                 }
                 else if (triggerName[j] == "NUMI_FEMBeamTriggerAlgo") {
-                    _software_trigger_pre = triggerHandle->passedAlgo(triggerName[j]);
+                    _software_trigger_pre = triggerHandle->passedAlgo(triggerName[j].c_str());
                 }
                 else if (triggerName[j] == "NUMI_2018May_FEMBeamTriggerAlgo") {
-                    _software_trigger_post = triggerHandle->passedAlgo(triggerName[j]);
+                    _software_trigger_post = triggerHandle->passedAlgo(triggerName[j].c_str());
                 }
                 else {
                     continue;
                 }
                 std::cout << triggerName[j] << ": ";
-                std::cout << triggerHandle->passedAlgo(triggerName[j]) << std::endl;
+                std::cout << triggerHandle->passedAlgo(triggerName[j].c_str()) << std::endl;
             }
         }
     }

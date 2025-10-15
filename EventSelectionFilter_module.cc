@@ -211,7 +211,7 @@ bool EventSelectionFilter::filter(art::Event &e) {
         const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
         auto has_any = [&](const std::vector<std::string>& wanted)->bool{
             bool ok = false;
-            for (auto const& name : wanted) ok = ok || trigH->passedAlgo(name);
+            for (auto const& name : wanted) ok = ok || trigH->passedAlgo(name.c_str());
             return ok;
         };
         pass_beam_gate = has_any(_beam_gate_algos);
