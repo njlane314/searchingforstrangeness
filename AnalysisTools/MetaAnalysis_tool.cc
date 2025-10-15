@@ -131,7 +131,7 @@ private:
     counts.reserve(handles.size());
     for (auto const& h : handles) {
       auto const* prov = h.provenance();
-      std::string label = prov ? prov->branchDescription().moduleLabel() : std::string{};
+      std::string label = prov ? prov->productDescription().moduleLabel() : std::string{};
       producers.push_back(label);
       int n = static_cast<int>(h->size());
       counts.push_back(n);
@@ -202,9 +202,10 @@ private:
                            std::string* out_release = nullptr) {
     auto const* prov = h.provenance();
     if (!prov) return false;
-    out_label = prov->branchDescription().moduleLabel();
-    out_pset_id = prov->parameterSetID().to_string();
-    if (out_release) *out_release = prov->processConfiguration().releaseVersion();
+    auto const& desc = prov->productDescription();
+    out_label = desc.moduleLabel();
+    out_pset_id = desc.parameterSetID().to_string();
+    if (out_release) *out_release = desc.processConfiguration().releaseVersion();
 
     try {
       fhicl::ParameterSet ptmp;

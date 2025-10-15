@@ -33,6 +33,7 @@
 #include "Products/SegmentationProducts.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
+#include "Imaging/ImageAlgo.h"
 #include "Imaging/SemanticPixelClassifier.h"
 
 #include <TDirectoryFile.h>
@@ -265,9 +266,9 @@ void ImageAnalysis::analyseSlice(
     bool is_data, bool is_selected) {
   for (const auto &pfp : pfp_pxy_vec) {
     if (pfp->IsPrimary()) {
-      const auto &vtx = pfp.get<recob::Vertex>();
-      if (!vtx.empty()) {
-        const auto &pos = vtx.front()->position();
+      auto vtx = pfp.get<recob::Vertex>();
+      if (vtx.size() > 0) {
+        const auto &pos = vtx.at(0)->position();
         _reco_neutrino_vertex_x = pos.X();
         _reco_neutrino_vertex_y = pos.Y();
         _reco_neutrino_vertex_z = pos.Z();
