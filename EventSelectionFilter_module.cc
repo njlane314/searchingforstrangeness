@@ -31,6 +31,7 @@
 
 #include "TTree.h"
 #include "TVector3.h"
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -199,13 +200,14 @@ bool EventSelectionFilter::filter(art::Event &e) {
     try {
         art::InputTag trigTag("swtrigger", "", _swtrig_proc);
         const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
-        auto has_any = [&](const std::vector<std::string>& wanted)->bool{
-            bool ok = false;
-            auto const& trigger = *trigH;
+        auto const& trigger = *trigH;
+        auto const passedNames = trigger.getListOfPassedAlgorithms();
+        auto has_any = [&](const std::vector<std::string>& wanted) -> bool {
             for (auto const& name : wanted) {
-                ok = ok || trigger.passedAlgo(name.c_str());
+                if (std::find(passedNames.begin(), passedNames.end(), name) != passedNames.end())
+                    return true;
             }
-            return ok;
+            return false;
         };
         pass_beam_gate = has_any(_beam_gate_algos);
         pass_ext_gate  = has_any(_ext_gate_algos);
