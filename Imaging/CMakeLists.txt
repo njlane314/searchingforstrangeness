@@ -1,2 +1,45 @@
+art_make(
+  MODULE_LIBRARIES
+    lardataobj_RecoBase
+    lardataobj_RawData
+    lardataobj_AnalysisBase
+    larcorealg_Geometry
+    larcore_Geometry_Geometry_service
+    lardata_Utilities
+    lardata_RecoObjects
+    larsim_MCCheater_BackTrackerService_service
+    larsim_MCCheater_ParticleInventoryService_service
+    lardata_DetectorInfoServices_DetectorPropertiesService_service
+    lardata_DetectorInfoServices_DetectorClocksService_service
+    nusimdata_SimulationBase
+    ubreco_SelectionTool_OpT0FinderBase
+    ubreco_SelectionTool_OpT0FinderAlgorithms
+    ubreco_BlipRecoAlg
+    larreco_RecoAlg
+    ${ART_FRAMEWORK_CORE}
+    ${ART_FRAMEWORK_PRINCIPAL}
+    ${ART_FRAMEWORK_SERVICES_REGISTRY}
+    ${ART_FRAMEWORK_SERVICES_BASIC}
+    ${ART_FRAMEWORK_SERVICES_SYSTEM}
+    ${ART_FRAMEWORK_SERVICES_OPTIONAL}
+    ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
+    ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+    art_Persistency_Common
+    art_Persistency_Provenance
+    art_Utilities
+    canvas
+    ${MF_MESSAGELOGGER}
+    ${MF_UTILITIES}
+    ${FHICLCPP}
+    ${CETLIB}
+    cetlib_except
+    ${ROOT_BASIC_LIB_LIST}
+    ${ROOT_GEOM}
+    ${ROOT_EG}
+    ${ROOT_MINUIT}
+    pthread
+)
+
 install_headers()
 install_source()
+install_fhicl()

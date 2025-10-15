@@ -4,7 +4,6 @@
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "canvas/Persistency/Common/FindManyP.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Utilities/InputTag.h"
 #include "cetlib_except/exception.h"
@@ -16,7 +15,6 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
-#include "lardata/Utilities/FindManyInChainP.h"
 #include "lardata/Utilities/GeometryUtilities.h"
 #include "lardataobj/AnalysisBase/MVAOutput.h"
 #include "lardataobj/RecoBase/Cluster.h"
@@ -28,15 +26,13 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include <cetlib/search_path.h>
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "AnalysisToolBase.h"
-#include "Common/NpyUtils.h"
+#include "Analysis/ImageProducts.h"
+#include "Analysis/SegmentationProducts.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
-#include "Imaging/Image.h"
-#include "Imaging/ImageAlgo.h"
 #include "Imaging/SemanticPixelClassifier.h"
 
 #include <TDirectoryFile.h>
@@ -48,65 +44,18 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <fstream>
 #include <iomanip>
-#include <limits.h>
 #include <limits>
 #include <map>
 #include <memory>
 #include <numeric>
-#include <set>
 #include <sstream>
 #include <string>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace analysis {
-
-namespace {
-inline bool fileExists(const std::string &p) {
-  struct stat sb;
-  return ::stat(p.c_str(), &sb) == 0 && S_ISREG(sb.st_mode);
-}
-inline bool dirExists(const std::string &p) {
-  struct stat sb;
-  return ::stat(p.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode);
-}
-inline bool isAbs(const std::string &p) {
-  return !p.empty() && p.front() == '/';
-}
-
-  static std::pair<double, double>
-  centroidWithinRadius(const art::Event &event, common::PandoraView view,
-                       const std::vector<art::Ptr<recob::Hit>> &hits,
-                       double radius, const std::set<unsigned int> &bad_channels,
-                       double vtx_z, double vtx_x) {
-  double W = 0.0, Zs = 0.0, Xs = 0.0;
-  for (auto const &h : hits) {
-    if (bad_channels.count(h->Channel()))
-      continue;
-    if (common::GetPandoraView(h) != view)
-      continue;
-    double q = std::max(0.f, h->Integral());
-    if (q <= 0)
-      continue;
-    TVector3 p = common::GetPandoraHitPosition(event, h, view);
-    double d = std::hypot(p.Z() - vtx_z, p.X() - vtx_x);
-    if (d <= radius) {
-      W += q;
-      Zs += q * p.Z();
-      Xs += q * p.X();
-    }
-  }
-  if (W == 0.0)
-    return {vtx_z, vtx_x};
-  return {Zs / W, Xs / W};
-}
-
-} // namespace
 
 class ImageAnalysis : public AnalysisToolBase {
 public:
@@ -129,24 +78,12 @@ private:
   art::InputTag fWIREproducer;
   art::InputTag fMCPproducer;
   art::InputTag fBKTproducer;
-  std::string fBadChannelFile;
-  std::set<unsigned int> fBadChannels;
+  art::InputTag fImagesSliceTag;
+  art::InputTag fImagesEventTag;
+  art::InputTag fScoresTag;
+  art::InputTag fSegmentationTag;
   std::vector<ModelConfig> fModels;
-  std::string fWeightsBaseDir;
   std::vector<std::string> fActiveModels;
-  std::string fAssetsBaseDir;
-  std::string fInferenceWrapper;
-  std::string fWorkDir;
-  int _image_width;
-  int _image_height;
-  float _adc_image_threshold;
-  const geo::GeometryCore *_geo;
-  const detinfo::DetectorProperties *_detp;
-  float _drift_step;
-  float _wire_pitch_u;
-  float _wire_pitch_v;
-  float _wire_pitch_w;
-  float _centroid_radius;
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
@@ -174,17 +111,15 @@ private:
   bool _is_vtx_in_image_u;
   bool _is_vtx_in_image_v;
   bool _is_vtx_in_image_w;
-  std::unique_ptr<SemanticPixelClassifier> _semantic_classifier;
-  std::unique_ptr<ImageAlgo> _image_algo;
+  std::vector<int> _pred_semantic_image_u;
+  std::vector<int> _pred_semantic_image_v;
+  std::vector<int> _pred_semantic_image_w;
+  std::vector<int> _pred_semantic_counts_u;
+  std::vector<int> _pred_semantic_counts_v;
+  std::vector<int> _pred_semantic_counts_w;
   std::unordered_map<std::string, float> _inference_scores;
 
-  void loadBadChannels(const std::string &filename);
-  std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event);
-  std::vector<art::Ptr<recob::Hit>>
-  collectSliceHits(const art::Event &event,
-                   const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec);
-  std::string resolveAssetPath(const std::string &relOrAbs,
-                               bool must_exist = true) const;
+  static std::vector<int> countLabels(const std::vector<int> &labels, size_t nlabels);
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -192,41 +127,6 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
 }
 
 void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
-  char cwd_buffer[PATH_MAX];
-  getcwd(cwd_buffer, sizeof(cwd_buffer));
-  fWorkDir = std::string(cwd_buffer);
-
-  fAssetsBaseDir = p.get<std::string>("AssetsBaseDir", "");
-  if (const char *env = std::getenv("ASSETS_BASE_DIR"))
-    fAssetsBaseDir = env;
-  if (!fAssetsBaseDir.empty() && !isAbs(fAssetsBaseDir))
-    fAssetsBaseDir = joinPath(fWorkDir, fAssetsBaseDir);
-
-  std::string badRel = p.get<std::string>("BadChannelFile", "badchannels.txt");
-  if (const char *env = std::getenv("IA_BADCHANNELS"))
-    badRel = env;
-  fBadChannelFile = resolveAssetPath(badRel, true);
-  mf::LogInfo("ImageAnalysis") << "Bad channel file: " << fBadChannelFile;
-  this->loadBadChannels(fBadChannelFile);
-
-  fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "weights");
-  if (const char *env = std::getenv("WEIGHTS_BASE_DIR"))
-    fWeightsBaseDir = env;
-  if (!isAbs(fWeightsBaseDir))
-    fWeightsBaseDir = resolveAssetPath(fWeightsBaseDir, false);
-  if (!dirExists(fWeightsBaseDir)) {
-    throw art::Exception(art::errors::Configuration)
-        << "Weights base dir '" << fWeightsBaseDir << "' does not exist.";
-  }
-  mf::LogInfo("ImageAnalysis") << "Weights base dir: " << fWeightsBaseDir;
-
-  std::string wrapperRel =
-      p.get<std::string>("InferenceWrapper", "scripts/inference_wrapper.sh");
-  if (const char *env = std::getenv("IA_INFERENCE_WRAPPER"))
-    wrapperRel = env;
-  fInferenceWrapper = resolveAssetPath(wrapperRel, true);
-  mf::LogInfo("ImageAnalysis") << "Inference wrapper: " << fInferenceWrapper;
-
   fPFPproducer = p.get<art::InputTag>("PFPproducer");
   fCLSproducer = p.get<art::InputTag>("CLSproducer");
   fSLCproducer = p.get<art::InputTag>("SLCproducer");
@@ -234,6 +134,11 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fWIREproducer = p.get<art::InputTag>("WIREproducer");
   fMCPproducer = p.get<art::InputTag>("MCPproducer");
   fBKTproducer = p.get<art::InputTag>("BKTproducer");
+
+  fImagesSliceTag = p.get<art::InputTag>("ImagesSliceTag", art::InputTag{"ImageProducerED", "slice"});
+  fImagesEventTag = p.get<art::InputTag>("ImagesEventTag", art::InputTag{"ImageProducerED", "event"});
+  fScoresTag = p.get<art::InputTag>("ScoresTag", art::InputTag{"ImageProducerED"});
+  fSegmentationTag = p.get<art::InputTag>("SegmentationTag", art::InputTag{"ImageProducerED", "seg"});
 
   fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
   if (const char *am = std::getenv("ACTIVE_MODELS")) {
@@ -253,86 +158,9 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
                        ps.get<std::string>("arch")});
   }
 
-  _image_width = 512;
-  _image_height = 512;
-  // Set the default ADC threshold for image production
-  _adc_image_threshold = 4.0;
-  _geo = art::ServiceHandle<geo::Geometry>()->provider();
-  _detp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-  auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
-  double tick_period = clock->TPCClock().TickPeriod();
-  double drift_velocity = _detp->DriftVelocity();
-  _drift_step = tick_period * drift_velocity * 1e1;
-  _wire_pitch_u = _geo->WirePitch(geo::kU);
-  _wire_pitch_v = _geo->WirePitch(geo::kV);
-  _wire_pitch_w = _geo->WirePitch(geo::kW);
-  // Images are 512x512 pixels at 3 mm resolution. Derive a fixed
-  // centroid radius from the image geometry rather than a configurable
-  // parameter. The radius corresponds to half the image width (or
-  // height) in centimetres so that all hits within this circle fit
-  // inside the square image.
-  const float pixel_size_cm = 0.3f; // 3 mm per pixel
-  _centroid_radius = 0.5f * std::min(_image_width, _image_height) * pixel_size_cm;
-  _semantic_classifier =
-      std::make_unique<SemanticPixelClassifier>(fMCPproducer);
-  _image_algo = std::make_unique<ImageAlgo>(
-      fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
-      _adc_image_threshold, fWeightsBaseDir, fInferenceWrapper, fAssetsBaseDir,
-      fModels, fActiveModels, _geo, _detp, fWorkDir);
-}
-
-std::string ImageAnalysis::resolveAssetPath(const std::string &relOrAbs,
-                                            bool must_exist) const {
-  if (relOrAbs.empty())
-    return {};
-  if (isAbs(relOrAbs) &&
-      (!must_exist || fileExists(relOrAbs) || dirExists(relOrAbs)))
-    return relOrAbs;
-  if (!fAssetsBaseDir.empty()) {
-    auto cand = joinPath(fAssetsBaseDir, relOrAbs);
-    if (!must_exist || fileExists(cand) || dirExists(cand))
-      return cand;
-  }
-  if (!fWorkDir.empty()) {
-    auto cand = joinPath(fWorkDir, relOrAbs);
-    if (!must_exist || fileExists(cand) || dirExists(cand))
-      return cand;
-  }
-  cet::search_path sp("FW_SEARCH_PATH");
-  std::string resolved;
-  if (sp.find_file(relOrAbs, resolved))
-    return resolved;
-  if (must_exist) {
-    throw art::Exception(art::errors::Configuration)
-        << "Could not resolve path '" << relOrAbs
-        << "'. Tried under AssetsBaseDir='" << fAssetsBaseDir << "', CWD='"
-        << fWorkDir << "', and FW_SEARCH_PATH.";
-  }
-  return relOrAbs;
-}
-
-void ImageAnalysis::loadBadChannels(const std::string &filename) {
-  fBadChannels.clear();
-  std::ifstream infile(filename);
-  if (!infile.is_open()) {
-    throw art::Exception(art::errors::Configuration)
-        << "Could not open bad channels file: " << filename;
-  }
-  std::string line;
-  while (std::getline(infile, line)) {
-    if (line.empty() || line.find('#') != std::string::npos) {
-      continue;
-    }
-    std::stringstream ss(line);
-    unsigned int first_ch, second_ch;
-    ss >> first_ch;
-    if (ss >> second_ch) {
-      for (unsigned int ch = first_ch; ch <= second_ch; ++ch) {
-        fBadChannels.insert(ch);
-      }
-    } else {
-      fBadChannels.insert(first_ch);
-    }
+  _inference_scores.clear();
+  for (const auto &m : fModels) {
+    _inference_scores[m.name] = std::numeric_limits<float>::quiet_NaN();
   }
 }
 
@@ -370,6 +198,12 @@ void ImageAnalysis::setBranches(TTree *_tree) {
                 "is_vtx_in_image_v/O");
   _tree->Branch("is_vtx_in_image_w", &_is_vtx_in_image_w,
                 "is_vtx_in_image_w/O");
+  _tree->Branch("pred_semantic_image_u", &_pred_semantic_image_u);
+  _tree->Branch("pred_semantic_image_v", &_pred_semantic_image_v);
+  _tree->Branch("pred_semantic_image_w", &_pred_semantic_image_w);
+  _tree->Branch("pred_semantic_counts_u", &_pred_semantic_counts_u);
+  _tree->Branch("pred_semantic_counts_v", &_pred_semantic_counts_v);
+  _tree->Branch("pred_semantic_counts_w", &_pred_semantic_counts_w);
   for (const auto &model : fModels) {
     _tree->Branch(("inference_score_" + model.name).c_str(),
                   &_inference_scores[model.name], "score/F");
@@ -404,9 +238,26 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _is_vtx_in_image_u = false;
   _is_vtx_in_image_v = false;
   _is_vtx_in_image_w = false;
+  _pred_semantic_image_u.clear();
+  _pred_semantic_image_v.clear();
+  _pred_semantic_image_w.clear();
+  _pred_semantic_counts_u.clear();
+  _pred_semantic_counts_v.clear();
+  _pred_semantic_counts_w.clear();
   for (auto &kv : _inference_scores) {
     kv.second = std::numeric_limits<float>::quiet_NaN();
   }
+}
+
+std::vector<int> ImageAnalysis::countLabels(const std::vector<int> &labels,
+                                            size_t nlabels) {
+  std::vector<int> counts(nlabels, 0);
+  for (int v : labels) {
+    if (v >= 0 && static_cast<size_t>(v) < nlabels) {
+      ++counts[v];
+    }
+  }
+  return counts;
 }
 
 void ImageAnalysis::analyseSlice(
@@ -415,73 +266,54 @@ void ImageAnalysis::analyseSlice(
   for (const auto &pfp : pfp_pxy_vec) {
     if (pfp->IsPrimary()) {
       const auto &vtx = pfp.get<recob::Vertex>();
-      if (vtx.size() > 0) {
-        const auto &vtx_pos = vtx[0]->position();
-        _reco_neutrino_vertex_x = vtx_pos.X();
-        _reco_neutrino_vertex_y = vtx_pos.Y();
-        _reco_neutrino_vertex_z = vtx_pos.Z();
+      if (!vtx.empty()) {
+        const auto &pos = vtx.front()->position();
+        _reco_neutrino_vertex_x = pos.X();
+        _reco_neutrino_vertex_y = pos.Y();
+        _reco_neutrino_vertex_z = pos.Z();
       }
       break;
     }
   }
 
-  std::vector<art::Ptr<recob::Hit>> all_hits = this->collectAllHits(event);
-  std::vector<art::Ptr<recob::Hit>> neutrino_hits =
-      this->collectSliceHits(event, pfp_pxy_vec);
-  std::pair<double, double> c_u, c_v, c_w;
-  TVector3 vtx_pos_3d(_reco_neutrino_vertex_x, _reco_neutrino_vertex_y,
-                      _reco_neutrino_vertex_z);
-  TVector3 vtx_proj_u = common::ProjectToWireView(
-      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_U);
-  TVector3 vtx_proj_v = common::ProjectToWireView(
-      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
-  TVector3 vtx_proj_w = common::ProjectToWireView(
-      vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
-  c_u = centroidWithinRadius(event, common::TPC_VIEW_U, neutrino_hits,
-                             _centroid_radius, fBadChannels, vtx_proj_u.Z(),
-                             vtx_proj_u.X());
-  c_v = centroidWithinRadius(event, common::TPC_VIEW_V, neutrino_hits,
-                             _centroid_radius, fBadChannels, vtx_proj_v.Z(),
-                             vtx_proj_v.X());
-  c_w = centroidWithinRadius(event, common::TPC_VIEW_W, neutrino_hits,
-                             _centroid_radius, fBadChannels, vtx_proj_w.Z(),
-                             vtx_proj_w.X());
-  auto [centroid_wire_u, centroid_drift_u] = c_u;
-  auto [centroid_wire_v, centroid_drift_v] = c_v;
-  auto [centroid_wire_w, centroid_drift_w] = c_w;
+  auto sliceH = event.getValidHandle<std::vector<analysis::PlaneImageProduct>>(fImagesSliceTag);
+  auto eventH = event.getValidHandle<std::vector<analysis::PlaneImageProduct>>(fImagesEventTag);
 
-  std::vector<ImageProperties> properties;
-  properties.emplace_back(centroid_wire_u, centroid_drift_u, _image_width,
-                          _image_height, _drift_step, _wire_pitch_u, geo::kU);
-  properties.emplace_back(centroid_wire_v, centroid_drift_v, _image_width,
-                          _image_height, _drift_step, _wire_pitch_v, geo::kV);
-  properties.emplace_back(centroid_wire_w, centroid_drift_w, _image_width,
-                          _image_height, _drift_step, _wire_pitch_w, geo::kW);
+  auto assignPlane = [&](const analysis::PlaneImageProduct &img, bool slice) {
+    std::vector<float> *det_slice = nullptr;
+    std::vector<int> *sem_slice = nullptr;
+    std::vector<float> *det_event = nullptr;
+    std::vector<int> *sem_event = nullptr;
+    if (img.view == static_cast<int>(geo::kU)) {
+      det_slice = &_detector_image_u;
+      sem_slice = &_semantic_image_u;
+      det_event = &_event_detector_image_u;
+      sem_event = &_event_semantic_image_u;
+    } else if (img.view == static_cast<int>(geo::kV)) {
+      det_slice = &_detector_image_v;
+      sem_slice = &_semantic_image_v;
+      det_event = &_event_detector_image_v;
+      sem_event = &_event_semantic_image_v;
+    } else if (img.view == static_cast<int>(geo::kW)) {
+      det_slice = &_detector_image_w;
+      sem_slice = &_semantic_image_w;
+      det_event = &_event_detector_image_w;
+      sem_event = &_event_semantic_image_w;
+    } else {
+      return;
+    }
+    if (slice) {
+      if (det_slice) *det_slice = img.adc;
+      if (sem_slice) sem_slice->assign(img.semantic.begin(), img.semantic.end());
+    } else {
+      if (det_event) *det_event = img.adc;
+      if (sem_event) sem_event->assign(img.semantic.begin(), img.semantic.end());
+    }
+  };
 
-  std::vector<Image<float>> detector_images;
-  std::vector<Image<int>> semantic_images;
-  _image_algo->produceImages(event, neutrino_hits, properties, is_data,
-                             _semantic_classifier.get(), fBadChannels,
-                             detector_images, semantic_images);
+  for (const auto &pi : *sliceH) assignPlane(pi, true);
+  for (const auto &pi : *eventH) assignPlane(pi, false);
 
-  std::vector<Image<float>> event_detector_images;
-  std::vector<Image<int>> event_semantic_images;
-  _image_algo->produceImages(event, all_hits, properties, is_data,
-                             _semantic_classifier.get(), fBadChannels,
-                             event_detector_images, event_semantic_images);
-
-  _detector_image_u = detector_images[0].data();
-  _detector_image_v = detector_images[1].data();
-  _detector_image_w = detector_images[2].data();
-  _semantic_image_u = semantic_images[0].data();
-  _semantic_image_v = semantic_images[1].data();
-  _semantic_image_w = semantic_images[2].data();
-  _event_detector_image_u = event_detector_images[0].data();
-  _event_detector_image_v = event_detector_images[1].data();
-  _event_detector_image_w = event_detector_images[2].data();
-  _event_semantic_image_u = event_semantic_images[0].data();
-  _event_semantic_image_v = event_semantic_images[1].data();
-  _event_semantic_image_w = event_semantic_images[2].data();
   _event_adc_u = std::accumulate(_event_detector_image_u.begin(),
                                  _event_detector_image_u.end(), 0.0f);
   _event_adc_v = std::accumulate(_event_detector_image_v.begin(),
@@ -490,36 +322,40 @@ void ImageAnalysis::analyseSlice(
                                  _event_detector_image_w.end(), 0.0f);
 
   if (!is_data) {
-    for (size_t i = 0; i < SemanticPixelClassifier::semantic_label_names.size();
-         ++i) {
-      _slice_semantic_counts_u.push_back(
-          std::count(_semantic_image_u.begin(), _semantic_image_u.end(), i));
-      _slice_semantic_counts_v.push_back(
-          std::count(_semantic_image_v.begin(), _semantic_image_v.end(), i));
-      _slice_semantic_counts_w.push_back(
-          std::count(_semantic_image_w.begin(), _semantic_image_w.end(), i));
-      _event_semantic_counts_u.push_back(std::count(
-          _event_semantic_image_u.begin(), _event_semantic_image_u.end(), i));
-      _event_semantic_counts_v.push_back(std::count(
-          _event_semantic_image_v.begin(), _event_semantic_image_v.end(), i));
-      _event_semantic_counts_w.push_back(std::count(
-          _event_semantic_image_w.begin(), _event_semantic_image_w.end(), i));
+    size_t nlabels = SemanticPixelClassifier::semantic_label_names.size();
+    _slice_semantic_counts_u = countLabels(_semantic_image_u, nlabels);
+    _slice_semantic_counts_v = countLabels(_semantic_image_v, nlabels);
+    _slice_semantic_counts_w = countLabels(_semantic_image_w, nlabels);
+    _event_semantic_counts_u = countLabels(_event_semantic_image_u, nlabels);
+    _event_semantic_counts_v = countLabels(_event_semantic_image_v, nlabels);
+    _event_semantic_counts_w = countLabels(_event_semantic_image_w, nlabels);
+  }
+
+  auto scoresH = event.getValidHandle<analysis::InferenceScoresProduct>(fScoresTag);
+  for (size_t i = 0; i < scoresH->names.size() && i < scoresH->scores.size(); ++i) {
+    _inference_scores[scoresH->names[i]] = scoresH->scores[i];
+  }
+
+  art::Handle<std::vector<analysis::PlaneSegmentationProduct>> segH;
+  if (event.getByLabel(fSegmentationTag, segH) && segH.isValid()) {
+    auto to_intvec = [](const std::vector<uint8_t> &src) {
+      std::vector<int> dst;
+      dst.reserve(src.size());
+      for (auto v : src) dst.push_back(static_cast<int>(v));
+      return dst;
+    };
+    for (const auto &p : *segH) {
+      if (p.view == static_cast<int>(geo::kU)) _pred_semantic_image_u = to_intvec(p.labels);
+      if (p.view == static_cast<int>(geo::kV)) _pred_semantic_image_v = to_intvec(p.labels);
+      if (p.view == static_cast<int>(geo::kW)) _pred_semantic_image_w = to_intvec(p.labels);
     }
-  }
-
-  std::string scratch_dir = ".";
-  const char *scratch_dir_cstr = std::getenv("_CONDOR_SCRATCH_DIR");
-  if (scratch_dir_cstr) {
-    scratch_dir = std::string(scratch_dir_cstr);
-  }
-  char scratch_path_buffer[PATH_MAX];
-  realpath(scratch_dir.c_str(), scratch_path_buffer);
-  std::string absolute_scratch_dir(scratch_path_buffer);
-
-  auto scores =
-      _image_algo->runInference(detector_images, absolute_scratch_dir);
-  for (auto const &kv : scores) {
-    _inference_scores[kv.first] = kv.second;
+    size_t nlabels = SemanticPixelClassifier::semantic_label_names.size();
+    if (!_pred_semantic_image_u.empty())
+      _pred_semantic_counts_u = countLabels(_pred_semantic_image_u, nlabels);
+    if (!_pred_semantic_image_v.empty())
+      _pred_semantic_counts_v = countLabels(_pred_semantic_image_v, nlabels);
+    if (!_pred_semantic_image_w.empty())
+      _pred_semantic_counts_w = countLabels(_pred_semantic_image_w, nlabels);
   }
 
   if (!std::isnan(_reco_neutrino_vertex_x)) {
@@ -527,56 +363,32 @@ void ImageAnalysis::analyseSlice(
                         _reco_neutrino_vertex_z);
     TVector3 vtx_proj_u = common::ProjectToWireView(
         vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_U);
-    _is_vtx_in_image_u =
-        (properties[0].row(vtx_proj_u.X()) != static_cast<size_t>(-1) &&
-         properties[0].col(vtx_proj_u.Z()) != static_cast<size_t>(-1));
     TVector3 vtx_proj_v = common::ProjectToWireView(
         vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
-    _is_vtx_in_image_v =
-        (properties[1].row(vtx_proj_v.X()) != static_cast<size_t>(-1) &&
-         properties[1].col(vtx_proj_v.Z()) != static_cast<size_t>(-1));
     TVector3 vtx_proj_w = common::ProjectToWireView(
         vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
-    _is_vtx_in_image_w =
-        (properties[2].row(vtx_proj_w.X()) != static_cast<size_t>(-1) &&
-         properties[2].col(vtx_proj_w.Z()) != static_cast<size_t>(-1));
+    auto in_img = [](const analysis::PlaneImageProduct &im, double drift, double wire) {
+      bool in_row = (drift >= im.origin_y) &&
+                    (drift < im.origin_y + im.pixel_h * static_cast<double>(im.height));
+      bool in_col = (wire >= im.origin_x) &&
+                    (wire < im.origin_x + im.pixel_w * static_cast<double>(im.width));
+      return in_row && in_col;
+    };
+    const analysis::PlaneImageProduct *U = nullptr;
+    const analysis::PlaneImageProduct *V = nullptr;
+    const analysis::PlaneImageProduct *W = nullptr;
+    for (const auto &im : *sliceH) {
+      if (im.view == static_cast<int>(geo::kU)) U = &im;
+      if (im.view == static_cast<int>(geo::kV)) V = &im;
+      if (im.view == static_cast<int>(geo::kW)) W = &im;
+    }
+    _is_vtx_in_image_u = (U && in_img(*U, vtx_proj_u.X(), vtx_proj_u.Z()));
+    _is_vtx_in_image_v = (V && in_img(*V, vtx_proj_v.X(), vtx_proj_v.Z()));
+    _is_vtx_in_image_w = (W && in_img(*W, vtx_proj_w.X(), vtx_proj_w.Z()));
   }
-}
-
-std::vector<art::Ptr<recob::Hit>>
-ImageAnalysis::collectAllHits(const art::Event &event) {
-  std::vector<art::Ptr<recob::Hit>> all_hits;
-  auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-  for (size_t i = 0; i < hit_handle->size(); ++i) {
-    all_hits.emplace_back(hit_handle, i);
-  }
-  return all_hits;
-}
-
-std::vector<art::Ptr<recob::Hit>> ImageAnalysis::collectSliceHits(
-    const art::Event &event,
-    const std::vector<common::ProxyPfpElem_t> &pfp_pxy_vec) {
-  std::vector<art::Ptr<recob::Hit>> neutrino_hits;
-  auto pfpHandle =
-      event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-  art::FindManyP<recob::Slice> sliceAssoc(pfpHandle, event, fPFPproducer);
-  size_t pfpIndex = pfp_pxy_vec[0].index();
-  const auto &slices = sliceAssoc.at(pfpIndex);
-  if (slices.empty())
-    return {};
-  const art::Ptr<recob::Slice> &slice = slices[0];
-  auto sliceHandle =
-      event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-  art::FindManyP<recob::Hit> hitAssoc(sliceHandle, event, fSLCproducer);
-  const std::vector<art::Ptr<recob::Hit>> &sliceHits = hitAssoc.at(slice.key());
-  neutrino_hits.reserve(sliceHits.size());
-  for (const auto &hit : sliceHits) {
-    neutrino_hits.push_back(hit);
-  }
-  return neutrino_hits;
 }
 
 DEFINE_ART_CLASS_TOOL(ImageAnalysis)
-} // namespace analysis
+}
 
 #endif

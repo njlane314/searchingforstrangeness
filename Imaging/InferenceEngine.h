@@ -2,16 +2,19 @@
 #define INFERENCEENGINE_H
 
 #include "Imaging/Image.h"
-#include "Common/NpyUtils.h"
 
 #include <chrono>
 #include <cstdlib>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <sys/stat.h>
+#include <cstdint>
 #include <cstdio>
+#include <fstream>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <vector>
 #include <cetlib_except/exception.h>
 #include <canvas/Utilities/Exception.h>
 #include <messagefacility/MessageLogger/MessageLogger.h>
@@ -19,13 +22,35 @@
 namespace analysis {
 class InferenceEngine {
   public:
+    struct Result {
+      std::vector<float> cls;
+      uint32_t segW{0}, segH{0};
+      std::vector<uint8_t> seg_u, seg_v, seg_w;
+      std::vector<float> conf_u, conf_v, conf_w;
+    };
+
+    static Result runInferenceDetailed(const std::vector<Image<float>> &detector_images,
+                                       const std::string &absolute_scratch_dir,
+                                       const std::string &work_dir,
+                                       const std::string &arch,
+                                       const std::string &weights_file,
+                                       const std::string &inference_wrapper,
+                                       const std::string &assets_base_dir,
+                                       bool want_cls = true,
+                                       bool want_seg = true);
+
     static float runInference(const std::vector<Image<float>> &detector_images,
                               const std::string &absolute_scratch_dir,
                               const std::string &work_dir,
                               const std::string &arch,
                               const std::string &weights_file,
                               const std::string &inference_wrapper,
-                              const std::string &assets_base_dir);
+                              const std::string &assets_base_dir) {
+      auto r = runInferenceDetailed(detector_images, absolute_scratch_dir, work_dir,
+                                    arch, weights_file, inference_wrapper, assets_base_dir,
+                                    true, false);
+      return r.cls.empty() ? std::numeric_limits<float>::quiet_NaN() : r.cls.front();
+    }
 };
 
 inline std::string joinPath(std::string a, const std::string &b) {
@@ -34,24 +59,56 @@ inline std::string joinPath(std::string a, const std::string &b) {
     return a + b;
 }
 
-inline float InferenceEngine::runInference(
+namespace _binary_io {
+  struct ResultHeader {
+    char     magic[4];
+    uint32_t version;
+    uint32_t K;
+    uint32_t segW;
+    uint32_t segH;
+    uint32_t has_conf;
+    uint64_t cls_bytes;
+    uint64_t seg_bytes;
+    uint64_t conf_bytes;
+  };
+
+  inline void write_chw_f32(const std::string& path,
+                            const std::vector<float>& u,
+                            const std::vector<float>& v,
+                            const std::vector<float>& w) {
+    std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
+    if (!ofs) throw std::runtime_error("Cannot open " + path);
+    ofs.write(reinterpret_cast<const char*>(u.data()), sizeof(float)*u.size());
+    ofs.write(reinterpret_cast<const char*>(v.data()), sizeof(float)*v.size());
+    ofs.write(reinterpret_cast<const char*>(w.data()), sizeof(float)*w.size());
+    if (!ofs) throw std::runtime_error("Short write to " + path);
+  }
+}
+
+inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     const std::vector<Image<float>> &detector_images,
     const std::string &absolute_scratch_dir, const std::string &work_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,
-    const std::string &assets_base_dir) {
+    const std::string &assets_base_dir,
+    bool want_cls, bool want_seg) {
     using std::string;
     (void)work_dir;
-    string npy_in = joinPath(absolute_scratch_dir, "detector_images.npy");
-    string temp_out = joinPath(absolute_scratch_dir, "temp_test_out.txt");
-    string script_stdout = joinPath(absolute_scratch_dir, "py_script.out");
-    string script_stderr = joinPath(absolute_scratch_dir, "py_script.err");
 
-    std::vector<std::vector<float>> images = {
-        detector_images[0].data(),
-        detector_images[1].data(),
-        detector_images[2].data()};
-    common::save_npy_f32_2d(npy_in, images);
+    auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    int pid  = ::getpid();
+    std::ostringstream base;
+    base << "ia_" << pid << "_" << now;
+
+    string req_bin       = joinPath(absolute_scratch_dir, base.str() + "_planes.bin");
+    string result_bin    = joinPath(absolute_scratch_dir, base.str() + "_results.bin");
+    string script_stdout = joinPath(absolute_scratch_dir, base.str() + "_py_script.out");
+    string script_stderr = joinPath(absolute_scratch_dir, base.str() + "_py_script.err");
+
+    const auto& U = detector_images[0].data();
+    const auto& V = detector_images[1].data();
+    const auto& W = detector_images[2].data();
+    _binary_io::write_chw_f32(req_bin, U, V, W);
 
     string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
 
@@ -94,10 +151,14 @@ inline float InferenceEngine::runInference(
     cmd << "apptainer exec --cleanenv --bind " << bind_csv.str() << " "
         << container << " "
         << "/bin/bash " << inference_wrapper << " "
-        << "--npy " << npy_in << " "
-        << "--output " << temp_out << " "
+        << "--in " << req_bin << " "
+        << "--out " << result_bin << " "
+        << "--W " << detector_images[0].width() << " "
+        << "--H " << detector_images[0].height() << " "
         << "--arch " << arch << " "
-        << "--weights " << weights_file
+        << "--weights " << weights_file << " "
+        << "--want-cls " << (want_cls ? 1 : 0) << " "
+        << "--want-seg " << (want_seg ? 1 : 0)
         << " > " << script_stdout << " 2> " << script_stderr;
 
     mf::LogInfo("InferenceEngine") << "Executing inference: " << cmd.str();
@@ -108,7 +169,7 @@ inline float InferenceEngine::runInference(
     double duration = std::chrono::duration<double>(end - start).count();
 
     struct stat temp_stat;
-    bool success = (code == 0) && (stat(temp_out.c_str(), &temp_stat) == 0);
+    bool success = (code == 0) && (stat(result_bin.c_str(), &temp_stat) == 0);
     if (!success) {
         std::ifstream error_stream(script_stderr);
         std::string error_message(
@@ -119,26 +180,58 @@ inline float InferenceEngine::runInference(
             << error_message << "\n--- End Script stderr ---";
     }
 
-    std::ifstream result_stream(temp_out.c_str());
-    if (!result_stream) {
-        throw art::Exception(art::errors::LogicError)
-            << "Could not open temporary result file: " << temp_out;
+    Result out;
+    std::ifstream ifs(result_bin, std::ios::binary);
+    if (!ifs) {
+      throw art::Exception(art::errors::LogicError)
+        << "Could not open result file: " << result_bin;
     }
-    float score;
-    result_stream >> score;
+    _binary_io::ResultHeader h{};
+    ifs.read(reinterpret_cast<char*>(&h), sizeof(h));
+    if (!ifs || std::string(h.magic, h.magic+4) != "IAOK" || h.version != 1) {
+      throw art::Exception(art::errors::LogicError)
+        << "Bad result header in " << result_bin;
+    }
+    if (h.K && h.cls_bytes == h.K * sizeof(float)) {
+      out.cls.resize(h.K);
+      ifs.read(reinterpret_cast<char*>(out.cls.data()), h.cls_bytes);
+    }
+    if (h.segW && h.segH) {
+      out.segW = h.segW; out.segH = h.segH;
+      const size_t npix = size_t(out.segW) * out.segH;
+      if (h.seg_bytes != 3 * npix) {
+        throw art::Exception(art::errors::LogicError)
+          << "seg_bytes mismatch in " << result_bin;
+      }
+      out.seg_u.resize(npix); out.seg_v.resize(npix); out.seg_w.resize(npix);
+      ifs.read(reinterpret_cast<char*>(out.seg_u.data()), npix);
+      ifs.read(reinterpret_cast<char*>(out.seg_v.data()), npix);
+      ifs.read(reinterpret_cast<char*>(out.seg_w.data()), npix);
+      if (h.has_conf) {
+        if (h.conf_bytes != 3 * npix * sizeof(float)) {
+          throw art::Exception(art::errors::LogicError)
+            << "conf_bytes mismatch in " << result_bin;
+        }
+        out.conf_u.resize(npix); out.conf_v.resize(npix); out.conf_w.resize(npix);
+        ifs.read(reinterpret_cast<char*>(out.conf_u.data()), npix*sizeof(float));
+        ifs.read(reinterpret_cast<char*>(out.conf_v.data()), npix*sizeof(float));
+        ifs.read(reinterpret_cast<char*>(out.conf_w.data()), npix*sizeof(float));
+      }
+    }
 
     mf::LogInfo("InferenceEngine")
         << "Inference time: " << duration << " seconds";
-    mf::LogInfo("InferenceEngine") << "Predicted score: " << score;
+    if (!out.cls.empty())
+      mf::LogInfo("InferenceEngine") << "First class score: " << out.cls.front();
 
-    std::remove(npy_in.c_str());
-    std::remove(temp_out.c_str());
+    std::remove(req_bin.c_str());
+    std::remove(result_bin.c_str());
     std::remove(script_stdout.c_str());
     std::remove(script_stderr.c_str());
 
-    return score;
+    return out;
 }
 
-} // namespace analysis
+}
 
-#endif // INFERENCEENGINE_H
+#endif
