@@ -46,6 +46,7 @@ public:
   ~MetaAnalysis_tool() override = default;
 
   void configure(const fhicl::ParameterSet&) override {}
+  bool isEventDriven() const override { return true; }
   void analyseEvent(const art::Event& event, bool is_data) override;
   void analyseSlice(const art::Event&, std::vector<common::ProxyPfpElem_t>&, bool, bool) override {}
   void setBranches(TTree* tree) override;
