@@ -22,78 +22,18 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 #include "ubobj/Optical/UbooneOpticalFilter.h"
 #include "Rtypes.h"
 #include "AnalysisTools/AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
-#include <type_traits>
-#include <utility>
 
 #include "TTree.h"
 #include "TVector3.h"
-#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-namespace {
-template <typename...>
-using void_t = void;
-
-template <typename T, typename = void>
-struct has_getListOfPassedAlgorithms : std::false_type {};
-
-template <typename T>
-struct has_getListOfPassedAlgorithms<
-    T,
-    void_t<decltype(std::declval<T const &>().getListOfPassedAlgorithms())>> : std::true_type {};
-
-template <typename T, typename = void>
-struct has_passedAlgo : std::false_type {};
-
-template <typename T>
-struct has_passedAlgo<
-    T,
-    void_t<decltype(std::declval<T const &>().passedAlgo(std::declval<std::string const &>()))>> : std::true_type {};
-
-template <typename T, typename = void>
-struct has_isPassed : std::false_type {};
-
-template <typename T>
-struct has_isPassed<
-    T,
-    void_t<decltype(std::declval<T const &>().isPassed(std::declval<std::string const &>()))>> : std::true_type {};
-
-template <typename T>
-inline constexpr bool dependent_false_v = false;
-
-template <typename Trigger>
-bool algorithmPassed(Trigger const &trigger, std::string const &name) {
-    if constexpr (has_passedAlgo<Trigger>::value) {
-        return trigger.passedAlgo(name);
-    } else if constexpr (has_isPassed<Trigger>::value) {
-        return trigger.isPassed(name);
-    } else if constexpr (has_getListOfPassedAlgorithms<Trigger>::value) {
-        auto const passed = trigger.getListOfPassedAlgorithms();
-        return std::find(passed.begin(), passed.end(), name) != passed.end();
-    } else {
-        static_assert(dependent_false_v<Trigger>,
-                      "ubdaqSoftwareTriggerData does not provide access to algorithm pass information");
-        return false;
-    }
-}
-
-template <>
-bool algorithmPassed<raw::ubdaqSoftwareTriggerData>(raw::ubdaqSoftwareTriggerData const &trigger,
-                                                    std::string const &name)
-{
-    auto const passed = trigger.getListOfPassedAlgorithms();
-    return std::find(passed.begin(), passed.end(), name) != passed.end();
-}
-} // namespace
 
 class EventSelectionFilter : public art::EDFilter {
 public:
@@ -143,9 +83,6 @@ private:
     std::unique_ptr<::selection::SelectionToolBase> _selectionTool;
     std::vector<std::unique_ptr<::analysis::AnalysisToolBase>> _analysisToolsVec;
 
-    std::string _swtrig_proc;
-    std::vector<std::string> _beam_gate_algos;
-    std::vector<std::string> _ext_gate_algos;
     bool _count_with_opfilter;
     std::string _opfilter_proc;
     float _op_pe_beam_min;
@@ -185,9 +122,6 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     _numi = p.get<bool>("IsNuMI", false);
     _filter = p.get<bool>("Filter", false);
 
-    _swtrig_proc         = p.get<std::string>("BeamSWTrigProcName", "DataOverlayOptical");
-    _beam_gate_algos     = p.get<std::vector<std::string>>("BeamGateAlgoNames", {});
-    _ext_gate_algos      = p.get<std::vector<std::string>>("ExtGateAlgoNames", {});
     _count_with_opfilter = p.get<bool>("CountWithOpFilter", false);
     _opfilter_proc       = p.get<std::string>("OpFilterProcName", "DataStage1Optical");
     _op_pe_beam_min      = p.get<float>("OpFilterPEBeamMin", 0.0);
@@ -255,20 +189,6 @@ bool EventSelectionFilter::filter(art::Event &e) {
 
     bool pass_beam_gate = false;
     bool pass_ext_gate  = false;
-    try {
-        art::InputTag trigTag("swtrigger", "", _swtrig_proc);
-        const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
-        auto const& trigger = *trigH;
-        auto const has_any = [&](const std::vector<std::string>& wanted) {
-            for (auto const& name : wanted) {
-                if (algorithmPassed(trigger, name)) return true;
-            }
-            return false;
-        };
-        pass_beam_gate = has_any(_beam_gate_algos);
-        pass_ext_gate  = has_any(_ext_gate_algos);
-    } catch (...) {
-    }
     bool op_ok = true;
     if (_count_with_opfilter) {
         try {
