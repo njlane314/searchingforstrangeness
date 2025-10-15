@@ -21,10 +21,6 @@ namespace analysis
 
         virtual void configure(const fhicl::ParameterSet&) = 0;
 
-        /// Whether this tool only performs event-level analysis.
-        /// Event-driven tools are not asked to analyse slices.
-        virtual bool isEventDriven() const { return false; }
-
         virtual void analyseEvent(const art::Event& event, bool is_data) = 0;
 
         virtual void analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) = 0;
