@@ -213,7 +213,7 @@ bool EventSelectionFilter::filter(art::Event &e) {
             bool ok = false;
             auto const& trigger = *trigH;
             for (auto const& name : wanted) {
-                ok = ok || trigger.passedAlgo(name);
+                ok = ok || trigger.passedAlgo(name.c_str());
             }
             return ok;
         };

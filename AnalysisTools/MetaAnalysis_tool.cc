@@ -206,20 +206,17 @@ private:
     out_label = desc.moduleLabel();
 
     out_pset_id.clear();
-    auto const& pset_ids = prov->parameterSetIDs();
-    if (!pset_ids.empty()) out_pset_id = pset_ids.front().to_string();
+    auto const pset_id = prov->parameterSetID();
+    if (pset_id.isValid()) out_pset_id = pset_id.to_string();
 
     if (out_release) {
-      if (auto const* pc = prov->processConfiguration()) {
-        *out_release = pc->releaseVersion();
-      } else {
-        out_release->clear();
-      }
+      out_release->clear();
     }
 
     try {
       fhicl::ParameterSet ptmp;
-      if (fhicl::ParameterSetRegistry::get(fhicl::ParameterSetID{out_pset_id}, ptmp)) {
+      if (!out_pset_id.empty() &&
+          fhicl::ParameterSetRegistry::get(fhicl::ParameterSetID{out_pset_id}, ptmp)) {
         out_pset = std::move(ptmp);
         return true;
       }
