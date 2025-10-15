@@ -277,10 +277,10 @@ void ImageAnalysis::analyseSlice(
     }
   }
 
-  auto sliceH = event.getValidHandle<std::vector<analysis::PlaneImageProduct>>(fImagesSliceTag);
-  auto eventH = event.getValidHandle<std::vector<analysis::PlaneImageProduct>>(fImagesEventTag);
+  auto sliceH = event.getValidHandle<std::vector<analysis::PlaneImage>>(fImagesSliceTag);
+  auto eventH = event.getValidHandle<std::vector<analysis::PlaneImage>>(fImagesEventTag);
 
-  auto assignPlane = [&](const analysis::PlaneImageProduct &img, bool slice) {
+  auto assignPlane = [&](const analysis::PlaneImage &img, bool slice) {
     std::vector<float> *det_slice = nullptr;
     std::vector<int> *sem_slice = nullptr;
     std::vector<float> *det_event = nullptr;
@@ -332,12 +332,12 @@ void ImageAnalysis::analyseSlice(
     _event_semantic_counts_w = countLabels(_event_semantic_image_w, nlabels);
   }
 
-  auto scoresH = event.getValidHandle<analysis::InferenceScoresProduct>(fScoresTag);
+  auto scoresH = event.getValidHandle<analysis::InferenceScores>(fScoresTag);
   for (size_t i = 0; i < scoresH->names.size() && i < scoresH->scores.size(); ++i) {
     _inference_scores[scoresH->names[i]] = scoresH->scores[i];
   }
 
-  art::Handle<std::vector<analysis::PlaneSegmentationProduct>> segH;
+  art::Handle<std::vector<analysis::PlaneSegmentation>> segH;
   if (event.getByLabel(fSegmentationTag, segH) && segH.isValid()) {
     auto to_intvec = [](const std::vector<uint8_t> &src) {
       std::vector<int> dst;
@@ -368,16 +368,16 @@ void ImageAnalysis::analyseSlice(
         vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
     TVector3 vtx_proj_w = common::ProjectToWireView(
         vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
-    auto in_img = [](const analysis::PlaneImageProduct &im, double drift, double wire) {
+    auto in_img = [](const analysis::PlaneImage &im, double drift, double wire) {
       bool in_row = (drift >= im.origin_y) &&
                     (drift < im.origin_y + im.pixel_h * static_cast<double>(im.height));
       bool in_col = (wire >= im.origin_x) &&
                     (wire < im.origin_x + im.pixel_w * static_cast<double>(im.width));
       return in_row && in_col;
     };
-    const analysis::PlaneImageProduct *U = nullptr;
-    const analysis::PlaneImageProduct *V = nullptr;
-    const analysis::PlaneImageProduct *W = nullptr;
+    const analysis::PlaneImage *U = nullptr;
+    const analysis::PlaneImage *V = nullptr;
+    const analysis::PlaneImage *W = nullptr;
     for (const auto &im : *sliceH) {
       if (im.view == static_cast<int>(geo::kU)) U = &im;
       if (im.view == static_cast<int>(geo::kV)) V = &im;

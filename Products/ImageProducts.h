@@ -9,7 +9,7 @@
 
 namespace analysis {
 
-struct PlaneImageProduct {
+struct PlaneImage {
   int view{static_cast<int>(geo::kUnknown)};
   uint32_t width{0};
   uint32_t height{0};
@@ -21,7 +21,7 @@ struct PlaneImageProduct {
   std::vector<int32_t> semantic;
 };
 
-struct InferenceScoresProduct {
+struct InferenceScores {
   std::vector<std::string> names;
   std::vector<float> scores;
 };
