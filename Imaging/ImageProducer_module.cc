@@ -16,8 +16,8 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/Vertex.h"
 
-#include "DataProducts/ImageProducts.h"
-#include "DataProducts/SegmentationProducts.h"
+#include "Products/ImageProducts.h"
+#include "Products/SegmentationProducts.h"
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageAlgo.h"
