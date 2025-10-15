@@ -32,6 +32,50 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace {
+  // Prefer the legacy method if it exists.
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, int)
+      -> decltype(trig.getListOfPassedAlgorithms()) {
+    return trig.getListOfPassedAlgorithms();
+  }
+
+  // Newer API variant: getListOfAlgorithms() + getPassed(name)
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, long)
+      -> decltype(trig.getListOfAlgorithms(),
+                  trig.getPassed(std::declval<std::string>()),
+                  std::vector<std::string>{}) {
+    std::vector<std::string> out;
+    for (auto const& name : trig.getListOfAlgorithms()) {
+      if (trig.getPassed(name)) out.push_back(name);
+    }
+    return out;
+  }
+
+  // Alternative newer API: getListOfAlgorithms() + passed(name)
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, double)
+      -> decltype(trig.getListOfAlgorithms(),
+                  trig.passed(std::declval<std::string>()),
+                  std::vector<std::string>{}) {
+    std::vector<std::string> out;
+    for (auto const& name : trig.getListOfAlgorithms()) {
+      if (trig.passed(name)) out.push_back(name);
+    }
+    return out;
+  }
+
+  template <class T>
+  auto getPassedAlgs(const T& trig) {
+    // Overload set resolves to the first viable impl for this build.
+    return getPassedAlgsImpl_(trig, 0);
+  }
+} // namespace
 
 namespace analysis {
 
@@ -268,7 +312,7 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             const auto& triggerHandle = event.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
             auto const& trigger = *triggerHandle;
-            auto const passedNames = trigger.getListOfPassedAlgorithms();
+            auto const passedNames = getPassedAlgs(trigger);
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
                 const bool passed = std::find(passedNames.begin(), passedNames.end(), triggerName[j]) != passedNames.end();
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {

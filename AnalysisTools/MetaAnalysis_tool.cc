@@ -35,6 +35,7 @@ public:
   void resetTTree(TTree* tree) override;
 
 private:
+  // ====================== stored state ======================
   // ---- generator (from MCTruth::MCGeneratorInfo) ----
   std::string _gen_name;
   std::string _gen_version;
@@ -54,6 +55,8 @@ private:
 
   // Union of metadata keys from PFParticleMetadata objects found in the event
   std::vector<std::string> _pandora_metadata_keys;
+
+  // ====================== detection helpers ======================
 
   // ---------- helpers for MCGeneratorInfo (guard for LArSoft variations) ----------
   template <typename T, typename = void>
@@ -101,6 +104,64 @@ private:
     else if constexpr (has_GI_Tune<GI>::value)        tune = std::to_string(static_cast<int>(gi.Tune()));
   }
 
+  // Try to read MCTruth::GeneratorInfo() only if it exists in this build.
+  // Overload selected via SFINAE; no name lookup errors in non-matching versions.
+  template <typename T>
+  static auto tryFillGeneratorInfo_(const T& mct,
+                                    std::string& name,
+                                    std::string& ver,
+                                    std::string& tune)
+    -> decltype(mct.GeneratorInfo(), bool())
+  {
+    // Old/variant API path: MCTruth exposes GeneratorInfo()
+    const auto& gi = mct.GeneratorInfo();
+    extractGI_(gi, name, ver, tune);
+    return !(name.empty() && ver.empty() && tune.empty());
+  }
+  // Fallback: no GeneratorInfo() in this stack.
+  static inline bool tryFillGeneratorInfo_(...) { return false; }
+
+  // ---------- helpers for art::Provenance (old vs new API) ----------
+  // releaseVersion moved in newer art; probe a direct method if present
+  template <typename Prov>
+  static auto get_release_version_(Prov const* prov, int)
+    -> decltype(prov->releaseVersion(), std::string())
+  { return prov->releaseVersion(); }
+  template <typename Prov>
+  static std::string get_release_version_(Prov const*, long)
+  { return {}; }
+
+  // Old art path: branchDescription() / processConfiguration() / parameterSetID()
+  template <typename Prov>
+  static auto fillProvInfo_fromProv_(Prov const* prov,
+                                     std::string& module_label,
+                                     std::string& process_name,
+                                     std::string& release_version,
+                                     std::string& pset_id)
+    -> decltype(prov->branchDescription(), prov->processConfiguration(), prov->parameterSetID(), bool())
+  {
+    module_label    = prov->branchDescription().moduleLabel();
+    process_name    = prov->processName();
+    release_version = prov->processConfiguration().releaseVersion();
+    pset_id         = prov->parameterSetID().to_string();
+    return true;
+  }
+  // Newer art path: productDescription() / parameterSet()
+  template <typename Prov>
+  static auto fillProvInfo_fromProv_(Prov const* prov,
+                                     std::string& module_label,
+                                     std::string& process_name,
+                                     std::string& release_version,
+                                     std::string& pset_id)
+    -> decltype(prov->productDescription(), prov->parameterSet(), bool())
+  {
+    module_label    = prov->productDescription().moduleLabel();
+    process_name    = prov->processName();
+    release_version = get_release_version_(prov, 0); // may be empty if not available
+    pset_id         = prov->parameterSet().id().to_string();
+    return true;
+  }
+
   template <class CollT>
   static bool fillProvInfo_(const art::Handle<CollT>& h,
                             std::string& module_label,
@@ -110,11 +171,7 @@ private:
   {
     auto const* prov = h.provenance();
     if (!prov) return false;
-    module_label   = prov->branchDescription().moduleLabel();
-    process_name   = prov->processName();
-    release_version= prov->processConfiguration().releaseVersion();
-    pset_id        = prov->parameterSetID().to_string(); // ID only; not reading FHiCL
-    return true;
+    return fillProvInfo_fromProv_(prov, module_label, process_name, release_version, pset_id);
   }
 };
 
@@ -170,13 +227,9 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool /*is_data*/)
     for (auto const& hmct : mct_handles) {
       if (!hmct.isValid()) continue;
       for (auto const& mct : *hmct) {
-        if constexpr (has_GeneratorInfo<simb::MCTruth>::value) {
-          try {
-            auto const& gi = mct.GeneratorInfo();
-            extractGI_(gi, _gen_name, _gen_version, _gen_tune);
-            if (!_gen_name.empty() || !_gen_version.empty() || !_gen_tune.empty())
-              break;
-          } catch (...) {}
+        if (tryFillGeneratorInfo_(mct, _gen_name, _gen_version, _gen_tune)) {
+          if (!_gen_name.empty() || !_gen_version.empty() || !_gen_tune.empty())
+            break;
         }
       }
       if (!_gen_name.empty() || !_gen_version.empty() || !_gen_tune.empty()) break;
