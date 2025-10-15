@@ -1,0 +1,7 @@
+<lcgdict>
+  <class name="analysis::PlaneImageProduct"/>
+  <class name="std::vector<analysis::PlaneImageProduct>"/>
+  <class name="analysis::InferenceScoresProduct"/>
+  <class name="analysis::PlaneSegmentationProduct"/>
+  <class name="std::vector<analysis::PlaneSegmentationProduct>"/>
+</lcgdict>
