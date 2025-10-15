@@ -125,7 +125,8 @@ private:
                      std::vector<int>& counts) {
     producers.clear();
     counts.clear();
-    auto handles = e.getMany<VecT>();
+    std::vector<art::Handle<VecT>> handles;
+    e.getManyByType(handles);
     producers.reserve(handles.size());
     counts.reserve(handles.size());
     for (auto const& h : handles) {
@@ -350,7 +351,7 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   _sub = static_cast<int>(e.subRun());
   _evt = static_cast<int>(e.event());
   try {
-    _event_time_value = e.eventAuxiliary().time().value();
+    _event_time_value = e.time().value();
   } catch (...) {
     _event_time_value = 0ULL;
   }
@@ -371,7 +372,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   }
 
   {
-    auto gens = e.getMany<std::vector<simb::MCTruth>>();
+    std::vector<art::Handle<std::vector<simb::MCTruth>>> gens;
+    e.getManyByType(gens);
     for (auto const& h : gens) {
       fhicl::ParameterSet gps;
       std::string pset_id;
@@ -409,7 +411,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   }
 
   {
-    auto fluxes = e.getMany<std::vector<simb::MCFlux>>();
+    std::vector<art::Handle<std::vector<simb::MCFlux>>> fluxes;
+    e.getManyByType(fluxes);
     for (auto const& h : fluxes) {
       fhicl::ParameterSet fps;
       std::string pset_id;
@@ -427,7 +430,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   }
 
   {
-    auto g4s = e.getMany<std::vector<simb::MCParticle>>();
+    std::vector<art::Handle<std::vector<simb::MCParticle>>> g4s;
+    e.getManyByType(g4s);
     for (auto const& h : g4s) {
       fhicl::ParameterSet g4ps;
       std::string pset_id;
@@ -440,7 +444,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   }
 
   {
-    auto pfps = e.getMany<std::vector<recob::PFParticle>>();
+    std::vector<art::Handle<std::vector<recob::PFParticle>>> pfps;
+    e.getManyByType(pfps);
     for (auto const& h : pfps) {
       fhicl::ParameterSet rps;
       std::string pset_id;
@@ -455,7 +460,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   {
     _swtrigger_algo_names.clear();
     _swtrigger_algo_passed.clear();
-    auto trigHandles = e.getMany<raw::ubdaqSoftwareTriggerData>();
+    std::vector<art::Handle<raw::ubdaqSoftwareTriggerData>> trigHandles;
+    e.getManyByType(trigHandles);
     for (auto const& h : trigHandles) {
       auto names = h->getListOfAlgorithms();
       _swtrigger_algo_names.assign(names.begin(), names.end());
@@ -474,7 +480,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   }
 
   {
-    auto oph = e.getMany<uboone::UbooneOpticalFilter>();
+    std::vector<art::Handle<uboone::UbooneOpticalFilter>> oph;
+    e.getManyByType(oph);
     for (auto const& h : oph) {
       _opfilter_pe_beam = h->PE_Beam();
       _opfilter_pe_veto = h->PE_Veto();
@@ -485,7 +492,8 @@ void MetaAnalysis_tool::analyseEvent(const art::Event& e, bool is_data)
   {
     _mc_weight_names.clear();
     std::set<std::string> names;
-    auto wgh = e.getMany<std::vector<evwgh::MCEventWeight>>();
+    std::vector<art::Handle<std::vector<evwgh::MCEventWeight>>> wgh;
+    e.getManyByType(wgh);
     for (auto const& h : wgh) {
       for (auto const& w : *h) {
         try {
