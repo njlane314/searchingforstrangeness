@@ -170,10 +170,10 @@ ImageProducerED::ImageProducerED(fhicl::ParameterSet const &p) {
                                       fADCThresh, fWeightsBaseDir, fInferenceWrapper, fAssetsBaseDir,
                                       fModels, fActiveModels, fGeo, fDetp, ".");
 
-  produces<std::vector<PlaneImageProduct>>("slice");
-  produces<std::vector<PlaneImageProduct>>("event");
-  produces<InferenceScoresProduct>();
-  produces<std::vector<PlaneSegmentationProduct>>("seg");
+  produces<std::vector<PlaneImage>>("slice");
+  produces<std::vector<PlaneImage>>("event");
+  produces<InferenceScores>();
+  produces<std::vector<PlaneSegmentation>>("seg");
 }
 
 void ImageProducerED::loadBadChannels(const std::string &filename) {
@@ -299,7 +299,7 @@ void ImageProducerED::produce(art::Event &event) {
   fAlgo->produceImages(event, all_hits, props, fIsData, fSemantic.get(), fBadChannels, det_event, sem_event);
 
   auto pack_plane = [](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem) {
-    PlaneImageProduct out;
+    PlaneImage out;
     out.view = static_cast<int>(p.view());
     out.width = static_cast<uint32_t>(p.width());
     out.height = static_cast<uint32_t>(p.height());
@@ -315,8 +315,8 @@ void ImageProducerED::produce(art::Event &event) {
     return out;
   };
 
-  auto out_slice = std::make_unique<std::vector<PlaneImageProduct>>();
-  auto out_event = std::make_unique<std::vector<PlaneImageProduct>>();
+  auto out_slice = std::make_unique<std::vector<PlaneImage>>();
+  auto out_event = std::make_unique<std::vector<PlaneImage>>();
   out_slice->reserve(3);
   out_event->reserve(3);
   for (size_t i = 0; i < 3; ++i) {
@@ -332,18 +332,18 @@ void ImageProducerED::produce(art::Event &event) {
   BinaryInferenceOutput inf_out = fAlgo->runInferenceBinary(det_slice, abs_scratch,
                                                             fWantClassification, fWantSegmentation);
 
-  auto sc = std::make_unique<InferenceScoresProduct>();
+  auto sc = std::make_unique<InferenceScores>();
   for (auto const &kv : inf_out.scores) {
     sc->names.push_back(kv.first);
     sc->scores.push_back(kv.second);
   }
 
-  std::unique_ptr<std::vector<PlaneSegmentationProduct>> seg_prod;
+  std::unique_ptr<std::vector<PlaneSegmentation>> seg_prod;
   if (inf_out.has_segmentation) {
-    seg_prod = std::make_unique<std::vector<PlaneSegmentationProduct>>();
+    seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
     seg_prod->reserve(3);
     auto make_plane = [&](int v, const std::vector<uint8_t> &lbl, const std::vector<float> &conf) {
-      PlaneSegmentationProduct p;
+      PlaneSegmentation p;
       p.view = v;
       p.width = inf_out.segW;
       p.height = inf_out.segH;
