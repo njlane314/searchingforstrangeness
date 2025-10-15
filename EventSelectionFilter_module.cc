@@ -35,7 +35,49 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
+
+namespace {
+  // Prefer the legacy method if it exists.
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, int)
+      -> decltype(trig.getListOfPassedAlgorithms()) {
+    return trig.getListOfPassedAlgorithms();
+  }
+
+  // Newer API variant: getListOfAlgorithms() + getPassed(name)
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, long)
+      -> decltype(trig.getListOfAlgorithms(),
+                  trig.getPassed(std::declval<std::string>()),
+                  std::vector<std::string>{}) {
+    std::vector<std::string> out;
+    for (auto const& name : trig.getListOfAlgorithms()) {
+      if (trig.getPassed(name)) out.push_back(name);
+    }
+    return out;
+  }
+
+  // Alternative newer API: getListOfAlgorithms() + passed(name)
+  template <class T>
+  auto getPassedAlgsImpl_(const T& trig, double)
+      -> decltype(trig.getListOfAlgorithms(),
+                  trig.passed(std::declval<std::string>()),
+                  std::vector<std::string>{}) {
+    std::vector<std::string> out;
+    for (auto const& name : trig.getListOfAlgorithms()) {
+      if (trig.passed(name)) out.push_back(name);
+    }
+    return out;
+  }
+
+  template <class T>
+  auto getPassedAlgs(const T& trig) {
+    // Overload set resolves to the first viable impl for this build.
+    return getPassedAlgsImpl_(trig, 0);
+  }
+} // namespace
 
 class EventSelectionFilter : public art::EDFilter {
 public:
@@ -201,7 +243,7 @@ bool EventSelectionFilter::filter(art::Event &e) {
         art::InputTag trigTag("swtrigger", "", _swtrig_proc);
         const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
         auto const& trigger = *trigH;
-        auto const passedNames = trigger.getListOfPassedAlgorithms();
+        auto const passedNames = getPassedAlgs(trigger);
         auto has_any = [&](const std::vector<std::string>& wanted) -> bool {
             for (auto const& name : wanted) {
                 if (std::find(passedNames.begin(), passedNames.end(), name) != passedNames.end())
