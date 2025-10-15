@@ -133,6 +133,56 @@ ImageAnalysis: {
     ActiveModels: []  # env override: ACTIVE_MODELS
 }
 
+# ----------------------------------------------------------------------
+# Builds image::PlaneImage and (optionally) image::PlaneSegmentation
+# and image::InferencePerfProduct from the event.
+# Module name (class) assumed: ImageProductsProducer
+# ----------------------------------------------------------------------
+ImageProducts: {
+    module_type: "ImageProductsProducer"
+
+    # ---- Inputs (reuse your standard producers) ----
+    WIREproducer: @local::standard_producers.WIREproducer
+    CLSproducer:  @local::standard_producers.CLSproducer
+    SLCproducer:  @local::standard_producers.SLCproducer
+    MCPproducer:  @local::standard_producers.MCPproducer
+    BKTproducer:  @local::standard_producers.BKTproducer
+
+    # ---- Image geometry (kept consistent with ImageAnalysis) ----
+    imageWidth:  @local::ImageAnalysis.imageWidth         # 512
+    imageHeight: @local::ImageAnalysis.imageHeight        # 512
+    Views: [ 0, 1, 2 ]    # geo::kU, geo::kV, geo::kZ (aka Y/collection)
+    BuildPerSlice: true    # one ROI per slice if true; whole-plane if false
+    TightenROIMarginWires: 10
+    TightenROIMarginTicks: 50
+
+    # Optional ADC preprocessing
+    ZeroSuppressBelow: -1.0e9    # effectively off
+    Normalization: "none"        # choices: "none", "maxabs", "zscore" (if supported)
+
+    # ---- What to write ----
+    MakeADC:       true      # writes std::vector<image::PlaneImage>::adc
+    MakeSemantic:  false     # toggled on automatically if any semantic model is active
+    WritePerf:     true      # writes image::InferencePerfProduct
+
+    # Output instance labels (if your module supports configuring them)
+    ADCInstance:      "adc"
+    SemanticInstance: "semantic"
+    PerfInstance:     "perf"
+
+    # ---- ML inference (optional) ----
+    # These mirror ImageAnalysis so env overrides still work the same way
+    AssetsBaseDir:    @local::ImageAnalysis.AssetsBaseDir      # env: ASSETS_BASE_DIR
+    WeightsBaseDir:   @local::ImageAnalysis.WeightsBaseDir     # env: WEIGHTS_BASE_DIR
+    InferenceWrapper: @local::ImageAnalysis.InferenceWrapper   # external script/runner
+
+    # Define models (empty by default; add your own below)
+    Models: @local::ImageAnalysis.Models
+
+    # Which models to actually run (leave [] to disable inference)
+    ActiveModels: @local::ImageAnalysis.ActiveModels           # env: ACTIVE_MODELS
+}
+
 SliceAnalysis: {
     tool_type: "SliceAnalysis"
     CLSproducer: @local::standard_producers.CLSproducer

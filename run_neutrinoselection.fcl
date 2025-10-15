@@ -29,12 +29,18 @@ source: {
 }
 
 physics: {
+    producers: {
+        imageprod: @local::ImageProducts
+    }
+
     filters: {
         nuselection: {
             @table::NeutrinoSelectionFilter
         }
     }
-    path1: [ nuselection ]
+
+    # Run image producer first, then the selection/filter
+    path1: [ imageprod, nuselection ]
     trigger_paths: [ path1 ]
 }
 
