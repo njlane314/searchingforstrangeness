@@ -199,6 +199,7 @@ void ImageProducerED::loadBadChannels(const std::string &filename) {
   }
 }
 
+
 std::vector<art::Ptr<recob::Hit>> ImageProducerED::collectAllHits(const art::Event &event,
                                                                   art::InputTag const &hitTag) {
   std::vector<art::Ptr<recob::Hit>> out;
