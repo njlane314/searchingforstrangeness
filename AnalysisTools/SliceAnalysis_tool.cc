@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <limits>
+#include <unordered_map>
 
 namespace analysis {
 
@@ -100,6 +101,23 @@ private:
     float neutrino_completeness_from_pfp;
     float neutrino_purity_from_pfp;
 
+    struct HitCategoryCounts {
+        int muon = 0;
+        int electron = 0;
+        int proton = 0;
+        int charged_pion = 0;
+        int neutral_pion = 0;
+        int neutron = 0;
+        int gamma = 0;
+        int other = 0;
+        int charged_kaon = 0;
+        int neutral_kaon = 0;
+        int lambda_baryon = 0;
+        int charged_sigma = 0;
+        int sigma_zero = 0;
+        int cosmic = 0;
+    };
+
     enum class PrimaryParticleLabel {
         Empty,
         Cosmic,
@@ -119,18 +137,8 @@ private:
     };
 
     void incrementCounts(const std::vector<art::Ptr<recob::Hit>> &hits,
-                         const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> &assocMCPart,
-                         const std::vector<size_t> &muon_ids, const std::vector<size_t> &electron_ids,
-                         const std::vector<size_t> &proton_ids, const std::vector<size_t> &charged_pion_ids,
-                         const std::vector<size_t> &neutral_pion_ids, const std::vector<size_t> &neutron_ids,
-                         const std::vector<size_t> &gamma_ids, const std::vector<size_t> &other_ids,
-                         const std::vector<size_t> &charged_kaon_ids, const std::vector<size_t> &neutral_kaon_ids,
-                         const std::vector<size_t> &lambda_ids, const std::vector<size_t> &charged_sigma_ids,
-                         const std::vector<size_t> &sigma_zero_ids,
-                         int &muon_hits, int &electron_hits, int &proton_hits, int &charged_pion_hits,
-                         int &neutral_pion_hits, int &neutron_hits, int &gamma_hits, int &other_hits,
-                         int &charged_kaon_hits, int &neutral_kaon_hits, int &lambda_hits,
-                         int &charged_sigma_hits, int &sigma_zero_hits, int &cosmic_hits) const;
+                         HitCategoryCounts &out) const;
+    static int neutrinoTotal(const HitCategoryCounts &counts);
 
     void assignLabelToProgenyRecursively(size_t particle_index,
                                          const std::vector<simb::MCParticle> &particles,
@@ -141,6 +149,8 @@ private:
     std::vector<PrimaryParticleLabel> classifyParticles(const art::Event &event) const;
 
     PrimaryParticleLabel getPrimaryLabel(int pdg) const;
+
+    std::unordered_map<size_t, PrimaryParticleLabel> fTrackLabelById;
 };
 
 SliceAnalysis::SliceAnalysis(const fhicl::ParameterSet &p) {
@@ -164,6 +174,8 @@ void SliceAnalysis::analyseEvent(const art::Event &event, bool is_data) {
     art::ValidHandle<std::vector<simb::MCParticle>> inputMCParticle = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
     muon_ids.clear();
     electron_ids.clear();
+    fTrackLabelById.clear();
+    fTrackLabelById.reserve(inputMCParticle->size());
     proton_ids.clear();
     charged_pion_ids.clear();
     neutral_pion_ids.clear();
@@ -177,63 +189,49 @@ void SliceAnalysis::analyseEvent(const art::Event &event, bool is_data) {
     sigma_zero_ids.clear();
     for (size_t i = 0; i < inputMCParticle->size(); ++i) {
         const auto &mcp = inputMCParticle->at(i);
-        if (mcp.StatusCode() == 1) {
-            PrimaryParticleLabel label = particle_labels[i];
-            switch (label) {
-                case PrimaryParticleLabel::Muon: muon_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Electron: electron_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Proton: proton_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::ChargedPion: charged_pion_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::NeutralPion: neutral_pion_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Neutron: neutron_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Gamma: gamma_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Other: other_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::ChargedKaon: charged_kaon_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::NeutralKaon: neutral_kaon_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::Lambda: lambda_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::ChargedSigma: charged_sigma_ids.push_back(mcp.TrackId()); break;
-                case PrimaryParticleLabel::SigmaZero: sigma_zero_ids.push_back(mcp.TrackId()); break;
-                default: break;
-            }
+        if (mcp.StatusCode() != 1) continue;
+        const PrimaryParticleLabel label = particle_labels[i];
+        switch (label) {
+            case PrimaryParticleLabel::Muon: muon_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Electron: electron_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Proton: proton_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::ChargedPion: charged_pion_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::NeutralPion: neutral_pion_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Neutron: neutron_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Gamma: gamma_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Other: other_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::ChargedKaon: charged_kaon_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::NeutralKaon: neutral_kaon_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::Lambda: lambda_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::ChargedSigma: charged_sigma_ids.push_back(mcp.TrackId()); break;
+            case PrimaryParticleLabel::SigmaZero: sigma_zero_ids.push_back(mcp.TrackId()); break;
+            default: break;
         }
+        fTrackLabelById.emplace(static_cast<size_t>(mcp.TrackId()), label);
     }
     art::ValidHandle<std::vector<recob::Hit>> inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
     assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
         new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, event, fBKTproducer));
-    int muon_hits = 0, electron_hits = 0, proton_hits = 0, charged_pion_hits = 0;
-    int neutral_pion_hits = 0, neutron_hits = 0, gamma_hits = 0, other_hits = 0;
-    int charged_kaon_hits = 0, neutral_kaon_hits = 0, lambda_hits = 0;
-    int charged_sigma_hits = 0, sigma_zero_hits = 0, cosmic_hits = 0;
     std::vector<art::Ptr<recob::Hit>> inHitsPtrV;
     for (unsigned int ih = 0; ih < inputHits->size(); ih++)
         inHitsPtrV.push_back({inputHits, ih});
-    this->incrementCounts(inHitsPtrV, assocMCPart,
-                          muon_ids, electron_ids, proton_ids, charged_pion_ids,
-                          neutral_pion_ids, neutron_ids, gamma_ids, other_ids,
-                          charged_kaon_ids, neutral_kaon_ids, lambda_ids,
-                          charged_sigma_ids, sigma_zero_ids,
-                          muon_hits, electron_hits, proton_hits, charged_pion_hits,
-                          neutral_pion_hits, neutron_hits, gamma_hits, other_hits,
-                          charged_kaon_hits, neutral_kaon_hits, lambda_hits,
-                          charged_sigma_hits, sigma_zero_hits, cosmic_hits);
-    event_neutrino_hits = muon_hits + electron_hits + proton_hits + charged_pion_hits +
-                          neutral_pion_hits + neutron_hits + gamma_hits + other_hits +
-                          charged_kaon_hits + neutral_kaon_hits + lambda_hits +
-                          charged_sigma_hits + sigma_zero_hits;
-    event_muon_hits = muon_hits;
-    event_electron_hits = electron_hits;
-    event_proton_hits = proton_hits;
-    event_charged_pion_hits = charged_pion_hits;
-    event_neutral_pion_hits = neutral_pion_hits;
-    event_neutron_hits = neutron_hits;
-    event_gamma_hits = gamma_hits;
-    event_other_hits = other_hits;
-    event_charged_kaon_hits = charged_kaon_hits;
-    event_neutral_kaon_hits = neutral_kaon_hits;
-    event_lambda_hits = lambda_hits;
-    event_charged_sigma_hits = charged_sigma_hits;
-    event_sigma_zero_hits = sigma_zero_hits;
-    event_cosmic_hits = cosmic_hits;
+    HitCategoryCounts event_counts;
+    this->incrementCounts(inHitsPtrV, event_counts);
+    event_neutrino_hits = neutrinoTotal(event_counts);
+    event_muon_hits = event_counts.muon;
+    event_electron_hits = event_counts.electron;
+    event_proton_hits = event_counts.proton;
+    event_charged_pion_hits = event_counts.charged_pion;
+    event_neutral_pion_hits = event_counts.neutral_pion;
+    event_neutron_hits = event_counts.neutron;
+    event_gamma_hits = event_counts.gamma;
+    event_other_hits = event_counts.other;
+    event_charged_kaon_hits = event_counts.charged_kaon;
+    event_neutral_kaon_hits = event_counts.neutral_kaon;
+    event_lambda_hits = event_counts.lambda_baryon;
+    event_charged_sigma_hits = event_counts.charged_sigma;
+    event_sigma_zero_hits = event_counts.sigma_zero;
+    event_cosmic_hits = event_counts.cosmic;
     if (!fOrigHITproducer.empty()) {
         auto hitsOrig = event.getValidHandle<std::vector<recob::Hit>>(fOrigHITproducer);
         auto assocMCPartOrig = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
@@ -267,37 +265,23 @@ void SliceAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
                 return;
             }
             auto slicehits = assocSliceHit->at(slice_pxy_v[0].key());
-            int muon_hits = 0, electron_hits = 0, proton_hits = 0, charged_pion_hits = 0;
-            int neutral_pion_hits = 0, neutron_hits = 0, gamma_hits = 0, other_hits = 0;
-            int charged_kaon_hits = 0, neutral_kaon_hits = 0, lambda_hits = 0;
-            int charged_sigma_hits = 0, sigma_zero_hits = 0, cosmic_hits = 0;
-            this->incrementCounts(slicehits, assocMCPart,
-                                  muon_ids, electron_ids, proton_ids, charged_pion_ids,
-                                  neutral_pion_ids, neutron_ids, gamma_ids, other_ids,
-                                  charged_kaon_ids, neutral_kaon_ids, lambda_ids,
-                                  charged_sigma_ids, sigma_zero_ids,
-                                  muon_hits, electron_hits, proton_hits, charged_pion_hits,
-                                  neutral_pion_hits, neutron_hits, gamma_hits, other_hits,
-                                  charged_kaon_hits, neutral_kaon_hits, lambda_hits,
-                                  charged_sigma_hits, sigma_zero_hits, cosmic_hits);
-            slice_neutrino_hits = muon_hits + electron_hits + proton_hits + charged_pion_hits +
-                                  neutral_pion_hits + neutron_hits + gamma_hits + other_hits +
-                                  charged_kaon_hits + neutral_kaon_hits + lambda_hits +
-                                  charged_sigma_hits + sigma_zero_hits;
-            slice_muon_hits = muon_hits;
-            slice_electron_hits = electron_hits;
-            slice_proton_hits = proton_hits;
-            slice_charged_pion_hits = charged_pion_hits;
-            slice_neutral_pion_hits = neutral_pion_hits;
-            slice_neutron_hits = neutron_hits;
-            slice_gamma_hits = gamma_hits;
-            slice_other_hits = other_hits;
-            slice_charged_kaon_hits = charged_kaon_hits;
-            slice_neutral_kaon_hits = neutral_kaon_hits;
-            slice_lambda_hits = lambda_hits;
-            slice_charged_sigma_hits = charged_sigma_hits;
-            slice_sigma_zero_hits = sigma_zero_hits;
-            slice_cosmic_hits = cosmic_hits;
+            HitCategoryCounts slice_counts;
+            this->incrementCounts(slicehits, slice_counts);
+            slice_neutrino_hits = neutrinoTotal(slice_counts);
+            slice_muon_hits = slice_counts.muon;
+            slice_electron_hits = slice_counts.electron;
+            slice_proton_hits = slice_counts.proton;
+            slice_charged_pion_hits = slice_counts.charged_pion;
+            slice_neutral_pion_hits = slice_counts.neutral_pion;
+            slice_neutron_hits = slice_counts.neutron;
+            slice_gamma_hits = slice_counts.gamma;
+            slice_other_hits = slice_counts.other;
+            slice_charged_kaon_hits = slice_counts.charged_kaon;
+            slice_neutral_kaon_hits = slice_counts.neutral_kaon;
+            slice_lambda_hits = slice_counts.lambda_baryon;
+            slice_charged_sigma_hits = slice_counts.charged_sigma;
+            slice_sigma_zero_hits = slice_counts.sigma_zero;
+            slice_cosmic_hits = slice_counts.cosmic;
         }
         std::vector<art::Ptr<recob::Hit>> hit_v;
         auto clus_pxy_v = pfp.get<recob::Cluster>();
@@ -309,38 +293,24 @@ void SliceAnalysis::analyseSlice(const art::Event &event, std::vector<common::Pr
             }
         }
         total_hits += hit_v.size();
-        int muon_hits = 0, electron_hits = 0, proton_hits = 0, charged_pion_hits = 0;
-        int neutral_pion_hits = 0, neutron_hits = 0, gamma_hits = 0, other_hits = 0;
-        int charged_kaon_hits = 0, neutral_kaon_hits = 0, lambda_hits = 0;
-        int charged_sigma_hits = 0, sigma_zero_hits = 0, cosmic_hits = 0;
-        this->incrementCounts(hit_v, assocMCPart,
-                              muon_ids, electron_ids, proton_ids, charged_pion_ids,
-                              neutral_pion_ids, neutron_ids, gamma_ids, other_ids,
-                              charged_kaon_ids, neutral_kaon_ids, lambda_ids,
-                              charged_sigma_ids, sigma_zero_ids,
-                              muon_hits, electron_hits, proton_hits, charged_pion_hits,
-                              neutral_pion_hits, neutron_hits, gamma_hits, other_hits,
-                              charged_kaon_hits, neutral_kaon_hits, lambda_hits,
-                              charged_sigma_hits, sigma_zero_hits, cosmic_hits);
-        int pfp_nu_hits = muon_hits + electron_hits + proton_hits + charged_pion_hits +
-                          neutral_pion_hits + neutron_hits + gamma_hits + other_hits +
-                          charged_kaon_hits + neutral_kaon_hits + lambda_hits +
-                          charged_sigma_hits + sigma_zero_hits;
+        HitCategoryCounts pfp_counts;
+        this->incrementCounts(hit_v, pfp_counts);
+        int pfp_nu_hits = neutrinoTotal(pfp_counts);
         pfp_neutrino_hits.push_back(pfp_nu_hits);
-        pfp_muon_hits.push_back(muon_hits);
-        pfp_electron_hits.push_back(electron_hits);
-        pfp_proton_hits.push_back(proton_hits);
-        pfp_charged_pion_hits.push_back(charged_pion_hits);
-        pfp_neutral_pion_hits.push_back(neutral_pion_hits);
-        pfp_neutron_hits.push_back(neutron_hits);
-        pfp_gamma_hits.push_back(gamma_hits);
-        pfp_other_hits.push_back(other_hits);
-        pfp_charged_kaon_hits.push_back(charged_kaon_hits);
-        pfp_neutral_kaon_hits.push_back(neutral_kaon_hits);
-        pfp_lambda_hits.push_back(lambda_hits);
-        pfp_charged_sigma_hits.push_back(charged_sigma_hits);
-        pfp_sigma_zero_hits.push_back(sigma_zero_hits);
-        pfp_cosmic_hits.push_back(cosmic_hits);
+        pfp_muon_hits.push_back(pfp_counts.muon);
+        pfp_electron_hits.push_back(pfp_counts.electron);
+        pfp_proton_hits.push_back(pfp_counts.proton);
+        pfp_charged_pion_hits.push_back(pfp_counts.charged_pion);
+        pfp_neutral_pion_hits.push_back(pfp_counts.neutral_pion);
+        pfp_neutron_hits.push_back(pfp_counts.neutron);
+        pfp_gamma_hits.push_back(pfp_counts.gamma);
+        pfp_other_hits.push_back(pfp_counts.other);
+        pfp_charged_kaon_hits.push_back(pfp_counts.charged_kaon);
+        pfp_neutral_kaon_hits.push_back(pfp_counts.neutral_kaon);
+        pfp_lambda_hits.push_back(pfp_counts.lambda_baryon);
+        pfp_charged_sigma_hits.push_back(pfp_counts.charged_sigma);
+        pfp_sigma_zero_hits.push_back(pfp_counts.sigma_zero);
+        pfp_cosmic_hits.push_back(pfp_counts.cosmic);
         neutrino_completeness_from_pfp += pfp_nu_hits;
     }
     if (total_hits > 0) neutrino_purity_from_pfp = static_cast<float>(neutrino_completeness_from_pfp) / total_hits;
@@ -450,45 +420,47 @@ void SliceAnalysis::resetTTree(TTree *_tree) {
 }
 
 void SliceAnalysis::incrementCounts(const std::vector<art::Ptr<recob::Hit>> &hits,
-                                    const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> &assocMCPart,
-                                    const std::vector<size_t> &muon_ids, const std::vector<size_t> &electron_ids,
-                                    const std::vector<size_t> &proton_ids, const std::vector<size_t> &charged_pion_ids,
-                                    const std::vector<size_t> &neutral_pion_ids, const std::vector<size_t> &neutron_ids,
-                                    const std::vector<size_t> &gamma_ids, const std::vector<size_t> &other_ids,
-                                    const std::vector<size_t> &charged_kaon_ids, const std::vector<size_t> &neutral_kaon_ids,
-                                    const std::vector<size_t> &lambda_ids, const std::vector<size_t> &charged_sigma_ids,
-                                    const std::vector<size_t> &sigma_zero_ids,
-                                    int &muon_hits, int &electron_hits, int &proton_hits, int &charged_pion_hits,
-                                    int &neutral_pion_hits, int &neutron_hits, int &gamma_hits, int &other_hits,
-                                    int &charged_kaon_hits, int &neutral_kaon_hits, int &lambda_hits,
-                                    int &charged_sigma_hits, int &sigma_zero_hits, int &cosmic_hits) const {
+                                    HitCategoryCounts &out) const {
+    if (!assocMCPart) return;
     for (const auto &hit : hits) {
-        auto assmcp = assocMCPart->at(hit.key());
-        auto assmdt = assocMCPart->data(hit.key());
+        const auto &assmcp = assocMCPart->at(hit.key());
+        const auto &assmdt = assocMCPart->data(hit.key());
         if (assmcp.empty()) {
-            cosmic_hits++;
+            ++out.cosmic;
             continue;
         }
-        for (unsigned int ia = 0; ia < assmcp.size(); ++ia) {
+        for (size_t ia = 0; ia < assmcp.size(); ++ia) {
             auto mcp = assmcp[ia];
             auto amd = assmdt[ia];
             if (amd->isMaxIDE != 1) continue;
-            size_t track_id = mcp->TrackId();
-            if (std::find(muon_ids.begin(), muon_ids.end(), track_id) != muon_ids.end()) muon_hits++;
-            else if (std::find(electron_ids.begin(), electron_ids.end(), track_id) != electron_ids.end()) electron_hits++;
-            else if (std::find(proton_ids.begin(), proton_ids.end(), track_id) != proton_ids.end()) proton_hits++;
-            else if (std::find(charged_pion_ids.begin(), charged_pion_ids.end(), track_id) != charged_pion_ids.end()) charged_pion_hits++;
-            else if (std::find(neutral_pion_ids.begin(), neutral_pion_ids.end(), track_id) != neutral_pion_ids.end()) neutral_pion_hits++;
-            else if (std::find(neutron_ids.begin(), neutron_ids.end(), track_id) != neutron_ids.end()) neutron_hits++;
-            else if (std::find(gamma_ids.begin(), gamma_ids.end(), track_id) != gamma_ids.end()) gamma_hits++;
-            else if (std::find(other_ids.begin(), other_ids.end(), track_id) != other_ids.end()) other_hits++;
-            else if (std::find(charged_kaon_ids.begin(), charged_kaon_ids.end(), track_id) != charged_kaon_ids.end()) charged_kaon_hits++;
-            else if (std::find(neutral_kaon_ids.begin(), neutral_kaon_ids.end(), track_id) != neutral_kaon_ids.end()) neutral_kaon_hits++;
-            else if (std::find(lambda_ids.begin(), lambda_ids.end(), track_id) != lambda_ids.end()) lambda_hits++;
-            else if (std::find(charged_sigma_ids.begin(), charged_sigma_ids.end(), track_id) != charged_sigma_ids.end()) charged_sigma_hits++;
-            else if (std::find(sigma_zero_ids.begin(), sigma_zero_ids.end(), track_id) != sigma_zero_ids.end()) sigma_zero_hits++;
+            const size_t track_id = static_cast<size_t>(mcp->TrackId());
+            auto it = fTrackLabelById.find(track_id);
+            if (it == fTrackLabelById.end()) continue;
+            switch (it->second) {
+                case PrimaryParticleLabel::Muon: ++out.muon; break;
+                case PrimaryParticleLabel::Electron: ++out.electron; break;
+                case PrimaryParticleLabel::Proton: ++out.proton; break;
+                case PrimaryParticleLabel::ChargedPion: ++out.charged_pion; break;
+                case PrimaryParticleLabel::NeutralPion: ++out.neutral_pion; break;
+                case PrimaryParticleLabel::Neutron: ++out.neutron; break;
+                case PrimaryParticleLabel::Gamma: ++out.gamma; break;
+                case PrimaryParticleLabel::ChargedKaon: ++out.charged_kaon; break;
+                case PrimaryParticleLabel::NeutralKaon: ++out.neutral_kaon; break;
+                case PrimaryParticleLabel::Lambda: ++out.lambda_baryon; break;
+                case PrimaryParticleLabel::ChargedSigma: ++out.charged_sigma; break;
+                case PrimaryParticleLabel::SigmaZero: ++out.sigma_zero; break;
+                case PrimaryParticleLabel::Other: ++out.other; break;
+                default: break;
+            }
         }
     }
+}
+
+int SliceAnalysis::neutrinoTotal(const HitCategoryCounts &counts) {
+    return counts.muon + counts.electron + counts.proton + counts.charged_pion +
+           counts.neutral_pion + counts.neutron + counts.gamma + counts.other +
+           counts.charged_kaon + counts.neutral_kaon + counts.lambda_baryon +
+           counts.charged_sigma + counts.sigma_zero;
 }
 
 void SliceAnalysis::assignLabelToProgenyRecursively(size_t particle_index,
