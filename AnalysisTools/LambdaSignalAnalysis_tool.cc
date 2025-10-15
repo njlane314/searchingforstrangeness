@@ -563,7 +563,7 @@ void LambdaSignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _interaction_mode = nuinfo.Mode();
         _interaction_type = nuinfo.InteractionType();
         _nu_E    = nu.Trajectory().E(0);
-        _nu_theta= nu.Theta();
+        _nu_theta= nu.Momentum().Vect().Theta();
         _nu_pt   = nuinfo.Pt();
         _nu_t    = nu.T();
         _nu_vx   = nu.Vx(); _nu_vy = nu.Vy(); _nu_vz = nu.Vz();
