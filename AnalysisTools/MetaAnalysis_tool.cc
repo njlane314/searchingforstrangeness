@@ -4,7 +4,6 @@
 #include "AnalysisTools/AnalysisToolBase.h"
 
 #include "art/Framework/Principal/Handle.h"
-#include "canvas/Persistency/Provenance/Provenance.h"
 #include "canvas/Persistency/Provenance/BranchDescription.h"
 #include "canvas/Persistency/Provenance/ProcessHistory.h"
 #include "canvas/Persistency/Provenance/ProcessConfiguration.h"
