@@ -210,13 +210,10 @@ bool EventSelectionFilter::filter(art::Event &e) {
         art::InputTag trigTag("swtrigger", "", _swtrig_proc);
         const auto& trigH = e.getValidHandle<raw::ubdaqSoftwareTriggerData>(trigTag);
         auto has_any = [&](const std::vector<std::string>& wanted)->bool{
-            using PassedAlgoFn = bool (raw::ubdaqSoftwareTriggerData::*)(const char*) const;
-            static PassedAlgoFn const passed_algo =
-                static_cast<PassedAlgoFn>(&raw::ubdaqSoftwareTriggerData::passedAlgo);
             bool ok = false;
             auto const& trigger = *trigH;
             for (auto const& name : wanted) {
-                ok = ok || (trigger.*passed_algo)(name.c_str());
+                ok = ok || trigger.passedAlgo(name);
             }
             return ok;
         };

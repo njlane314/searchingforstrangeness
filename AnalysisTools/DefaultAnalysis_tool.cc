@@ -266,28 +266,26 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             art::InputTag triggerTag("swtrigger", "", NuMISWTrigProd);
             const auto& triggerHandle = event.getValidHandle<raw::ubdaqSoftwareTriggerData>(triggerTag);
             std::vector<std::string> triggerName = triggerHandle->getListOfAlgorithms();
-            using PassedAlgoFn = bool (raw::ubdaqSoftwareTriggerData::*)(const char*) const;
-            static PassedAlgoFn const passed_algo =
-                static_cast<PassedAlgoFn>(&raw::ubdaqSoftwareTriggerData::passedAlgo);
             auto const& trigger = *triggerHandle;
             for (int j = 0; j != triggerHandle->getNumberOfAlgorithms(); j++) {
+                const bool passed = trigger.passedAlgo(triggerName[j]);
                 if (triggerName[j] == "EXT_NUMIwin_FEMBeamTriggerAlgo") {
-                    _software_trigger_pre_ext = (trigger.*passed_algo)(triggerName[j].c_str());
+                    _software_trigger_pre_ext = passed;
                 }
                 else if (triggerName[j] == "EXT_NUMIwin_2018May_FEMBeamTriggerAlgo") {
-                    _software_trigger_post_ext = (trigger.*passed_algo)(triggerName[j].c_str());
+                    _software_trigger_post_ext = passed;
                 }
                 else if (triggerName[j] == "NUMI_FEMBeamTriggerAlgo") {
-                    _software_trigger_pre = (trigger.*passed_algo)(triggerName[j].c_str());
+                    _software_trigger_pre = passed;
                 }
                 else if (triggerName[j] == "NUMI_2018May_FEMBeamTriggerAlgo") {
-                    _software_trigger_post = (trigger.*passed_algo)(triggerName[j].c_str());
+                    _software_trigger_post = passed;
                 }
                 else {
                     continue;
                 }
                 std::cout << triggerName[j] << ": ";
-                std::cout << (trigger.*passed_algo)(triggerName[j].c_str()) << std::endl;
+                std::cout << trigger.passedAlgo(triggerName[j]) << std::endl;
             }
         }
     }
