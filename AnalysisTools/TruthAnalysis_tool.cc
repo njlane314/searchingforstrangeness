@@ -60,21 +60,6 @@ private:
     float fFidvolZstart;
     float fFidvolZend;
 
-    float fProtonKEThreshold;
-    float fPionKEThreshold;
-    float fMuonKEThreshold;
-    float fElectronKEThreshold;
-    float fGammaKEThreshold;
-    float fNeutralPionKEThreshold;
-    float fHadronKEThreshold;
-
-    struct ParticleCounter {
-        std::vector<int> pdgs;
-        bool use_abs;
-        float threshold;
-        int* counter;
-    };
-
     struct InclusiveStrangenessResult {
         bool has_inclusive_strangeness = false;
         int n_phi = 0;
@@ -84,8 +69,6 @@ private:
 
     bool HasInclusiveStrangeness(const std::vector<simb::MCParticle>& parts,
                                  InclusiveStrangenessResult* out = nullptr) const;
-
-    std::vector<ParticleCounter> particle_counters;
 
     int _neutrino_pdg;
     int _interaction_ccnc;
@@ -231,33 +214,6 @@ void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
     fFidvolZstart = p.get<double>("fidvolZstart", 10);
     fFidvolZend = p.get<double>("fidvolZend", 50);
 
-    fProtonKEThreshold = p.get<float>("ProtonKEThreshold", 0.035);
-    fPionKEThreshold = p.get<float>("PionKEThreshold", 0.020);
-    fMuonKEThreshold = p.get<float>("MuonKEThreshold", 0.015);
-    fElectronKEThreshold = p.get<float>("ElectronKEThreshold", 0.030);
-    fGammaKEThreshold = p.get<float>("GammaKEThreshold", 0.030);
-    fNeutralPionKEThreshold = p.get<float>("NeutralPionKEThreshold", 0.030);
-    fHadronKEThreshold = p.get<float>("HadronKEThreshold", 0.035);
-
-    particle_counters = {
-        {{13}, false, fMuonKEThreshold, &_count_mu_minus},
-        {{-13}, false, fMuonKEThreshold, &_count_mu_plus},
-        {{11}, false, fElectronKEThreshold, &_count_e_minus},
-        {{-11}, false, fElectronKEThreshold, &_count_e_plus},
-        {{22}, false, fGammaKEThreshold, &_count_gamma},
-        {{111}, false, fNeutralPionKEThreshold, &_count_pi_zero},
-        {{211}, false, fPionKEThreshold, &_count_pi_plus},
-        {{-211}, false, fPionKEThreshold, &_count_pi_minus},
-        {{321}, false, fHadronKEThreshold, &_count_kaon_plus},
-        {{-321}, false, fHadronKEThreshold, &_count_kaon_minus},
-        {{130, 310, 311}, false, -1.f, &_count_kaon_zero},
-        {{2212}, false, fProtonKEThreshold, &_count_proton},
-        {{2112}, false, -1.f, &_count_neutron},
-        {{3122}, true, -1.f, &_count_lambda},
-        {{3222}, false, fHadronKEThreshold, &_count_sigma_plus},
-        {{3212}, false, -1.f, &_count_sigma_zero},
-        {{3112}, false, fHadronKEThreshold, &_count_sigma_minus}
-    };
 }
 
 void TruthAnalysis::setBranches(TTree* _tree) {
@@ -767,21 +723,34 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         mcParticleMap[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
     }
 
+    // Simple, threshold-free counting of final-state primary particles by PDG.
     for (int i = 0; i < mct.NParticles(); ++i) {
         const simb::MCParticle& particle = mct.GetParticle(i);
         if (!(particle.StatusCode() == 1 && particle.Process() == "primary")) continue;
-        int pdg = particle.PdgCode();
-
-        for (const auto& pc : particle_counters) {
-            int check_pdg = pc.use_abs ? std::abs(pdg) : pdg;
-            auto it = std::find(pc.pdgs.begin(), pc.pdgs.end(), check_pdg);
-            if (it == pc.pdgs.end()) continue;
-
-            float ke = particle.E() - particle.Mass();
-            if (pc.threshold < 0.f || ke > pc.threshold) {
-                (*pc.counter)++;
+        const int pdg = particle.PdgCode();
+        switch (pdg) {
+            case 13:   ++_count_mu_minus;   break;
+            case -13:  ++_count_mu_plus;    break;
+            case 11:   ++_count_e_minus;    break;
+            case -11:  ++_count_e_plus;     break;
+            case 22:   ++_count_gamma;      break;
+            case 111:  ++_count_pi_zero;    break;
+            case 211:  ++_count_pi_plus;    break;
+            case -211: ++_count_pi_minus;   break;
+            case 321:  ++_count_kaon_plus;  break;
+            case -321: ++_count_kaon_minus; break;
+            case 2212: ++_count_proton;     break;
+            case 2112: ++_count_neutron;    break;
+            case 3222: ++_count_sigma_plus; break;
+            case 3212: ++_count_sigma_zero; break;
+            case 3112: ++_count_sigma_minus;break;
+            default:
+                if (pdg == 130 || pdg == 310 || pdg == 311) {
+                    ++_count_kaon_zero;
+                } else if (std::abs(pdg) == 3122) {
+                    ++_count_lambda; // count Λ and anti-Λ
+                }
                 break;
-            }
         }
     }
 
