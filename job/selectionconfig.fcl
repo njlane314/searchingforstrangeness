@@ -139,12 +139,6 @@ TruthAnalysis: {
     CLSproducer: @local::standard_producers.CLSproducer
 }
 
-VertexTopology: {
-    tool_type: "VertexTopology"
-    PFPproducer: @local::standard_producers.PFPproducer
-    BackwardAngleDeg: 10
-}
-
 EventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: @local::standard_producers.PFPproducer
@@ -184,6 +178,5 @@ NeutrinoSelectionFilter: {
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
-        vertex: @local::VertexTopology
     }
 }
