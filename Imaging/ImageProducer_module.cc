@@ -371,9 +371,8 @@ void ImageProducer::produce(art::Event &event) {
     perf_prod->per_model.push_back(std::move(mp));
   }
 
-  std::unique_ptr<std::vector<PlaneSegmentation>> seg_prod;
+  auto seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
   if (inf_out.has_segmentation) {
-    seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
     seg_prod->reserve(3);
     auto make_plane = [&](int v, const std::vector<uint8_t> &lbl, const std::vector<float> &conf) {
       PlaneSegmentation p;
@@ -408,7 +407,7 @@ void ImageProducer::produce(art::Event &event) {
   event.put(std::move(out_slice), "slice");
   event.put(std::move(out_event), "event");
   event.put(std::move(sc));
-  if (seg_prod) event.put(std::move(seg_prod), "seg");
+  event.put(std::move(seg_prod), "seg");
   event.put(std::move(perf_prod), "perf");
   event.put(std::move(randfeat_prod), "features");
 }
