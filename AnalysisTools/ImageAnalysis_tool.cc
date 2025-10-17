@@ -148,11 +148,11 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fMCPproducer = p.get<art::InputTag>("MCPproducer");
   fBKTproducer = p.get<art::InputTag>("BKTproducer");
 
-  fImagesSliceTag = p.get<art::InputTag>("ImagesSliceTag", art::InputTag{"ImageProducerED", "slice"});
-  fImagesEventTag = p.get<art::InputTag>("ImagesEventTag", art::InputTag{"ImageProducerED", "event"});
-  fScoresTag = p.get<art::InputTag>("ScoresTag", art::InputTag{"ImageProducerED"});
-  fSegmentationTag = p.get<art::InputTag>("SegmentationTag", art::InputTag{"ImageProducerED", "seg"});
-  fPerfTag = p.get<art::InputTag>("PerfTag", art::InputTag{"ImageProducerED", "perf"});
+  fImagesSliceTag = p.get<art::InputTag>("ImagesSliceTag", art::InputTag{"imageprod", "slice"});
+  fImagesEventTag = p.get<art::InputTag>("ImagesEventTag", art::InputTag{"imageprod", "event"});
+  fScoresTag = p.get<art::InputTag>("ScoresTag", art::InputTag{"imageprod"});
+  fSegmentationTag = p.get<art::InputTag>("SegmentationTag", art::InputTag{"imageprod", "seg"});
+  fPerfTag = p.get<art::InputTag>("PerfTag", art::InputTag{"imageprod", "perf"});
 
   fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
   if (const char *am = std::getenv("ACTIVE_MODELS")) {
