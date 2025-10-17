@@ -70,9 +70,9 @@ static std::pair<double, double> centroidWithinRadius(const art::Event &event,
 }
 } // namespace
 
-class ImageProducerED : public art::EDProducer {
+class ImageProducer : public art::EDProducer {
 public:
-  explicit ImageProducerED(fhicl::ParameterSet const &p);
+  explicit ImageProducer(fhicl::ParameterSet const &p);
   void produce(art::Event &e) override;
 
 private:
@@ -120,7 +120,7 @@ private:
   std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
 };
 
-ImageProducerED::ImageProducerED(fhicl::ParameterSet const &p) {
+ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   fPFPproducer = p.get<art::InputTag>("PFPproducer");
   fSLCproducer = p.get<art::InputTag>("SLCproducer");
   fHITproducer = p.get<art::InputTag>("HITproducer");
@@ -384,4 +384,4 @@ void ImageProducerED::produce(art::Event &event) {
   event.put(std::move(perf_prod), "perf");
 }
 
-DEFINE_ART_MODULE(ImageProducerED)
+DEFINE_ART_MODULE(ImageProducer)
