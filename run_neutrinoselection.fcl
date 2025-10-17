@@ -29,12 +29,29 @@ source: {
 }
 
 physics: {
+    producers: {
+        ImageProducerED: {
+            module_type: "ImageProducerED"
+            PFPproducer: @local::standard_producers.PFPproducer
+            SLCproducer: @local::standard_producers.SLCproducer
+            HITproducer: @local::standard_producers.HITproducer
+            WIREproducer: @local::standard_producers.WIREproducer
+            MCPproducer: @local::standard_producers.MCPproducer
+            BKTproducer: @local::standard_producers.BKTproducer
+            ContainerImage: "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod"
+            BadChannelFile: "assets/badchannels.txt"
+            Models: []
+            ActiveModels: []
+            WantClassification: false
+            WantSegmentation: false
+        }
+    }
     filters: {
         nuselection: {
             @table::NeutrinoSelectionFilter
         }
     }
-    path1: [ nuselection ]
+    path1: [ ImageProducerED, nuselection ]
     trigger_paths: [ path1 ]
 }
 
