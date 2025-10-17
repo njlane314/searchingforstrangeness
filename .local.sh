@@ -36,27 +36,31 @@ process_files_with_lar() {
         fi
 
         local outputfile="${TEMP_DIR}/output_${counter}.root"
+        rm -f "${outputfile}"
         echo "Running: lar -c ${FHICL_FILE} -s ${filepath} -T ${outputfile}"
-        lar -c "${FHICL_FILE}" -s "${filepath}" -T "${outputfile}" || {
+        if lar -c "${FHICL_FILE}" -s "${filepath}" -T "${outputfile}"; then
+            echo "FHiCL processing successful. Output: ${outputfile}"
+            SUCCESSFUL_OUTPUTS="${SUCCESSFUL_OUTPUTS} ${outputfile}"
+            counter=$((counter + 1))
+        else
             echo "Error: FHiCL processing failed for file: ${file}."
+            rm -f "${outputfile}"
             continue
-        }
-        echo "FHiCL processing successful. Output: ${outputfile}"
-        counter=$((counter + 1))
+        fi
     done
 }
 
 combine_output_files() {
     echo "Combining all the output ROOT files..."
-    local outputfiles=$(find "${TEMP_DIR}" -maxdepth 1 -name "*.root")
 
-    if [ -z "${outputfiles}" ]; then
-        echo "Error: No output ROOT files found to combine! Exiting..."
+    if [ -z "${SUCCESSFUL_OUTPUTS}" ]; then
+        echo "Error: No successful output ROOT files found to combine! Exiting..."
         exit 1
     fi
 
+    set -- ${SUCCESSFUL_OUTPUTS}
     echo "Combining files into: ${COMBINED_OUTPUT}"
-    hadd -f "${COMBINED_OUTPUT}" ${outputfiles} || {
+    hadd -f "${COMBINED_OUTPUT}" "$@" || {
         echo "Error: Combining ROOT files failed!"
         exit 1
     }
@@ -80,6 +84,7 @@ OUTPUT_BASE_DIR="/exp/uboone/data/users/$USER/analysis"
 FHICL_BASE=$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')
 COMBINED_OUTPUT="${OUTPUT_BASE_DIR}/${SAM_DEF}_${FHICL_BASE}_${NUM_FILES}_new_analysis.root"
 TEMP_DIR="${OUTPUT_BASE_DIR}/temp_root_files"
+SUCCESSFUL_OUTPUTS=""
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $(basename "$0") <fhicl_file> <num_files>"
