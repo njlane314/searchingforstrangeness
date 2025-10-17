@@ -136,6 +136,7 @@ ImageAnalysis: {
     ScoresTag: "imageprod"
     SegmentationTag: "imageprod:seg"
     PerfTag: "imageprod:perf"
+    Debug: true
 }
 
 SliceAnalysis: {
