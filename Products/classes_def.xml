@@ -1,14 +1,20 @@
 <lcgdict>
   <class name="image::PlaneImage"/>
   <class name="std::vector<image::PlaneImage>"/>
+  <class name="art::Wrapper<std::vector<image::PlaneImage>>"/>
   <class name="image::InferenceScores"/>
   <class name="image::PlaneSegmentation"/>
   <class name="std::vector<image::PlaneSegmentation>"/>
+  <class name="art::Wrapper<std::vector<image::PlaneSegmentation>>"/>
   <class name="image::ModelPerf"/>
   <class name="std::vector<image::ModelPerf>"/>
+  <class name="art::Wrapper<std::vector<image::ModelPerf>>"/>
   <class name="image::InferencePerfProduct"/>
+  <class name="art::Wrapper<image::InferencePerfProduct>"/>
 
   <!-- Random feature vectors from the MinkowskiEngine wrapper -->
   <class name="image::RandomFeatures"/>
   <class name="std::vector<image::RandomFeatures>"/>
+  <class name="art::Wrapper<image::RandomFeatures>"/>
+  <class name="art::Wrapper<std::vector<image::RandomFeatures>>"/>
 </lcgdict>
