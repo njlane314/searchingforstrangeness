@@ -183,8 +183,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
                                       fADCThresh, fWeightsBaseDir, fInferenceWrapper, fAssetsBaseDir,
                                       fModels, fActiveModels, fGeo, fDetp, ".");
 
-  produces<std::vector<PlaneImage>>("slice");
-  produces<std::vector<PlaneImage>>("event");
+  produces<std::vector<image::PlaneImage>>("slice");
+  produces<std::vector<image::PlaneImage>>("event");
   produces<InferenceScores>();
   produces<std::vector<PlaneSegmentation>>("seg");
   produces<InferencePerfProduct>("perf");
@@ -331,8 +331,8 @@ void ImageProducer::produce(art::Event &event) {
     return out;
   };
 
-  auto out_slice = std::make_unique<std::vector<PlaneImage>>();
-  auto out_event = std::make_unique<std::vector<PlaneImage>>();
+  auto out_slice = std::make_unique<std::vector<image::PlaneImage>>();
+  auto out_event = std::make_unique<std::vector<image::PlaneImage>>();
   out_slice->reserve(3);
   out_event->reserve(3);
   for (size_t i = 0; i < 3; ++i) {
