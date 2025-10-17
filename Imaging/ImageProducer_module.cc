@@ -19,6 +19,7 @@
 #include "Products/ImageProducts.h"
 #include "Products/SegmentationProducts.h"
 #include "Products/InferencePerf.h"
+#include "Products/RandomFeatures.h"
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageAlgo.h"
@@ -28,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <cstdint>
 #include <fstream>
 #include <limits>
 #include <map>
@@ -186,6 +188,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   produces<InferenceScores>();
   produces<std::vector<PlaneSegmentation>>("seg");
   produces<InferencePerfProduct>("perf");
+  produces<image::RandomFeaturesCollection>("features"); // NEW
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -387,11 +390,27 @@ void ImageProducer::produce(art::Event &event) {
     seg_prod->push_back(make_plane(int(geo::kW), inf_out.seg_w, inf_out.seg_conf_w));
   }
 
+  // NEW: persist full random feature vectors per model
+  auto randfeat_prod = std::make_unique<image::RandomFeaturesCollection>();
+  randfeat_prod->reserve(inf_out.features.size());
+  for (auto const &kv : inf_out.features) {
+    const std::string &model = kv.first;
+    auto const &vec = kv.second;
+    image::RandomFeatures rf;
+    rf.model = model;
+    rf.dim   = static_cast<std::uint32_t>(vec.size());
+    auto it_seed = inf_out.feature_seeds.find(model);
+    rf.seed  = (it_seed != inf_out.feature_seeds.end()) ? it_seed->second : 0u;
+    rf.values = vec;
+    randfeat_prod->push_back(std::move(rf));
+  }
+
   event.put(std::move(out_slice), "slice");
   event.put(std::move(out_event), "event");
   event.put(std::move(sc));
   if (seg_prod) event.put(std::move(seg_prod), "seg");
   event.put(std::move(perf_prod), "perf");
+  event.put(std::move(randfeat_prod), "features");
 }
 
 DEFINE_ART_MODULE(ImageProducer)
