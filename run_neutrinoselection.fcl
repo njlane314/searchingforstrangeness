@@ -30,8 +30,8 @@ source: {
 
 physics: {
     producers: {
-        ImageProducerED: {
-            module_type: "ImageProducerED"
+        imageprod: {
+            module_type: "ImageProducer"
             PFPproducer: @local::standard_producers.PFPproducer
             SLCproducer: @local::standard_producers.SLCproducer
             HITproducer: @local::standard_producers.HITproducer
@@ -51,7 +51,7 @@ physics: {
             @table::NeutrinoSelectionFilter
         }
     }
-    path1: [ ImageProducerED, nuselection ]
+    path1: [ imageprod, nuselection ]
     trigger_paths: [ path1 ]
 }
 
