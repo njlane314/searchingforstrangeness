@@ -39,7 +39,12 @@
 #include <vector>
 #include <limits.h>
 
-using namespace image;
+using image::BinaryInferenceOutput;
+using image::Image;
+using image::ImageAlgo;
+using image::ImageProperties;
+using image::ModelConfig;
+using image::SemanticPixelClassifier;
 
 namespace {
 static std::pair<double, double> centroidWithinRadius(const art::Event &event,
@@ -178,7 +183,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   produces<InferencePerfProduct>("perf");
 }
 
-void ImageProducerED::loadBadChannels(const std::string &filename) {
+void ImageProducer::loadBadChannels(const std::string &filename) {
   fBadChannels.clear();
   std::ifstream in(filename);
   if (!in.is_open()) {
@@ -200,8 +205,8 @@ void ImageProducerED::loadBadChannels(const std::string &filename) {
 }
 
 
-std::vector<art::Ptr<recob::Hit>> ImageProducerED::collectAllHits(const art::Event &event,
-                                                                  art::InputTag const &hitTag) {
+std::vector<art::Ptr<recob::Hit>> ImageProducer::collectAllHits(const art::Event &event,
+                                                                art::InputTag const &hitTag) {
   std::vector<art::Ptr<recob::Hit>> out;
   auto h = event.getValidHandle<std::vector<recob::Hit>>(hitTag);
   out.reserve(h->size());
@@ -209,7 +214,7 @@ std::vector<art::Ptr<recob::Hit>> ImageProducerED::collectAllHits(const art::Eve
   return out;
 }
 
-std::vector<art::Ptr<recob::Hit>> ImageProducerED::collectNeutrinoSliceHits(const art::Event &event) const {
+std::vector<art::Ptr<recob::Hit>> ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
   auto pfpHandle = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
   art::FindManyP<recob::Slice> pfpToSlice(pfpHandle, event, fPFPproducer);
 
@@ -253,7 +258,7 @@ std::vector<art::Ptr<recob::Hit>> ImageProducerED::collectNeutrinoSliceHits(cons
   return result;
 }
 
-void ImageProducerED::produce(art::Event &event) {
+void ImageProducer::produce(art::Event &event) {
   auto all_hits = collectAllHits(event, fHITproducer);
   auto neutrino_hits = collectNeutrinoSliceHits(event);
 
