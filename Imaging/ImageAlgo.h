@@ -27,6 +27,9 @@ struct BinaryInferenceOutput {
     uint32_t segW{0}, segH{0};
     std::vector<uint8_t> seg_u, seg_v, seg_w;
     std::vector<float>   seg_conf_u, seg_conf_v, seg_conf_w;
+    // NEW: full random features per model
+    std::unordered_map<std::string, std::vector<float>> features;
+    std::unordered_map<std::string, std::uint32_t> feature_seeds;
 };
 
 struct ModelConfig {
@@ -195,6 +198,11 @@ inline BinaryInferenceOutput ImageAlgo::runInferenceBinary(
             out.seg_u = std::move(r.seg_u); out.seg_v = std::move(r.seg_v); out.seg_w = std::move(r.seg_w);
             out.seg_conf_u = std::move(r.conf_u); out.seg_conf_v = std::move(r.conf_v); out.seg_conf_w = std::move(r.conf_w);
             took_seg = true;
+        }
+        // NEW: carry random features up
+        if (!r.features.empty()) {
+            out.features[m.name] = r.features;
+            out.feature_seeds[m.name] = r.feature_seed;
         }
     }
     return out;

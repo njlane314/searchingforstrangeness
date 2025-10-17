@@ -40,6 +40,9 @@ class InferenceEngine {
       std::vector<uint8_t> seg_u, seg_v, seg_w;
       std::vector<float> conf_u, conf_v, conf_w;
       Perf perf;
+      // NEW: random features sidecar (flat float32 file) + meta
+      std::vector<float> features;     // length = feature dimension (if provided)
+      std::uint32_t feature_seed{0};   // RNG seed used by the wrapper (optional)
     };
 
     static Result runInferenceDetailed(const std::vector<Image<float>> &detector_images,
@@ -118,6 +121,8 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     string meta_txt      = result_bin + ".meta";
     string script_stdout = joinPath(absolute_scratch_dir, base.str() + "_py_script.out");
     string script_stderr = joinPath(absolute_scratch_dir, base.str() + "_py_script.err");
+
+    // NOTE: wrapper will also write a flat float32 sidecar "<result_bin>.feat.f32"
 
     auto t0 = std::chrono::steady_clock::now();
     const auto& U = detector_images[0].data();
@@ -243,8 +248,12 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     out.perf.t_exec_total_ms = duration * 1000.0;
     out.perf.t_read_resp_ms  = std::chrono::duration<double, std::milli>(t3 - t2).count();
 
+    // Parse metrics text and (NEW) sidecar pointers
     {
       std::ifstream m(meta_txt);
+      std::string features_path;
+      int feat_dim = 0;
+      std::uint32_t feat_seed = 0;
       if (m) {
         std::string line;
         while (std::getline(m, line)) {
@@ -252,17 +261,33 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
           if (eq == std::string::npos) continue;
           std::string key = line.substr(0, eq);
           std::string val = line.substr(eq + 1);
-          double d = 0.0;
-          const char *cstr = val.c_str();
+
+          // numeric parse
           char *endp = nullptr;
-          d = std::strtod(cstr, &endp);
-          if (endp == cstr) continue;
-          if (key == "t_total_ms")      out.perf.t_child_total_ms = d;
-          else if (key == "t_setup_ms") out.perf.t_child_setup_ms = d;
-          else if (key == "t_infer_ms") out.perf.t_child_infer_ms = d;
-          else if (key == "t_post_ms")  out.perf.t_child_post_ms  = d;
-          else if (key == "max_rss_mb") out.perf.child_max_rss_mb = d;
-          else if (key == "cuda_mem_mb")out.perf.child_cuda_mem_mb = d;
+          double d = std::strtod(val.c_str(), &endp);
+          bool numeric = (endp != val.c_str());
+
+          if      (key == "t_total_ms"  && numeric) out.perf.t_child_total_ms = d;
+          else if (key == "t_setup_ms"  && numeric) out.perf.t_child_setup_ms = d;
+          else if (key == "t_infer_ms"  && numeric) out.perf.t_child_infer_ms = d;
+          else if (key == "t_post_ms"   && numeric) out.perf.t_child_post_ms  = d;
+          else if (key == "max_rss_mb"  && numeric) out.perf.child_max_rss_mb = d;
+          else if (key == "cuda_mem_mb" && numeric) out.perf.child_cuda_mem_mb = d;
+          else if (key == "feat_dim"    && numeric) feat_dim = static_cast<int>(d);
+          else if (key == "seed"        && numeric) feat_seed = static_cast<std::uint32_t>(d);
+          else if (key == "features_path")          features_path = val;
+        }
+      }
+      // Read flat float32 sidecar if present
+      if (!features_path.empty() && feat_dim > 0) {
+        std::ifstream fin(features_path, std::ios::binary);
+        if (fin) {
+          std::vector<float> f(static_cast<size_t>(feat_dim));
+          fin.read(reinterpret_cast<char*>(f.data()), sizeof(float) * f.size());
+          if (fin.gcount() == static_cast<std::streamsize>(sizeof(float) * f.size())) {
+            out.features = std::move(f);
+            out.feature_seed = feat_seed;
+          }
         }
       }
     }
@@ -271,6 +296,8 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
       mf::LogInfo("InferenceEngine") << "First class score: " << out.cls.front();
+    if (!out.features.empty())
+      mf::LogInfo("InferenceEngine") << "Feature dim: " << out.features.size();
     mf::LogInfo("InferenceEngine")
         << "t_write_req_ms=" << out.perf.t_write_req_ms
         << " t_exec_total_ms=" << out.perf.t_exec_total_ms
@@ -286,6 +313,7 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     std::remove(script_stdout.c_str());
     std::remove(script_stderr.c_str());
     std::remove(meta_txt.c_str());
+    // keep the .feat.f32 if you want to inspect offline (we do not delete here)
 
     return out;
 }

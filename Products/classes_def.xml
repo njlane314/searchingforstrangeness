@@ -7,4 +7,8 @@
   <class name="image::ModelPerf"/>
   <class name="std::vector<image::ModelPerf>"/>
   <class name="image::InferencePerfProduct"/>
+
+  <!-- Random feature vectors from the MinkowskiEngine wrapper -->
+  <class name="image::RandomFeatures"/>
+  <class name="std::vector<image::RandomFeatures>"/>
 </lcgdict>
