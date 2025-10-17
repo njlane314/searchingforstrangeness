@@ -73,6 +73,7 @@ public:
   void resetTTree(TTree *_tree) override;
 
 private:
+  bool fDebug = false;
   art::InputTag fPFPproducer;
   art::InputTag fCLSproducer;
   art::InputTag fSLCproducer;
@@ -133,6 +134,7 @@ private:
   std::vector<float> _perf_child_cuda_mem_mb;
 
   static std::vector<int> countLabels(const std::vector<int> &labels, size_t nlabels);
+  void printSummary(const art::Event &event, bool is_data) const;
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -140,6 +142,7 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
 }
 
 void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
+  fDebug = p.get<bool>("Debug", false);
   fPFPproducer = p.get<art::InputTag>("PFPproducer");
   fCLSproducer = p.get<art::InputTag>("CLSproducer");
   fSLCproducer = p.get<art::InputTag>("SLCproducer");
@@ -436,6 +439,131 @@ void ImageAnalysis::analyseSlice(
     _is_vtx_in_image_v = (V && in_img(*V, vtx_proj_v.X(), vtx_proj_v.Z()));
     _is_vtx_in_image_w = (W && in_img(*W, vtx_proj_w.X(), vtx_proj_w.Z()));
   }
+
+  if (fDebug) {
+    printSummary(event, is_data);
+  }
+}
+
+void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
+  const char *cat = "ImageAnalysis";
+  const auto eid = event.id();
+  mf::LogInfo(cat) << "=== ImageAnalysis summary: Run " << eid.run()
+                   << " SubRun " << eid.subRun()
+                   << " Event " << eid.event() << " ===";
+
+  {
+    std::ostringstream oss;
+    for (size_t i = 0; i < fActiveModels.size(); ++i) {
+      if (i)
+        oss << ",";
+      oss << fActiveModels[i];
+    }
+    mf::LogInfo(cat) << "ActiveModels: [" << oss.str() << "]";
+  }
+
+  auto checkPair = [&](const char *name, const std::vector<float> &adc,
+                       const std::vector<int> &sem) {
+    bool mismatch = (!adc.empty() && !sem.empty() && adc.size() != sem.size());
+    mf::LogInfo(cat) << "  " << name << " ADC=" << adc.size()
+                     << "px, SEM=" << sem.size()
+                     << "px" << (mismatch ? "  [SIZE-MISMATCH]" : "");
+  };
+  auto yesno = [](bool v) { return v ? "Y" : "N"; };
+
+  checkPair("Slice U", _detector_image_u, _semantic_image_u);
+  checkPair("Slice V", _detector_image_v, _semantic_image_v);
+  checkPair("Slice W", _detector_image_w, _semantic_image_w);
+  checkPair("Event U", _event_detector_image_u, _event_semantic_image_u);
+  checkPair("Event V", _event_detector_image_v, _event_semantic_image_v);
+  checkPair("Event W", _event_detector_image_w, _event_semantic_image_w);
+
+  mf::LogInfo(cat) << "  Event ADC sums [U,V,W] = [" << _event_adc_u << ", "
+                   << _event_adc_v << ", " << _event_adc_w << "]";
+
+  mf::LogInfo(cat) << "  Reco vtx: (" << _reco_neutrino_vertex_x << ", "
+                   << _reco_neutrino_vertex_y << ", "
+                   << _reco_neutrino_vertex_z << ")";
+  mf::LogInfo(cat) << "  Vertex in image [U,V,W] = ["
+                   << yesno(_is_vtx_in_image_u) << ", "
+                   << yesno(_is_vtx_in_image_v) << ", "
+                   << yesno(_is_vtx_in_image_w) << "]";
+
+  if (!is_data) {
+    const auto &names = image::SemanticPixelClassifier::semantic_label_names;
+    mf::LogInfo(cat) << "  Slice semantic counts by label:";
+    for (size_t i = 0; i < names.size(); ++i) {
+      int u = (i < _slice_semantic_counts_u.size()) ? _slice_semantic_counts_u[i] : 0;
+      int v = (i < _slice_semantic_counts_v.size()) ? _slice_semantic_counts_v[i] : 0;
+      int w = (i < _slice_semantic_counts_w.size()) ? _slice_semantic_counts_w[i] : 0;
+      mf::LogInfo(cat) << "    [" << i << "] " << names[i]
+                       << ": U=" << u << " V=" << v << " W=" << w;
+    }
+    mf::LogInfo(cat) << "  Event semantic counts by label:";
+    for (size_t i = 0; i < names.size(); ++i) {
+      int u = (i < _event_semantic_counts_u.size()) ? _event_semantic_counts_u[i] : 0;
+      int v = (i < _event_semantic_counts_v.size()) ? _event_semantic_counts_v[i] : 0;
+      int w = (i < _event_semantic_counts_w.size()) ? _event_semantic_counts_w[i] : 0;
+      mf::LogInfo(cat) << "    [" << i << "] " << names[i]
+                       << ": U=" << u << " V=" << v << " W=" << w;
+    }
+  }
+
+  mf::LogInfo(cat) << "  Pred segmentation present: U="
+                   << yesno(!_pred_semantic_image_u.empty())
+                   << " V=" << yesno(!_pred_semantic_image_v.empty())
+                   << " W=" << yesno(!_pred_semantic_image_w.empty());
+  if (!_pred_semantic_counts_u.empty() || !_pred_semantic_counts_v.empty() ||
+      !_pred_semantic_counts_w.empty()) {
+    const auto &names = image::SemanticPixelClassifier::semantic_label_names;
+    mf::LogInfo(cat) << "  Pred semantic counts by label:";
+    for (size_t i = 0; i < names.size(); ++i) {
+      int u = (i < _pred_semantic_counts_u.size()) ? _pred_semantic_counts_u[i] : 0;
+      int v = (i < _pred_semantic_counts_v.size()) ? _pred_semantic_counts_v[i] : 0;
+      int w = (i < _pred_semantic_counts_w.size()) ? _pred_semantic_counts_w[i] : 0;
+      mf::LogInfo(cat) << "    [" << i << "] " << names[i]
+                       << ": U=" << u << " V=" << v << " W=" << w;
+    }
+  }
+
+  mf::LogInfo(cat) << "  Inference scores:";
+  for (const auto &m : fModels) {
+    auto it = _inference_scores.find(m.name);
+    float s = (it != _inference_scores.end())
+                  ? it->second
+                  : std::numeric_limits<float>::quiet_NaN();
+    if (!std::isnan(s)) {
+      mf::LogInfo(cat) << "    " << m.name << ": " << s;
+    } else {
+      mf::LogInfo(cat) << "    " << m.name << ": MISSING";
+    }
+  }
+
+  if (!_perf_model.empty()) {
+    mf::LogInfo(cat) << "  Inference perf for " << _perf_model.size()
+                     << " model(s):";
+    for (size_t i = 0; i < _perf_model.size(); ++i) {
+      auto safe = [&](const std::vector<float> &v, size_t idx) {
+        return (idx < v.size()) ? v[idx]
+                                : std::numeric_limits<float>::quiet_NaN();
+      };
+      mf::LogInfo(cat)
+          << "    " << _perf_model[i]
+          << " | exec_total_ms=" << safe(_perf_t_exec_total_ms, i)
+          << " write_req_ms=" << safe(_perf_t_write_req_ms, i)
+          << " read_resp_ms=" << safe(_perf_t_read_resp_ms, i)
+          << " child_total_ms=" << safe(_perf_t_child_total_ms, i)
+          << " child_setup_ms=" << safe(_perf_t_child_setup_ms, i)
+          << " child_infer_ms=" << safe(_perf_t_child_infer_ms, i)
+          << " child_post_ms=" << safe(_perf_t_child_post_ms, i)
+          << " child_max_rss_mb=" << safe(_perf_child_max_rss_mb, i)
+          << " child_cuda_mem_mb=" << safe(_perf_child_cuda_mem_mb, i);
+    }
+  } else {
+    mf::LogInfo(cat) << "  No inference perf product found.";
+  }
+
+  mf::LogInfo(cat) << "=== end ImageAnalysis summary ===";
 }
 
 DEFINE_ART_CLASS_TOOL(ImageAnalysis)
