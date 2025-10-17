@@ -43,7 +43,12 @@ using image::BinaryInferenceOutput;
 using image::Image;
 using image::ImageAlgo;
 using image::ImageProperties;
+using image::InferencePerfProduct;
+using image::InferenceScores;
 using image::ModelConfig;
+using image::ModelPerf;
+using image::PlaneImage;
+using image::PlaneSegmentation;
 using image::SemanticPixelClassifier;
 
 namespace {
