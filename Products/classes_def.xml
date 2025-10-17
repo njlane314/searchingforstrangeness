@@ -1,8 +1,12 @@
 <lcgdict>
   <class name="image::PlaneImage"/>
   <class name="std::vector<image::PlaneImage>"/>
+  <class name="art::Wrapper<image::PlaneImage>"/>
   <class name="art::Wrapper<std::vector<image::PlaneImage>>"/>
   <class name="image::InferenceScores"/>
+  <class name="std::vector<image::InferenceScores>"/>
+  <class name="art::Wrapper<image::InferenceScores>"/>
+  <class name="art::Wrapper<std::vector<image::InferenceScores>>"/>
   <class name="image::PlaneSegmentation"/>
   <class name="std::vector<image::PlaneSegmentation>"/>
   <class name="art::Wrapper<std::vector<image::PlaneSegmentation>>"/>
