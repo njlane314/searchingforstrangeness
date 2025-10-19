@@ -17,9 +17,6 @@
 #include "lardataobj/RecoBase/Vertex.h"
 
 #include "Products/ImageProducts.h"
-#include "Products/SegmentationProducts.h"
-#include "Products/InferencePerf.h"
-#include "Products/RandomFeatures.h"
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageAlgo.h"
@@ -28,7 +25,6 @@
 #include <TVector3.h>
 #include <algorithm>
 #include <cmath>
-#include <cstdlib>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -37,20 +33,12 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <unistd.h>
 #include <vector>
-#include <limits.h>
 
-using image::BinaryInferenceOutput;
 using image::Image;
 using image::ImageAlgo;
 using image::ImageProperties;
-using image::InferencePerfProduct;
-using image::InferenceScores;
-using image::ModelConfig;
-using image::ModelPerf;
 using image::PlaneImage;
-using image::PlaneSegmentation;
 using image::SemanticPixelClassifier;
 
 namespace {
@@ -96,12 +84,6 @@ private:
   art::InputTag fBKTproducer;
   bool fIsData{false};
 
-  std::string fContainerImage;
-  std::string fWrapperScript;
-  std::vector<std::string> fWrapperExtra;
-  bool fWantClassification{true};
-  bool fWantSegmentation{true};
-
   int fImgW{512};
   int fImgH{512};
   float fADCThresh{4.0f};
@@ -109,12 +91,6 @@ private:
 
   std::set<unsigned int> fBadChannels;
   std::string fBadChannelFile;
-
-  std::vector<ModelConfig> fModels;
-  std::vector<std::string> fActiveModels;
-  std::string fAssetsBaseDir;
-  std::string fWeightsBaseDir;
-  std::string fInferenceWrapper;
 
   const geo::GeometryCore *fGeo{nullptr};
   const detinfo::DetectorProperties *fDetp{nullptr};
@@ -141,12 +117,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   fBKTproducer = p.get<art::InputTag>("BKTproducer");
   fIsData = p.get<bool>("IsData", false);
 
-  fContainerImage = p.get<std::string>("ContainerImage");
-  fWrapperScript = p.get<std::string>("WrapperScript", "/app/infer_bin.py");
-  fWrapperExtra = p.get<std::vector<std::string>>("WrapperExtraArgs", {});
-  fWantClassification = p.get<bool>("WantClassification", true);
-  fWantSegmentation = p.get<bool>("WantSegmentation", true);
-
   fBadChannelFile = p.get<std::string>("BadChannelFile", "");
   if (!fBadChannelFile.empty()) loadBadChannels(fBadChannelFile);
 
@@ -166,29 +136,12 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   fPitchV = fGeo->WirePitch(geo::kV);
   fPitchW = fGeo->WirePitch(geo::kW);
 
-  fAssetsBaseDir = p.get<std::string>("AssetsBaseDir", "");
-  fWeightsBaseDir = p.get<std::string>("WeightsBaseDir", "weights");
-  fInferenceWrapper = p.get<std::string>("InferenceWrapper", "scripts/inference_wrapper.sh");
-
-  auto model_psets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
-  for (auto const &ps : model_psets) {
-    fModels.push_back({ps.get<std::string>("name"),
-                       ps.get<std::string>("weights_file"),
-                       ps.get<std::string>("arch")});
-  }
-  fActiveModels = p.get<std::vector<std::string>>("ActiveModels", {});
-
   fSemantic = std::make_unique<SemanticPixelClassifier>(fMCPproducer);
   fAlgo = std::make_unique<ImageAlgo>(fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
-                                      fADCThresh, fWeightsBaseDir, fInferenceWrapper, fAssetsBaseDir,
-                                      fModels, fActiveModels, fGeo, fDetp, ".");
+                                      fADCThresh, fGeo, fDetp);
 
   produces<std::vector<PlaneImage>>("slice");
   produces<std::vector<PlaneImage>>("event");
-  produces<InferenceScores>();
-  produces<std::vector<PlaneSegmentation>>("seg");
-  produces<InferencePerfProduct>("perf");
-  produces<image::RandomFeaturesCollection>("features"); // NEW
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -340,76 +293,8 @@ void ImageProducer::produce(art::Event &event) {
     out_event->emplace_back(pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
   }
 
-  std::string scratch = ".";
-  if (auto *s = std::getenv("_CONDOR_SCRATCH_DIR")) scratch = s;
-  char buf[PATH_MAX];
-  std::string abs_scratch = realpath(scratch.c_str(), buf) ? std::string(buf) : scratch;
-
-  BinaryInferenceOutput inf_out = fAlgo->runInferenceBinary(det_slice, abs_scratch,
-                                                            fWantClassification, fWantSegmentation);
-
-  auto sc = std::make_unique<InferenceScores>();
-  for (auto const &kv : inf_out.scores) {
-    sc->names.push_back(kv.first);
-    sc->scores.push_back(kv.second);
-  }
-
-  auto perf_prod = std::make_unique<InferencePerfProduct>();
-  perf_prod->per_model.reserve(inf_out.perfs.size());
-  for (auto const &kv : inf_out.perfs) {
-    ModelPerf mp;
-    mp.model = kv.first;
-    mp.t_write_req_ms   = static_cast<float>(kv.second.t_write_req_ms);
-    mp.t_exec_total_ms  = static_cast<float>(kv.second.t_exec_total_ms);
-    mp.t_read_resp_ms   = static_cast<float>(kv.second.t_read_resp_ms);
-    mp.t_child_total_ms = static_cast<float>(kv.second.t_child_total_ms);
-    mp.t_child_setup_ms = static_cast<float>(kv.second.t_child_setup_ms);
-    mp.t_child_infer_ms = static_cast<float>(kv.second.t_child_infer_ms);
-    mp.t_child_post_ms  = static_cast<float>(kv.second.t_child_post_ms);
-    mp.child_max_rss_mb = static_cast<float>(kv.second.child_max_rss_mb);
-    mp.child_cuda_mem_mb= static_cast<float>(kv.second.child_cuda_mem_mb);
-    perf_prod->per_model.push_back(std::move(mp));
-  }
-
-  auto seg_prod = std::make_unique<std::vector<PlaneSegmentation>>();
-  if (inf_out.has_segmentation) {
-    seg_prod->reserve(3);
-    auto make_plane = [&](int v, const std::vector<uint8_t> &lbl, const std::vector<float> &conf) {
-      PlaneSegmentation p;
-      p.view = v;
-      p.width = inf_out.segW;
-      p.height = inf_out.segH;
-      p.nclasses = 0;
-      p.labels = lbl;
-      p.confidence = conf;
-      return p;
-    };
-    seg_prod->push_back(make_plane(int(geo::kU), inf_out.seg_u, inf_out.seg_conf_u));
-    seg_prod->push_back(make_plane(int(geo::kV), inf_out.seg_v, inf_out.seg_conf_v));
-    seg_prod->push_back(make_plane(int(geo::kW), inf_out.seg_w, inf_out.seg_conf_w));
-  }
-
-  // NEW: persist full random feature vectors per model
-  auto randfeat_prod = std::make_unique<image::RandomFeaturesCollection>();
-  randfeat_prod->reserve(inf_out.features.size());
-  for (auto const &kv : inf_out.features) {
-    const std::string &model = kv.first;
-    auto const &vec = kv.second;
-    image::RandomFeatures rf;
-    rf.model = model;
-    rf.dim   = static_cast<std::uint32_t>(vec.size());
-    auto it_seed = inf_out.feature_seeds.find(model);
-    rf.seed  = (it_seed != inf_out.feature_seeds.end()) ? it_seed->second : 0u;
-    rf.values = vec;
-    randfeat_prod->push_back(std::move(rf));
-  }
-
   event.put(std::move(out_slice), "slice");
   event.put(std::move(out_event), "event");
-  event.put(std::move(sc));
-  event.put(std::move(seg_prod), "seg");
-  event.put(std::move(perf_prod), "perf");
-  event.put(std::move(randfeat_prod), "features");
 }
 
 DEFINE_ART_MODULE(ImageProducer)
