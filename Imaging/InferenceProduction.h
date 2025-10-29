@@ -1,13 +1,14 @@
-#ifndef INFERENCEENGINE_H
-#define INFERENCEENGINE_H
+#ifndef INFERENCEPRODUCTION_H
+#define INFERENCEPRODUCTION_H
 
-#include "Imaging/Image.h"
+#include "Products/ImageProducts.h"
 
 #include <chrono>
 #include <cstdlib>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <iterator>
 #include <limits>
 #include <sstream>
 #include <stdexcept>
@@ -20,7 +21,7 @@
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
 namespace image {
-class InferenceEngine {
+class InferenceProduction {
   public:
     struct Perf {
       double t_write_req_ms{0.0};
@@ -45,7 +46,7 @@ class InferenceEngine {
       std::uint32_t feature_seed{0};   // RNG seed used by the wrapper (optional)
     };
 
-    static Result runInferenceDetailed(const std::vector<Image<float>> &detector_images,
+    static Result runInferenceDetailed(const std::vector<PlaneImage> &detector_images,
                                        const std::string &absolute_scratch_dir,
                                        const std::string &work_dir,
                                        const std::string &arch,
@@ -55,7 +56,7 @@ class InferenceEngine {
                                        bool want_cls = true,
                                        bool want_seg = true);
 
-    static float runInference(const std::vector<Image<float>> &detector_images,
+    static float runInference(const std::vector<PlaneImage> &detector_images,
                               const std::string &absolute_scratch_dir,
                               const std::string &work_dir,
                               const std::string &arch,
@@ -101,8 +102,8 @@ namespace _binary_io {
   }
 }
 
-inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
-    const std::vector<Image<float>> &detector_images,
+inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
+    const std::vector<PlaneImage> &detector_images,
     const std::string &absolute_scratch_dir, const std::string &work_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,
@@ -110,6 +111,11 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     bool want_cls, bool want_seg) {
     using std::string;
     (void)work_dir;
+
+    if (detector_images.size() < 3) {
+        throw art::Exception(art::errors::LogicError)
+            << "Need at least 3 detector images (U,V,W)";
+    }
 
     auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
     int pid  = ::getpid();
@@ -125,9 +131,9 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
     // NOTE: wrapper will also write a flat float32 sidecar "<result_bin>.feat.f32"
 
     auto t0 = std::chrono::steady_clock::now();
-    const auto& U = detector_images[0].data();
-    const auto& V = detector_images[1].data();
-    const auto& W = detector_images[2].data();
+    const auto& U = detector_images[0].adc;
+    const auto& V = detector_images[1].adc;
+    const auto& W = detector_images[2].adc;
     _binary_io::write_chw_f32(req_bin, U, V, W);
     auto t1 = std::chrono::steady_clock::now();
 
@@ -175,15 +181,15 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
         << "--in " << req_bin << " "
         << "--out " << result_bin << " "
         << "--metrics " << meta_txt << " "
-        << "--W " << detector_images[0].width() << " "
-        << "--H " << detector_images[0].height() << " "
+        << "--W " << detector_images[0].width << " "
+        << "--H " << detector_images[0].height << " "
         << "--arch " << arch << " "
         << "--weights " << weights_file << " "
         << "--want-cls " << (want_cls ? 1 : 0) << " "
         << "--want-seg " << (want_seg ? 1 : 0)
         << " > " << script_stdout << " 2> " << script_stderr;
 
-    mf::LogInfo("InferenceEngine") << "Executing inference: " << cmd.str();
+    mf::LogInfo("InferenceProduction") << "Executing inference: " << cmd.str();
 
     auto start = std::chrono::steady_clock::now();
     int code = std::system(cmd.str().c_str());
@@ -292,13 +298,13 @@ inline InferenceEngine::Result InferenceEngine::runInferenceDetailed(
       }
     }
 
-    mf::LogInfo("InferenceEngine")
+    mf::LogInfo("InferenceProduction")
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
-      mf::LogInfo("InferenceEngine") << "First class score: " << out.cls.front();
+      mf::LogInfo("InferenceProduction") << "First class score: " << out.cls.front();
     if (!out.features.empty())
-      mf::LogInfo("InferenceEngine") << "Feature dim: " << out.features.size();
-    mf::LogInfo("InferenceEngine")
+      mf::LogInfo("InferenceProduction") << "Feature dim: " << out.features.size();
+    mf::LogInfo("InferenceProduction")
         << "t_write_req_ms=" << out.perf.t_write_req_ms
         << " t_exec_total_ms=" << out.perf.t_exec_total_ms
         << " t_read_resp_ms=" << out.perf.t_read_resp_ms
