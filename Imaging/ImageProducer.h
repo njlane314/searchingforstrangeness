@@ -32,10 +32,10 @@ public:
                                      std::vector<Image<float>> &detector_images,
                                      std::vector<Image<int>> &semantic_images,
                                      bool is_data,
-                                     const art::InputTag &wireProducer,
-                                     const art::InputTag &hitProducer,
-                                     const art::InputTag &mcpProducer,
-                                     const art::InputTag &bktProducer,
+                                     const art::InputTag &wire_producer,
+                                     const art::InputTag &hit_producer,
+                                     const art::InputTag &mcp_producer,
+                                     const art::InputTag &bkt_producer,
                                      const geo::GeometryCore *geo,
                                      const detinfo::DetectorProperties *detp,
                                      float adc_image_threshold,
@@ -234,8 +234,8 @@ inline void ImageProducer::constructPixelImages(
     const std::vector<ImageProperties> &properties,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images, bool is_data,
-    const art::InputTag &wireProducer, const art::InputTag &hitProducer,
-    const art::InputTag &mcpProducer, const art::InputTag &bktProducer,
+    const art::InputTag &wire_producer, const art::InputTag &hit_producer,
+    const art::InputTag &mcp_producer, const art::InputTag &bkt_producer,
     const geo::GeometryCore *geo, const detinfo::DetectorProperties *detp,
     float adc_image_threshold, SemanticClassifier *semantic_classifier,
     const std::set<unsigned int> &bad_channels) {
@@ -251,13 +251,13 @@ inline void ImageProducer::constructPixelImages(
         semantic_images.push_back(std::move(semantic_image));
     }
 
-    auto wire_vector = event.getValidHandle<std::vector<recob::Wire>>(wireProducer);
-    auto hit_vector = event.getValidHandle<std::vector<recob::Hit>>(hitProducer);
+    auto wire_vector = event.getValidHandle<std::vector<recob::Wire>>(wire_producer);
+    auto hit_vector = event.getValidHandle<std::vector<recob::Hit>>(hit_producer);
     art::Handle<std::vector<simb::MCParticle>> mcp_vector;
-    bool has_mcps = event.getByLabel(mcpProducer, mcp_vector);
-    art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, hitProducer);
+    bool has_mcps = event.getByLabel(mcp_producer, mcp_vector);
+    art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, hit_producer);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        mcp_bkth_assoc(hit_vector, event, bktProducer);
+        mcp_bkth_assoc(hit_vector, event, bkt_producer);
     std::vector<SemanticClassifier::SemanticLabel> semantic_label_vector;
     if (!is_data && has_mcps && mcp_vector.isValid() && semantic_classifier) {
         semantic_label_vector = semantic_classifier->classifyParticles(event);
