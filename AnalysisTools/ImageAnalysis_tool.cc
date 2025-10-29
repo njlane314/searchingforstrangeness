@@ -33,7 +33,7 @@
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
 #include "Imaging/ImageAlgo.h"
-#include "Imaging/SemanticPixelClassifier.h"
+#include "Imaging/SemanticClassifier.h"
 
 #include <TDirectoryFile.h>
 #include <TFile.h>
@@ -262,7 +262,7 @@ void ImageAnalysis::analyseSlice(
                                  _event_detector_image_w.end(), 0.0f);
 
   if (!is_data) {
-    size_t nlabels = image::SemanticPixelClassifier::semantic_label_names.size();
+    size_t nlabels = image::SemanticClassifier::semantic_label_names.size();
     _slice_semantic_counts_u = countLabels(_semantic_image_u, nlabels);
     _slice_semantic_counts_v = countLabels(_semantic_image_v, nlabels);
     _slice_semantic_counts_w = countLabels(_semantic_image_w, nlabels);
@@ -340,7 +340,7 @@ void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
                    << yesno(_is_vtx_in_image_w) << "]";
 
   if (!is_data) {
-    const auto &names = image::SemanticPixelClassifier::semantic_label_names;
+    const auto &names = image::SemanticClassifier::semantic_label_names;
     mf::LogInfo(cat) << "  Slice semantic counts by label:";
     for (size_t i = 0; i < names.size(); ++i) {
       int u = (i < _slice_semantic_counts_u.size()) ? _slice_semantic_counts_u[i] : 0;

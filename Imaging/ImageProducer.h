@@ -2,7 +2,7 @@
 #define IMAGEPRODUCER_H
 
 #include "Imaging/Image.h"
-#include "Imaging/SemanticPixelClassifier.h"
+#include "Imaging/SemanticClassifier.h"
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"
@@ -36,17 +36,17 @@ class ImageProducer {
                                      const geo::GeometryCore *geo,
                                      const detinfo::DetectorProperties *detp,
                                      float adc_image_threshold,
-                                     SemanticPixelClassifier *semantic_classifier,
+                                     SemanticClassifier *semantic_classifier,
                                      const std::set<unsigned int> &badChannels);
 
   private:
-    static SemanticPixelClassifier::SemanticLabel labelSemanticPixels(
+    static SemanticClassifier::SemanticLabel labelSemanticPixels(
         const art::Ptr<recob::Hit> &matched_hit,
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
             &mcp_bkth_assoc,
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
         const std::map<int, size_t> &trackid_to_index,
-        const std::vector<SemanticPixelClassifier::SemanticLabel>
+        const std::vector<SemanticClassifier::SemanticLabel>
             &semantic_label_vector,
         bool has_mcps);
 
@@ -59,7 +59,7 @@ class ImageProducer {
             &mcp_bkth_assoc,
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
         const std::map<int, size_t> &trackid_to_index,
-        const std::vector<SemanticPixelClassifier::SemanticLabel>
+        const std::vector<SemanticClassifier::SemanticLabel>
             &semantic_label_vector,
         std::vector<Image<float>> &detector_images,
         std::vector<Image<int>> &semantic_images,
@@ -67,21 +67,21 @@ class ImageProducer {
         const geo::GeometryCore *geo,
         const detinfo::DetectorProperties *detp,
         float adc_image_threshold,
-        SemanticPixelClassifier *semantic_classifier,
+        SemanticClassifier *semantic_classifier,
         const std::set<unsigned int> &badChannels);
 };
 
-inline SemanticPixelClassifier::SemanticLabel ImageProducer::labelSemanticPixels(
+inline SemanticClassifier::SemanticLabel ImageProducer::labelSemanticPixels(
     const art::Ptr<recob::Hit> &matched_hit,
     const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
         &mcp_bkth_assoc,
     const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
     const std::map<int, size_t> &trackid_to_index,
-    const std::vector<SemanticPixelClassifier::SemanticLabel>
+    const std::vector<SemanticClassifier::SemanticLabel>
         &semantic_label_vector,
     bool has_mcps) {
-    SemanticPixelClassifier::SemanticLabel semantic_pixel_label =
-        SemanticPixelClassifier::SemanticLabel::Cosmic;
+    SemanticClassifier::SemanticLabel semantic_pixel_label =
+        SemanticClassifier::SemanticLabel::Cosmic;
     if (!has_mcps || !mcp_vector.isValid())
         return semantic_pixel_label;
     std::vector<art::Ptr<simb::MCParticle>> mcp_particles_ass_to_hit;
@@ -106,7 +106,7 @@ inline SemanticPixelClassifier::SemanticLabel ImageProducer::labelSemanticPixels
                 if (particle_mcp_idx < semantic_label_vector.size()) {
                     if (max_ide_fraction <= 0.5f) {
                         semantic_pixel_label =
-                            SemanticPixelClassifier::SemanticLabel::Ambiguous;
+                            SemanticClassifier::SemanticLabel::Ambiguous;
                     } else {
                         semantic_pixel_label =
                             semantic_label_vector[particle_mcp_idx];
@@ -127,12 +127,12 @@ inline void ImageProducer::fillDetectorImage(
         &mcp_bkth_assoc,
     const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
     const std::map<int, size_t> &trackid_to_index,
-    const std::vector<SemanticPixelClassifier::SemanticLabel>
+    const std::vector<SemanticClassifier::SemanticLabel>
         &semantic_label_vector,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps,
     const geo::GeometryCore *geo, const detinfo::DetectorProperties *detp,
-    float adc_image_threshold, SemanticPixelClassifier *semantic_classifier,
+    float adc_image_threshold, SemanticClassifier *semantic_classifier,
     const std::set<unsigned int> &badChannels) {
     (void)semantic_classifier;
     auto ch_id = wire.Channel();
@@ -212,7 +212,7 @@ inline void ImageProducer::constructPixelImages(
     const art::InputTag &wireProducer, const art::InputTag &hitProducer,
     const art::InputTag &mcpProducer, const art::InputTag &bktProducer,
     const geo::GeometryCore *geo, const detinfo::DetectorProperties *detp,
-    float adc_image_threshold, SemanticPixelClassifier *semantic_classifier,
+    float adc_image_threshold, SemanticClassifier *semantic_classifier,
     const std::set<unsigned int> &badChannels) {
     detector_images.clear();
     semantic_images.clear();
@@ -222,7 +222,7 @@ inline void ImageProducer::constructPixelImages(
         detector_images.push_back(std::move(detector_image));
         Image<int> semantic_image(prop);
         semantic_image.clear(
-            static_cast<int>(SemanticPixelClassifier::SemanticLabel::Empty));
+            static_cast<int>(SemanticClassifier::SemanticLabel::Empty));
         semantic_images.push_back(std::move(semantic_image));
     }
     auto wire_vector =
@@ -234,7 +234,7 @@ inline void ImageProducer::constructPixelImages(
     art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, hitProducer);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
         mcp_bkth_assoc(hit_vector, event, bktProducer);
-    std::vector<SemanticPixelClassifier::SemanticLabel> semantic_label_vector;
+    std::vector<SemanticClassifier::SemanticLabel> semantic_label_vector;
     if (!is_data && has_mcps && mcp_vector.isValid() && semantic_classifier) {
         semantic_label_vector = semantic_classifier->classifyParticles(event);
     }

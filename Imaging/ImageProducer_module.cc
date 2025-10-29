@@ -20,7 +20,7 @@
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageAlgo.h"
-#include "Imaging/SemanticPixelClassifier.h"
+#include "Imaging/SemanticClassifier.h"
 
 #include <TVector3.h>
 #include <algorithm>
@@ -39,7 +39,7 @@ using image::Image;
 using image::ImageAlgo;
 using image::ImageProperties;
 using image::PlaneImage;
-using image::SemanticPixelClassifier;
+using image::SemanticClassifier;
 
 namespace {
 static std::pair<double, double> centroidWithinRadius(const art::Event &event,
@@ -99,7 +99,7 @@ private:
   double fPitchV{0.0};
   double fPitchW{0.0};
 
-  std::unique_ptr<SemanticPixelClassifier> fSemantic;
+  std::unique_ptr<SemanticClassifier> fSemantic;
   std::unique_ptr<ImageAlgo> fAlgo;
 
   void loadBadChannels(const std::string &filename);
@@ -136,7 +136,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
   fPitchV = fGeo->WirePitch(geo::kV);
   fPitchW = fGeo->WirePitch(geo::kW);
 
-  fSemantic = std::make_unique<SemanticPixelClassifier>(fMCPproducer);
+  fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
   fAlgo = std::make_unique<ImageAlgo>(fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
                                       fADCThresh, fGeo, fDetp);
 
