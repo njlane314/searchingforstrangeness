@@ -1,4 +1,8 @@
 <lcgdict>
+  <include file="Products/ImageProducts.h"/>
+  <include file="Products/InferencePerf.h"/>
+  <include file="Products/RandomFeatures.h"/>
+
   <class name="image::PlaneImage"/>
   <class name="std::vector<image::PlaneImage>"/>
   <class name="art::Wrapper<image::PlaneImage>"/>
