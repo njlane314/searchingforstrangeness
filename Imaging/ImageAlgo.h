@@ -32,7 +32,7 @@ class ImageAlgo {
                        const std::vector<ImageProperties> &properties,
                        bool is_data,
                        SemanticClassifier *semantic_classifier,
-                       const std::set<unsigned int> &badChannels,
+                       const std::set<unsigned int> &bad_channels,
                        std::vector<Image<float>> &detector_images,
                        std::vector<Image<int>> &semantic_images) const;
 
@@ -69,7 +69,7 @@ inline void ImageAlgo::produceImages(
     const std::vector<ImageProperties> &properties,
     bool is_data,
     SemanticClassifier *semantic_classifier,
-    const std::set<unsigned int> &badChannels,
+    const std::set<unsigned int> &bad_channels,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images) const {
     ImageProducer::constructPixelImages(event, 
@@ -86,7 +86,7 @@ inline void ImageAlgo::produceImages(
                                         fDetp, 
                                         fADCImageThreshold,
                                         semantic_classifier, 
-                                        badChannels);
+                                        bad_channels);
 }
 
 }

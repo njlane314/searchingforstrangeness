@@ -37,7 +37,7 @@ class ImageProducer {
                                      const detinfo::DetectorProperties *detp,
                                      float adc_image_threshold,
                                      SemanticClassifier *semantic_classifier,
-                                     const std::set<unsigned int> &badChannels);
+                                     const std::set<unsigned int> &bad_channels);
 
   private:
     static SemanticClassifier::SemanticLabel labelSemanticPixels(
@@ -68,7 +68,7 @@ class ImageProducer {
         const detinfo::DetectorProperties *detp,
         float adc_image_threshold,
         SemanticClassifier *semantic_classifier,
-        const std::set<unsigned int> &badChannels);
+        const std::set<unsigned int> &bad_channels);
 };
 
 inline SemanticClassifier::SemanticLabel ImageProducer::labelSemanticPixels(
@@ -133,10 +133,10 @@ inline void ImageProducer::fillDetectorImage(
     std::vector<Image<int>> &semantic_images, bool is_data, bool has_mcps,
     const geo::GeometryCore *geo, const detinfo::DetectorProperties *detp,
     float adc_image_threshold, SemanticClassifier *semantic_classifier,
-    const std::set<unsigned int> &badChannels) {
+    const std::set<unsigned int> &bad_channels) {
     (void)semantic_classifier;
     auto ch_id = wire.Channel();
-    if (badChannels.count(ch_id)) {
+    if (bad_channels.count(ch_id)) {
         return;
     }
     std::vector<geo::WireID> wire_ids = geo->ChannelToWire(ch_id);
@@ -213,7 +213,7 @@ inline void ImageProducer::constructPixelImages(
     const art::InputTag &mcpProducer, const art::InputTag &bktProducer,
     const geo::GeometryCore *geo, const detinfo::DetectorProperties *detp,
     float adc_image_threshold, SemanticClassifier *semantic_classifier,
-    const std::set<unsigned int> &badChannels) {
+    const std::set<unsigned int> &bad_channels) {
     detector_images.clear();
     semantic_images.clear();
     for (const auto &prop : properties) {
@@ -251,7 +251,7 @@ inline void ImageProducer::constructPixelImages(
                           trackid_to_index, semantic_label_vector,
                           detector_images, semantic_images, is_data, has_mcps,
                           geo, detp, adc_image_threshold, semantic_classifier,
-                          badChannels);
+                          bad_channels);
     }
 }
 
