@@ -2,7 +2,6 @@
 #define DATAPRODUCTS_IMAGE_PRODUCTS_H
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
@@ -19,11 +18,6 @@ struct PlaneImage {
   float pixel_h{0.f};
   std::vector<float> adc;
   std::vector<int32_t> semantic;
-};
-
-struct InferenceScores {
-  std::vector<std::string> names;
-  std::vector<float> scores;
 };
 
 } // namespace image
