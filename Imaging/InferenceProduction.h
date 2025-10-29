@@ -21,54 +21,54 @@
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
 namespace image {
-class InferenceProduction {
-  public:
-    struct Perf {
-      double t_write_req_ms{0.0};
-      double t_exec_total_ms{0.0};
-      double t_read_resp_ms{0.0};
-      double t_child_total_ms{0.0};
-      double t_child_setup_ms{0.0};
-      double t_child_infer_ms{0.0};
-      double t_child_post_ms{0.0};
-      double child_max_rss_mb{0.0};
-      double child_cuda_mem_mb{0.0};
+    class InferenceProduction {
+    public:
+        struct Perf {
+            double t_write_req_ms{0.0};
+            double t_exec_total_ms{0.0};
+            double t_read_resp_ms{0.0};
+            double t_child_total_ms{0.0};
+            double t_child_setup_ms{0.0};
+            double t_child_infer_ms{0.0};
+            double t_child_post_ms{0.0};
+            double child_max_rss_mb{0.0};
+            double child_cuda_mem_mb{0.0};
+        };
+
+        struct Result {
+            std::vector<float> cls;
+            uint32_t segW{0}, segH{0};
+            std::vector<uint8_t> seg_u, seg_v, seg_w;
+            std::vector<float> conf_u, conf_v, conf_w;
+            Perf perf;
+            // NEW: random features sidecar (flat float32 file) + meta
+            std::vector<float> features;   // length = feature dimension (if provided)
+            std::uint32_t feature_seed{0}; // RNG seed used by the wrapper (optional)
+        };
+
+        static Result runInferenceDetailed(const std::vector<PlaneImage> &detector_images,
+                                           const std::string &absolute_scratch_dir,
+                                           const std::string &work_dir,
+                                           const std::string &arch,
+                                           const std::string &weights_file,
+                                           const std::string &inference_wrapper,
+                                           const std::string &assets_base_dir,
+                                           bool want_cls = true,
+                                           bool want_seg = true);
+
+        static float runInference(const std::vector<PlaneImage> &detector_images,
+                                  const std::string &absolute_scratch_dir,
+                                  const std::string &work_dir,
+                                  const std::string &arch,
+                                  const std::string &weights_file,
+                                  const std::string &inference_wrapper,
+                                  const std::string &assets_base_dir) {
+            auto r = runInferenceDetailed(detector_images, absolute_scratch_dir, work_dir,
+                                          arch, weights_file, inference_wrapper, assets_base_dir,
+                                          true, false);
+            return r.cls.empty() ? std::numeric_limits<float>::quiet_NaN() : r.cls.front();
+        }
     };
-
-    struct Result {
-      std::vector<float> cls;
-      uint32_t segW{0}, segH{0};
-      std::vector<uint8_t> seg_u, seg_v, seg_w;
-      std::vector<float> conf_u, conf_v, conf_w;
-      Perf perf;
-      // NEW: random features sidecar (flat float32 file) + meta
-      std::vector<float> features;     // length = feature dimension (if provided)
-      std::uint32_t feature_seed{0};   // RNG seed used by the wrapper (optional)
-    };
-
-    static Result runInferenceDetailed(const std::vector<PlaneImage> &detector_images,
-                                       const std::string &absolute_scratch_dir,
-                                       const std::string &work_dir,
-                                       const std::string &arch,
-                                       const std::string &weights_file,
-                                       const std::string &inference_wrapper,
-                                       const std::string &assets_base_dir,
-                                       bool want_cls = true,
-                                       bool want_seg = true);
-
-    static float runInference(const std::vector<PlaneImage> &detector_images,
-                              const std::string &absolute_scratch_dir,
-                              const std::string &work_dir,
-                              const std::string &arch,
-                              const std::string &weights_file,
-                              const std::string &inference_wrapper,
-                              const std::string &assets_base_dir) {
-      auto r = runInferenceDetailed(detector_images, absolute_scratch_dir, work_dir,
-                                    arch, weights_file, inference_wrapper, assets_base_dir,
-                                    true, false);
-      return r.cls.empty() ? std::numeric_limits<float>::quiet_NaN() : r.cls.front();
-    }
-};
 
 inline std::string joinPath(std::string a, const std::string &b) {
     if (a.empty()) return b;
@@ -77,29 +77,29 @@ inline std::string joinPath(std::string a, const std::string &b) {
 }
 
 namespace _binary_io {
-  struct ResultHeader {
-    char     magic[4];
-    uint32_t version;
-    uint32_t K;
-    uint32_t segW;
-    uint32_t segH;
-    uint32_t has_conf;
-    uint64_t cls_bytes;
-    uint64_t seg_bytes;
-    uint64_t conf_bytes;
-  };
+    struct ResultHeader {
+        char magic[4];
+        uint32_t version;
+        uint32_t K;
+        uint32_t segW;
+        uint32_t segH;
+        uint32_t has_conf;
+        uint64_t cls_bytes;
+        uint64_t seg_bytes;
+        uint64_t conf_bytes;
+    };
 
-  inline void write_chw_f32(const std::string& path,
-                            const std::vector<float>& u,
-                            const std::vector<float>& v,
-                            const std::vector<float>& w) {
-    std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
-    if (!ofs) throw std::runtime_error("Cannot open " + path);
-    ofs.write(reinterpret_cast<const char*>(u.data()), sizeof(float)*u.size());
-    ofs.write(reinterpret_cast<const char*>(v.data()), sizeof(float)*v.size());
-    ofs.write(reinterpret_cast<const char*>(w.data()), sizeof(float)*w.size());
-    if (!ofs) throw std::runtime_error("Short write to " + path);
-  }
+    inline void write_chw_f32(const std::string &path,
+                              const std::vector<float> &u,
+                              const std::vector<float> &v,
+                              const std::vector<float> &w) {
+        std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
+        if (!ofs) throw std::runtime_error("Cannot open " + path);
+        ofs.write(reinterpret_cast<const char *>(u.data()), sizeof(float) * u.size());
+        ofs.write(reinterpret_cast<const char *>(v.data()), sizeof(float) * v.size());
+        ofs.write(reinterpret_cast<const char *>(w.data()), sizeof(float) * w.size());
+        if (!ofs) throw std::runtime_error("Short write to " + path);
+    }
 }
 
 inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
@@ -131,9 +131,9 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
     // NOTE: wrapper will also write a flat float32 sidecar "<result_bin>.feat.f32"
 
     auto t0 = std::chrono::steady_clock::now();
-    const auto& U = detector_images[0].adc;
-    const auto& V = detector_images[1].adc;
-    const auto& W = detector_images[2].adc;
+    const auto &U = detector_images[0].adc;
+    const auto &V = detector_images[1].adc;
+    const auto &W = detector_images[2].adc;
     _binary_io::write_chw_f32(req_bin, U, V, W);
     auto t1 = std::chrono::steady_clock::now();
 
@@ -212,40 +212,45 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
     Result out;
     std::ifstream ifs(result_bin, std::ios::binary);
     if (!ifs) {
-      throw art::Exception(art::errors::LogicError)
-        << "Could not open result file: " << result_bin;
+        throw art::Exception(art::errors::LogicError)
+            << "Could not open result file: " << result_bin;
     }
     _binary_io::ResultHeader h{};
-    ifs.read(reinterpret_cast<char*>(&h), sizeof(h));
-    if (!ifs || std::string(h.magic, h.magic+4) != "IAOK" || h.version != 1) {
-      throw art::Exception(art::errors::LogicError)
-        << "Bad result header in " << result_bin;
+    ifs.read(reinterpret_cast<char *>(&h), sizeof(h));
+    if (!ifs || std::string(h.magic, h.magic + 4) != "IAOK" || h.version != 1) {
+        throw art::Exception(art::errors::LogicError)
+            << "Bad result header in " << result_bin;
     }
     if (h.K && h.cls_bytes == h.K * sizeof(float)) {
-      out.cls.resize(h.K);
-      ifs.read(reinterpret_cast<char*>(out.cls.data()), h.cls_bytes);
+        out.cls.resize(h.K);
+        ifs.read(reinterpret_cast<char *>(out.cls.data()), h.cls_bytes);
     }
     if (h.segW && h.segH) {
-      out.segW = h.segW; out.segH = h.segH;
-      const size_t npix = size_t(out.segW) * out.segH;
-      if (h.seg_bytes != 3 * npix) {
-        throw art::Exception(art::errors::LogicError)
-          << "seg_bytes mismatch in " << result_bin;
-      }
-      out.seg_u.resize(npix); out.seg_v.resize(npix); out.seg_w.resize(npix);
-      ifs.read(reinterpret_cast<char*>(out.seg_u.data()), npix);
-      ifs.read(reinterpret_cast<char*>(out.seg_v.data()), npix);
-      ifs.read(reinterpret_cast<char*>(out.seg_w.data()), npix);
-      if (h.has_conf) {
-        if (h.conf_bytes != 3 * npix * sizeof(float)) {
-          throw art::Exception(art::errors::LogicError)
-            << "conf_bytes mismatch in " << result_bin;
+        out.segW = h.segW;
+        out.segH = h.segH;
+        const size_t npix = size_t(out.segW) * out.segH;
+        if (h.seg_bytes != 3 * npix) {
+            throw art::Exception(art::errors::LogicError)
+                << "seg_bytes mismatch in " << result_bin;
         }
-        out.conf_u.resize(npix); out.conf_v.resize(npix); out.conf_w.resize(npix);
-        ifs.read(reinterpret_cast<char*>(out.conf_u.data()), npix*sizeof(float));
-        ifs.read(reinterpret_cast<char*>(out.conf_v.data()), npix*sizeof(float));
-        ifs.read(reinterpret_cast<char*>(out.conf_w.data()), npix*sizeof(float));
-      }
+        out.seg_u.resize(npix);
+        out.seg_v.resize(npix);
+        out.seg_w.resize(npix);
+        ifs.read(reinterpret_cast<char *>(out.seg_u.data()), npix);
+        ifs.read(reinterpret_cast<char *>(out.seg_v.data()), npix);
+        ifs.read(reinterpret_cast<char *>(out.seg_w.data()), npix);
+        if (h.has_conf) {
+            if (h.conf_bytes != 3 * npix * sizeof(float)) {
+                throw art::Exception(art::errors::LogicError)
+                    << "conf_bytes mismatch in " << result_bin;
+            }
+            out.conf_u.resize(npix);
+            out.conf_v.resize(npix);
+            out.conf_w.resize(npix);
+            ifs.read(reinterpret_cast<char *>(out.conf_u.data()), npix * sizeof(float));
+            ifs.read(reinterpret_cast<char *>(out.conf_v.data()), npix * sizeof(float));
+            ifs.read(reinterpret_cast<char *>(out.conf_w.data()), npix * sizeof(float));
+        }
     }
 
     auto t3 = std::chrono::steady_clock::now();
@@ -256,54 +261,63 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
 
     // Parse metrics text and (NEW) sidecar pointers
     {
-      std::ifstream m(meta_txt);
-      std::string features_path;
-      int feat_dim = 0;
-      std::uint32_t feat_seed = 0;
-      if (m) {
-        std::string line;
-        while (std::getline(m, line)) {
-          auto eq = line.find('=');
-          if (eq == std::string::npos) continue;
-          std::string key = line.substr(0, eq);
-          std::string val = line.substr(eq + 1);
+        std::ifstream m(meta_txt);
+        std::string features_path;
+        int feat_dim = 0;
+        std::uint32_t feat_seed = 0;
+        if (m) {
+            std::string line;
+            while (std::getline(m, line)) {
+                auto eq = line.find('=');
+                if (eq == std::string::npos) continue;
+                std::string key = line.substr(0, eq);
+                std::string val = line.substr(eq + 1);
 
-          // numeric parse
-          char *endp = nullptr;
-          double d = std::strtod(val.c_str(), &endp);
-          bool numeric = (endp != val.c_str());
+                // numeric parse
+                char *endp = nullptr;
+                double d = std::strtod(val.c_str(), &endp);
+                bool numeric = (endp != val.c_str());
 
-          if      (key == "t_total_ms"  && numeric) out.perf.t_child_total_ms = d;
-          else if (key == "t_setup_ms"  && numeric) out.perf.t_child_setup_ms = d;
-          else if (key == "t_infer_ms"  && numeric) out.perf.t_child_infer_ms = d;
-          else if (key == "t_post_ms"   && numeric) out.perf.t_child_post_ms  = d;
-          else if (key == "max_rss_mb"  && numeric) out.perf.child_max_rss_mb = d;
-          else if (key == "cuda_mem_mb" && numeric) out.perf.child_cuda_mem_mb = d;
-          else if (key == "feat_dim"    && numeric) feat_dim = static_cast<int>(d);
-          else if (key == "seed"        && numeric) feat_seed = static_cast<std::uint32_t>(d);
-          else if (key == "features_path")          features_path = val;
+                if (key == "t_total_ms" && numeric)
+                    out.perf.t_child_total_ms = d;
+                else if (key == "t_setup_ms" && numeric)
+                    out.perf.t_child_setup_ms = d;
+                else if (key == "t_infer_ms" && numeric)
+                    out.perf.t_child_infer_ms = d;
+                else if (key == "t_post_ms" && numeric)
+                    out.perf.t_child_post_ms = d;
+                else if (key == "max_rss_mb" && numeric)
+                    out.perf.child_max_rss_mb = d;
+                else if (key == "cuda_mem_mb" && numeric)
+                    out.perf.child_cuda_mem_mb = d;
+                else if (key == "feat_dim" && numeric)
+                    feat_dim = static_cast<int>(d);
+                else if (key == "seed" && numeric)
+                    feat_seed = static_cast<std::uint32_t>(d);
+                else if (key == "features_path")
+                    features_path = val;
+            }
         }
-      }
-      // Read flat float32 sidecar if present
-      if (!features_path.empty() && feat_dim > 0) {
-        std::ifstream fin(features_path, std::ios::binary);
-        if (fin) {
-          std::vector<float> f(static_cast<size_t>(feat_dim));
-          fin.read(reinterpret_cast<char*>(f.data()), sizeof(float) * f.size());
-          if (fin.gcount() == static_cast<std::streamsize>(sizeof(float) * f.size())) {
-            out.features = std::move(f);
-            out.feature_seed = feat_seed;
-          }
+        // Read flat float32 sidecar if present
+        if (!features_path.empty() && feat_dim > 0) {
+            std::ifstream fin(features_path, std::ios::binary);
+            if (fin) {
+                std::vector<float> f(static_cast<size_t>(feat_dim));
+                fin.read(reinterpret_cast<char *>(f.data()), sizeof(float) * f.size());
+                if (fin.gcount() == static_cast<std::streamsize>(sizeof(float) * f.size())) {
+                    out.features = std::move(f);
+                    out.feature_seed = feat_seed;
+                }
+            }
         }
-      }
     }
 
     mf::LogInfo("InferenceProduction")
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
-      mf::LogInfo("InferenceProduction") << "First class score: " << out.cls.front();
+        mf::LogInfo("InferenceProduction") << "First class score: " << out.cls.front();
     if (!out.features.empty())
-      mf::LogInfo("InferenceProduction") << "Feature dim: " << out.features.size();
+        mf::LogInfo("InferenceProduction") << "Feature dim: " << out.features.size();
     mf::LogInfo("InferenceProduction")
         << "t_write_req_ms=" << out.perf.t_write_req_ms
         << " t_exec_total_ms=" << out.perf.t_exec_total_ms
