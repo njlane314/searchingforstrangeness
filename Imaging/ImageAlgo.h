@@ -3,7 +3,7 @@
 
 #include "Imaging/Image.h"
 #include "Imaging/ImageProducer.h"
-#include "Imaging/SemanticPixelClassifier.h"
+#include "Imaging/SemanticClassifier.h"
 
 #include "canvas/Utilities/InputTag.h"
 #include "art/Framework/Principal/Event.h"
@@ -31,7 +31,7 @@ class ImageAlgo {
                        const std::vector<art::Ptr<recob::Hit>> &hits,
                        const std::vector<ImageProperties> &properties,
                        bool is_data,
-                       SemanticPixelClassifier *semantic_classifier,
+                       SemanticClassifier *semantic_classifier,
                        const std::set<unsigned int> &badChannels,
                        std::vector<Image<float>> &detector_images,
                        std::vector<Image<int>> &semantic_images) const;
@@ -68,7 +68,7 @@ inline void ImageAlgo::produceImages(
     const std::vector<art::Ptr<recob::Hit>> &hits,
     const std::vector<ImageProperties> &properties,
     bool is_data,
-    SemanticPixelClassifier *semantic_classifier,
+    SemanticClassifier *semantic_classifier,
     const std::set<unsigned int> &badChannels,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images) const {

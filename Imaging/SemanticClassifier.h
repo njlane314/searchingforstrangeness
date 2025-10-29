@@ -1,5 +1,5 @@
-#ifndef SEMANTICPIXELCLASSIFIER_H
-#define SEMANTICPIXELCLASSIFIER_H
+#ifndef SEMANTICCLASSIFIER_H
+#define SEMANTICCLASSIFIER_H
 
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Optional/TFileService.h"
@@ -46,7 +46,7 @@
 #include <vector>
 
 namespace image {
-class SemanticPixelClassifier {
+class SemanticClassifier {
     public:
     enum class SemanticLabel {
         Empty = 0,
@@ -73,7 +73,7 @@ class SemanticPixelClassifier {
         "Proton",   "ChargedKaon",   "NeutralKaon", "Lambda",
         "ChargedSigma", "NeutralSigma", "Other", "Ambiguous"};
 
-    explicit SemanticPixelClassifier(const art::InputTag &MCPproducer)
+    explicit SemanticClassifier(const art::InputTag &MCPproducer)
         : fMCPproducer(MCPproducer) {}
 
     SemanticLabel getSemanticLabel(int pdg) const {
@@ -157,5 +157,5 @@ class SemanticPixelClassifier {
 };
 } // namespace image
 
-#endif // SEMANTICPIXELCLASSIFIER_H
+#endif // SEMANTICCLASSIFIER_H
 
