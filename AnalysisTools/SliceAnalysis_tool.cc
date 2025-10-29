@@ -140,11 +140,11 @@ private:
                          HitCategoryCounts &out) const;
     static int neutrinoTotal(const HitCategoryCounts &counts);
 
-    void assignLabelToProgenyRecursively(size_t particle_index,
-                                         const std::vector<simb::MCParticle> &particles,
-                                         std::vector<PrimaryParticleLabel> &particle_labels,
-                                         const std::unordered_map<int, size_t> &track_id_to_index,
-                                         PrimaryParticleLabel primary_label_to_assign) const;
+    void propagateLabel(size_t particle_index,
+                        const std::vector<simb::MCParticle> &particles,
+                        std::vector<PrimaryParticleLabel> &particle_labels,
+                        const std::unordered_map<int, size_t> &track_id_to_index,
+                        PrimaryParticleLabel primary_label_to_assign) const;
 
     std::vector<PrimaryParticleLabel> classifyParticles(const art::Event &event) const;
 
@@ -463,11 +463,11 @@ int SliceAnalysis::neutrinoTotal(const HitCategoryCounts &counts) {
            counts.charged_sigma + counts.sigma_zero;
 }
 
-void SliceAnalysis::assignLabelToProgenyRecursively(size_t particle_index,
-                                                   const std::vector<simb::MCParticle> &particles,
-                                                   std::vector<PrimaryParticleLabel> &particle_labels,
-                                                   const std::unordered_map<int, size_t> &track_id_to_index,
-                                                   PrimaryParticleLabel primary_label_to_assign) const {
+void SliceAnalysis::propagateLabel(size_t particle_index,
+                                  const std::vector<simb::MCParticle> &particles,
+                                  std::vector<PrimaryParticleLabel> &particle_labels,
+                                  const std::unordered_map<int, size_t> &track_id_to_index,
+                                  PrimaryParticleLabel primary_label_to_assign) const {
     if (particle_index >= particles.size() || particle_index >= particle_labels.size()) return;
     particle_labels[particle_index] = primary_label_to_assign;
     const auto &particle = particles[particle_index];
@@ -475,7 +475,7 @@ void SliceAnalysis::assignLabelToProgenyRecursively(size_t particle_index,
         int daughter_track_id = particle.Daughter(daughter_idx);
         auto it = track_id_to_index.find(daughter_track_id);
         if (it != track_id_to_index.end() && it->second < particles.size()) {
-            this->assignLabelToProgenyRecursively(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
+            this->propagateLabel(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
         }
     }
 }
@@ -493,7 +493,7 @@ std::vector<SliceAnalysis::PrimaryParticleLabel> SliceAnalysis::classifyParticle
             auto it = track_id_to_vector_index.find(particles[i].TrackId());
             if (it != track_id_to_vector_index.end()) {
                 PrimaryParticleLabel initial_label = this->getPrimaryLabel(particles[i].PdgCode());
-                this->assignLabelToProgenyRecursively(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
+                this->propagateLabel(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
             }
         }
     }

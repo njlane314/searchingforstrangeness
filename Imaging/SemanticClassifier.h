@@ -118,7 +118,7 @@ class SemanticClassifier {
         return SemanticLabel::Other;
     }
 
-    void assignLabelToProgenyRecursively(
+    void propagateLabel(
         size_t particle_index,
         const std::vector<simb::MCParticle> &particles,
         std::vector<SemanticLabel> &particle_labels,
@@ -135,7 +135,7 @@ class SemanticClassifier {
             auto it = track_id_to_index.find(daughter_track_id);
             if (it != track_id_to_index.end()) {
                 if (it->second < particles.size()) {
-                    assignLabelToProgenyRecursively(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
+                    propagateLabel(it->second, particles, particle_labels, track_id_to_index, primary_label_to_assign);
                 }
             }
         }
@@ -157,7 +157,7 @@ class SemanticClassifier {
             if (particles[i].Mother() == 0) {
                 if (auto it = track_id_to_vector_index.find(particles[i].TrackId()); it != track_id_to_vector_index.end()) {
                     SemanticLabel initial_label = getSemanticLabel(particles[i].PdgCode());
-                    assignLabelToProgenyRecursively(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
+                    propagateLabel(it->second, particles, classified_particle_labels, track_id_to_vector_index, initial_label);
                 }
             }
         }
