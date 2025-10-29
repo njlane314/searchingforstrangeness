@@ -1,5 +1,5 @@
-#ifndef INFERENCEENGINE_H
-#define INFERENCEENGINE_H
+#ifndef INFERENCEPRODUCTION_H
+#define INFERENCEPRODUCTION_H
 
 #include "Imaging/Image.h"
 

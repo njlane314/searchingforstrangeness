@@ -22,8 +22,9 @@ struct PlaneImage {
 };
 
 struct InferenceScores {
-  std::vector<std::string> names;
-  std::vector<float> scores;
+  std::string               model;   // Name of the inference model that generated the scores
+  std::vector<std::string>  names;   // Optional human-readable class labels
+  std::vector<float>        scores;  // Raw classification scores (aligned with `names` when provided)
 };
 
 } // namespace image
