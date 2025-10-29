@@ -1,5 +1,5 @@
-#ifndef IMAGEPRODUCER_H
-#define IMAGEPRODUCER_H
+#ifndef IMAGEPRODUCTION_H
+#define IMAGEPRODUCTION_H
 
 #include "Imaging/Image.h"
 #include "Imaging/SemanticClassifier.h"
@@ -282,4 +282,4 @@ inline void ImageProducer::constructPixelImages(
 
 } // namespace image
 
-#endif // IMAGEPRODUCER_H
+#endif // IMAGEPRODUCTION_H
