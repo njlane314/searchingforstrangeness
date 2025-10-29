@@ -19,11 +19,11 @@ namespace image {
 
 class ImageAlgo {
   public:
-    ImageAlgo(const art::InputTag &wireProducer,
-              const art::InputTag &hitProducer,
-              const art::InputTag &mcpProducer,
-              const art::InputTag &bktProducer,
-              float adcThreshold,
+    ImageAlgo(const art::InputTag &wire_producer,
+              const art::InputTag &hit_producer,
+              const art::InputTag &mcp_producer,
+              const art::InputTag &bkt_producer,
+              float adc_threshold,
               const geo::GeometryCore *geo,
               const detinfo::DetectorProperties *detp);
 
@@ -48,18 +48,18 @@ class ImageAlgo {
 
 inline bool isAbsPath(const std::string &p) { return !p.empty() && p.front() == '/'; }
 
-inline ImageAlgo::ImageAlgo(const art::InputTag &wireProducer,
-                            const art::InputTag &hitProducer,
-                            const art::InputTag &mcpProducer,
-                            const art::InputTag &bktProducer,
-                            float adcThreshold,
+inline ImageAlgo::ImageAlgo(const art::InputTag &wire_producer,
+                            const art::InputTag &hit_producer,
+                            const art::InputTag &mcp_producer,
+                            const art::InputTag &bkt_producer,
+                            float adc_threshold,
                             const geo::GeometryCore *geo,
                             const detinfo::DetectorProperties *detp)
-    : fWIREproducer(wireProducer),
-      fHITproducer(hitProducer),
-      fMCPproducer(mcpProducer),
-      fBKTproducer(bktProducer),
-      fADCImageThreshold(adcThreshold),
+    : fWIREproducer(wire_producer),
+      fHITproducer(hit_producer),
+      fMCPproducer(mcp_producer),
+      fBKTproducer(bkt_producer),
+      fADCImageThreshold(adc_threshold),
       fGeo(geo),
       fDetp(detp) {}
 
