@@ -72,11 +72,21 @@ inline void ImageAlgo::produceImages(
     const std::set<unsigned int> &badChannels,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images) const {
-    ImageProducer::constructPixelImages(event, hits, properties, detector_images,
-                                        semantic_images, is_data, fWIREproducer,
-                                        fHITproducer, fMCPproducer, fBKTproducer,
-                                        fGeo, fDetp, fADCImageThreshold,
-                                        semantic_classifier, badChannels);
+    ImageProducer::constructPixelImages(event, 
+                                        hits, 
+                                        properties, 
+                                        detector_images,
+                                        semantic_images, 
+                                        is_data, 
+                                        fWIREproducer,
+                                        fHITproducer, 
+                                        fMCPproducer, 
+                                        fBKTproducer,
+                                        fGeo, 
+                                        fDetp, 
+                                        fADCImageThreshold,
+                                        semantic_classifier, 
+                                        badChannels);
 }
 
 }
