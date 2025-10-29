@@ -1,6 +1,7 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
+#include "canvas/Persistency/Provenance/ProductID.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -25,6 +26,7 @@
 #include <TVector3.h>
 #include <algorithm>
 #include <cmath>
+#include <cetlib_except/exception.h>
 #include <cstdint>
 #include <fstream>
 #include <limits>
@@ -34,6 +36,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "sbndcode/BlipReco/Alg/BlipRecoAlg.h"
 
 using image::Image;
 using image::ImageProperties;
@@ -85,6 +89,11 @@ class ImageProducer : public art::EDProducer {
     art::InputTag fBKTproducer;
     bool fIsData{false};
 
+    std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
+    fhicl::ParameterSet                fBlipAlgPSet;
+    art::InputTag                      fBlipAlgHitProducer;
+    bool                               fIgnoreBlipHits{true};
+
     int fImgW{512};
     int fImgH{512};
     float fADCThresh{4.0f};
@@ -107,6 +116,9 @@ class ImageProducer : public art::EDProducer {
     collectAllHits(const art::Event &event, art::InputTag const &hitTag);
     std::vector<art::Ptr<recob::Hit>>
     collectNeutrinoSliceHits(const art::Event &event) const;
+
+    std::optional<std::pair<art::ProductID, std::vector<uint8_t>>>
+    buildBlipMaskWithAlg(art::Event &event);
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
@@ -117,6 +129,13 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
     fIsData = p.get<bool>("IsData", false);
+    fIgnoreBlipHits = p.get<bool>("IgnoreBlipHits", true);
+
+    if (p.has_key("BlipAlg")) {
+        fBlipAlgPSet = p.get<fhicl::ParameterSet>("BlipAlg");
+        fBlipAlg = std::make_unique<blip::BlipRecoAlg>(fBlipAlgPSet);
+        fBlipAlgHitProducer = fBlipAlgPSet.get<art::InputTag>("HitProducer", fHITproducer);
+    }
 
     fBadChannelFile = p.get<std::string>("BadChannelFile", "");
     if (!fBadChannelFile.empty())
@@ -229,9 +248,53 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
     return result;
 }
 
+std::optional<std::pair<art::ProductID, std::vector<uint8_t>>>
+ImageProducer::buildBlipMaskWithAlg(art::Event &event) {
+    if (!fBlipAlg)
+        return std::nullopt;
+    if (!fIgnoreBlipHits)
+        return std::nullopt;
+
+    fBlipAlg->RunBlipReco(event);
+
+    auto hitH = event.getHandle<std::vector<recob::Hit>>(fBlipAlgHitProducer);
+    if (!hitH)
+        return std::nullopt;
+
+    const auto &hi = fBlipAlg->hitinfo;
+    const size_t N = std::min(hi.size(), hitH->size());
+    if (N == 0)
+        return std::nullopt;
+
+    std::vector<uint8_t> isBlip(N, 0);
+    for (size_t i = 0; i < N; ++i) {
+        if (hi[i].blipid >= 0)
+            isBlip[i] = 1;
+    }
+    return std::make_pair(hitH.id(), std::move(isBlip));
+}
+
 void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
+
+    if (fIgnoreBlipHits && fBlipAlg) {
+        if (auto mask = buildBlipMaskWithAlg(event)) {
+            const art::ProductID pid = mask->first;
+            const auto &isBlip = mask->second;
+            auto apply_mask = [&](std::vector<art::Ptr<recob::Hit>> &v) {
+                v.erase(std::remove_if(v.begin(), v.end(),
+                                       [&](auto const &h) {
+                                           const auto same = (h.id() == pid);
+                                           const auto idx = static_cast<size_t>(h.key());
+                                           return same && idx < isBlip.size() && isBlip[idx];
+                                       }),
+                        v.end());
+            };
+            apply_mask(neutrino_hits);
+            apply_mask(all_hits);
+        }
+    }
 
     double vtx_x = std::numeric_limits<double>::quiet_NaN();
     double vtx_y = std::numeric_limits<double>::quiet_NaN();
