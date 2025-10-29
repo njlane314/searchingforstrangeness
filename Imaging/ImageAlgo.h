@@ -2,7 +2,7 @@
 #define IMAGEALGO_H
 
 #include "Imaging/Image.h"
-#include "Imaging/ImageProducer.h"
+#include "Imaging/ImageProduction.h"
 #include "Imaging/SemanticClassifier.h"
 
 #include "canvas/Utilities/InputTag.h"
