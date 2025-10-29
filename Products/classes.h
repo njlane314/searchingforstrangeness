@@ -10,10 +10,6 @@ template class std::vector<image::PlaneImage>;
 template class art::Wrapper<image::PlaneImage>;
 template class art::Wrapper<std::vector<image::PlaneImage>>;
 
-template class std::vector<image::InferenceScores>;
-template class art::Wrapper<image::InferenceScores>;
-template class art::Wrapper<std::vector<image::InferenceScores>>;
-
 template class art::Wrapper<image::InferencePerfProduct>;
 
 template class std::vector<image::ModelPerf>;
