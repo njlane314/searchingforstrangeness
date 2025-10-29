@@ -18,7 +18,7 @@
 
 #include "Common/PandoraUtilities.h"
 #include "Imaging/Image.h"
-#include "Imaging/ImageAlgo.h"
+#include "Imaging/ImageProduction.h"
 #include "Imaging/SemanticClassifier.h"
 #include "Products/ImageProducts.h"
 
@@ -36,7 +36,6 @@
 #include <vector>
 
 using image::Image;
-using image::ImageAlgo;
 using image::ImageProperties;
 using image::PlaneImage;
 using image::SemanticClassifier;
@@ -102,7 +101,6 @@ class ImageProducer : public art::EDProducer {
     double fPitchW{0.0};
 
     std::unique_ptr<SemanticClassifier> fSemantic;
-    std::unique_ptr<ImageAlgo> fAlgo;
 
     void loadBadChannels(const std::string &filename);
     static std::vector<art::Ptr<recob::Hit>>
@@ -143,9 +141,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
     fPitchW = fGeo->WirePitch(geo::kW);
 
     fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
-    fAlgo =
-        std::make_unique<ImageAlgo>(fWIREproducer, fHITproducer, fMCPproducer,
-                                    fBKTproducer, fADCThresh, fGeo, fDetp);
 
     produces<std::vector<PlaneImage>>("primary_slice");
     produces<std::vector<PlaneImage>>("all_hits");
@@ -290,10 +285,22 @@ void ImageProducer::produce(art::Event &event) {
     std::vector<Image<int>> sem_slice;
     std::vector<Image<float>> det_event;
     std::vector<Image<int>> sem_event;
-    fAlgo->produceImages(event, neutrino_hits, props, fIsData, fSemantic.get(),
-                         fBadChannels, det_slice, sem_slice);
-    fAlgo->produceImages(event, all_hits, props, fIsData, fSemantic.get(),
-                         fBadChannels, det_event, sem_event);
+    image::PixelImageBuilder::constructPixelImages(
+        event, neutrino_hits, props,
+        det_slice, sem_slice,
+        fIsData,
+        fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
+        fGeo, fDetp, fADCThresh,
+        fSemantic.get(),
+        fBadChannels);
+    image::PixelImageBuilder::constructPixelImages(
+        event, all_hits, props,
+        det_event, sem_event,
+        fIsData,
+        fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
+        fGeo, fDetp, fADCThresh,
+        fSemantic.get(),
+        fBadChannels);
 
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                          ImageProperties const &p, bool include_sem) {

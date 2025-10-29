@@ -25,6 +25,7 @@
 #include <TTree.h>
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -38,19 +39,19 @@ class ImageProperties {
         origin_x_ = center_x - (width * pixel_w) / 2.0;
         origin_y_ = center_y - (height * pixel_h) / 2.0;
     }
-    size_t index(size_t row, size_t col) const {
+    std::optional<size_t> index(size_t row, size_t col) const {
         if (row >= height_ || col >= width_)
-            return static_cast<size_t>(-1);
+            return std::nullopt;
         return row * width_ + col;
     }
-    size_t col(double x) const {
+    std::optional<size_t> col(double x) const {
         if (x < origin_x_ || x >= origin_x_ + width_ * pixel_w_)
-            return static_cast<size_t>(-1);
+            return std::nullopt;
         return static_cast<size_t>((x - origin_x_) / pixel_w_);
     }
-    size_t row(double y) const {
+    std::optional<size_t> row(double y) const {
         if (y < origin_y_ || y >= origin_y_ + height_ * pixel_h_)
-            return static_cast<size_t>(-1);
+            return std::nullopt;
         return static_cast<size_t>((y - origin_y_) / pixel_h_);
     }
     size_t height() const { return height_; }
@@ -78,17 +79,17 @@ class Image {
     Image(const ImageProperties &prop)
         : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
     void set(size_t row, size_t col, T value, bool accumulate = true) {
-        size_t idx = prop_.index(row, col);
-        if (idx != static_cast<size_t>(-1)) {
+        auto idx = prop_.index(row, col);
+        if (idx) {
             if (accumulate)
-                pixels_[idx] += value;
+                pixels_[*idx] += value;
             else
-                pixels_[idx] = value;
+                pixels_[*idx] = value;
         }
     }
     T get(size_t row, size_t col) const {
-        size_t idx = prop_.index(row, col);
-        return (idx != static_cast<size_t>(-1)) ? pixels_[idx] : T(0);
+        auto idx = prop_.index(row, col);
+        return idx ? pixels_[*idx] : T(0);
     }
     void clear(T value = T(0)) {
         std::fill(pixels_.begin(), pixels_.end(), value);
