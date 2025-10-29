@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Wrapper invoked by InferenceEngine::runInferenceDetailed
+# Wrapper invoked by InferenceProduction::runInferenceDetailed
 # Reads CHW float32 planes (U,V,W), extracts random sparse features with ME,
 # writes a SIMPLE sidecar "<out>.feat.f32" (flat float32[D]) and a tiny
 # result header with K=0 (or K=1 if you want a scalar score).
