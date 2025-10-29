@@ -147,8 +147,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
         std::make_unique<ImageAlgo>(fWIREproducer, fHITproducer, fMCPproducer,
                                     fBKTproducer, fADCThresh, fGeo, fDetp);
 
-    produces<std::vector<PlaneImage>>("slice");
-    produces<std::vector<PlaneImage>>("event");
+    produces<std::vector<PlaneImage>>("primary_slice");
+    produces<std::vector<PlaneImage>>("all_hits");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -324,8 +324,8 @@ void ImageProducer::produce(art::Event &event) {
             pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
-    event.put(std::move(out_slice), "slice");
-    event.put(std::move(out_event), "event");
+    event.put(std::move(out_slice), "primary_slice");
+    event.put(std::move(out_event), "all_hits");
 }
 
 DEFINE_ART_MODULE(ImageProducer)
