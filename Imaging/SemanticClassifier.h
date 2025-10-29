@@ -68,10 +68,22 @@ class SemanticClassifier {
     };
 
     static inline const std::array<std::string, 16> semantic_label_names = {
-        "Empty",    "Cosmic",        "Muon",       "Electron",
-        "Photon",   "ChargedPion",   "NeutralPion", "Neutron",
-        "Proton",   "ChargedKaon",   "NeutralKaon", "Lambda",
-        "ChargedSigma", "NeutralSigma", "Other", "Ambiguous"};
+        "Empty",
+        "Cosmic",
+        "Muon",
+        "Electron",
+        "Photon",
+        "ChargedPion",
+        "NeutralPion",
+        "Neutron",
+        "Proton",
+        "ChargedKaon",
+        "NeutralKaon",
+        "Lambda",
+        "ChargedSigma",
+        "NeutralSigma",
+        "Other",
+        "Ambiguous"};
 
     explicit SemanticClassifier(const art::InputTag &MCPproducer)
         : fMCPproducer(MCPproducer) {}
