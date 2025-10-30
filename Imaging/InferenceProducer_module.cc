@@ -57,15 +57,6 @@ std::string resolve_under(const std::string &base, const std::string &value) {
     return join_path(base, value);
 }
 
-image::PlaneImage clamp_plane(image::PlaneImage const &src) {
-    image::PlaneImage dst = src;
-    for (auto &v : dst.adc) {
-        if (v < 0.f)
-            v = 0.f;
-    }
-    return dst;
-}
-
 const image::PlaneImage *find_view(std::vector<image::PlaneImage> const &planes,
                                    geo::View_t view,
                                    const image::PlaneImage *fallback) {
@@ -103,7 +94,6 @@ class InferenceProducerModule : public art::EDProducer {
     std::string scratchDir_;
     std::string assetsBaseDir_;
     std::string defaultWrapper_;
-    bool clampNegatives_{true};
     std::vector<ModelConfig> models_;
 };
 
@@ -127,8 +117,7 @@ InferenceProducerModule::InferenceProducerModule(
       assetsBaseDir_{p.get<std::string>("AssetsBaseDir", "")},
       defaultWrapper_{resolve_under(
           assetsBaseDir_, p.get<std::string>("DefaultWrapper",
-                                             "scripts/inference_wrapper.sh"))},
-      clampNegatives_{p.get<bool>("ClampNegativeADC", true)} {
+                                             "scripts/inference_wrapper.sh"))} {
     produces<image::InferencePerfProduct>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
@@ -154,15 +143,11 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    image::PlaneImage u = clampNegatives_ ? clamp_plane(*U) : *U;
-    image::PlaneImage v = clampNegatives_ ? clamp_plane(*V) : *V;
-    image::PlaneImage w = clampNegatives_ ? clamp_plane(*W) : *W;
-
     std::vector<image::PlaneImage> detector_images;
     detector_images.reserve(3);
-    detector_images.emplace_back(std::move(u));
-    detector_images.emplace_back(std::move(v));
-    detector_images.emplace_back(std::move(w));
+    detector_images.emplace_back(*U);
+    detector_images.emplace_back(*V);
+    detector_images.emplace_back(*W);
 
     std::string scratch = scratchDir_;
     if (scratch.empty()) {
