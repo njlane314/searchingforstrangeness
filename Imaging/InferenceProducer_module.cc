@@ -97,11 +97,11 @@ class InferenceProducerModule : public art::EDProducer {
   private:
     static ModelConfig makeConfig(fhicl::ParameterSet const &p);
 
-    art::InputTag planesTag_;
-    std::string scratchDir_;
-    std::string assetsBaseDir_;
-    std::string defaultWrapper_;
-    bool clampNegatives_{true};
+    art::InputTag planes_tag_;
+    std::string scratch_dir_;
+    std::string assets_base_dir_;
+    std::string default_wrapper_;
+    bool clamp_negatives_{true};
     std::vector<ModelConfig> models_;
 };
 
@@ -118,13 +118,13 @@ InferenceProducerModule::makeConfig(fhicl::ParameterSet const &p) {
 
 InferenceProducerModule::InferenceProducerModule(
     fhicl::ParameterSet const &p)
-    : planesTag_{p.get<std::string>("PlanesTag")},
-      scratchDir_{p.get<std::string>("ScratchDir", "")},
-      assetsBaseDir_{p.get<std::string>("AssetsBaseDir", "")},
-      defaultWrapper_{resolve_under(
-          assetsBaseDir_, p.get<std::string>("DefaultWrapper",
-                                             "scripts/inference_wrapper.sh"))},
-      clampNegatives_{p.get<bool>("ClampNegativeADC", true)} {
+    : planes_tag_{p.get<std::string>("PlanesTag")},
+      scratch_dir_{p.get<std::string>("ScratchDir", "")},
+      assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
+      default_wrapper_{resolve_under(
+          assets_base_dir_, p.get<std::string>("DefaultWrapper",
+                                               "scripts/inference_wrapper.sh"))},
+      clamp_negatives_{p.get<bool>("ClampNegativeADC", true)} {
     produces<image::InferencePerfProduct>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
@@ -135,7 +135,7 @@ InferenceProducerModule::InferenceProducerModule(
 }
 
 void InferenceProducerModule::produce(art::Event &e) {
-    auto planes = e.getValidHandle<std::vector<image::PlaneImage>>(planesTag_);
+    auto planes = e.getValidHandle<std::vector<image::PlaneImage>>(planes_tag_);
     if (planes->size() < 3) {
         throw cet::exception("InferenceProduction")
             << "Need at least three planes (U,V,W), got " << planes->size();
@@ -150,9 +150,9 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    image::PlaneImage u = clampNegatives_ ? clamp_plane(*U) : *U;
-    image::PlaneImage v = clampNegatives_ ? clamp_plane(*V) : *V;
-    image::PlaneImage w = clampNegatives_ ? clamp_plane(*W) : *W;
+    image::PlaneImage u = clamp_negatives_ ? clamp_plane(*U) : *U;
+    image::PlaneImage v = clamp_negatives_ ? clamp_plane(*V) : *V;
+    image::PlaneImage w = clamp_negatives_ ? clamp_plane(*W) : *W;
 
     std::vector<image::PlaneImage> detector_images;
     detector_images.reserve(3);
@@ -160,7 +160,7 @@ void InferenceProducerModule::produce(art::Event &e) {
     detector_images.emplace_back(std::move(v));
     detector_images.emplace_back(std::move(w));
 
-    std::string scratch = scratchDir_;
+    std::string scratch = scratch_dir_;
     if (scratch.empty()) {
         if (const char *env = std::getenv("_CONDOR_SCRATCH_DIR"))
             scratch = env;
@@ -175,9 +175,9 @@ void InferenceProducerModule::produce(art::Event &e) {
     auto perfProduct = std::make_unique<image::InferencePerfProduct>();
 
     for (auto const &cfg : models_) {
-        std::string assets = cfg.assets.empty() ? assetsBaseDir_ : cfg.assets;
+        std::string assets = cfg.assets.empty() ? assets_base_dir_ : cfg.assets;
         std::string wrapper =
-            cfg.wrapper.empty() ? defaultWrapper_ : cfg.wrapper;
+            cfg.wrapper.empty() ? default_wrapper_ : cfg.wrapper;
         wrapper = resolve_under(assets, wrapper);
         std::string weights = resolve_under(assets, cfg.weights);
 
