@@ -19,7 +19,6 @@ struct ModelPerf {
   float t_child_post_ms{0.f};
 
   float child_max_rss_mb{0.f};
-  float child_cuda_mem_mb{0.f};
 };
 
 struct InferencePerfProduct {
