@@ -1,6 +1,7 @@
 <lcgdict>
   <include file="Products/ImageProducts.h"/>
   <include file="Products/InferencePerf.h"/>
+  <include file="Products/InferenceResult.h"/>
 
   <class name="image::PlaneImage"/>
   <class name="std::vector<image::PlaneImage>"/>
@@ -11,5 +12,11 @@
   <class name="art::Wrapper<std::vector<image::ModelPerf>>"/>
   <class name="image::InferencePerfProduct"/>
   <class name="art::Wrapper<image::InferencePerfProduct>"/>
+
+  <class name="image::ModelResult"/>
+  <class name="std::vector<image::ModelResult>"/>
+  <class name="art::Wrapper<std::vector<image::ModelResult>>"/>
+  <class name="image::InferenceResultProduct"/>
+  <class name="art::Wrapper<image::InferenceResultProduct>"/>
 
 </lcgdict>

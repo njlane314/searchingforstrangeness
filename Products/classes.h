@@ -2,6 +2,7 @@
 
 #include "Products/ImageProducts.h"
 #include "Products/InferencePerf.h"
+#include "Products/InferenceResult.h"
 
 #include <vector>
 
@@ -13,4 +14,8 @@ template class art::Wrapper<image::InferencePerfProduct>;
 
 template class std::vector<image::ModelPerf>;
 template class art::Wrapper<std::vector<image::ModelPerf>>;
+
+template class std::vector<image::ModelResult>;
+template class art::Wrapper<std::vector<image::ModelResult>>;
+template class art::Wrapper<image::InferenceResultProduct>;
 

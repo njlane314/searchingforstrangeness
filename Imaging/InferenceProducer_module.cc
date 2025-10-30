@@ -10,6 +10,7 @@
 #include "Imaging/InferenceProduction.h"
 #include "Products/ImageProducts.h"
 #include "Products/InferencePerf.h"
+#include "Products/InferenceResult.h"
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
@@ -85,7 +86,7 @@ class InferenceProducerModule : public art::EDProducer {
     void produce(art::Event &e) override;
 
   private:
-    static ModelConfig makeConfig(fhicl::ParameterSet const &p);
+    static ModelConfig make_config(fhicl::ParameterSet const &p);
 
     art::InputTag planes_tag_;
     std::string scratch_dir_;
@@ -95,14 +96,14 @@ class InferenceProducerModule : public art::EDProducer {
 };
 
 InferenceProducerModule::ModelConfig
-InferenceProducerModule::makeConfig(fhicl::ParameterSet const &p) {
-    ModelConfig cfg;
-    cfg.label = p.get<std::string>("Label", "");
-    cfg.arch = p.get<std::string>("Arch");
-    cfg.weights = p.get<std::string>("Weights", "");
-    cfg.wrapper = p.get<std::string>("Wrapper", "");
-    cfg.assets = p.get<std::string>("Assets", "");
-    return cfg;
+InferenceProducerModule::make_config(fhicl::ParameterSet const &p) {
+    ModelConfig model_config;
+    model_config.label = p.get<std::string>("Label", "");
+    model_config.arch = p.get<std::string>("Arch");
+    model_config.weights = p.get<std::string>("Weights", "");
+    model_config.wrapper = p.get<std::string>("Wrapper", "");
+    model_config.assets = p.get<std::string>("Assets", "");
+    return model_config;
 }
 
 InferenceProducerModule::InferenceProducerModule(
@@ -114,87 +115,119 @@ InferenceProducerModule::InferenceProducerModule(
           assets_base_dir_, p.get<std::string>("DefaultWrapper",
                                               "scripts/inference_wrapper.sh"))} {
     produces<image::InferencePerfProduct>();
+    produces<image::InferenceResultProduct>();
 
-    auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
-    models_.reserve(modelSets.size());
-    for (auto const &modelPs : modelSets) {
-        models_.push_back(makeConfig(modelPs));
+    auto model_parameter_sets =
+        p.get<std::vector<fhicl::ParameterSet>>("Models", {});
+    models_.reserve(model_parameter_sets.size());
+    for (auto const &model_parameter_set : model_parameter_sets) {
+        models_.push_back(make_config(model_parameter_set));
     }
 }
 
 void InferenceProducerModule::produce(art::Event &e) {
-    auto planes = e.getValidHandle<std::vector<image::PlaneImage>>(planes_tag_);
-    if (planes->size() < 3) {
+    auto plane_handle =
+        e.getValidHandle<std::vector<image::PlaneImage>>(planes_tag_);
+    if (plane_handle->size() < 3) {
         throw cet::exception("InferenceProduction")
-            << "Need at least three planes (U,V,W), got " << planes->size();
+            << "Need at least three planes (U,V,W), got "
+            << plane_handle->size();
     }
 
-    auto const *first = &planes->front();
-    auto const *U = find_view(*planes, geo::kU, first);
-    auto const *V = find_view(*planes, geo::kV, first);
-    auto const *W = find_view(*planes, geo::kW, first);
-    if (U == nullptr || V == nullptr || W == nullptr) {
+    auto const *first_plane = &plane_handle->front();
+    auto const *plane_u = find_view(*plane_handle, geo::kU, first_plane);
+    auto const *plane_v = find_view(*plane_handle, geo::kV, first_plane);
+    auto const *plane_w = find_view(*plane_handle, geo::kW, first_plane);
+    if (plane_u == nullptr || plane_v == nullptr || plane_w == nullptr) {
         throw cet::exception("InferenceProduction")
             << "Unable to identify U/V/W planes";
     }
 
-    image::PlaneImage u = *U;
-    image::PlaneImage v = *V;
-    image::PlaneImage w = *W;
+    image::PlaneImage plane_image_u = *plane_u;
+    image::PlaneImage plane_image_v = *plane_v;
+    image::PlaneImage plane_image_w = *plane_w;
 
     std::vector<image::PlaneImage> detector_images;
     detector_images.reserve(3);
-    detector_images.emplace_back(std::move(u));
-    detector_images.emplace_back(std::move(v));
-    detector_images.emplace_back(std::move(w));
+    detector_images.emplace_back(std::move(plane_image_u));
+    detector_images.emplace_back(std::move(plane_image_v));
+    detector_images.emplace_back(std::move(plane_image_w));
 
-    std::string scratch = scratch_dir_;
-    if (scratch.empty()) {
-        if (const char *env = std::getenv("_CONDOR_SCRATCH_DIR"))
-            scratch = env;
+    std::string scratch_directory = scratch_dir_;
+    if (scratch_directory.empty()) {
+        if (const char *scratch_env = std::getenv("_CONDOR_SCRATCH_DIR"))
+            scratch_directory = scratch_env;
         else
-            scratch = ".";
+            scratch_directory = ".";
     }
 
-    char buf[4096];
-    std::string absoluteScratch =
-        realpath(scratch.c_str(), buf) ? std::string(buf) : scratch;
+    char scratch_buffer[4096];
+    std::string absolute_scratch =
+        realpath(scratch_directory.c_str(), scratch_buffer)
+            ? std::string(scratch_buffer)
+            : scratch_directory;
 
-    auto perfProduct = std::make_unique<image::InferencePerfProduct>();
+    auto perf_product = std::make_unique<image::InferencePerfProduct>();
+    auto result_product = std::make_unique<image::InferenceResultProduct>();
 
-    for (auto const &cfg : models_) {
-        std::string assets = cfg.assets.empty() ? assets_base_dir_ : cfg.assets;
-        std::string wrapper =
-            cfg.wrapper.empty() ? default_wrapper_ : cfg.wrapper;
-        wrapper = resolve_under(assets, wrapper);
-        std::string weights = resolve_under(assets, cfg.weights);
+    for (auto const &model_config : models_) {
+        std::string assets_dir =
+            model_config.assets.empty() ? assets_base_dir_ : model_config.assets;
+        std::string wrapper_path =
+            model_config.wrapper.empty() ? default_wrapper_ : model_config.wrapper;
+        wrapper_path = resolve_under(assets_dir, wrapper_path);
+        std::string weights_path = resolve_under(assets_dir, model_config.weights);
 
         mf::LogInfo("InferenceProduction")
-            << "Running model: " << (cfg.label.empty() ? cfg.arch : cfg.label);
+            << "Running model: "
+            << (model_config.label.empty() ? model_config.arch
+                                           : model_config.label);
 
-        auto result = image::InferenceProduction::runInferenceDetailed(
-            detector_images, absoluteScratch, assets, cfg.arch, weights,
-            wrapper, assets);
+        auto inference_result = image::InferenceProduction::runInferenceDetailed(
+            detector_images, absolute_scratch, assets_dir, model_config.arch,
+            weights_path, wrapper_path, assets_dir);
 
-        image::ModelPerf perf;
-        perf.model = cfg.label.empty() ? cfg.arch : cfg.label;
-        perf.t_write_req_ms = static_cast<float>(result.perf.t_write_req_ms);
-        perf.t_exec_total_ms = static_cast<float>(result.perf.t_exec_total_ms);
-        perf.t_read_resp_ms = static_cast<float>(result.perf.t_read_resp_ms);
-        perf.t_child_total_ms =
-            static_cast<float>(result.perf.t_child_total_ms);
-        perf.t_child_setup_ms =
-            static_cast<float>(result.perf.t_child_setup_ms);
-        perf.t_child_infer_ms =
-            static_cast<float>(result.perf.t_child_infer_ms);
-        perf.t_child_post_ms = static_cast<float>(result.perf.t_child_post_ms);
-        perf.child_max_rss_mb =
-            static_cast<float>(result.perf.child_max_rss_mb);
-        perfProduct->per_model.push_back(std::move(perf));
+        image::ModelPerf model_perf;
+        model_perf.model =
+            model_config.label.empty() ? model_config.arch : model_config.label;
+        model_perf.t_write_req_ms =
+            static_cast<float>(inference_result.perf.t_write_req_ms);
+        model_perf.t_exec_total_ms =
+            static_cast<float>(inference_result.perf.t_exec_total_ms);
+        model_perf.t_read_resp_ms =
+            static_cast<float>(inference_result.perf.t_read_resp_ms);
+        model_perf.t_child_total_ms =
+            static_cast<float>(inference_result.perf.t_child_total_ms);
+        model_perf.t_child_setup_ms =
+            static_cast<float>(inference_result.perf.t_child_setup_ms);
+        model_perf.t_child_infer_ms =
+            static_cast<float>(inference_result.perf.t_child_infer_ms);
+        model_perf.t_child_post_ms =
+            static_cast<float>(inference_result.perf.t_child_post_ms);
+        model_perf.child_max_rss_mb =
+            static_cast<float>(inference_result.perf.child_max_rss_mb);
+        perf_product->per_model.push_back(model_perf);
+
+        image::ModelResult model_result;
+        model_result.model =
+            model_config.label.empty() ? model_config.arch : model_config.label;
+        model_result.cls_scores = std::move(inference_result.cls);
+        model_result.segmentation_width = inference_result.segW;
+        model_result.segmentation_height = inference_result.segH;
+        model_result.segmentation_u = std::move(inference_result.seg_u);
+        model_result.segmentation_v = std::move(inference_result.seg_v);
+        model_result.segmentation_w = std::move(inference_result.seg_w);
+        model_result.confidence_u = std::move(inference_result.conf_u);
+        model_result.confidence_v = std::move(inference_result.conf_v);
+        model_result.confidence_w = std::move(inference_result.conf_w);
+        model_result.features = std::move(inference_result.features);
+        model_result.feature_seed = inference_result.feature_seed;
+        result_product->per_model.push_back(std::move(model_result));
 
     }
 
-    e.put(std::move(perfProduct));
+    e.put(std::move(perf_product));
+    e.put(std::move(result_product));
 }
 
 DEFINE_ART_MODULE(image::InferenceProducerModule)
