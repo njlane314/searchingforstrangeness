@@ -58,13 +58,11 @@ namespace _binary_io {
         char magic[4];
         uint32_t version;
         uint32_t K;
-        uint32_t segW;
-        uint32_t segH;
-        uint32_t has_conf;
+        uint32_t reserved;
         uint64_t cls_bytes;
-        uint64_t seg_bytes;
-        uint64_t conf_bytes;
     };
+
+    static_assert(sizeof(ResultHeader) == 24, "Unexpected ResultHeader size");
 
     inline void write_chw_f32(const std::string &path,
                               const std::vector<float> &u,
@@ -198,22 +196,6 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     if (h.K && h.cls_bytes == h.K * sizeof(float)) {
         out.cls.resize(h.K);
         ifs.read(reinterpret_cast<char *>(out.cls.data()), h.cls_bytes);
-    }
-    if (h.segW && h.segH) {
-        const size_t npix = size_t(h.segW) * h.segH;
-        if (h.seg_bytes != 3 * npix) {
-            throw art::Exception(art::errors::LogicError)
-                << "seg_bytes mismatch in " << result_bin;
-        }
-        std::vector<char> buffer(3 * npix);
-        ifs.read(buffer.data(), buffer.size());
-        if (h.has_conf) {
-            if (h.conf_bytes != 3 * npix) {
-                throw art::Exception(art::errors::LogicError)
-                    << "conf_bytes mismatch in " << result_bin;
-            }
-            ifs.read(buffer.data(), buffer.size());
-        }
     }
 
     auto t3 = std::chrono::steady_clock::now();
