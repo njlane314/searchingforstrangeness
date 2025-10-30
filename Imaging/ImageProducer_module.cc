@@ -23,6 +23,9 @@
 #include "Imaging/SemanticClassifier.h"
 #include "Products/ImageProducts.h"
 
+#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardataobj/AnalysisBase/T0.h"
+
 #include <TVector3.h>
 #include <algorithm>
 #include <cmath>
@@ -89,6 +92,9 @@ class ImageProducer : public art::EDProducer {
     art::InputTag fBKTproducer;
     bool fIsData{false};
 
+    art::InputTag fT0producer;
+    std::unique_ptr<calo::CalorimetryAlg> fCalo;
+
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
     fhicl::ParameterSet                fBlipAlgPSet;
     art::InputTag                      fBlipAlgHitProducer;
@@ -128,6 +134,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
+    fT0producer = p.get<art::InputTag>("T0producer", art::InputTag{});
     fIsData = p.get<bool>("IsData", false);
     fIgnoreBlipHits = p.get<bool>("IgnoreBlipHits", true);
 
@@ -135,6 +142,11 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
         fBlipAlgPSet = p.get<fhicl::ParameterSet>("BlipAlg");
         fBlipAlg = std::make_unique<blip::BlipRecoAlg>(fBlipAlgPSet);
         fBlipAlgHitProducer = fBlipAlgPSet.get<art::InputTag>("HitProducer", fHITproducer);
+    }
+
+    if (p.has_key("CalorimetryAlg")) {
+        auto cset = p.get<fhicl::ParameterSet>("CalorimetryAlg");
+        fCalo = std::make_unique<calo::CalorimetryAlg>(cset);
     }
 
     fBadChannelFile = p.get<std::string>("BadChannelFile", "");
@@ -278,6 +290,43 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
+    auto const clockData =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const detPropDAT =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
+
+    double T0_ticks = 0.0;
+    if (fCalo && !fT0producer.label().empty()) {
+        auto pfpHandle =
+            event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+        art::FindManyP<recob::Slice> pfpToSlice(pfpHandle, event, fPFPproducer);
+
+        std::optional<size_t> pfpIndex;
+        for (size_t i = 0; i < pfpHandle->size(); ++i) {
+            auto const &p = pfpHandle->at(i);
+            if (!p.IsPrimary()) continue;
+            int pdg = std::abs(p.PdgCode());
+            if (pdg == 12 || pdg == 14 || pdg == 16) { pfpIndex = i; break; }
+        }
+        if (!pfpIndex) {
+            for (size_t i = 0; i < pfpHandle->size(); ++i)
+                if (pfpHandle->at(i).IsPrimary()) { pfpIndex = i; break; }
+        }
+        if (pfpIndex) {
+            auto sliceHandle =
+                event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+            art::FindManyP<anab::T0> slcToT0(sliceHandle, event, fT0producer);
+            auto slices = pfpToSlice.at(*pfpIndex);
+            if (!slices.empty()) {
+                auto t0s = slcToT0.at(slices.front().key());
+                if (!t0s.empty()) {
+                    const double T0_us = t0s.front()->Time();
+                    T0_ticks = T0_us / clockData.TPCClock().TickPeriod();
+                }
+            }
+        }
+    }
+
     if (fIgnoreBlipHits && fBlipAlg) {
         if (auto mask = buildBlipMask(event)) {
             const art::ProductID pid = mask->first;
@@ -355,7 +404,11 @@ void ImageProducer::produce(art::Event &event) {
         fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
         fGeo, fDetp, fADCThresh,
         fSemantic.get(),
-        fBadChannels);
+        fBadChannels,
+        fCalo ? fCalo.get() : nullptr,
+        &clockData,
+        &detPropDAT,
+        T0_ticks);
     image::PixelImageBuilder::constructPixelImages(
         event, all_hits, props,
         det_event, sem_event,
@@ -363,7 +416,11 @@ void ImageProducer::produce(art::Event &event) {
         fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
         fGeo, fDetp, fADCThresh,
         fSemantic.get(),
-        fBadChannels);
+        fBadChannels,
+        fCalo ? fCalo.get() : nullptr,
+        &clockData,
+        &detPropDAT,
+        T0_ticks);
 
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                          ImageProperties const &p, bool include_sem) {
