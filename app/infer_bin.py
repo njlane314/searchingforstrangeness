@@ -35,7 +35,7 @@ def read_chw_f32(path, C, H, W):
 
 def write_results_bin(path, cls_f32: np.ndarray):
     K = int(cls_f32.size)
-    header = struct.pack('<4s5I3Q', b'IAOK', 1, K, 0, 0, 0, K*4, 0, 0)
+    header = struct.pack('<4sIIIQ', b'IAOK', 1, K, 0, K * 4)
     with open(path, 'wb') as f:
         f.write(header)
         if K:
