@@ -52,9 +52,7 @@ namespace image {
                                            const std::string &arch,
                                            const std::string &weights_file,
                                            const std::string &inference_wrapper,
-                                           const std::string &assets_base_dir,
-                                           bool want_cls = true,
-                                           bool want_seg = true);
+                                           const std::string &assets_base_dir);
 
         static float runInference(const std::vector<PlaneImage> &detector_images,
                                   const std::string &absolute_scratch_dir,
@@ -64,8 +62,7 @@ namespace image {
                                   const std::string &inference_wrapper,
                                   const std::string &assets_base_dir) {
             auto r = runInferenceDetailed(detector_images, absolute_scratch_dir, work_dir,
-                                          arch, weights_file, inference_wrapper, assets_base_dir,
-                                          true, false);
+                                          arch, weights_file, inference_wrapper, assets_base_dir);
             return r.cls.empty() ? std::numeric_limits<float>::quiet_NaN() : r.cls.front();
         }
     };
@@ -107,8 +104,7 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
     const std::string &absolute_scratch_dir, const std::string &work_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,
-    const std::string &assets_base_dir,
-    bool want_cls, bool want_seg) {
+    const std::string &assets_base_dir) {
     using std::string;
     (void)work_dir;
 
@@ -185,8 +181,6 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
         << "--H " << detector_images[0].height << " "
         << "--arch " << arch << " "
         << "--weights " << weights_file << " "
-        << "--want-cls " << (want_cls ? 1 : 0) << " "
-        << "--want-seg " << (want_seg ? 1 : 0)
         << " > " << script_stdout << " 2> " << script_stderr;
 
     mf::LogInfo("InferenceProduction") << "Executing inference: " << cmd.str();

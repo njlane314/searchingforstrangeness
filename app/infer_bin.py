@@ -50,8 +50,6 @@ def main():
     ap.add_argument('--H', type=int, required=True)
     ap.add_argument('--arch', default='')
     ap.add_argument('--weights', default='')
-    ap.add_argument('--want-cls', type=int, default=0)
-    ap.add_argument('--want-seg', type=int, default=0)
     args = ap.parse_args()
 
     t0 = time.time()
@@ -72,11 +70,8 @@ def main():
     with open(features_path, "wb") as f:
         f.write(feat.tobytes(order='C'))
 
-    # Minimal cls: either none (K=0) or a scalar score (e.g., L2 norm)
-    if args.want_cls:
-        cls = np.array([float(np.linalg.norm(feat))], dtype=np.float32)
-    else:
-        cls = np.array([], dtype=np.float32)
+    # Minimal cls: always emit a single scalar score (e.g., L2 norm)
+    cls = np.array([float(np.linalg.norm(feat))], dtype=np.float32)
     write_results_bin(args.out_path, cls)
 
     t_write = time.time()
