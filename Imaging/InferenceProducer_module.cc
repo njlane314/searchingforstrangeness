@@ -13,7 +13,6 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
-#include <algorithm>
 #include <cstdlib>
 #include <memory>
 #include <string>
@@ -57,15 +56,6 @@ std::string resolve_under(const std::string &base, const std::string &value) {
     return join_path(base, value);
 }
 
-image::PlaneImage clamp_plane(image::PlaneImage const &src) {
-    image::PlaneImage dst = src;
-    for (auto &v : dst.adc) {
-        if (v < 0.f)
-            v = 0.f;
-    }
-    return dst;
-}
-
 const image::PlaneImage *find_view(std::vector<image::PlaneImage> const &planes,
                                    geo::View_t view,
                                    const image::PlaneImage *fallback) {
@@ -101,7 +91,6 @@ class InferenceProducerModule : public art::EDProducer {
     std::string scratch_dir_;
     std::string assets_base_dir_;
     std::string default_wrapper_;
-    bool clamp_negatives_{true};
     std::vector<ModelConfig> models_;
 };
 
@@ -123,8 +112,7 @@ InferenceProducerModule::InferenceProducerModule(
       assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
       default_wrapper_{resolve_under(
           assets_base_dir_, p.get<std::string>("DefaultWrapper",
-                                               "scripts/inference_wrapper.sh"))},
-      clamp_negatives_{p.get<bool>("ClampNegativeADC", true)} {
+                                              "scripts/inference_wrapper.sh"))} {
     produces<image::InferencePerfProduct>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
@@ -150,9 +138,9 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    image::PlaneImage u = clamp_negatives_ ? clamp_plane(*U) : *U;
-    image::PlaneImage v = clamp_negatives_ ? clamp_plane(*V) : *V;
-    image::PlaneImage w = clamp_negatives_ ? clamp_plane(*W) : *W;
+    image::PlaneImage u = *U;
+    image::PlaneImage v = *V;
+    image::PlaneImage w = *W;
 
     std::vector<image::PlaneImage> detector_images;
     detector_images.reserve(3);
