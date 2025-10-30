@@ -118,7 +118,7 @@ class ImageProducer : public art::EDProducer {
     collectNeutrinoSliceHits(const art::Event &event) const;
 
     std::optional<std::pair<art::ProductID, std::vector<uint8_t>>>
-    buildBlipMaskWithAlg(art::Event &event);
+    buildBlipMask(art::Event &event);
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
@@ -249,7 +249,7 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
 }
 
 std::optional<std::pair<art::ProductID, std::vector<uint8_t>>>
-ImageProducer::buildBlipMaskWithAlg(art::Event &event) {
+ImageProducer::buildBlipMask(art::Event &event) {
     if (!fBlipAlg)
         return std::nullopt;
     if (!fIgnoreBlipHits)
@@ -279,7 +279,7 @@ void ImageProducer::produce(art::Event &event) {
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
     if (fIgnoreBlipHits && fBlipAlg) {
-        if (auto mask = buildBlipMaskWithAlg(event)) {
+        if (auto mask = buildBlipMask(event)) {
             const art::ProductID pid = mask->first;
             const auto &isBlip = mask->second;
             auto apply_mask = [&](std::vector<art::Ptr<recob::Hit>> &v) {
