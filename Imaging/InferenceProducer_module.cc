@@ -172,7 +172,7 @@ void InferenceProducerModule::produce(art::Event &e) {
         mf::LogInfo("InferenceProduction")
             << "Running model: " << (cfg.label.empty() ? cfg.arch : cfg.label);
 
-        auto result = image::InferenceProduction::runInferenceDetailed(
+        auto result = image::InferenceProduction::runInference(
             detector_images, absoluteScratch, assets, cfg.arch, weights,
             wrapper, assets);
 

@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <fstream>
 #include <iterator>
-#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -39,25 +38,13 @@ namespace image {
             Perf perf;
         };
 
-        static Result runInferenceDetailed(const std::vector<PlaneImage> &detector_images,
-                                           const std::string &absolute_scratch_dir,
-                                           const std::string &work_dir,
-                                           const std::string &arch,
-                                           const std::string &weights_file,
-                                           const std::string &inference_wrapper,
-                                           const std::string &assets_base_dir);
-
-        static float runInference(const std::vector<PlaneImage> &detector_images,
-                                  const std::string &absolute_scratch_dir,
-                                  const std::string &work_dir,
-                                  const std::string &arch,
-                                  const std::string &weights_file,
-                                  const std::string &inference_wrapper,
-                                  const std::string &assets_base_dir) {
-            auto r = runInferenceDetailed(detector_images, absolute_scratch_dir, work_dir,
-                                          arch, weights_file, inference_wrapper, assets_base_dir);
-            return r.cls.empty() ? std::numeric_limits<float>::quiet_NaN() : r.cls.front();
-        }
+        static Result runInference(const std::vector<PlaneImage> &detector_images,
+                                   const std::string &absolute_scratch_dir,
+                                   const std::string &work_dir,
+                                   const std::string &arch,
+                                   const std::string &weights_file,
+                                   const std::string &inference_wrapper,
+                                   const std::string &assets_base_dir);
     };
 
 inline std::string joinPath(std::string a, const std::string &b) {
@@ -92,7 +79,7 @@ namespace _binary_io {
     }
 }
 
-inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
+inline InferenceProduction::Result InferenceProduction::runInference(
     const std::vector<PlaneImage> &detector_images,
     const std::string &absolute_scratch_dir, const std::string &work_dir,
     const std::string &arch, const std::string &weights_file,
