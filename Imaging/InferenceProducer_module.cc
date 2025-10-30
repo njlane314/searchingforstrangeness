@@ -88,8 +88,6 @@ class InferenceProducerModule : public art::EDProducer {
         std::string weights;
         std::string wrapper;
         std::string assets;
-        bool want_cls{true};
-        bool want_seg{false};
     };
 
     explicit InferenceProducerModule(fhicl::ParameterSet const &p);
@@ -115,8 +113,6 @@ InferenceProducerModule::makeConfig(fhicl::ParameterSet const &p) {
     cfg.weights = p.get<std::string>("Weights", "");
     cfg.wrapper = p.get<std::string>("Wrapper", "");
     cfg.assets = p.get<std::string>("Assets", "");
-    cfg.want_cls = p.get<bool>("WantCls", true);
-    cfg.want_seg = p.get<bool>("WantSeg", false);
     return cfg;
 }
 
@@ -190,7 +186,7 @@ void InferenceProducerModule::produce(art::Event &e) {
 
         auto result = image::InferenceProduction::runInferenceDetailed(
             detector_images, absoluteScratch, assets, cfg.arch, weights,
-            wrapper, assets, cfg.want_cls, cfg.want_seg);
+            wrapper, assets);
 
         image::ModelPerf perf;
         perf.model = cfg.label.empty() ? cfg.arch : cfg.label;
