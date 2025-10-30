@@ -36,14 +36,7 @@ namespace image {
 
         struct Result {
             std::vector<float> cls;
-            uint32_t segW{0}, segH{0};
-            std::vector<uint8_t> seg_u, seg_v, seg_w;
-            // Binary (0/1) confidence flags per pixel, if provided by the wrapper
-            std::vector<uint8_t> conf_u, conf_v, conf_w;
             Perf perf;
-            // NEW: random features sidecar (flat float32 file) + meta
-            std::vector<float> features;   // length = feature dimension (if provided)
-            std::uint32_t feature_seed{0}; // RNG seed used by the wrapper (optional)
         };
 
         static Result runInferenceDetailed(const std::vector<PlaneImage> &detector_images,
@@ -220,30 +213,19 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
         ifs.read(reinterpret_cast<char *>(out.cls.data()), h.cls_bytes);
     }
     if (h.segW && h.segH) {
-        out.segW = h.segW;
-        out.segH = h.segH;
-        const size_t npix = size_t(out.segW) * out.segH;
+        const size_t npix = size_t(h.segW) * h.segH;
         if (h.seg_bytes != 3 * npix) {
             throw art::Exception(art::errors::LogicError)
                 << "seg_bytes mismatch in " << result_bin;
         }
-        out.seg_u.resize(npix);
-        out.seg_v.resize(npix);
-        out.seg_w.resize(npix);
-        ifs.read(reinterpret_cast<char *>(out.seg_u.data()), npix);
-        ifs.read(reinterpret_cast<char *>(out.seg_v.data()), npix);
-        ifs.read(reinterpret_cast<char *>(out.seg_w.data()), npix);
+        std::vector<char> buffer(3 * npix);
+        ifs.read(buffer.data(), buffer.size());
         if (h.has_conf) {
             if (h.conf_bytes != 3 * npix) {
                 throw art::Exception(art::errors::LogicError)
                     << "conf_bytes mismatch in " << result_bin;
             }
-            out.conf_u.resize(npix);
-            out.conf_v.resize(npix);
-            out.conf_w.resize(npix);
-            ifs.read(reinterpret_cast<char *>(out.conf_u.data()), npix);
-            ifs.read(reinterpret_cast<char *>(out.conf_v.data()), npix);
-            ifs.read(reinterpret_cast<char *>(out.conf_w.data()), npix);
+            ifs.read(buffer.data(), buffer.size());
         }
     }
 
@@ -253,12 +235,9 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
     out.perf.t_exec_total_ms = duration * 1000.0;
     out.perf.t_read_resp_ms  = std::chrono::duration<double, std::milli>(t3 - t2).count();
 
-    // Parse metrics text and (NEW) sidecar pointers
+    // Parse metrics text
     {
         std::ifstream m(meta_txt);
-        std::string features_path;
-        int feat_dim = 0;
-        std::uint32_t feat_seed = 0;
         if (m) {
             std::string line;
             while (std::getline(m, line)) {
@@ -282,24 +261,6 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
                     out.perf.t_child_post_ms = d;
                 else if (key == "max_rss_mb" && numeric)
                     out.perf.child_max_rss_mb = d;
-                else if (key == "feat_dim" && numeric)
-                    feat_dim = static_cast<int>(d);
-                else if (key == "seed" && numeric)
-                    feat_seed = static_cast<std::uint32_t>(d);
-                else if (key == "features_path")
-                    features_path = val;
-            }
-        }
-        // Read flat float32 sidecar if present
-        if (!features_path.empty() && feat_dim > 0) {
-            std::ifstream fin(features_path, std::ios::binary);
-            if (fin) {
-                std::vector<float> f(static_cast<size_t>(feat_dim));
-                fin.read(reinterpret_cast<char *>(f.data()), sizeof(float) * f.size());
-                if (fin.gcount() == static_cast<std::streamsize>(sizeof(float) * f.size())) {
-                    out.features = std::move(f);
-                    out.feature_seed = feat_seed;
-                }
             }
         }
     }
@@ -308,8 +269,6 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
         mf::LogInfo("InferenceProduction") << "First class score: " << out.cls.front();
-    if (!out.features.empty())
-        mf::LogInfo("InferenceProduction") << "Feature dim: " << out.features.size();
     mf::LogInfo("InferenceProduction")
         << "t_write_req_ms=" << out.perf.t_write_req_ms
         << " t_exec_total_ms=" << out.perf.t_exec_total_ms
