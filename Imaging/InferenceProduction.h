@@ -38,7 +38,8 @@ namespace image {
             std::vector<float> cls;
             uint32_t segW{0}, segH{0};
             std::vector<uint8_t> seg_u, seg_v, seg_w;
-            std::vector<float> conf_u, conf_v, conf_w;
+            // Binary (0/1) confidence flags per pixel, if provided by the wrapper
+            std::vector<uint8_t> conf_u, conf_v, conf_w;
             Perf perf;
             // NEW: random features sidecar (flat float32 file) + meta
             std::vector<float> features;   // length = feature dimension (if provided)
@@ -233,16 +234,16 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
         ifs.read(reinterpret_cast<char *>(out.seg_v.data()), npix);
         ifs.read(reinterpret_cast<char *>(out.seg_w.data()), npix);
         if (h.has_conf) {
-            if (h.conf_bytes != 3 * npix * sizeof(float)) {
+            if (h.conf_bytes != 3 * npix) {
                 throw art::Exception(art::errors::LogicError)
                     << "conf_bytes mismatch in " << result_bin;
             }
             out.conf_u.resize(npix);
             out.conf_v.resize(npix);
             out.conf_w.resize(npix);
-            ifs.read(reinterpret_cast<char *>(out.conf_u.data()), npix * sizeof(float));
-            ifs.read(reinterpret_cast<char *>(out.conf_v.data()), npix * sizeof(float));
-            ifs.read(reinterpret_cast<char *>(out.conf_w.data()), npix * sizeof(float));
+            ifs.read(reinterpret_cast<char *>(out.conf_u.data()), npix);
+            ifs.read(reinterpret_cast<char *>(out.conf_v.data()), npix);
+            ifs.read(reinterpret_cast<char *>(out.conf_w.data()), npix);
         }
     }
 
