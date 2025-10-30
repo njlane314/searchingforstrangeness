@@ -9,6 +9,9 @@
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Utilities/InputTag.h"
 #include "larcore/Geometry/Geometry.h"
+#include "larreco/Calorimetry/CalorimetryAlg.h"
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -45,6 +48,26 @@ public:
                                      SemanticClassifier *semantic_classifier,
                                      const std::set<unsigned int> &bad_channels);
 
+    static void constructPixelImages(const art::Event &event,
+                                     const std::vector<art::Ptr<recob::Hit>> &hits,
+                                     const std::vector<ImageProperties> &properties,
+                                     std::vector<Image<float>> &detector_images,
+                                     std::vector<Image<int>> &semantic_images,
+                                     bool is_data,
+                                     const art::InputTag &wire_producer,
+                                     const art::InputTag &hit_producer,
+                                     const art::InputTag &mcp_producer,
+                                     const art::InputTag &bkt_producer,
+                                     const geo::GeometryCore *geo,
+                                     const detinfo::DetectorProperties *detp,
+                                     float adc_image_threshold,
+                                     SemanticClassifier *semantic_classifier,
+                                     const std::set<unsigned int> &bad_channels,
+                                     calo::CalorimetryAlg* calo_alg,
+                                     detinfo::DetectorClocksData const* clock_data,
+                                     detinfo::DetectorPropertiesData const* detprop_data,
+                                     double T0_ticks);
+
 private:
     static SemanticClassifier::SemanticLabel labelSemanticPixels(
         const art::Ptr<recob::Hit> &matched_hit,
@@ -71,7 +94,11 @@ private:
         const geo::GeometryCore *geo,
         const detinfo::DetectorProperties *detp,
         float adc_image_threshold,
-        const std::set<unsigned int> &bad_channels);
+        const std::set<unsigned int> &bad_channels,
+        calo::CalorimetryAlg* calo_alg,
+        detinfo::DetectorClocksData const* clock_data,
+        detinfo::DetectorPropertiesData const* detprop_data,
+        double T0_ticks);
 };
 
 } // namespace image
@@ -146,7 +173,11 @@ inline void image::PixelImageBuilder::fillDetectorImage(
     const geo::GeometryCore *geo,
     const detinfo::DetectorProperties *detp,
     float adc_image_threshold,
-    const std::set<unsigned int> &bad_channels) {
+    const std::set<unsigned int> &bad_channels,
+    calo::CalorimetryAlg* calo_alg,
+    detinfo::DetectorClocksData const* clock_data,
+    detinfo::DetectorPropertiesData const* detprop_data,
+    double T0_ticks) {
     auto ch_id = wire.Channel();
     if (bad_channels.count(ch_id)) {
         return;
@@ -211,7 +242,21 @@ inline void image::PixelImageBuilder::fillDetectorImage(
                 filtered_hits[hit_index]->StartTick() <= tick &&
                 tick < filtered_hits[hit_index]->EndTick()) {
                 if (adcs[adc_index] > adc_image_threshold) {
-                    detector_images[view_idx].set(*row, *col, adcs[adc_index]);
+                    float out_val = adcs[adc_index];
+                    if (calo_alg && clock_data && detprop_data) {
+                        const double pitch_cm_drift = properties[view_idx].pixel_w();
+                        if (pitch_cm_drift > 0.) {
+                            const double dQdx_ADC = static_cast<double>(adcs[adc_index]) / pitch_cm_drift;
+                            const unsigned plane = wire_ids.front().planeID().Plane;
+                            const double time_tick = static_cast<double>(tick);
+                            const double dEdx_MeV_cm =
+                                calo_alg->dEdx_AMP(*clock_data, *detprop_data,
+                                                   dQdx_ADC, time_tick, plane,
+                                                   /*T0=*/T0_ticks);
+                            out_val = static_cast<float>(dEdx_MeV_cm);
+                        }
+                    }
+                    detector_images[view_idx].set(*row, *col, out_val);
 
                     if (!is_data) {
                         auto semantic_pixel_label = labelSemanticPixels(
@@ -244,6 +289,33 @@ inline void image::PixelImageBuilder::constructPixelImages(
     float adc_image_threshold,
     SemanticClassifier *semantic_classifier,
     const std::set<unsigned int> &bad_channels) {
+    constructPixelImages(event, hits, properties, detector_images, semantic_images,
+                         is_data, wire_producer, hit_producer, mcp_producer, bkt_producer,
+                         geo, detp, adc_image_threshold, semantic_classifier, bad_channels,
+                         /*calo_alg*/nullptr, /*clock_data*/nullptr, /*detprop_data*/nullptr,
+                         /*T0_ticks*/0.0);
+}
+
+inline void image::PixelImageBuilder::constructPixelImages(
+    const art::Event &event,
+    const std::vector<art::Ptr<recob::Hit>> &hits,
+    const std::vector<ImageProperties> &properties,
+    std::vector<Image<float>> &detector_images,
+    std::vector<Image<int>> &semantic_images,
+    bool is_data,
+    const art::InputTag &wire_producer,
+    const art::InputTag &hit_producer,
+    const art::InputTag &mcp_producer,
+    const art::InputTag &bkt_producer,
+    const geo::GeometryCore *geo,
+    const detinfo::DetectorProperties *detp,
+    float adc_image_threshold,
+    SemanticClassifier *semantic_classifier,
+    const std::set<unsigned int> &bad_channels,
+    calo::CalorimetryAlg* calo_alg,
+    detinfo::DetectorClocksData const* clock_data,
+    detinfo::DetectorPropertiesData const* detprop_data,
+    double T0_ticks) {
     detector_images.clear();
     semantic_images.clear();
     for (const auto &prop : properties) {
@@ -282,7 +354,8 @@ inline void image::PixelImageBuilder::constructPixelImages(
                           wire_hit_assoc, hit_set, mcp_bkth_assoc, mcp_vector,
                           trackid_to_index, semantic_label_vector,
                           detector_images, semantic_images, is_data, has_mcps,
-                          geo, detp, adc_image_threshold, bad_channels);
+                          geo, detp, adc_image_threshold, bad_channels,
+                          calo_alg, clock_data, detprop_data, T0_ticks);
     }
 }
 
