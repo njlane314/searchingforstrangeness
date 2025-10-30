@@ -38,14 +38,13 @@ def write_result_IAOK_cls1(path, value):
         f.write(np.float32(value).tobytes())
 
 def write_metrics(meta_path, t_total_ms, t_setup_ms, t_infer_ms, t_post_ms,
-                  features_path, feat_dim, max_rss_mb=0.0, cuda_mem_mb=0.0):
+                  features_path, feat_dim, max_rss_mb=0.0):
     with open(meta_path, "w") as m:
         m.write(f"t_total_ms={t_total_ms:.3f}\n")
         m.write(f"t_setup_ms={t_setup_ms:.3f}\n")
         m.write(f"t_infer_ms={t_infer_ms:.3f}\n")
         m.write(f"t_post_ms={t_post_ms:.3f}\n")
         m.write(f"max_rss_mb={max_rss_mb:.3f}\n")
-        m.write(f"cuda_mem_mb={cuda_mem_mb:.3f}\n")
         m.write(f"features_path={features_path}\n")
         m.write(f"feat_dim={feat_dim}\n")
 

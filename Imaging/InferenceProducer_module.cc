@@ -190,8 +190,6 @@ void InferenceProducerModule::produce(art::Event &e) {
         perf.t_child_post_ms = static_cast<float>(result.perf.t_child_post_ms);
         perf.child_max_rss_mb =
             static_cast<float>(result.perf.child_max_rss_mb);
-        perf.child_cuda_mem_mb =
-            static_cast<float>(result.perf.child_cuda_mem_mb);
         perfProduct->per_model.push_back(std::move(perf));
 
     }

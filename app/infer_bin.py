@@ -82,7 +82,6 @@ def main():
         m.write(f"t_infer_ms={(t_infer-t_setup)*1000.0:.3f}\n")
         m.write(f"t_post_ms={(t_write-t_infer)*1000.0:.3f}\n")
         m.write("max_rss_mb=0.0\n")
-        m.write("cuda_mem_mb=0.0\n")
         m.write(f"features_path={features_path}\n")
         m.write(f"feat_dim={feat.size}\n")
         m.write(f"seed={cfg['seed']}\n")

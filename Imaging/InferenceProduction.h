@@ -32,7 +32,6 @@ namespace image {
             double t_child_infer_ms{0.0};
             double t_child_post_ms{0.0};
             double child_max_rss_mb{0.0};
-            double child_cuda_mem_mb{0.0};
         };
 
         struct Result {
@@ -282,8 +281,6 @@ inline InferenceProduction::Result InferenceProduction::runInferenceDetailed(
                     out.perf.t_child_post_ms = d;
                 else if (key == "max_rss_mb" && numeric)
                     out.perf.child_max_rss_mb = d;
-                else if (key == "cuda_mem_mb" && numeric)
-                    out.perf.child_cuda_mem_mb = d;
                 else if (key == "feat_dim" && numeric)
                     feat_dim = static_cast<int>(d);
                 else if (key == "seed" && numeric)
