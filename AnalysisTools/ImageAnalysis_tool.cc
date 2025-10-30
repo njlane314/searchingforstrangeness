@@ -32,7 +32,6 @@
 #include "Products/ImageProducts.h"
 #include "Common/PandoraUtilities.h"
 #include "Common/ProxyTypes.h"
-#include "Imaging/ImageAlgo.h"
 #include "Imaging/SemanticClassifier.h"
 
 #include <TDirectoryFile.h>
