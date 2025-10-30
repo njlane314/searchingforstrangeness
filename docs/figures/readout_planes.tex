@@ -1,0 +1,35 @@
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage{tikz}
+\usepackage{tikz-3dplot} % gives an easy 3-D camera/view
+
+\begin{document}
+% camera: elevation, azimuth (tweak these to rotate the box)
+\tdplotsetmaincoords{70}{135}
+
+\begin{tikzpicture}[tdplot_main_coords, line join=round, line cap=round]
+  % --- Box dimensions (change to taste) ---
+  \def\L{11}   % length  (x direction)
+  \def\W{3.2}  % width   (y direction)
+  \def\H{3.0}  % height  (z direction)
+
+  % --- Vertices of the rectangular prism ---
+  \coordinate (O) at (0,0,0);
+  \coordinate (A) at (\L,0,0);
+  \coordinate (B) at (\L,\W,0);
+  \coordinate (C) at (0,\W,0);
+  \coordinate (D) at (0,0,\H);
+  \coordinate (E) at (\L,0,\H);
+  \coordinate (F) at (\L,\W,\H);
+  \coordinate (G) at (0,\W,\H);
+
+  % Hidden edges (draw first so they sit behind)
+  \draw[densely dashed, gray] (C)--(B)--(F)--(G)--cycle;
+
+  % Visible edges
+  \draw[thick] (O)--(A)--(B)--(C)--cycle;
+  \draw[thick] (O)--(D)--(G)--(C);
+  \draw[thick] (D)--(E)--(F)--(G);
+  \draw[thick] (A)--(E);
+  \draw[thick] (B)--(F);
+\end{tikzpicture}
+\end{document}
