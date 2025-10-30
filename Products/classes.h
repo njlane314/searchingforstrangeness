@@ -2,7 +2,6 @@
 
 #include "Products/ImageProducts.h"
 #include "Products/InferencePerf.h"
-#include "Products/RandomFeatures.h"
 
 #include <vector>
 
@@ -15,7 +14,3 @@ template class art::Wrapper<image::InferencePerfProduct>;
 template class std::vector<image::ModelPerf>;
 template class art::Wrapper<std::vector<image::ModelPerf>>;
 
-template class art::Wrapper<image::RandomFeatures>;
-
-template class std::vector<image::RandomFeatures>;
-template class art::Wrapper<std::vector<image::RandomFeatures>>;

@@ -10,7 +10,6 @@
 #include "Imaging/InferenceProduction.h"
 #include "Products/ImageProducts.h"
 #include "Products/InferencePerf.h"
-#include "Products/RandomFeatures.h"
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
@@ -131,7 +130,6 @@ InferenceProducerModule::InferenceProducerModule(
                                              "scripts/inference_wrapper.sh"))},
       clampNegatives_{p.get<bool>("ClampNegativeADC", true)} {
     produces<image::InferencePerfProduct>();
-    produces<std::vector<image::RandomFeatures>>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
     models_.reserve(modelSets.size());
@@ -179,8 +177,6 @@ void InferenceProducerModule::produce(art::Event &e) {
         realpath(scratch.c_str(), buf) ? std::string(buf) : scratch;
 
     auto perfProduct = std::make_unique<image::InferencePerfProduct>();
-    auto featureProduct =
-        std::make_unique<std::vector<image::RandomFeatures>>();
 
     for (auto const &cfg : models_) {
         std::string assets = cfg.assets.empty() ? assetsBaseDir_ : cfg.assets;
@@ -214,17 +210,9 @@ void InferenceProducerModule::produce(art::Event &e) {
             static_cast<float>(result.perf.child_cuda_mem_mb);
         perfProduct->per_model.push_back(std::move(perf));
 
-        if (!result.features.empty()) {
-            image::RandomFeatures rf;
-            rf.model = perf.model;
-            rf.values = result.features;
-            rf.seed = result.feature_seed;
-            featureProduct->push_back(std::move(rf));
-        }
     }
 
     e.put(std::move(perfProduct));
-    e.put(std::move(featureProduct));
 }
 
 DEFINE_ART_MODULE(image::InferenceProducerModule)

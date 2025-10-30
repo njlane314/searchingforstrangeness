@@ -1,7 +1,6 @@
 <lcgdict>
   <include file="Products/ImageProducts.h"/>
   <include file="Products/InferencePerf.h"/>
-  <include file="Products/RandomFeatures.h"/>
 
   <class name="image::PlaneImage"/>
   <class name="std::vector<image::PlaneImage>"/>
@@ -13,9 +12,4 @@
   <class name="image::InferencePerfProduct"/>
   <class name="art::Wrapper<image::InferencePerfProduct>"/>
 
-  <!-- Random feature vectors from the MinkowskiEngine wrapper -->
-  <class name="image::RandomFeatures"/>
-  <class name="std::vector<image::RandomFeatures>"/>
-  <class name="art::Wrapper<image::RandomFeatures>"/>
-  <class name="art::Wrapper<std::vector<image::RandomFeatures>>"/>
 </lcgdict>
