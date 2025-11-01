@@ -444,8 +444,8 @@ void ImageProducer::produce(art::Event &event) {
             pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
-    event.put(std::move(out_slice), "primary_slice");
-    event.put(std::move(out_event), "all_hits");
+    event.put(std::move(out_slice));
+    event.put(std::move(out_event));
 }
 
 DEFINE_ART_MODULE(ImageProducer)
