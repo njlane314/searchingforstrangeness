@@ -341,15 +341,10 @@ void ImageProducer::produce(art::Event &event) {
     TVector3 vtxW = common::ProjectToWireView(
         vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_W);
 
-    // Local neighborhood radii per view:
-    //   R_v = 0.5 * min(N_x p_x, N_w p_w)
     const double R_U = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchU);
     const double R_V = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchV);
     const double R_W = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchW);
 
-    // Per-plane local charge centroids in (w_v, x) plane coords:
-    // centroidWithinRadius returns (Z_like, X) in the Pandora view,
-    // where Z_like corresponds to the per-view wire-perp (w_v).
     auto cU = ImageCentering::centroidWithinRadius(
         event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
         vtxU.Z(), vtxU.X());
@@ -360,20 +355,17 @@ void ImageProducer::produce(art::Event &event) {
         event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
         vtxW.Z(), vtxW.X());
 
-    // Fuse to a single 3D anchor and re-project to each view (centre to same point):
-    //   inputs: x_v = c?.second, w_v = c?.first
-    auto fused = image::fuse_and_project(/*xU=*/cU.second, /*wU=*/cU.first,
-                                         /*xV=*/cV.second, /*wV=*/cV.first,
-                                         /*xW=*/cW.second, /*wW=*/cW.first);
+    auto fused = image::fuse_and_project(cU.second, cU.first,
+                                         cV.second, cV.first,
+                                         cW.second, cW.first);
 
     std::vector<ImageProperties> props;
-    // NOTE: ImageProperties expects (center_x=wire axis, center_y=drift axis)
-    props.emplace_back(/*center_x=*/fused.wU_star, /*center_y=*/fused.x_star,
-                       /*W=*/fImgW, /*H=*/fImgH, /*p_x=*/fDriftStepCm, /*p_w=*/fPitchU,
+    props.emplace_back(fused.wU_star, fused.x_star,
+                       fImgW, fImgH, fDriftStepCm, fPitchU,
                        geo::kU);
-    props.emplace_back(/*center_x=*/fused.wV_star, /*center_y=*/fused.x_star,
+    props.emplace_back(fused.wV_star, fused.x_star,
                        fImgW, fImgH, fDriftStepCm, fPitchV, geo::kV);
-    props.emplace_back(/*center_x=*/fused.wW_star, /*center_y=*/fused.x_star,
+    props.emplace_back(fused.wW_star, fused.x_star,
                        fImgW, fImgH, fDriftStepCm, fPitchW, geo::kW);
 
     std::vector<Image<float>> det_slice;
