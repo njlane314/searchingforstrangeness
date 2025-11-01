@@ -10,6 +10,7 @@
 #include "Imaging/InferenceProduction.h"
 #include "Products/ImageProducts.h"
 #include "Products/InferencePerf.h"
+#include "Products/InferencePred.h"
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
@@ -114,6 +115,7 @@ InferenceProducerModule::InferenceProducerModule(
           assets_base_dir_, p.get<std::string>("DefaultWrapper",
                                               "scripts/inference_wrapper.sh"))} {
     produces<image::InferencePerfProduct>();
+    produces<image::InferencePredProduct>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
     models_.reserve(modelSets.size());
@@ -161,6 +163,7 @@ void InferenceProducerModule::produce(art::Event &e) {
         realpath(scratch.c_str(), buf) ? std::string(buf) : scratch;
 
     auto perfProduct = std::make_unique<image::InferencePerfProduct>();
+    auto predProduct = std::make_unique<image::InferencePredProduct>();
 
     for (auto const &cfg : models_) {
         std::string assets = cfg.assets.empty() ? assets_base_dir_ : cfg.assets;
@@ -169,15 +172,17 @@ void InferenceProducerModule::produce(art::Event &e) {
         wrapper = resolve_under(assets, wrapper);
         std::string weights = resolve_under(assets, cfg.weights);
 
+        auto label_or_arch = cfg.label.empty() ? cfg.arch : cfg.label;
+
         mf::LogInfo("InferenceProduction")
-            << "Running model: " << (cfg.label.empty() ? cfg.arch : cfg.label);
+            << "Running model: " << label_or_arch;
 
         auto result = image::InferenceProduction::runInference(
             detector_images, absoluteScratch, assets, cfg.arch, weights,
             wrapper, assets);
 
         image::ModelPerf perf;
-        perf.model = cfg.label.empty() ? cfg.arch : cfg.label;
+        perf.model = label_or_arch;
         perf.t_write_req_ms = static_cast<float>(result.perf.t_write_req_ms);
         perf.t_exec_total_ms = static_cast<float>(result.perf.t_exec_total_ms);
         perf.t_read_resp_ms = static_cast<float>(result.perf.t_read_resp_ms);
@@ -192,9 +197,15 @@ void InferenceProducerModule::produce(art::Event &e) {
             static_cast<float>(result.perf.child_max_rss_mb);
         perfProduct->per_model.push_back(std::move(perf));
 
+        image::ModelPred pred;
+        pred.model = label_or_arch;
+        pred.scores = std::move(result.cls);
+        predProduct->per_model.push_back(std::move(pred));
+
     }
 
     e.put(std::move(perfProduct));
+    e.put(std::move(predProduct));
 }
 
 DEFINE_ART_MODULE(image::InferenceProducerModule)
