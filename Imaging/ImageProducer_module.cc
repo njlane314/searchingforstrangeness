@@ -397,30 +397,40 @@ void ImageProducer::produce(art::Event &event) {
     std::vector<Image<int>> sem_slice;
     std::vector<Image<float>> det_event;
     std::vector<Image<int>> sem_event;
-    image::PixelImageBuilder::constructPixelImages(
-        event, neutrino_hits, props,
-        det_slice, sem_slice,
-        fIsData,
-        fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
-        fGeo, fDetp, fADCThresh,
-        fSemantic.get(),
-        fBadChannels,
-        fCalo ? fCalo.get() : nullptr,
-        &clockData,
-        &detPropDAT,
-        T0_ticks);
-    image::PixelImageBuilder::constructPixelImages(
-        event, all_hits, props,
-        det_event, sem_event,
-        fIsData,
-        fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer,
-        fGeo, fDetp, fADCThresh,
-        fSemantic.get(),
-        fBadChannels,
-        fCalo ? fCalo.get() : nullptr,
-        &clockData,
-        &detPropDAT,
-        T0_ticks);
+
+    image::PixelImageOptions opts;
+    opts.is_data       = fIsData;
+    opts.producers     = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
+    opts.adc_threshold = fADCThresh;
+    opts.bad_channels  = &fBadChannels;
+    opts.semantic      = fSemantic.get();
+
+    image::PixelImageBuilder builder(*fGeo, opts);
+
+    std::optional<image::CalibrationContext> cal;
+    if (fCalo) {
+        cal = image::CalibrationContext{
+            fCalo.get(), &clockData, &detPropDAT, T0_ticks
+        };
+    }
+
+    builder.build(
+        event,
+        neutrino_hits,
+        props,
+        det_slice,
+        sem_slice,
+        fDetp,
+        cal);
+
+    builder.build(
+        event,
+        all_hits,
+        props,
+        det_event,
+        sem_event,
+        fDetp,
+        cal);
 
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                          ImageProperties const &p, bool include_sem) {
