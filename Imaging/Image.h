@@ -100,6 +100,7 @@ class Image {
     geo::View_t view() const { return prop_.view(); }
     size_t height() const { return prop_.height(); }
     size_t width() const { return prop_.width(); }
+    const ImageProperties& properties() const { return prop_; }
 
     private:
     ImageProperties prop_;
