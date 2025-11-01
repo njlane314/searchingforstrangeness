@@ -1,6 +1,8 @@
 #ifndef IMAGEPRODUCTION_H
 #define IMAGEPRODUCTION_H
 
+#include <optional>
+#include <array>
 #include "Imaging/Image.h"
 #include "Imaging/SemanticClassifier.h"
 
@@ -24,15 +26,12 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
-#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
 namespace image {
 
-// -----------------------------------------------------------------------------
-// Helper option bundles to reduce long argument lists
 struct PixelImageOptions {
     bool is_data{false};
     struct Producers {
@@ -68,43 +67,29 @@ public:
                const detinfo::DetectorProperties *detp,
                std::optional<CalibrationContext> const& cal = std::nullopt) const;
 
-    static void constructPixelImages(const art::Event &event,
-                                     const std::vector<art::Ptr<recob::Hit>> &hits,
-                                     const std::vector<ImageProperties> &properties,
-                                     std::vector<Image<float>> &detector_images,
-                                     std::vector<Image<int>> &semantic_images,
-                                     bool is_data,
-                                     const art::InputTag &wire_producer,
-                                     const art::InputTag &hit_producer,
-                                     const art::InputTag &mcp_producer,
-                                     const art::InputTag &bkt_producer,
-                                     const geo::GeometryCore *geo,
-                                     const detinfo::DetectorProperties *detp,
-                                     float adc_image_threshold,
-                                     SemanticClassifier *semantic_classifier,
-                                     const std::set<unsigned int> &bad_channels);
-
-    static void constructPixelImages(const art::Event &event,
-                                     const std::vector<art::Ptr<recob::Hit>> &hits,
-                                     const std::vector<ImageProperties> &properties,
-                                     std::vector<Image<float>> &detector_images,
-                                     std::vector<Image<int>> &semantic_images,
-                                     bool is_data,
-                                     const art::InputTag &wire_producer,
-                                     const art::InputTag &hit_producer,
-                                     const art::InputTag &mcp_producer,
-                                     const art::InputTag &bkt_producer,
-                                     const geo::GeometryCore *geo,
-                                     const detinfo::DetectorProperties *detp,
-                                     float adc_image_threshold,
-                                     SemanticClassifier *semantic_classifier,
-                                     const std::set<unsigned int> &bad_channels,
-                                     calo::CalorimetryAlg* calo_alg,
-                                     detinfo::DetectorClocksData const* clock_data,
-                                     detinfo::DetectorPropertiesData const* detprop_data,
-                                     double T0_ticks);
-
 private:
+    struct BuildContext {
+        const std::vector<ImageProperties> &properties;
+        std::vector<Image<float>> &detector_images;
+        std::vector<Image<int>> &semantic_images;
+        const art::FindManyP<recob::Hit> &wire_hit_assoc;
+        const std::set<art::Ptr<recob::Hit>> &hit_set;
+        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc;
+        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector;
+        const std::map<int, size_t> &trackid_to_index;
+        const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector;
+        bool is_data;
+        bool has_mcps;
+        const geo::GeometryCore *geo;
+        const detinfo::DetectorProperties *detp;
+        float adc_image_threshold;
+        const std::set<unsigned int> *bad_channels;
+        calo::CalorimetryAlg* calo_alg;
+        detinfo::DetectorClocksData const* clock_data;
+        detinfo::DetectorPropertiesData const* detprop_data;
+        double T0_ticks{0.0};
+    };
+
     static SemanticClassifier::SemanticLabel labelSemanticPixels(
         const art::Ptr<recob::Hit> &matched_hit,
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
@@ -116,31 +101,14 @@ private:
     static void fillDetectorImage(
         const recob::Wire &wire,
         size_t wire_idx,
-        const std::vector<ImageProperties> &properties,
-        const art::FindManyP<recob::Hit> &wire_hit_assoc,
         const std::set<art::Ptr<recob::Hit>> &hit_set,
-        const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
-        const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-        const std::map<int, size_t> &trackid_to_index,
-        const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector,
-        std::vector<Image<float>> &detector_images,
-        std::vector<Image<int>> &semantic_images,
-        bool is_data,
-        bool has_mcps,
-        const geo::GeometryCore *geo,
-        const detinfo::DetectorProperties *detp,
-        float adc_image_threshold,
-        const std::set<unsigned int> &bad_channels,
-        calo::CalorimetryAlg* calo_alg,
-        detinfo::DetectorClocksData const* clock_data,
-        detinfo::DetectorPropertiesData const* detprop_data,
-        double T0_ticks);
+        BuildContext const& ctx);
 
     geo::GeometryCore const* geo_{nullptr};
     PixelImageOptions opts_;
 };
 
-} // namespace image
+}
 
 inline SemanticClassifier::SemanticLabel image::PixelImageBuilder::labelSemanticPixels(
     const art::Ptr<recob::Hit> &matched_hit,
@@ -197,52 +165,36 @@ inline SemanticClassifier::SemanticLabel image::PixelImageBuilder::labelSemantic
 inline void image::PixelImageBuilder::fillDetectorImage(
     const recob::Wire &wire,
     size_t wire_idx,
-    const std::vector<ImageProperties> &properties,
-    const art::FindManyP<recob::Hit> &wire_hit_assoc,
     const std::set<art::Ptr<recob::Hit>> &hit_set,
-    const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        &mcp_bkth_assoc,
-    const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
-    const std::map<int, size_t> &trackid_to_index,
-    const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector,
-    std::vector<Image<float>> &detector_images,
-    std::vector<Image<int>> &semantic_images,
-    bool is_data,
-    bool has_mcps,
-    const geo::GeometryCore *geo,
-    const detinfo::DetectorProperties *detp,
-    float adc_image_threshold,
-    const std::set<unsigned int> &bad_channels,
-    calo::CalorimetryAlg* calo_alg,
-    detinfo::DetectorClocksData const* clock_data,
-    detinfo::DetectorPropertiesData const* detprop_data,
-    double T0_ticks) {
+    BuildContext const& ctx) {
     auto ch_id = wire.Channel();
-    if (bad_channels.count(ch_id)) {
+    if (ctx.bad_channels && ctx.bad_channels->count(ch_id)) {
         return;
     }
 
-    std::vector<geo::WireID> wire_ids = geo->ChannelToWire(ch_id);
+    std::vector<geo::WireID> wire_ids = ctx.geo->ChannelToWire(ch_id);
     if (wire_ids.empty()) {
         return;
     }
 
-    geo::View_t view = geo->View(wire_ids.front().planeID());
+    geo::View_t view = ctx.geo->View(wire_ids.front().planeID());
     size_t view_idx = static_cast<size_t>(view);
-    const geo::WireGeo *wire_geo = geo->WirePtr(wire_ids.front());
+    const geo::WireGeo *wire_geo = ctx.geo->WirePtr(wire_ids.front());
     TVector3 center = wire_geo->GetCenter();
     TVector3 wire_center(center.X(), center.Y(), center.Z());
 
+    constexpr double plus60  =  1.04719758034;
+    constexpr double minus60 = -1.04719758034;
     double wire_coord =
         (view == geo::kW)
             ? wire_center.Z()
         : (view == geo::kU)
-            ? (wire_center.Z() * std::cos(1.04719758034) -
-               wire_center.Y() * std::sin(1.04719758034))
-            : (wire_center.Z() * std::cos(-1.04719758034) -
-               wire_center.Y() * std::sin(-1.04719758034));
+            ? (wire_center.Z() * std::cos(plus60)  -
+               wire_center.Y() * std::sin(plus60))
+            : (wire_center.Z() * std::cos(minus60) -
+               wire_center.Y() * std::sin(minus60));
 
-    auto hits_for_wire = wire_hit_assoc.at(wire_idx);
+    auto hits_for_wire = ctx.wire_hit_assoc.at(wire_idx);
     std::vector<art::Ptr<recob::Hit>> filtered_hits;
     filtered_hits.reserve(hits_for_wire.size());
     for (const auto &hit : hits_for_wire) {
@@ -263,11 +215,11 @@ inline void image::PixelImageBuilder::fillDetectorImage(
 
         for (size_t adc_index = 0; adc_index < adcs.size(); ++adc_index) {
             int tick = start_tick + static_cast<int>(adc_index);
-            double x_drift_pos = detp->ConvertTicksToX(static_cast<double>(tick),
-                                                       wire_ids.front().planeID());
+            double x_drift_pos = ctx.detp->ConvertTicksToX(static_cast<double>(tick),
+                                                           wire_ids.front().planeID());
 
-            auto row = properties[view_idx].row(x_drift_pos);
-            auto col = properties[view_idx].col(wire_coord);
+            auto row = ctx.properties[view_idx].row(x_drift_pos);
+            auto col = ctx.properties[view_idx].col(wire_coord);
             if (!row || !col) {
                 continue;
             }
@@ -280,29 +232,29 @@ inline void image::PixelImageBuilder::fillDetectorImage(
             if (hit_index < filtered_hits.size() &&
                 filtered_hits[hit_index]->StartTick() <= tick &&
                 tick < filtered_hits[hit_index]->EndTick()) {
-                if (adcs[adc_index] > adc_image_threshold) {
+                if (adcs[adc_index] > ctx.adc_image_threshold) {
                     float out_val = adcs[adc_index];
-                    if (calo_alg && clock_data && detprop_data) {
-                        const double pitch_cm_drift = properties[view_idx].pixel_w();
+                    if (ctx.calo_alg && ctx.clock_data && ctx.detprop_data) {
+                        const double pitch_cm_drift = ctx.properties[view_idx].pixel_w();
                         if (pitch_cm_drift > 0.) {
                             const double dQdx_ADC = static_cast<double>(adcs[adc_index]) / pitch_cm_drift;
                             const unsigned plane = wire_ids.front().planeID().Plane;
                             const double time_tick = static_cast<double>(tick);
                             const double dEdx_MeV_cm =
-                                calo_alg->dEdx_AMP(*clock_data, *detprop_data,
-                                                   dQdx_ADC, time_tick, plane,
-                                                   /*T0=*/T0_ticks);
+                                ctx.calo_alg->dEdx_AMP(*ctx.clock_data, *ctx.detprop_data,
+                                                       dQdx_ADC, time_tick, plane,
+                                                       ctx.T0_ticks);
                             out_val = static_cast<float>(dEdx_MeV_cm);
                         }
                     }
-                    detector_images[view_idx].set(*row, *col, out_val);
+                    ctx.detector_images[view_idx].set(*row, *col, out_val);
 
-                    if (!is_data) {
+                    if (!ctx.is_data) {
                         auto semantic_pixel_label = labelSemanticPixels(
-                            filtered_hits[hit_index], mcp_bkth_assoc, mcp_vector,
-                            trackid_to_index, semantic_label_vector, has_mcps);
+                            filtered_hits[hit_index], ctx.mcp_bkth_assoc, ctx.mcp_vector,
+                            ctx.trackid_to_index, ctx.semantic_label_vector, ctx.has_mcps);
 
-                        semantic_images[view_idx].set(
+                        ctx.semantic_images[view_idx].set(
                             *row, *col,
                             static_cast<int>(semantic_pixel_label), false);
                     }
@@ -312,49 +264,14 @@ inline void image::PixelImageBuilder::fillDetectorImage(
     }
 }
 
-inline void image::PixelImageBuilder::constructPixelImages(
+inline void image::PixelImageBuilder::build(
     const art::Event &event,
     const std::vector<art::Ptr<recob::Hit>> &hits,
     const std::vector<ImageProperties> &properties,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images,
-    bool is_data,
-    const art::InputTag &wire_producer,
-    const art::InputTag &hit_producer,
-    const art::InputTag &mcp_producer,
-    const art::InputTag &bkt_producer,
-    const geo::GeometryCore *geo,
     const detinfo::DetectorProperties *detp,
-    float adc_image_threshold,
-    SemanticClassifier *semantic_classifier,
-    const std::set<unsigned int> &bad_channels) {
-    constructPixelImages(event, hits, properties, detector_images, semantic_images,
-                         is_data, wire_producer, hit_producer, mcp_producer, bkt_producer,
-                         geo, detp, adc_image_threshold, semantic_classifier, bad_channels,
-                         /*calo_alg*/nullptr, /*clock_data*/nullptr, /*detprop_data*/nullptr,
-                         /*T0_ticks*/0.0);
-}
-
-inline void image::PixelImageBuilder::constructPixelImages(
-    const art::Event &event,
-    const std::vector<art::Ptr<recob::Hit>> &hits,
-    const std::vector<ImageProperties> &properties,
-    std::vector<Image<float>> &detector_images,
-    std::vector<Image<int>> &semantic_images,
-    bool is_data,
-    const art::InputTag &wire_producer,
-    const art::InputTag &hit_producer,
-    const art::InputTag &mcp_producer,
-    const art::InputTag &bkt_producer,
-    const geo::GeometryCore *geo,
-    const detinfo::DetectorProperties *detp,
-    float adc_image_threshold,
-    SemanticClassifier *semantic_classifier,
-    const std::set<unsigned int> &bad_channels,
-    calo::CalorimetryAlg* calo_alg,
-    detinfo::DetectorClocksData const* clock_data,
-    detinfo::DetectorPropertiesData const* detprop_data,
-    double T0_ticks) {
+    std::optional<CalibrationContext> const& cal) const {
     detector_images.clear();
     semantic_images.clear();
     for (const auto &prop : properties) {
@@ -368,85 +285,56 @@ inline void image::PixelImageBuilder::constructPixelImages(
     }
 
     auto wire_vector =
-        event.getValidHandle<std::vector<recob::Wire>>(wire_producer);
+        event.getValidHandle<std::vector<recob::Wire>>(opts_.producers.wire);
     auto hit_vector =
-        event.getValidHandle<std::vector<recob::Hit>>(hit_producer);
+        event.getValidHandle<std::vector<recob::Hit>>(opts_.producers.hit);
     art::Handle<std::vector<simb::MCParticle>> mcp_vector;
-    bool has_mcps = event.getByLabel(mcp_producer, mcp_vector);
-    art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, hit_producer);
+    bool has_mcps = event.getByLabel(opts_.producers.mcp, mcp_vector);
+    art::FindManyP<recob::Hit> wire_hit_assoc(wire_vector, event, opts_.producers.hit);
     art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
-        mcp_bkth_assoc(hit_vector, event, bkt_producer);
+        mcp_bkth_assoc(hit_vector, event, opts_.producers.bkt);
     std::vector<SemanticClassifier::SemanticLabel> semantic_label_vector;
-    if (!is_data && has_mcps && mcp_vector.isValid() && semantic_classifier) {
-        semantic_label_vector = semantic_classifier->classifyParticles(event);
+    if (!opts_.is_data && has_mcps && mcp_vector.isValid() && opts_.semantic) {
+        semantic_label_vector = opts_.semantic->classifyParticles(event);
     }
     std::map<int, size_t> trackid_to_index;
-    if (!is_data && has_mcps && mcp_vector.isValid()) {
+    if (!opts_.is_data && has_mcps && mcp_vector.isValid()) {
         for (size_t i = 0; i < mcp_vector->size(); ++i) {
             trackid_to_index[mcp_vector->at(i).TrackId()] = i;
         }
     }
 
     std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
+    calo::CalorimetryAlg* calo_alg = (cal && cal->enabled()) ? cal->calo : nullptr;
+    detinfo::DetectorClocksData const* clock_data = (cal && cal->enabled()) ? cal->clock : nullptr;
+    detinfo::DetectorPropertiesData const* detprop_data = (cal && cal->enabled()) ? cal->detprop : nullptr;
+    double T0_ticks = (cal && cal->enabled()) ? cal->T0_ticks : 0.0;
+
+    BuildContext ctx{
+        properties,
+        detector_images,
+        semantic_images,
+        wire_hit_assoc,
+        hit_set,
+        mcp_bkth_assoc,
+        mcp_vector,
+        trackid_to_index,
+        semantic_label_vector,
+        opts_.is_data,
+        has_mcps,
+        geo_,
+        detp,
+        opts_.adc_threshold,
+        opts_.bad_channels,
+        calo_alg,
+        clock_data,
+        detprop_data,
+        T0_ticks
+    };
+
     for (size_t wire_idx = 0; wire_idx < wire_vector->size(); ++wire_idx) {
-        fillDetectorImage(wire_vector->at(wire_idx), wire_idx, properties,
-                          wire_hit_assoc, hit_set, mcp_bkth_assoc, mcp_vector,
-                          trackid_to_index, semantic_label_vector,
-                          detector_images, semantic_images, is_data, has_mcps,
-                          geo, detp, adc_image_threshold, bad_channels,
-                          calo_alg, clock_data, detprop_data, T0_ticks);
+        fillDetectorImage(wire_vector->at(wire_idx), wire_idx, hit_set, ctx);
     }
 }
 
-inline void image::PixelImageBuilder::build(
-    const art::Event &event,
-    const std::vector<art::Ptr<recob::Hit>> &hits,
-    const std::vector<ImageProperties> &properties,
-    std::vector<Image<float>> &detector_images,
-    std::vector<Image<int>> &semantic_images,
-    const detinfo::DetectorProperties *detp,
-    std::optional<CalibrationContext> const& cal) const {
-
-    detector_images.clear();
-    semantic_images.clear();
-
-    if (!opts_.bad_channels) {
-        static const std::set<unsigned int> kEmptyBad{};
-        if (cal && cal->enabled()) {
-            constructPixelImages(event, hits, properties, detector_images,
-                                 semantic_images, opts_.is_data,
-                                 opts_.producers.wire, opts_.producers.hit,
-                                 opts_.producers.mcp, opts_.producers.bkt, geo_,
-                                 detp, opts_.adc_threshold, opts_.semantic,
-                                 kEmptyBad, cal->calo, cal->clock, cal->detprop,
-                                 cal->T0_ticks);
-        } else {
-            constructPixelImages(event, hits, properties, detector_images,
-                                 semantic_images, opts_.is_data,
-                                 opts_.producers.wire, opts_.producers.hit,
-                                 opts_.producers.mcp, opts_.producers.bkt, geo_,
-                                 detp, opts_.adc_threshold, opts_.semantic,
-                                 kEmptyBad);
-        }
-        return;
-    }
-
-    if (cal && cal->enabled()) {
-        constructPixelImages(event, hits, properties, detector_images,
-                             semantic_images, opts_.is_data,
-                             opts_.producers.wire, opts_.producers.hit,
-                             opts_.producers.mcp, opts_.producers.bkt, geo_,
-                             detp, opts_.adc_threshold, opts_.semantic,
-                             *opts_.bad_channels, cal->calo, cal->clock,
-                             cal->detprop, cal->T0_ticks);
-    } else {
-        constructPixelImages(event, hits, properties, detector_images,
-                             semantic_images, opts_.is_data,
-                             opts_.producers.wire, opts_.producers.hit,
-                             opts_.producers.mcp, opts_.producers.bkt, geo_,
-                             detp, opts_.adc_threshold, opts_.semantic,
-                             *opts_.bad_channels);
-    }
-}
-
-#endif // IMAGEPRODUCTION_H
+#endif
