@@ -44,40 +44,10 @@
 #include "sbndcode/BlipReco/Alg/BlipRecoAlg.h"
 
 using image::Image;
+using image::ImageCentering;
 using image::ImageProperties;
 using image::PlaneImage;
 using image::SemanticClassifier;
-
-namespace {
-static std::pair<double, double>
-centroidWithinRadius(const art::Event &event, common::PandoraView view,
-                     const std::vector<art::Ptr<recob::Hit>> &hits,
-                     double radius, const std::set<unsigned int> &bad_channels,
-                     double vtx_z, double vtx_x) {
-    double W = 0.0;
-    double Zs = 0.0;
-    double Xs = 0.0;
-    for (auto const &h : hits) {
-        if (bad_channels.count(h->Channel()))
-            continue;
-        if (common::GetPandoraView(h) != view)
-            continue;
-        double q = std::max(0.f, h->Integral());
-        if (q <= 0)
-            continue;
-        TVector3 p = common::GetPandoraHitPosition(event, h, view);
-        double d = std::hypot(p.Z() - vtx_z, p.X() - vtx_x);
-        if (d <= radius) {
-            W += q;
-            Zs += q * p.Z();
-            Xs += q * p.X();
-        }
-    }
-    if (W == 0.0)
-        return {vtx_z, vtx_x};
-    return {Zs / W, Xs / W};
-}
-} // namespace
 
 class ImageProducer : public art::EDProducer {
   public:
@@ -385,12 +355,15 @@ void ImageProducer::produce(art::Event &event) {
     // Per-plane local charge centroids in (w_v, x) plane coords:
     // centroidWithinRadius returns (Z_like, X) in the Pandora view,
     // where Z_like corresponds to the per-view wire-perp (w_v).
-    auto cU = centroidWithinRadius(event, common::TPC_VIEW_U, neutrino_hits,
-                                   R_U, fBadChannels, vtxU.Z(), vtxU.X());
-    auto cV = centroidWithinRadius(event, common::TPC_VIEW_V, neutrino_hits,
-                                   R_V, fBadChannels, vtxV.Z(), vtxV.X());
-    auto cW = centroidWithinRadius(event, common::TPC_VIEW_W, neutrino_hits,
-                                   R_W, fBadChannels, vtxW.Z(), vtxW.X());
+    auto cU = ImageCentering::centroidWithinRadius(
+        event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
+        vtxU.Z(), vtxU.X());
+    auto cV = ImageCentering::centroidWithinRadius(
+        event, common::TPC_VIEW_V, neutrino_hits, R_V, fBadChannels,
+        vtxV.Z(), vtxV.X());
+    auto cW = ImageCentering::centroidWithinRadius(
+        event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
+        vtxW.Z(), vtxW.X());
 
     // Fuse to a single 3D anchor and re-project to each view (centre to same point):
     //   inputs: x_v = c?.second, w_v = c?.first
