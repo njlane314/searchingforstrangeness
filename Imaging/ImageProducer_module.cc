@@ -46,7 +46,7 @@
 using image::Image;
 using image::ImageCentering;
 using image::ImageProperties;
-using image::PlaneImage;
+using image::ImageProduct;
 using image::SemanticClassifier;
 
 class ImageProducer : public art::EDProducer {
@@ -141,8 +141,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
 
     fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
 
-    produces<std::vector<PlaneImage>>("primary_slice");
-    produces<std::vector<PlaneImage>>("all_hits");
+    produces<std::vector<ImageProduct>>("primary_slice");
+    produces<std::vector<ImageProduct>>("all_hits");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -409,7 +409,7 @@ void ImageProducer::produce(art::Event &event) {
 
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                          ImageProperties const &p, bool include_sem) {
-        PlaneImage out;
+        ImageProduct out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
         out.height = static_cast<uint32_t>(p.height());
@@ -425,8 +425,8 @@ void ImageProducer::produce(art::Event &event) {
         return out;
     };
 
-    auto out_slice = std::make_unique<std::vector<PlaneImage>>();
-    auto out_event = std::make_unique<std::vector<PlaneImage>>();
+    auto out_slice = std::make_unique<std::vector<ImageProduct>>();
+    auto out_event = std::make_unique<std::vector<ImageProduct>>();
     out_slice->reserve(3);
     out_event->reserve(3);
     for (size_t i = 0; i < 3; ++i) {

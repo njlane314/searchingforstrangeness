@@ -6,9 +6,9 @@
 
 #include <vector>
 
-template class std::vector<image::PlaneImage>;
-template class art::Wrapper<image::PlaneImage>;
-template class art::Wrapper<std::vector<image::PlaneImage>>;
+template class std::vector<image::ImageProduct>;
+template class art::Wrapper<image::ImageProduct>;
+template class art::Wrapper<std::vector<image::ImageProduct>>;
 
 template class art::Wrapper<image::InferencePerfProduct>;
 

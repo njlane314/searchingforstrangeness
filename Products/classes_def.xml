@@ -3,10 +3,10 @@
   <include file="Products/InferencePerf.h"/>
   <include file="Products/InferencePred.h"/>
 
-  <class name="image::PlaneImage"/>
-  <class name="std::vector<image::PlaneImage>"/>
-  <class name="art::Wrapper<image::PlaneImage>"/>
-  <class name="art::Wrapper<std::vector<image::PlaneImage>>"/>
+  <class name="image::ImageProduct"/>
+  <class name="std::vector<image::ImageProduct>"/>
+  <class name="art::Wrapper<image::ImageProduct>"/>
+  <class name="art::Wrapper<std::vector<image::ImageProduct>>"/>
   <class name="image::ModelPerf"/>
   <class name="std::vector<image::ModelPerf>"/>
   <class name="art::Wrapper<std::vector<image::ModelPerf>>"/>

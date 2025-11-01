@@ -38,7 +38,7 @@ namespace image {
             Perf perf;
         };
 
-        static Result runInference(const std::vector<PlaneImage> &detector_images,
+        static Result runInference(const std::vector<ImageProduct> &detector_images,
                                    const std::string &absolute_scratch_dir,
                                    const std::string &work_dir,
                                    const std::string &arch,
@@ -78,7 +78,7 @@ namespace _binary_io {
 }
 
 inline InferenceProduction::Result InferenceProduction::runInference(
-    const std::vector<PlaneImage> &detector_images,
+    const std::vector<ImageProduct> &detector_images,
     const std::string &absolute_scratch_dir, const std::string &work_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,
