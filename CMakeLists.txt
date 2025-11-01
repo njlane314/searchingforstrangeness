@@ -27,21 +27,31 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            larsim_Simulation nutools_ParticleNavigation
                            lardataobj_Simulation
                            lardataobj_RecoBase
+                           lardataobj_RawData
+                           lardataobj_AnalysisBase
                            lardataobj_MCBase
                            lardata_Utilities
-			               nusimdata_SimulationBase
+                           lardata_RecoObjects
+                           lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+                           lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
+                           nusimdata_SimulationBase
                            larevt_Filters
                            larsim_MCCheater_BackTrackerService_service
                            larsim_MCCheater_ParticleInventoryService_service
-                           lardataobj_RawData
                            larevt_CalibrationDBI_Providers
                            nutools_RandomUtils_NuRandomService_service
+                           ubreco_SelectionTool_OpT0FinderBase
+                           ubreco_SelectionTool_OpT0FinderAlgorithms
+                           ubreco_BlipRecoAlg
+                           larreco_RecoAlg
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_PRINCIPAL}
                            ${ART_FRAMEWORK_SERVICES_REGISTRY}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL_RANDOMNUMBERGENERATOR_SERVICE}
                            ${ART_FRAMEWORK_SERVICES_OPTIONAL_TFILESERVICE_SERVICE}
+                           ${ART_FRAMEWORK_SERVICES_BASIC}
+                           ${ART_FRAMEWORK_SERVICES_SYSTEM}
                            art_Persistency_Common
                            art_Persistency_Provenance
                            art_Utilities
@@ -58,8 +68,8 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            ${ROOT_BASIC_LIB_LIST}
                            ${ROOT_EG}
                            ${ROOT_MINUIT}
-            		   	   ${PANDORASDK}
-			   			   larpandora_LArPandoraInterface
+                           ${PANDORASDK}
+                           larpandora_LArPandoraInterface
                            ${PYTHON_LIBRARY}
                            larreco_Calorimetry
                            pthread
