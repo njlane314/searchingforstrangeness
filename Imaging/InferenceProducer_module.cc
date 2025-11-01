@@ -57,9 +57,9 @@ std::string resolve_under(const std::string &base, const std::string &value) {
     return join_path(base, value);
 }
 
-const image::PlaneImage *find_view(std::vector<image::PlaneImage> const &planes,
-                                   geo::View_t view,
-                                   const image::PlaneImage *fallback) {
+const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &planes,
+                                     geo::View_t view,
+                                     const image::ImageProduct *fallback) {
     for (auto const &plane : planes) {
         if (plane.view == static_cast<int>(view))
             return &plane;
@@ -125,7 +125,7 @@ InferenceProducerModule::InferenceProducerModule(
 }
 
 void InferenceProducerModule::produce(art::Event &e) {
-    auto planes = e.getValidHandle<std::vector<image::PlaneImage>>(planes_tag_);
+    auto planes = e.getValidHandle<std::vector<image::ImageProduct>>(planes_tag_);
     if (planes->size() < 3) {
         throw cet::exception("InferenceProduction")
             << "Need at least three planes (U,V,W), got " << planes->size();
@@ -140,11 +140,11 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    image::PlaneImage u = *U;
-    image::PlaneImage v = *V;
-    image::PlaneImage w = *W;
+    image::ImageProduct u = *U;
+    image::ImageProduct v = *V;
+    image::ImageProduct w = *W;
 
-    std::vector<image::PlaneImage> detector_images;
+    std::vector<image::ImageProduct> detector_images;
     detector_images.reserve(3);
     detector_images.emplace_back(std::move(u));
     detector_images.emplace_back(std::move(v));
