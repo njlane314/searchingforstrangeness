@@ -1,0 +1,51 @@
+#include "job/selectionconfig.fcl"
+
+process_name: Imaging
+
+services: {
+    TFileService: { fileName: "imaging.root" }
+    TimeTracker: {}
+    MemoryTracker: {}
+    RandomNumberGenerator: {}
+    Geometry: @local::microboone_geo
+    DetectorPropertiesService: @local::microboone_detproperties
+    ParticleInventoryService: @local::standard_particleinventoryservice
+    LArProperties: @local::microboone_properties
+    DetectorClocksService: @local::microboone_detectorclocks
+    @table::microboone_services_reco
+    message: @local::standard_info
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+    module_type: RootInput
+    maxEvents: -1
+}
+
+physics: {
+    producers: {
+        imageprod: {
+            module_type: "ImageProducer"
+            PFPproducer: @local::standard_producers.PFPproducer
+            SLCproducer: @local::standard_producers.SLCproducer
+            HITproducer: @local::standard_producers.HITproducer
+            WIREproducer: @local::standard_producers.WIREproducer
+            MCPproducer: @local::standard_producers.MCPproducer
+            BKTproducer: @local::standard_producers.BKTproducer
+            BadChannelFile: "assets/badchannels.txt"
+            ContainerImage: "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod"
+            Models: []
+            ActiveModels: []
+            WantClassification: false
+            WantSegmentation: false
+        }
+    }
+    path1: [ imageprod ]
+    trigger_paths: [ path1 ]
+}
