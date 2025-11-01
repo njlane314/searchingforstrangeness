@@ -24,14 +24,50 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>
 
 namespace image {
 
+// -----------------------------------------------------------------------------
+// Helper option bundles to reduce long argument lists
+struct PixelImageOptions {
+    bool is_data{false};
+    struct Producers {
+        art::InputTag wire;
+        art::InputTag hit;
+        art::InputTag mcp;
+        art::InputTag bkt;
+    } producers;
+    float adc_threshold{4.0f};
+    const std::set<unsigned int>* bad_channels{nullptr};
+    image::SemanticClassifier* semantic{nullptr};
+};
+
+struct CalibrationContext {
+    calo::CalorimetryAlg* calo{nullptr};
+    detinfo::DetectorClocksData const* clock{nullptr};
+    detinfo::DetectorPropertiesData const* detprop{nullptr};
+    double T0_ticks{0.0};
+    bool enabled() const { return calo && clock && detprop; }
+};
+
 class PixelImageBuilder {
 public:
+    PixelImageBuilder(geo::GeometryCore const& geo,
+                      PixelImageOptions const& opts)
+        : geo_{&geo}, opts_{opts} {}
+
+    void build(const art::Event &event,
+               const std::vector<art::Ptr<recob::Hit>> &hits,
+               const std::vector<ImageProperties> &properties,
+               std::vector<Image<float>> &detector_images,
+               std::vector<Image<int>> &semantic_images,
+               const detinfo::DetectorProperties *detp,
+               std::optional<CalibrationContext> const& cal = std::nullopt) const;
+
     static void constructPixelImages(const art::Event &event,
                                      const std::vector<art::Ptr<recob::Hit>> &hits,
                                      const std::vector<ImageProperties> &properties,
@@ -99,6 +135,9 @@ private:
         detinfo::DetectorClocksData const* clock_data,
         detinfo::DetectorPropertiesData const* detprop_data,
         double T0_ticks);
+
+    geo::GeometryCore const* geo_{nullptr};
+    PixelImageOptions opts_;
 };
 
 } // namespace image
@@ -359,5 +398,55 @@ inline void image::PixelImageBuilder::constructPixelImages(
     }
 }
 
+inline void image::PixelImageBuilder::build(
+    const art::Event &event,
+    const std::vector<art::Ptr<recob::Hit>> &hits,
+    const std::vector<ImageProperties> &properties,
+    std::vector<Image<float>> &detector_images,
+    std::vector<Image<int>> &semantic_images,
+    const detinfo::DetectorProperties *detp,
+    std::optional<CalibrationContext> const& cal) const {
+
+    detector_images.clear();
+    semantic_images.clear();
+
+    if (!opts_.bad_channels) {
+        static const std::set<unsigned int> kEmptyBad{};
+        if (cal && cal->enabled()) {
+            constructPixelImages(event, hits, properties, detector_images,
+                                 semantic_images, opts_.is_data,
+                                 opts_.producers.wire, opts_.producers.hit,
+                                 opts_.producers.mcp, opts_.producers.bkt, geo_,
+                                 detp, opts_.adc_threshold, opts_.semantic,
+                                 kEmptyBad, cal->calo, cal->clock, cal->detprop,
+                                 cal->T0_ticks);
+        } else {
+            constructPixelImages(event, hits, properties, detector_images,
+                                 semantic_images, opts_.is_data,
+                                 opts_.producers.wire, opts_.producers.hit,
+                                 opts_.producers.mcp, opts_.producers.bkt, geo_,
+                                 detp, opts_.adc_threshold, opts_.semantic,
+                                 kEmptyBad);
+        }
+        return;
+    }
+
+    if (cal && cal->enabled()) {
+        constructPixelImages(event, hits, properties, detector_images,
+                             semantic_images, opts_.is_data,
+                             opts_.producers.wire, opts_.producers.hit,
+                             opts_.producers.mcp, opts_.producers.bkt, geo_,
+                             detp, opts_.adc_threshold, opts_.semantic,
+                             *opts_.bad_channels, cal->calo, cal->clock,
+                             cal->detprop, cal->T0_ticks);
+    } else {
+        constructPixelImages(event, hits, properties, detector_images,
+                             semantic_images, opts_.is_data,
+                             opts_.producers.wire, opts_.producers.hit,
+                             opts_.producers.mcp, opts_.producers.bkt, geo_,
+                             detp, opts_.adc_threshold, opts_.semantic,
+                             *opts_.bad_channels);
+    }
+}
 
 #endif // IMAGEPRODUCTION_H
