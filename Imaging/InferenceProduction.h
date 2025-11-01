@@ -102,8 +102,6 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     string script_stdout = joinPath(absolute_scratch_dir, base.str() + "_py_script.out");
     string script_stderr = joinPath(absolute_scratch_dir, base.str() + "_py_script.err");
 
-    // NOTE: wrapper will also write a flat float32 sidecar "<result_bin>.feat.f32"
-
     auto t0 = std::chrono::steady_clock::now();
     const auto &U = detector_images[0].adc;
     const auto &V = detector_images[1].adc;
@@ -204,7 +202,6 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     out.perf.t_exec_total_ms = duration * 1000.0;
     out.perf.t_read_resp_ms  = std::chrono::duration<double, std::milli>(t3 - t2).count();
 
-    // Parse metrics text
     {
         std::ifstream m(meta_txt);
         if (m) {
@@ -215,7 +212,6 @@ inline InferenceProduction::Result InferenceProduction::runInference(
                 std::string key = line.substr(0, eq);
                 std::string val = line.substr(eq + 1);
 
-                // numeric parse
                 char *endp = nullptr;
                 double d = std::strtod(val.c_str(), &endp);
                 bool numeric = (endp != val.c_str());
@@ -253,8 +249,6 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     std::remove(script_stdout.c_str());
     std::remove(script_stderr.c_str());
     std::remove(meta_txt.c_str());
-    // keep the .feat.f32 if you want to inspect offline (we do not delete here)
-
     return out;
 }
 
