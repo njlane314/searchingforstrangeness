@@ -99,7 +99,6 @@ class ImageProducer : public art::EDProducer {
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
     fhicl::ParameterSet                fBlipAlgPSet;
     art::InputTag                      fBlipAlgHitProducer;
-    bool                               fIgnoreBlipHits{true};
 
     int fImgW{512};
     int fImgH{512};
@@ -137,8 +136,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
     fT0producer = p.get<art::InputTag>("T0producer", art::InputTag{});
     fIsData = p.get<bool>("IsData", false);
-    fIgnoreBlipHits = p.get<bool>("IgnoreBlipHits", true);
-
     if (p.has_key("BlipAlg")) {
         fBlipAlgPSet = p.get<fhicl::ParameterSet>("BlipAlg");
         fBlipAlg = std::make_unique<blip::BlipRecoAlg>(fBlipAlgPSet);
@@ -265,8 +262,6 @@ std::optional<std::pair<art::ProductID, std::vector<uint8_t>>>
 ImageProducer::buildBlipMask(art::Event &event) {
     if (!fBlipAlg)
         return std::nullopt;
-    if (!fIgnoreBlipHits)
-        return std::nullopt;
 
     fBlipAlg->RunBlipReco(event);
 
@@ -328,7 +323,7 @@ void ImageProducer::produce(art::Event &event) {
         }
     }
 
-    if (fIgnoreBlipHits && fBlipAlg) {
+    if (fBlipAlg) {
         if (auto mask = buildBlipMask(event)) {
             const art::ProductID pid = mask->first;
             const auto &isBlip = mask->second;
