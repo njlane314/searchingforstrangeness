@@ -11,6 +11,10 @@ include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/
 set(PYTHON_LIB_DIR /cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib)
 set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
 
+# Always add lardata include path (needed for lardata/DetectorInfo/DetectorProperties.h)
+find_ups_product(lardata)
+include_directories(${LARDATA_INC})
+
 add_subdirectory(Common)
 add_subdirectory(Products)
 add_subdirectory(SelectionTools)
