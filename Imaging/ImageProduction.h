@@ -23,10 +23,15 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardataalg/DetectorInfo/DetectorClocksData.h"
-#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
-#include "lardataalg/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+
+namespace detinfo {
+  using DetectorClocksData     = detinfo::DetectorClocks;
+  using DetectorPropertiesData = detinfo::DetectorProperties;
+}
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
