@@ -380,7 +380,7 @@ void ImageProducer::produce(art::Event &event) {
     opts.bad_channels  = &fBadChannels;
     opts.semantic      = fSemantic.get();
 
-    image::PixelImageBuilder builder(*fGeo, opts);
+    image::ImageProduction builder(*fGeo, opts);
 
     std::optional<image::CalibrationContext> cal;
     if (fCalo) {

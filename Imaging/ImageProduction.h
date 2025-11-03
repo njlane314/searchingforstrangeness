@@ -234,10 +234,10 @@ inline double sum_adc_weights_in_window(std::vector<RangeRef> const& ranges,
 
 // ============================ Builder ============================
 
-class PixelImageBuilder {
+class ImageProduction {
 public:
-    PixelImageBuilder(geo::GeometryCore const& geo,
-                      PixelImageOptions const& opts)
+    ImageProduction(geo::GeometryCore const& geo,
+                    PixelImageOptions const& opts)
         : geo_{&geo}, opts_{opts} {}
 
     void build(const art::Event &event,
@@ -333,7 +333,7 @@ private:
 // ----------------- Implementation -----------------
 
 inline SemanticClassifier::SemanticLabel
-PixelImageBuilder::labelSemanticPixels(
+ImageProduction::labelSemanticPixels(
     const art::Ptr<recob::Hit> &matched_hit,
     const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
     const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
@@ -368,7 +368,7 @@ PixelImageBuilder::labelSemanticPixels(
     return semantic_label_vector[idx];
 }
 
-inline void PixelImageBuilder::paint_hit_energy(
+inline void ImageProduction::paint_hit_energy(
     recob::Hit const& hit,
     recob::Wire const& wire,
     geo::PlaneID const& planeID,
@@ -445,7 +445,7 @@ inline void PixelImageBuilder::paint_hit_energy(
     }
 }
 
-inline void PixelImageBuilder::fillDetectorImage(
+inline void ImageProduction::fillDetectorImage(
     const recob::Wire &wire,
     size_t wire_idx,
     const std::set<art::Ptr<recob::Hit>> &hit_set,
@@ -528,7 +528,7 @@ inline void PixelImageBuilder::fillDetectorImage(
     }
 }
 
-inline void PixelImageBuilder::build(
+inline void ImageProduction::build(
     const art::Event &event,
     const std::vector<art::Ptr<recob::Hit>> &hits,
     const std::vector<ImageProperties> &properties,
