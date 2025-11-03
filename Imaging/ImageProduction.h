@@ -23,13 +23,10 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfo/DetectorClocks.h"
 #include "lardata/DetectorInfo/DetectorProperties.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 namespace detinfo {
-  using DetectorClocksData     = detinfo::DetectorClocks;
   using DetectorPropertiesData = detinfo::DetectorProperties;
 }
 
@@ -83,7 +80,6 @@ struct PixelImageOptions {
 
 struct CalibrationContext {
     calo::CalorimetryAlg* calo{nullptr};
-    detinfo::DetectorClocksData const* clock{nullptr};
     detinfo::DetectorPropertiesData const* detprop{nullptr};
 
     lariov::TPCEnergyCalib const* tpcCalib{nullptr};
@@ -93,7 +89,7 @@ struct CalibrationContext {
 
     double T0_ticks{0.0};
 
-    bool enabled() const { return calo && clock && detprop; }
+    bool enabled() const { return calo && detprop; }
 };
 
 // ============================== Helpers ===============================
@@ -159,13 +155,13 @@ inline double yz_gain_corr(lariov::TPCEnergyCalib const* tpcCalib,
 }
 
 inline double lifetime_corr(lariov::UBElectronLifetime const* lifetime,
-                            detinfo::DetectorClocksData const* clock,
+                            detinfo::DetectorPropertiesData const* detprop,
                             double T0_ticks,
                             double tick,
                             bool apply_lifetime)
 {
-    if (!lifetime || !clock || !apply_lifetime) return 1.0;
-    const double tick_us = clock->TPCClock().TickPeriod(); // us
+    if (!lifetime || !detprop || !apply_lifetime) return 1.0;
+    const double tick_us = detprop->SamplingRate() * 1e-3; // ns -> us
     const double t_ms    = (tick - T0_ticks) * tick_us * 1e-3;
     const double tau_ms  = lifetime->Lifetime();
     if (tau_ms <= 0.0) return 1.0;
@@ -280,7 +276,6 @@ private:
 
         // Calibration & services
         calo::CalorimetryAlg* calo_alg;
-        detinfo::DetectorClocksData const* clock_data;
         detinfo::DetectorPropertiesData const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
         lariov::UBElectronLifetime const* lifetime;
@@ -396,7 +391,7 @@ inline void ImageProduction::paint_hit_energy(
     // Per-hit calibrations
     const unsigned plane = planeID.Plane;
     const double yz    = cal::yz_gain_corr(ctx.tpcCalib, plane, p, ctx.apply_yz);
-    const double life  = cal::lifetime_corr(ctx.lifetime, ctx.clock_data, ctx.T0_ticks, tick_c, ctx.apply_lifetime);
+    const double life  = cal::lifetime_corr(ctx.lifetime, ctx.detprop_data, ctx.T0_ticks, tick_c, ctx.apply_lifetime);
     double Q_e         = cal::electrons_from_adc_area(ctx.calo_alg, hit, plane) * yz * life;
 
     const double E_loc = cal::local_efield_kV_cm(ctx.sce, ctx.detprop_data, p, ctx.apply_sce_efield);
@@ -598,7 +593,6 @@ inline void ImageProduction::build(
         opts_.adc_threshold,
         {}, // merged_bad populated below
         (cal && cal->enabled()) ? cal->calo      : nullptr,
-        (cal && cal->enabled()) ? cal->clock     : nullptr,
         (cal && cal->enabled()) ? cal->detprop   : nullptr,
         (cal && cal->enabled()) ? cal->tpcCalib  : nullptr,
         (cal && cal->enabled()) ? cal->lifetime  : nullptr,
