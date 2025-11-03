@@ -23,8 +23,8 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
-#include "lardataalg/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "lardataobj/RecoBase/Hit.h"
