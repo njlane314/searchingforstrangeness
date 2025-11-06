@@ -15,7 +15,6 @@
 
 namespace image {
 
-// Median of three (robust to one outlier)
 inline double median3(double a, double b, double c) {
     if (a > b) std::swap(a, b);
     if (b > c) std::swap(b, c);
@@ -23,13 +22,12 @@ inline double median3(double a, double b, double c) {
     return b;
 }
 
-// "Median" of two is their average in common practice
 inline double median2(double a, double b) { return 0.5 * (a + b); }
 
 struct FusedAnchor {
-    double x_star;                  // X*
-    double Y_star, Z_star;          // Y*, Z*
-    double wU_star, wV_star, wW_star; // projected to U,V,W
+    double x_star;                  
+    double Y_star, Z_star;          
+    double wU_star, wV_star, wW_star; 
 };
 
 class ImageCentering {
@@ -65,14 +63,6 @@ class ImageCentering {
     }
 };
 
-// Implements the equations from your spec:
-//   x*  = median(x_U, x_V, x_W)
-//   Z*  = median(w_W, w_U + w_V)
-//   Y*  = (w_V - w_U) / sqrt(3)
-// and
-//   w_U* = 0.5 Z* - (sqrt(3)/2) Y*
-//   w_V* = 0.5 Z* + (sqrt(3)/2) Y*
-//   w_W* = Z*
 inline FusedAnchor fuse_and_project(double xU, double wU,
                                     double xV, double wV,
                                     double xW, double wW)
@@ -88,4 +78,4 @@ inline FusedAnchor fuse_and_project(double xU, double wU,
     return {x_star, Y_star, Z_star, wU_star, wV_star, wW_star};
 }
 
-} // namespace image
+} 
