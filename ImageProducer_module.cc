@@ -384,9 +384,12 @@ void ImageProducer::produce(art::Event &event) {
 
     std::optional<image::CalibrationContext> cal;
     if (fCalo) {
-        cal = image::CalibrationContext{
-            fCalo.get(), &clockData, &detPropDAT, T0_ticks
-        };
+        image::CalibrationContext tmp;
+        tmp.calo = fCalo.get();
+        tmp.clocks = &clockData;
+        tmp.detprop = &detPropDAT;
+        tmp.T0_ticks = T0_ticks;
+        cal = tmp;
     }
 
     builder.build(

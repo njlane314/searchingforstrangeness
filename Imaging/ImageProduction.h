@@ -23,6 +23,7 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
+#include "lardata/DetectorInfo/DetectorClocksData.h"
 #include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -75,6 +76,7 @@ struct PixelImageOptions {
 
 struct CalibrationContext {
     calo::CalorimetryAlg* calo{nullptr};
+    detinfo::DetectorClocksData const* clocks{nullptr};
     detinfo::DetectorPropertiesData const* detprop{nullptr};
 
     lariov::TPCEnergyCalib const* tpcCalib{nullptr};
@@ -84,7 +86,7 @@ struct CalibrationContext {
 
     double T0_ticks{0.0};
 
-    bool enabled() const { return calo && detprop; }
+    bool enabled() const { return calo && clocks && detprop; }
 };
 
 namespace cal {
@@ -261,6 +263,7 @@ private:
 
         
         calo::CalorimetryAlg* calo_alg;
+        detinfo::DetectorClocksData const* clocks;
         detinfo::DetectorPropertiesData const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
         lariov::UBElectronLifetime const* lifetime;
@@ -363,35 +366,28 @@ inline void ImageProduction::paint_hit_energy(
 {
     const int tick_start = hit.StartTick();
     const int tick_end   = hit.EndTick();
-
-    
     const double tick_c = static_cast<double>(hit.PeakTime());
-
-    
     auto p_nom = cal::nominal_point_from_tick(ctx.detp_api, ctx.detprop_data, planeID, tick_c, wire_center);
     auto p = cal::correct_spacepoint(ctx.sce, p_nom, ctx.apply_sce_spatial);
-
-    
     const unsigned plane = planeID.Plane;
-    const double yz    = cal::yz_gain_corr(ctx.tpcCalib, plane, p, ctx.apply_yz);
-    const double life  = cal::lifetime_corr(ctx.lifetime, ctx.detprop_data, ctx.T0_ticks, tick_c, ctx.apply_lifetime);
-    double Q_e         = cal::electrons_from_adc_area(ctx.calo_alg, hit, plane) * yz * life;
-
+    const double yz = cal::yz_gain_corr(ctx.tpcCalib, plane, p, ctx.apply_yz);
+    double Q_e = cal::electrons_from_adc_area(ctx.calo_alg, hit, plane) * yz;
+    double pitch_cm = 1.0;
+    if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(planeID).WirePitch());
+    const double dQdx_e = (pitch_cm > 0.0) ? (Q_e / pitch_cm) : 0.0;
     const double E_loc = cal::local_efield_kV_cm(ctx.sce, ctx.detprop_data, p, ctx.apply_sce_efield);
-    const double recomb = cal::modbox_recomb(static_cast<double>(ctx.assumed_dEdx),
-                                             E_loc, ctx.LArDensity,
-                                             static_cast<double>(ctx.modbox_A),
-                                             static_cast<double>(ctx.modbox_B));
-
-    const double E_hit_MeV = cal::energy_from_electrons(Q_e, recomb, ctx.WionMeVPerElectron);
-
-    
+    double T0_ns = 0.0;
+    if (ctx.detprop_data) T0_ns = ctx.detprop_data->SamplingRate() * ctx.T0_ticks;
+    const double phi = 0.0;
+    double dEdx_MeV_cm = 0.0;
+    if (ctx.calo_alg && ctx.detprop_data && ctx.clocks) {
+        dEdx_MeV_cm = ctx.calo_alg->dEdx_from_dQdx_e(
+            *ctx.clocks, *ctx.detprop_data, dQdx_e, tick_c, T0_ns, E_loc, phi);
+    }
+    const double E_hit_MeV = dEdx_MeV_cm * pitch_cm;
     const double sumw = cal::sum_adc_weights_in_window(roi_ranges, tick_start, tick_end, ctx.adc_image_threshold);
-
-    
     const double wire_coord = cal::wire_column_coordinate(view, wire_center);
 
-    
     for (auto const& rr : roi_ranges) {
         const int rbeg = rr.begin;
         const int rend = rbeg + static_cast<int>(rr.adcs->size());
@@ -576,6 +572,7 @@ inline void ImageProduction::build(
         opts_.adc_threshold,
         {}, 
         (cal && cal->enabled()) ? cal->calo      : nullptr,
+        (cal && cal->enabled()) ? cal->clocks    : nullptr,
         (cal && cal->enabled()) ? cal->detprop   : nullptr,
         (cal && cal->enabled()) ? cal->tpcCalib  : nullptr,
         (cal && cal->enabled()) ? cal->lifetime  : nullptr,
