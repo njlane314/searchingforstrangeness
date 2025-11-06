@@ -167,7 +167,7 @@ class SemanticClassifier {
     private:
     art::InputTag fMCPproducer;
 };
-} // namespace image
+} 
 
-#endif // SEMANTICCLASSIFIER_H
+#endif 
 

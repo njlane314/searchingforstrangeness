@@ -106,6 +106,6 @@ class Image {
     ImageProperties prop_;
     std::vector<T> pixels_;
 };
-} // namespace image
+} 
 
-#endif // IMAGE_H
+#endif 

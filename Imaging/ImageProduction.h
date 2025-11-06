@@ -42,8 +42,6 @@
 
 namespace image {
 
-// ========================== Options & Context ==========================
-
 struct PixelImageOptions {
     bool is_data{false};
     struct Producers {
@@ -51,25 +49,25 @@ struct PixelImageOptions {
         art::InputTag hit;
         art::InputTag mcp;
         art::InputTag bkt;
-        art::InputTag bad; // optional per-event bad-channel product (vector<int>)
+        art::InputTag bad; 
     } producers;
 
     float adc_threshold{4.0f};
-    const std::set<unsigned int>* bad_channels{nullptr}; // optional static mask
+    const std::set<unsigned int>* bad_channels{nullptr}; 
     image::SemanticClassifier* semantic{nullptr};
 
-    // Calorimetry & corrections toggles (match BlipRecoAlg)
-    int  calo_plane{2};           // collection by default
+    
+    int  calo_plane{2};           
     bool apply_yz{true};
     bool apply_lifetime{true};
     bool apply_sce_spatial{true};
     bool apply_sce_efield{true};
     bool veto_noisy{false};
 
-    // Modified Box parameters and assumed dE/dx (same as blips)
+    
     float modbox_A{0.93f};
     float modbox_B{0.212f};
-    float assumed_dEdx{2.8f}; // MeV/cm
+    float assumed_dEdx{2.8f}; 
 
     enum class ValueMode { ADC, dEdx, Energy };
     ValueMode value_mode{ValueMode::Energy};
@@ -89,11 +87,7 @@ struct CalibrationContext {
     bool enabled() const { return calo && detprop; }
 };
 
-// ============================== Helpers ===============================
-
 namespace cal {
-
-// --- geometry mapping ---
 
 inline geo::Point_t nominal_point_from_tick(detinfo::DetectorProperties const* detp_api,
                                             detinfo::DetectorPropertiesData const* detprop,
@@ -101,7 +95,7 @@ inline geo::Point_t nominal_point_from_tick(detinfo::DetectorProperties const* d
                                             double tick,
                                             TVector3 const& wire_center)
 {
-    (void)detp_api; // kept for signature parity with your original interfaces
+    (void)detp_api; 
     double x_nom = detprop->ConvertTicksToX(tick, planeID);
     return geo::Point_t{x_nom, wire_center.Y(), wire_center.Z()};
 }
@@ -140,8 +134,6 @@ inline double wire_column_coordinate(geo::View_t view, TVector3 const& wire_cent
     return                    wire_center.Z() * std::cos(minus60) - wire_center.Y() * std::sin(minus60);
 }
 
-// --- calibrations and physics ---
-
 inline double yz_gain_corr(lariov::TPCEnergyCalib const* tpcCalib,
                            unsigned plane,
                            geo::Point_t const& p,
@@ -158,7 +150,7 @@ inline double lifetime_corr(lariov::UBElectronLifetime const* lifetime,
                             bool apply_lifetime)
 {
     if (!lifetime || !detprop || !apply_lifetime) return 1.0;
-    const double tick_us = detprop->SamplingRate() * 1e-3; // ns -> us
+    const double tick_us = detprop->SamplingRate() * 1e-3; 
     const double t_ms    = (tick - T0_ticks) * tick_us * 1e-3;
     const double tau_ms  = lifetime->Lifetime();
     if (tau_ms <= 0.0) return 1.0;
@@ -191,9 +183,9 @@ inline double modbox_recomb(double dEdx_MeV_cm,
                             double LArDensity_g_cm3,
                             double A, double B)
 {
-    // same as your BlipRecoAlg
+    
     const double Xi = (B * dEdx_MeV_cm) / (Efield_kV_cm * LArDensity_g_cm3);
-    return std::log(A + Xi) / Xi; // fraction of charge that survives
+    return std::log(A + Xi) / Xi; 
 }
 
 inline double energy_from_electrons(double Q_electrons,
@@ -203,8 +195,6 @@ inline double energy_from_electrons(double Q_electrons,
     if (recomb <= 0.0) return 0.0;
     return Q_electrons * (1.0 / recomb) * Wion_MeV_per_e;
 }
-
-// --- ROI utilities ---
 
 struct RangeRef { int begin; const std::vector<float>* adcs; };
 
@@ -228,9 +218,7 @@ inline double sum_adc_weights_in_window(std::vector<RangeRef> const& ranges,
     return sumw;
 }
 
-} // namespace cal
-
-// ============================ Builder ============================
+} 
 
 class ImageProduction {
 public:
@@ -268,10 +256,10 @@ private:
 
         float adc_image_threshold;
 
-        // Combined bad channels (static + per-event)
+        
         std::set<unsigned int> merged_bad;
 
-        // Calibration & services
+        
         calo::CalorimetryAlg* calo_alg;
         detinfo::DetectorPropertiesData const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
@@ -279,7 +267,7 @@ private:
         spacecharge::SpaceCharge const* sce;
         lariov::ChannelStatusProvider const* chan_status;
 
-        // Knobs
+        
         double T0_ticks{0.0};
         int  calo_plane{2};
         bool apply_yz{true};
@@ -292,8 +280,8 @@ private:
         float modbox_B{0.212f};
         float assumed_dEdx{2.8f};
 
-        // Material + constants
-        double LArDensity{1.396};         // overwritten from detprop when present
+        
+        double LArDensity{1.396};         
         double WionMeVPerElectron{2.36e-5};
 
         PixelImageOptions::ValueMode value_mode{PixelImageOptions::ValueMode::Energy};
@@ -326,8 +314,6 @@ private:
     geo::GeometryCore const* geo_{nullptr};
     PixelImageOptions opts_;
 };
-
-// ----------------- Implementation -----------------
 
 inline SemanticClassifier::SemanticLabel
 ImageProduction::labelSemanticPixels(
@@ -378,14 +364,14 @@ inline void ImageProduction::paint_hit_energy(
     const int tick_start = hit.StartTick();
     const int tick_end   = hit.EndTick();
 
-    // Representative tick (peak) for corrections
+    
     const double tick_c = static_cast<double>(hit.PeakTime());
 
-    // Build nominal point at tick_c, then SCE spatial correction
+    
     auto p_nom = cal::nominal_point_from_tick(ctx.detp_api, ctx.detprop_data, planeID, tick_c, wire_center);
     auto p = cal::correct_spacepoint(ctx.sce, p_nom, ctx.apply_sce_spatial);
 
-    // Per-hit calibrations
+    
     const unsigned plane = planeID.Plane;
     const double yz    = cal::yz_gain_corr(ctx.tpcCalib, plane, p, ctx.apply_yz);
     const double life  = cal::lifetime_corr(ctx.lifetime, ctx.detprop_data, ctx.T0_ticks, tick_c, ctx.apply_lifetime);
@@ -399,13 +385,13 @@ inline void ImageProduction::paint_hit_energy(
 
     const double E_hit_MeV = cal::energy_from_electrons(Q_e, recomb, ctx.WionMeVPerElectron);
 
-    // Sum ADC weights across this hit window
+    
     const double sumw = cal::sum_adc_weights_in_window(roi_ranges, tick_start, tick_end, ctx.adc_image_threshold);
 
-    // Column coordinate for this wire (fixed)
+    
     const double wire_coord = cal::wire_column_coordinate(view, wire_center);
 
-    // Paint energy across ticks ∝ ADC
+    
     for (auto const& rr : roi_ranges) {
         const int rbeg = rr.begin;
         const int rend = rbeg + static_cast<int>(rr.adcs->size());
@@ -417,7 +403,7 @@ inline void ImageProduction::paint_hit_energy(
             const float a = (*rr.adcs)[t - rbeg];
             if (a <= ctx.adc_image_threshold) continue;
 
-            // Row position from per-tick (SCE-corrected) X
+            
             auto row = cal::tick_to_corrected_row(ctx.detp_api, ctx.detprop_data, ctx.sce,
                                                   planeID, t, wire_center, ctx.apply_sce_spatial,
                                                   ctx.properties[view_idx]);
@@ -427,16 +413,16 @@ inline void ImageProduction::paint_hit_energy(
             const double w = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
             const float E_pix = static_cast<float>(E_hit_MeV * w);
 
-            // Accumulate; if your Image<T> lacks get(r,c), replace this with your accessor
+            
             const float prev = ctx.detector_images[view_idx].get(*row, *col);
             ctx.detector_images[view_idx].set(*row, *col, prev + E_pix);
 
-            // Optional semantic label (do not overwrite)
+            
             if (!ctx.is_data) {
-                // We need a Ptr<recob::Hit> for semantics; this function receives a const&.
-                // Callers invoke paint_hit_energy from within a loop over Ptr<recob::Hit>
-                // if they also want semantics. When called from fillDetectorImage (below),
-                // semantics are set there where Ptr<> is available.
+                
+                
+                
+                
             }
         }
     }
@@ -450,7 +436,7 @@ inline void ImageProduction::fillDetectorImage(
 {
     const unsigned ch = wire.Channel();
 
-    // Static + per-event channel veto
+    
     if (ctx.merged_bad.count(ch)) return;
     if (ctx.chan_status) {
         if (ctx.chan_status->IsBad(ch)) return;
@@ -468,32 +454,32 @@ inline void ImageProduction::fillDetectorImage(
     const geo::WireGeo* wire_geo = ctx.geo->WirePtr(wire_ids.front());
     const TVector3 wire_center = wire_geo->GetCenter();
 
-    // Gather hits for this wire & filter to the requested subset
+    
     auto hits_for_wire = ctx.wire_hit_assoc.at(wire_idx);
     std::vector<art::Ptr<recob::Hit>> hits_filtered;
     hits_filtered.reserve(hits_for_wire.size());
     for (auto const& ph : hits_for_wire) if (hit_set.count(ph)) hits_filtered.push_back(ph);
     if (hits_filtered.empty()) return;
 
-    // Cache ROI ranges for this wire
+    
     std::vector<cal::RangeRef> ranges;
     ranges.reserve(wire.SignalROI().get_ranges().size());
     for (auto const& r : wire.SignalROI().get_ranges())
         ranges.push_back(cal::RangeRef{ r.begin_index(), &r.data() });
 
-    // If writing energy (MeV per pixel), mirror blips and restrict to calo plane
+    
     const bool restrict_to_calo_plane = (ctx.value_mode == PixelImageOptions::ValueMode::Energy);
 
     for (auto const& ph : hits_filtered) {
         if (restrict_to_calo_plane && static_cast<int>(plane) != ctx.calo_plane)
             continue;
 
-        // Paint energy for this hit
+        
         paint_hit_energy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
 
-        // Optional semantic label pass (per pixel) while we have Ptr<recob::Hit>
+        
         if (!ctx.is_data) {
-            // Re-walk the pixels touched by this hit to set labels (cheap; small windows)
+            
             const int tick_start = ph->StartTick();
             const int tick_end   = ph->EndTick();
             const double wire_coord = cal::wire_column_coordinate(view, wire_center);
@@ -518,7 +504,7 @@ inline void ImageProduction::fillDetectorImage(
                     auto sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
                                                    ctx.trackid_to_index, ctx.semantic_label_vector,
                                                    ctx.has_mcps);
-                    ctx.semantic_images[view_idx].set(*row, *col, static_cast<int>(sem), /*overwrite=*/false);
+                    ctx.semantic_images[view_idx].set(*row, *col, static_cast<int>(sem), false);
                 }
             }
         }
@@ -561,10 +547,10 @@ inline void ImageProduction::build(
     if (!opts_.is_data && has_mcps && mcps.isValid())
         for (size_t i = 0; i < mcps->size(); ++i) trkid_to_idx[mcps->at(i).TrackId()] = i;
 
-    // Hits of interest
+    
     std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
 
-    // Merge static + per-event bad channels
+    
     std::set<unsigned int> merged_bad;
     if (opts_.bad_channels) merged_bad.insert(opts_.bad_channels->begin(), opts_.bad_channels->end());
     if (opts_.producers.bad != art::InputTag{}) {
@@ -588,7 +574,7 @@ inline void ImageProduction::build(
         geo_,
         detp,
         opts_.adc_threshold,
-        {}, // merged_bad populated below
+        {}, 
         (cal && cal->enabled()) ? cal->calo      : nullptr,
         (cal && cal->enabled()) ? cal->detprop   : nullptr,
         (cal && cal->enabled()) ? cal->tpcCalib  : nullptr,
@@ -612,11 +598,11 @@ inline void ImageProduction::build(
     ctx.merged_bad = std::move(merged_bad);
     if (ctx.detprop_data) ctx.LArDensity = ctx.detprop_data->Density();
 
-    // Loop all wires
+    
     for (size_t wi = 0; wi < wires->size(); ++wi)
         fillDetectorImage(wires->at(wi), wi, hit_set, ctx);
 }
 
-} // namespace image
+} 
 
 #endif
