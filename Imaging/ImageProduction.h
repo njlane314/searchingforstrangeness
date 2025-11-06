@@ -36,42 +36,21 @@
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 #include "larevt/CalibrationServices/TPCEnergyCalibService.h"
-#include "larevt/CalibrationServices/UBElectronLifetimeService.h"
 #include "larevt/CalibrationServices/ChannelStatusService.h"
 
 #include <TVector3.h>
 
 namespace image {
 
+// Minimal, option-free inputs.
 struct PixelImageOptions {
-    bool is_data{false};
     struct Producers {
         art::InputTag wire;
         art::InputTag hit;
         art::InputTag mcp;
         art::InputTag bkt;
-        art::InputTag bad; 
     } producers;
-
-    float adc_threshold{4.0f};
-    const std::set<unsigned int>* bad_channels{nullptr}; 
-    image::SemanticClassifier* semantic{nullptr};
-
-    
-    int  calo_plane{2};           
-    bool apply_yz{true};
-    bool apply_lifetime{true};
-    bool apply_sce_spatial{true};
-    bool apply_sce_efield{true};
-    bool veto_noisy{false};
-
-    
-    float modbox_A{0.93f};
-    float modbox_B{0.212f};
-    float assumed_dEdx{2.8f}; 
-
-    enum class ValueMode { ADC, dEdx, Energy };
-    ValueMode value_mode{ValueMode::Energy};
+    image::SemanticClassifier* semantic{nullptr}; // optional
 };
 
 struct CalibrationContext {
@@ -80,7 +59,6 @@ struct CalibrationContext {
     detinfo::DetectorPropertiesData const* detprop{nullptr};
 
     lariov::TPCEnergyCalib const* tpcCalib{nullptr};
-    lariov::UBElectronLifetime const* lifetime{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     lariov::ChannelStatusProvider const* chanStatus{nullptr};
 
@@ -104,9 +82,9 @@ inline geo::Point_t nominal_point_from_tick(detinfo::DetectorProperties const* d
 
 inline geo::Point_t correct_spacepoint(spacecharge::SpaceCharge const* sce,
                                        geo::Point_t p_in,
-                                       bool apply_sce_spatial)
+                                       bool always_apply)
 {
-    if (sce && apply_sce_spatial && sce->EnableCalSpatialSCE()) {
+    if (sce && sce->EnableCalSpatialSCE() && always_apply) {
         auto off = sce->GetCalPosOffsets(p_in, 0);
         return geo::Point_t{ p_in.X() - off.X(), p_in.Y() + off.Y(), p_in.Z() + off.Z() };
     }
@@ -119,11 +97,11 @@ inline std::optional<size_t> tick_to_corrected_row(detinfo::DetectorProperties c
                                                    geo::PlaneID const& planeID,
                                                    int tick,
                                                    TVector3 const& wire_center,
-                                                   bool apply_sce_spatial,
+                                                   bool always_apply_sce,
                                                    ImageProperties const& prop)
 {
     auto p_nom = nominal_point_from_tick(detp_api, detprop, planeID, static_cast<double>(tick), wire_center);
-    auto p = correct_spacepoint(sce, p_nom, apply_sce_spatial);
+    auto p = correct_spacepoint(sce, p_nom, always_apply_sce);
     return prop.row(p.X());
 }
 
@@ -139,63 +117,23 @@ inline double wire_column_coordinate(geo::View_t view, TVector3 const& wire_cent
 inline double yz_gain_corr(lariov::TPCEnergyCalib const* tpcCalib,
                            unsigned plane,
                            geo::Point_t const& p,
-                           bool apply_yz)
+                           bool always_apply)
 {
-    if (tpcCalib && apply_yz) return tpcCalib->YZdqdxCorrection(plane, p.Y(), p.Z());
+    if (tpcCalib && always_apply) return tpcCalib->YZdqdxCorrection(plane, p.Y(), p.Z());
     return 1.0;
-}
-
-inline double lifetime_corr(lariov::UBElectronLifetime const* lifetime,
-                            detinfo::DetectorPropertiesData const* detprop,
-                            double T0_ticks,
-                            double tick,
-                            bool apply_lifetime)
-{
-    if (!lifetime || !detprop || !apply_lifetime) return 1.0;
-    const double tick_us = detprop->SamplingRate() * 1e-3; 
-    const double t_ms    = (tick - T0_ticks) * tick_us * 1e-3;
-    const double tau_ms  = lifetime->Lifetime();
-    if (tau_ms <= 0.0) return 1.0;
-    return std::exp(t_ms / tau_ms);
-}
-
-inline double electrons_from_adc_area(calo::CalorimetryAlg* calo,
-                                      recob::Hit const& hit,
-                                      unsigned plane)
-{
-    if (!calo) return 0.0;
-    return static_cast<double>(calo->ElectronsFromADCArea(hit.Integral(), plane));
 }
 
 inline double local_efield_kV_cm(spacecharge::SpaceCharge const* sce,
                                  detinfo::DetectorPropertiesData const* detprop,
                                  geo::Point_t const& p,
-                                 bool apply_sce_efield)
+                                 bool always_apply)
 {
     double E = detprop->Efield();
-    if (sce && apply_sce_efield && sce->EnableCalEfieldSCE()) {
+    if (sce && sce->EnableCalEfieldSCE() && always_apply) {
         auto fo = sce->GetCalEfieldOffsets(p, 0);
         E *= std::hypot(1.0 + fo.X(), fo.Y(), fo.Z());
     }
     return E;
-}
-
-inline double modbox_recomb(double dEdx_MeV_cm,
-                            double Efield_kV_cm,
-                            double LArDensity_g_cm3,
-                            double A, double B)
-{
-    
-    const double Xi = (B * dEdx_MeV_cm) / (Efield_kV_cm * LArDensity_g_cm3);
-    return std::log(A + Xi) / Xi; 
-}
-
-inline double energy_from_electrons(double Q_electrons,
-                                    double recomb,
-                                    double Wion_MeV_per_e)
-{
-    if (recomb <= 0.0) return 0.0;
-    return Q_electrons * (1.0 / recomb) * Wion_MeV_per_e;
 }
 
 struct RangeRef { int begin; const std::vector<float>* adcs; };
@@ -237,6 +175,9 @@ public:
                std::optional<CalibrationContext> const& cal = std::nullopt) const;
 
 private:
+    static constexpr int   kCollectionPlane = 2;   // minimal, fixed choice
+    static constexpr float kAdcThreshold    = 4.0f; // minimal, fixed threshold
+
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
         std::vector<Image<float>> &detector_images;
@@ -250,7 +191,6 @@ private:
         const std::map<int, size_t> &trackid_to_index;
         const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector;
 
-        bool is_data;
         bool has_mcps;
 
         const geo::GeometryCore *geo;
@@ -258,36 +198,14 @@ private:
 
         float adc_image_threshold;
 
-        
-        std::set<unsigned int> merged_bad;
-
-        
         calo::CalorimetryAlg* calo_alg;
         detinfo::DetectorClocksData const* clocks;
         detinfo::DetectorPropertiesData const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
-        lariov::UBElectronLifetime const* lifetime;
         spacecharge::SpaceCharge const* sce;
         lariov::ChannelStatusProvider const* chan_status;
 
-        
         double T0_ticks{0.0};
-        int  calo_plane{2};
-        bool apply_yz{true};
-        bool apply_lifetime{true};
-        bool apply_sce_spatial{true};
-        bool apply_sce_efield{true};
-        bool veto_noisy{false};
-
-        float modbox_A{0.93f};
-        float modbox_B{0.212f};
-        float assumed_dEdx{2.8f};
-
-        
-        double LArDensity{1.396};         
-        double WionMeVPerElectron{2.36e-5};
-
-        PixelImageOptions::ValueMode value_mode{PixelImageOptions::ValueMode::Energy};
     };
 
     static SemanticClassifier::SemanticLabel labelSemanticPixels(
@@ -368,21 +286,19 @@ inline void ImageProduction::paint_hit_energy(
     const int tick_end   = hit.EndTick();
     const double tick_c = static_cast<double>(hit.PeakTime());
     auto p_nom = cal::nominal_point_from_tick(ctx.detp_api, ctx.detprop_data, planeID, tick_c, wire_center);
-    auto p = cal::correct_spacepoint(ctx.sce, p_nom, ctx.apply_sce_spatial);
+    auto p = cal::correct_spacepoint(ctx.sce, p_nom, /*always_apply=*/true);
     const unsigned plane = planeID.Plane;
-    const double yz = cal::yz_gain_corr(ctx.tpcCalib, plane, p, ctx.apply_yz);
-    double Q_e = cal::electrons_from_adc_area(ctx.calo_alg, hit, plane) * yz;
+    const double yz = cal::yz_gain_corr(ctx.tpcCalib, plane, p, /*always_apply=*/true);
     double pitch_cm = 1.0;
     if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(planeID).WirePitch());
-    const double dQdx_e = (pitch_cm > 0.0) ? (Q_e / pitch_cm) : 0.0;
-    const double E_loc = cal::local_efield_kV_cm(ctx.sce, ctx.detprop_data, p, ctx.apply_sce_efield);
-    double T0_ns = 0.0;
-    if (ctx.detprop_data) T0_ns = ctx.detprop_data->SamplingRate() * ctx.T0_ticks;
+    const double E_loc = cal::local_efield_kV_cm(ctx.sce, ctx.detprop_data, p, /*always_apply=*/true);
+    const double T0_ns = ctx.detprop_data ? (ctx.detprop_data->SamplingRate() * ctx.T0_ticks) : 0.0;
     const double phi = 0.0;
     double dEdx_MeV_cm = 0.0;
-    if (ctx.calo_alg && ctx.detprop_data && ctx.clocks) {
-        dEdx_MeV_cm = ctx.calo_alg->dEdx_from_dQdx_e(
-            *ctx.clocks, *ctx.detprop_data, dQdx_e, tick_c, T0_ns, E_loc, phi);
+    if (ctx.calo_alg && ctx.detprop_data && ctx.clocks && pitch_cm > 0.0) {
+        const double dQdx_adc_cm = (hit.Integral() / pitch_cm) * yz;
+        dEdx_MeV_cm = ctx.calo_alg->dEdx_AREA(
+            *ctx.clocks, *ctx.detprop_data, dQdx_adc_cm, tick_c, plane, T0_ns, E_loc, phi);
     }
     const double E_hit_MeV = dEdx_MeV_cm * pitch_cm;
     const double sumw = cal::sum_adc_weights_in_window(roi_ranges, tick_start, tick_end, ctx.adc_image_threshold);
@@ -401,7 +317,7 @@ inline void ImageProduction::paint_hit_energy(
 
             
             auto row = cal::tick_to_corrected_row(ctx.detp_api, ctx.detprop_data, ctx.sce,
-                                                  planeID, t, wire_center, ctx.apply_sce_spatial,
+                                                  planeID, t, wire_center, /*always_apply_sce=*/true,
                                                   ctx.properties[view_idx]);
             auto col = ctx.properties[view_idx].col(wire_coord);
             if (!row || !col) continue;
@@ -414,11 +330,11 @@ inline void ImageProduction::paint_hit_energy(
             ctx.detector_images[view_idx].set(*row, *col, prev + E_pix);
 
             
-            if (!ctx.is_data) {
-                
-                
-                
-                
+            if (ctx.has_mcps) {
+
+
+
+
             }
         }
     }
@@ -431,13 +347,7 @@ inline void ImageProduction::fillDetectorImage(
     BuildContext const& ctx)
 {
     const unsigned ch = wire.Channel();
-
-    
-    if (ctx.merged_bad.count(ch)) return;
-    if (ctx.chan_status) {
-        if (ctx.chan_status->IsBad(ch)) return;
-        if (ctx.veto_noisy && ctx.chan_status->IsNoisy(ch)) return;
-    }
+    if (ctx.chan_status && ctx.chan_status->IsBad(ch)) return;
 
     auto wire_ids = ctx.geo->ChannelToWire(ch);
     if (wire_ids.empty()) return;
@@ -464,17 +374,15 @@ inline void ImageProduction::fillDetectorImage(
         ranges.push_back(cal::RangeRef{ r.begin_index(), &r.data() });
 
     
-    const bool restrict_to_calo_plane = (ctx.value_mode == PixelImageOptions::ValueMode::Energy);
-
     for (auto const& ph : hits_filtered) {
-        if (restrict_to_calo_plane && static_cast<int>(plane) != ctx.calo_plane)
+        if (static_cast<int>(plane) != kCollectionPlane)
             continue;
 
         
         paint_hit_energy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
 
         
-        if (!ctx.is_data) {
+        if (ctx.has_mcps) {
             
             const int tick_start = ph->StartTick();
             const int tick_end   = ph->EndTick();
@@ -492,7 +400,7 @@ inline void ImageProduction::fillDetectorImage(
                     if (a <= ctx.adc_image_threshold) continue;
 
                     auto row = cal::tick_to_corrected_row(ctx.detp_api, ctx.detprop_data, ctx.sce,
-                                                          planeID, t, wire_center, ctx.apply_sce_spatial,
+                                                          planeID, t, wire_center, /*always_apply_sce=*/true,
                                                           ctx.properties[view_idx]);
                     auto col = ctx.properties[view_idx].col(wire_coord);
                     if (!row || !col) continue;
@@ -536,25 +444,15 @@ inline void ImageProduction::build(
         mcp_bkth_assoc(all_hits, event, opts_.producers.bkt);
 
     std::vector<SemanticClassifier::SemanticLabel> sem_labels;
-    if (!opts_.is_data && has_mcps && mcps.isValid() && opts_.semantic)
+    if (has_mcps && mcps.isValid() && opts_.semantic)
         sem_labels = opts_.semantic->classifyParticles(event);
 
     std::map<int, size_t> trkid_to_idx;
-    if (!opts_.is_data && has_mcps && mcps.isValid())
+    if (has_mcps && mcps.isValid())
         for (size_t i = 0; i < mcps->size(); ++i) trkid_to_idx[mcps->at(i).TrackId()] = i;
 
     
     std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
-
-    
-    std::set<unsigned int> merged_bad;
-    if (opts_.bad_channels) merged_bad.insert(opts_.bad_channels->begin(), opts_.bad_channels->end());
-    if (opts_.producers.bad != art::InputTag{}) {
-        art::Handle<std::vector<int>> evtBad;
-        if (event.getByLabel(opts_.producers.bad, evtBad) && evtBad.isValid())
-            for (int ch : *evtBad) merged_bad.insert(static_cast<unsigned>(ch));
-    }
-
     BuildContext ctx{
         properties,
         detector_images,
@@ -565,35 +463,18 @@ inline void ImageProduction::build(
         mcps,
         trkid_to_idx,
         sem_labels,
-        opts_.is_data,
         has_mcps,
         geo_,
         detp,
-        opts_.adc_threshold,
-        {}, 
+        kAdcThreshold,
         (cal && cal->enabled()) ? cal->calo      : nullptr,
         (cal && cal->enabled()) ? cal->clocks    : nullptr,
         (cal && cal->enabled()) ? cal->detprop   : nullptr,
         (cal && cal->enabled()) ? cal->tpcCalib  : nullptr,
-        (cal && cal->enabled()) ? cal->lifetime  : nullptr,
         (cal && cal->enabled()) ? cal->sce       : nullptr,
         (cal && cal->enabled()) ? cal->chanStatus: nullptr,
-        (cal && cal->enabled()) ? cal->T0_ticks  : 0.0,
-        opts_.calo_plane,
-        opts_.apply_yz,
-        opts_.apply_lifetime,
-        opts_.apply_sce_spatial,
-        opts_.apply_sce_efield,
-        opts_.veto_noisy,
-        opts_.modbox_A,
-        opts_.modbox_B,
-        opts_.assumed_dEdx,
-        1.396,
-        2.36e-5,
-        opts_.value_mode
+        (cal && cal->enabled()) ? cal->T0_ticks  : 0.0
     };
-    ctx.merged_bad = std::move(merged_bad);
-    if (ctx.detprop_data) ctx.LArDensity = ctx.detprop_data->Density();
 
     
     for (size_t wi = 0; wi < wires->size(); ++wi)
