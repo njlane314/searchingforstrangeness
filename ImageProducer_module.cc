@@ -374,11 +374,8 @@ void ImageProducer::produce(art::Event &event) {
     std::vector<Image<int>> sem_event;
 
     image::PixelImageOptions opts;
-    opts.is_data       = fIsData;
-    opts.producers     = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
-    opts.adc_threshold = fADCThresh;
-    opts.bad_channels  = &fBadChannels;
-    opts.semantic      = fSemantic.get();
+    opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
+    opts.semantic  = fSemantic.get();
 
     image::ImageProduction builder(*fGeo, opts);
 
