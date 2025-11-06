@@ -42,7 +42,6 @@
 
 namespace image {
 
-// Minimal, option-free inputs.
 struct PixelImageOptions {
     struct Producers {
         art::InputTag wire;
@@ -50,7 +49,7 @@ struct PixelImageOptions {
         art::InputTag mcp;
         art::InputTag bkt;
     } producers;
-    image::SemanticClassifier* semantic{nullptr}; // optional
+    image::SemanticClassifier* semantic{nullptr};
 };
 
 struct CalibrationContext {
@@ -61,7 +60,6 @@ struct CalibrationContext {
     lariov::TPCEnergyCalib const* tpcCalib{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     lariov::ChannelStatusProvider const* chanStatus{nullptr};
-
     double T0_ticks{0.0};
 
     bool enabled() const { return calo && clocks && detprop; }
@@ -69,71 +67,99 @@ struct CalibrationContext {
 
 namespace cal {
 
-inline geo::Point_t nominal_point_from_tick(detinfo::DetectorProperties const* detp_api,
-                                            detinfo::DetectorPropertiesData const* detprop,
-                                            geo::PlaneID const& planeID,
-                                            double tick,
-                                            TVector3 const& wire_center)
-{
-    (void)detp_api; 
-    double x_nom = detprop->ConvertTicksToX(tick, planeID);
-    return geo::Point_t{x_nom, wire_center.Y(), wire_center.Z()};
-}
+struct GeometryResult {
+    geo::Point_t p_corr;
+    double wire_coord{0.0};
+    std::optional<size_t> col;
 
-inline geo::Point_t correct_spacepoint(spacecharge::SpaceCharge const* sce,
-                                       geo::Point_t p_in,
-                                       bool always_apply)
-{
-    if (sce && sce->EnableCalSpatialSCE() && always_apply) {
-        auto off = sce->GetCalPosOffsets(p_in, 0);
-        return geo::Point_t{ p_in.X() - off.X(), p_in.Y() + off.Y(), p_in.Z() + off.Z() };
+    detinfo::DetectorPropertiesData const* detprop{nullptr};
+    spacecharge::SpaceCharge const* sce{nullptr};
+    geo::PlaneID planeID;
+    TVector3 wire_center;
+    ImageProperties const* prop{nullptr};
+
+    inline std::optional<size_t> row(int tick) const
+    {
+        double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
+        geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
+        if (sce && sce->EnableCalSpatialSCE()) {
+            auto off = sce->GetCalPosOffsets(p, 0);
+            p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
+        }
+        return prop->row(p.X());
     }
-    return p_in;
-}
+};
 
-inline std::optional<size_t> tick_to_corrected_row(detinfo::DetectorProperties const* detp_api,
-                                                   detinfo::DetectorPropertiesData const* detprop,
-                                                   spacecharge::SpaceCharge const* sce,
-                                                   geo::PlaneID const& planeID,
-                                                   int tick,
-                                                   TVector3 const& wire_center,
-                                                   bool always_apply_sce,
-                                                   ImageProperties const& prop)
+inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detprop,
+                                    spacecharge::SpaceCharge const* sce,
+                                    geo::PlaneID const& planeID,
+                                    int tick_center,
+                                    TVector3 const& wire_center,
+                                    geo::View_t view,
+                                    ImageProperties const& prop)
 {
-    auto p_nom = nominal_point_from_tick(detp_api, detprop, planeID, static_cast<double>(tick), wire_center);
-    auto p = correct_spacepoint(sce, p_nom, always_apply_sce);
-    return prop.row(p.X());
-}
+    double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick_center), planeID);
+    geo::Point_t p_corr{x_nom, wire_center.Y(), wire_center.Z()};
+    if (sce && sce->EnableCalSpatialSCE()) {
+        auto off = sce->GetCalPosOffsets(p_corr, 0);
+        p_corr = geo::Point_t{ p_corr.X() - off.X(), p_corr.Y() + off.Y(), p_corr.Z() + off.Z() };
+    }
 
-inline double wire_column_coordinate(geo::View_t view, TVector3 const& wire_center)
-{
     constexpr double plus60  =  1.04719758034;
     constexpr double minus60 = -1.04719758034;
-    if (view == geo::kW) return wire_center.Z();
-    if (view == geo::kU) return wire_center.Z() * std::cos(plus60)  - wire_center.Y() * std::sin(plus60);
-    return                    wire_center.Z() * std::cos(minus60) - wire_center.Y() * std::sin(minus60);
+    double wire_coord = (view == geo::kW) ? wire_center.Z()
+                      : (view == geo::kU)
+                        ? (wire_center.Z() * std::cos(plus60) - wire_center.Y() * std::sin(plus60))
+                        : (wire_center.Z() * std::cos(minus60) - wire_center.Y() * std::sin(minus60));
+
+    GeometryResult out;
+    out.p_corr = p_corr;
+    out.wire_coord = wire_coord;
+    out.col = prop.col(wire_coord);
+    out.detprop = detprop;
+    out.sce = sce;
+    out.planeID = planeID;
+    out.wire_center = wire_center;
+    out.prop = &prop;
+    return out;
 }
 
-inline double yz_gain_corr(lariov::TPCEnergyCalib const* tpcCalib,
-                           unsigned plane,
-                           geo::Point_t const& p,
-                           bool always_apply)
-{
-    if (tpcCalib && always_apply) return tpcCalib->YZdqdxCorrection(plane, p.Y(), p.Z());
-    return 1.0;
-}
+struct CaloResult {
+    double E_hit_MeV{0.0};
+    double dEdx_MeV_cm{0.0};
+    double yz_corr{1.0};
+    double E_loc_kV_cm{0.0};
+};
 
-inline double local_efield_kV_cm(spacecharge::SpaceCharge const* sce,
-                                 detinfo::DetectorPropertiesData const* detprop,
-                                 geo::Point_t const& p,
-                                 bool always_apply)
+inline CaloResult applyCalorimetry(recob::Hit const& hit,
+                                   unsigned plane,
+                                   geo::Point_t const& p_corr,
+                                   double pitch_cm,
+                                   calo::CalorimetryAlg* calo_alg,
+                                   detinfo::DetectorClocksData const* clocks,
+                                   detinfo::DetectorPropertiesData const* detprop,
+                                   lariov::TPCEnergyCalib const* tpcCalib,
+                                   spacecharge::SpaceCharge const* sce,
+                                   double T0_ticks)
 {
-    double E = detprop->Efield();
-    if (sce && sce->EnableCalEfieldSCE() && always_apply) {
-        auto fo = sce->GetCalEfieldOffsets(p, 0);
-        E *= std::hypot(1.0 + fo.X(), fo.Y(), fo.Z());
+    CaloResult out;
+    out.yz_corr = (tpcCalib ? tpcCalib->YZdqdxCorrection(plane, p_corr.Y(), p_corr.Z()) : 1.0);
+    out.E_loc_kV_cm = detprop->Efield();
+    if (sce && sce->EnableCalEfieldSCE()) {
+        auto fo = sce->GetCalEfieldOffsets(p_corr, 0);
+        out.E_loc_kV_cm *= std::hypot(1.0 + fo.X(), fo.Y(), fo.Z());
     }
-    return E;
+    if (calo_alg && clocks && detprop && pitch_cm > 0.0) {
+        const double T0_ns = detprop->SamplingRate() * T0_ticks;
+        const double dQdx_adc_cm = (hit.Integral() / pitch_cm) * out.yz_corr;
+        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(*clocks, *detprop,
+                                              dQdx_adc_cm,
+                                              static_cast<double>(hit.PeakTime()),
+                                              plane, T0_ns, out.E_loc_kV_cm,
+                                              0.0);
+        out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
+    }
+    return out;
 }
 
 struct RangeRef { int begin; const std::vector<float>* adcs; };
@@ -171,12 +197,12 @@ public:
                const std::vector<ImageProperties> &properties,
                std::vector<Image<float>> &detector_images,
                std::vector<Image<int>> &semantic_images,
-               const detinfo::DetectorProperties *detp,
+               const detinfo::DetectorProperties *,
                std::optional<CalibrationContext> const& cal = std::nullopt) const;
 
 private:
-    static constexpr int   kCollectionPlane = 2;   // minimal, fixed choice
-    static constexpr float kAdcThreshold    = 4.0f; // minimal, fixed threshold
+    static constexpr int   kCollectionPlane = 2;
+    static constexpr float kAdcThreshold    = 4.0f;
 
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
@@ -194,7 +220,6 @@ private:
         bool has_mcps;
 
         const geo::GeometryCore *geo;
-        const detinfo::DetectorProperties *detp_api;
 
         float adc_image_threshold;
 
@@ -203,7 +228,7 @@ private:
         detinfo::DetectorPropertiesData const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
         spacecharge::SpaceCharge const* sce;
-        lariov::ChannelStatusProvider const* chan_status;
+        lariov::ChannelStatusProvider const* chanStatus;
 
         double T0_ticks{0.0};
     };
@@ -216,9 +241,9 @@ private:
         const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector,
         bool has_mcps);
 
-    static void paint_hit_energy(
+    static void rasterizeHitEnergy(
         recob::Hit const& hit,
-        recob::Wire const& wire,
+        recob::Wire const&,
         geo::PlaneID const& planeID,
         geo::View_t view,
         TVector3 const& wire_center,
@@ -272,9 +297,9 @@ ImageProduction::labelSemanticPixels(
     return semantic_label_vector[idx];
 }
 
-inline void ImageProduction::paint_hit_energy(
+inline void ImageProduction::rasterizeHitEnergy(
     recob::Hit const& hit,
-    recob::Wire const& wire,
+    recob::Wire const&,
     geo::PlaneID const& planeID,
     geo::View_t view,
     TVector3 const& wire_center,
@@ -282,27 +307,23 @@ inline void ImageProduction::paint_hit_energy(
     std::vector<cal::RangeRef> const& roi_ranges,
     BuildContext const& ctx)
 {
-    const int tick_start = hit.StartTick();
-    const int tick_end   = hit.EndTick();
-    const double tick_c = static_cast<double>(hit.PeakTime());
-    auto p_nom = cal::nominal_point_from_tick(ctx.detp_api, ctx.detprop_data, planeID, tick_c, wire_center);
-    auto p = cal::correct_spacepoint(ctx.sce, p_nom, /*always_apply=*/true);
     const unsigned plane = planeID.Plane;
-    const double yz = cal::yz_gain_corr(ctx.tpcCalib, plane, p, /*always_apply=*/true);
+    const int tick_c = static_cast<int>(hit.PeakTime());
+
+    auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
+                                     tick_c, wire_center, view, ctx.properties[view_idx]);
+    if (!geoRes.col) return;
+
     double pitch_cm = 1.0;
     if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(planeID).WirePitch());
-    const double E_loc = cal::local_efield_kV_cm(ctx.sce, ctx.detprop_data, p, /*always_apply=*/true);
-    const double T0_ns = ctx.detprop_data ? (ctx.detprop_data->SamplingRate() * ctx.T0_ticks) : 0.0;
-    const double phi = 0.0;
-    double dEdx_MeV_cm = 0.0;
-    if (ctx.calo_alg && ctx.detprop_data && ctx.clocks && pitch_cm > 0.0) {
-        const double dQdx_adc_cm = (hit.Integral() / pitch_cm) * yz;
-        dEdx_MeV_cm = ctx.calo_alg->dEdx_AREA(
-            *ctx.clocks, *ctx.detprop_data, dQdx_adc_cm, tick_c, plane, T0_ns, E_loc, phi);
-    }
-    const double E_hit_MeV = dEdx_MeV_cm * pitch_cm;
+
+    auto calRes = cal::applyCalorimetry(hit, plane, geoRes.p_corr, pitch_cm,
+                                        ctx.calo_alg, ctx.clocks, ctx.detprop_data,
+                                        ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
+
+    const int tick_start = hit.StartTick();
+    const int tick_end   = hit.EndTick();
     const double sumw = cal::sum_adc_weights_in_window(roi_ranges, tick_start, tick_end, ctx.adc_image_threshold);
-    const double wire_coord = cal::wire_column_coordinate(view, wire_center);
 
     for (auto const& rr : roi_ranges) {
         const int rbeg = rr.begin;
@@ -315,27 +336,14 @@ inline void ImageProduction::paint_hit_energy(
             const float a = (*rr.adcs)[t - rbeg];
             if (a <= ctx.adc_image_threshold) continue;
 
-            
-            auto row = cal::tick_to_corrected_row(ctx.detp_api, ctx.detprop_data, ctx.sce,
-                                                  planeID, t, wire_center, /*always_apply_sce=*/true,
-                                                  ctx.properties[view_idx]);
-            auto col = ctx.properties[view_idx].col(wire_coord);
-            if (!row || !col) continue;
+            auto row = geoRes.row(t);
+            if (!row) continue;
 
             const double w = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
-            const float E_pix = static_cast<float>(E_hit_MeV * w);
+            const float E_pix = static_cast<float>(calRes.E_hit_MeV * w);
 
-            
-            const float prev = ctx.detector_images[view_idx].get(*row, *col);
-            ctx.detector_images[view_idx].set(*row, *col, prev + E_pix);
-
-            
-            if (ctx.has_mcps) {
-
-
-
-
-            }
+            const float prev = ctx.detector_images[view_idx].get(*row, *geoRes.col);
+            ctx.detector_images[view_idx].set(*row, *geoRes.col, prev + E_pix);
         }
     }
 }
@@ -347,7 +355,7 @@ inline void ImageProduction::fillDetectorImage(
     BuildContext const& ctx)
 {
     const unsigned ch = wire.Channel();
-    if (ctx.chan_status && ctx.chan_status->IsBad(ch)) return;
+    if (ctx.chanStatus && ctx.chanStatus->IsBad(ch)) return;
 
     auto wire_ids = ctx.geo->ChannelToWire(ch);
     if (wire_ids.empty()) return;
@@ -378,15 +386,16 @@ inline void ImageProduction::fillDetectorImage(
         if (static_cast<int>(plane) != kCollectionPlane)
             continue;
 
-        
-        paint_hit_energy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
+        rasterizeHitEnergy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
 
-        
         if (ctx.has_mcps) {
-            
+            const int tick_c = static_cast<int>(ph->PeakTime());
+            auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
+                                             tick_c, wire_center, view, ctx.properties[view_idx]);
+            if (!geoRes.col) continue;
+
             const int tick_start = ph->StartTick();
             const int tick_end   = ph->EndTick();
-            const double wire_coord = cal::wire_column_coordinate(view, wire_center);
 
             for (auto const& rr : ranges) {
                 const int rbeg = rr.begin;
@@ -399,16 +408,13 @@ inline void ImageProduction::fillDetectorImage(
                     const float a = (*rr.adcs)[t - rbeg];
                     if (a <= ctx.adc_image_threshold) continue;
 
-                    auto row = cal::tick_to_corrected_row(ctx.detp_api, ctx.detprop_data, ctx.sce,
-                                                          planeID, t, wire_center, /*always_apply_sce=*/true,
-                                                          ctx.properties[view_idx]);
-                    auto col = ctx.properties[view_idx].col(wire_coord);
-                    if (!row || !col) continue;
+                    auto row = geoRes.row(t);
+                    if (!row) continue;
 
                     auto sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
                                                    ctx.trackid_to_index, ctx.semantic_label_vector,
                                                    ctx.has_mcps);
-                    ctx.semantic_images[view_idx].set(*row, *col, static_cast<int>(sem), false);
+                    ctx.semantic_images[view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
                 }
             }
         }
@@ -421,7 +427,7 @@ inline void ImageProduction::build(
     const std::vector<ImageProperties> &properties,
     std::vector<Image<float>> &detector_images,
     std::vector<Image<int>> &semantic_images,
-    const detinfo::DetectorProperties *detp,
+    const detinfo::DetectorProperties *,
     std::optional<CalibrationContext> const& cal) const
 {
     detector_images.clear();
@@ -465,7 +471,6 @@ inline void ImageProduction::build(
         sem_labels,
         has_mcps,
         geo_,
-        detp,
         kAdcThreshold,
         (cal && cal->enabled()) ? cal->calo      : nullptr,
         (cal && cal->enabled()) ? cal->clocks    : nullptr,
