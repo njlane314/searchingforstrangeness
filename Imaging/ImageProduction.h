@@ -80,10 +80,11 @@ struct GeometryResult {
 
     inline std::optional<size_t> row(int tick) const
     {
-        double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
+        const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
         geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
         if (sce && sce->EnableCalSpatialSCE()) {
-            auto off = sce->GetCalPosOffsets(p, 0);
+            const unsigned tpcID = planeID.TPC;
+            auto off = sce->GetCalPosOffsets(p, tpcID);
             p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
         }
         return prop->row(p.X());
@@ -98,19 +99,22 @@ inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detpr
                                     geo::View_t view,
                                     ImageProperties const& prop)
 {
-    double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick_center), planeID);
+    const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick_center), planeID);
     geo::Point_t p_corr{x_nom, wire_center.Y(), wire_center.Z()};
     if (sce && sce->EnableCalSpatialSCE()) {
-        auto off = sce->GetCalPosOffsets(p_corr, 0);
+        const unsigned tpcID = planeID.TPC;
+        auto off = sce->GetCalPosOffsets(p_corr, tpcID);
         p_corr = geo::Point_t{ p_corr.X() - off.X(), p_corr.Y() + off.Y(), p_corr.Z() + off.Z() };
     }
 
     constexpr double plus60  =  1.04719758034;
     constexpr double minus60 = -1.04719758034;
-    double wire_coord = (view == geo::kW) ? wire_center.Z()
+    const double y = p_corr.Y();
+    const double z = p_corr.Z();
+    double wire_coord = (view == geo::kW) ? z
                       : (view == geo::kU)
-                        ? (wire_center.Z() * std::cos(plus60) - wire_center.Y() * std::sin(plus60))
-                        : (wire_center.Z() * std::cos(minus60) - wire_center.Y() * std::sin(minus60));
+                        ? (z * std::cos(plus60) - y * std::sin(plus60))
+                        : (z * std::cos(minus60) - y * std::sin(minus60));
 
     GeometryResult out;
     out.p_corr = p_corr;
