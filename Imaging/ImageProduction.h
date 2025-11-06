@@ -215,7 +215,7 @@ private:
         return semantic_label_vector[idx];
     }
 
-    static void rasterizeHitEnergy(
+    static void rasteriseHitEnergy(
         recob::Hit const& hit,
         recob::Wire const&,
         geo::PlaneID const& planeID,
@@ -304,7 +304,7 @@ private:
             if (static_cast<int>(plane) != kCollectionPlane)
                 continue;
 
-            rasterizeHitEnergy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
+            rasteriseHitEnergy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
 
             if (ctx.has_mcps) {
                 const int tick_c = static_cast<int>(ph->PeakTime());
