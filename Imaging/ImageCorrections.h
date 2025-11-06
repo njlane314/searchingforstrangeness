@@ -25,6 +25,22 @@ namespace image {
 namespace cal {
 
 // Helper describing geometry results used by rasterization.
+inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const* detprop,
+                                           spacecharge::SpaceCharge const* sce,
+                                           geo::PlaneID const& planeID,
+                                           TVector3 const& wire_center,
+                                           int tick)
+{
+    const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
+    geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
+    if (sce && sce->EnableCalSpatialSCE()) {
+        const unsigned tpcID = planeID.TPC;
+        auto off = sce->GetCalPosOffsets(p, tpcID);
+        p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
+    }
+    return p;
+}
+
 struct GeometryResult {
     geo::Point_t p_corr;
     double wire_coord{0.0};
@@ -39,13 +55,7 @@ struct GeometryResult {
 
     inline std::optional<size_t> row(int tick) const
     {
-        const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
-        geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
-        if (sce && sce->EnableCalSpatialSCE()) {
-            const unsigned tpcID = planeID.TPC;
-            auto off = sce->GetCalPosOffsets(p, tpcID);
-            p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
-        }
+        auto p = correctedPointFromTick(detprop, sce, planeID, wire_center, tick);
         return prop->row(p.X());
     }
 };
@@ -55,21 +65,15 @@ inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detpr
                                     geo::PlaneID const& planeID,
                                     int tick_center,
                                     TVector3 const& wire_center,
-                                    geo::View_t view,
                                     ImageProperties const& prop)
 {
-    const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick_center), planeID);
-    geo::Point_t p_corr{x_nom, wire_center.Y(), wire_center.Z()};
-    if (sce && sce->EnableCalSpatialSCE()) {
-        const unsigned tpcID = planeID.TPC;
-        auto off = sce->GetCalPosOffsets(p_corr, tpcID);
-        p_corr = geo::Point_t{ p_corr.X() - off.X(), p_corr.Y() + off.Y(), p_corr.Z() + off.Z() };
-    }
+    geo::Point_t p_corr = correctedPointFromTick(detprop, sce, planeID, wire_center, tick_center);
 
     constexpr double plus60  =  1.04719758034; // +60 deg in rad
     constexpr double minus60 = -1.04719758034; // -60 deg in rad
     const double y = p_corr.Y();
     const double z = p_corr.Z();
+    const geo::View_t view = prop.view();
     double wire_coord = (view == geo::kW) ? z
                       : (view == geo::kU)
                         ? (z * std::cos(plus60) - y * std::sin(plus60))
@@ -172,8 +176,8 @@ inline void convolveSeparableUnitSum(Image<float>& img,
     const int Rr = static_cast<int>(k_row.size() / 2);
     const int Rc = static_cast<int>(k_col.size() / 2);
 
-    const size_t H = prop.rows();
-    const size_t W = prop.cols();
+    const size_t H = prop.height();
+    const size_t W = prop.width();
 
     Image<float> tmp(prop);
     tmp.clear(0.0f);
