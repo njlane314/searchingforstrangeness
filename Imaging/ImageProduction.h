@@ -219,7 +219,6 @@ private:
         recob::Hit const& hit,
         recob::Wire const&,
         geo::PlaneID const& planeID,
-        geo::View_t view,
         TVector3 const& wire_center,
         size_t view_idx,
         std::vector<cal::RangeRef> const& roi_ranges,
@@ -229,7 +228,7 @@ private:
         const int tick_c = static_cast<int>(hit.PeakTime());
 
         auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
-                                         tick_c, wire_center, view, ctx.properties[view_idx]);
+                                         tick_c, wire_center, ctx.properties[view_idx]);
         if (!geoRes.col) return;
 
         double pitch_cm = 1.0;
@@ -304,12 +303,12 @@ private:
             if (static_cast<int>(plane) != kCollectionPlane)
                 continue;
 
-            rasteriseHitEnergy(*ph, wire, planeID, view, wire_center, view_idx, ranges, ctx);
+            rasteriseHitEnergy(*ph, wire, planeID, wire_center, view_idx, ranges, ctx);
 
             if (ctx.has_mcps) {
                 const int tick_c = static_cast<int>(ph->PeakTime());
                 auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
-                                                 tick_c, wire_center, view, ctx.properties[view_idx]);
+                                                 tick_c, wire_center, ctx.properties[view_idx]);
                 if (!geoRes.col) continue;
 
                 const int tick_start = ph->StartTick();
