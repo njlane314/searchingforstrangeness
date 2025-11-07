@@ -345,18 +345,14 @@ void ImageProducer::produce(art::Event &event) {
         event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
         vtxW.Z(), vtxW.X());
 
-    auto fused = image::fuse_and_project(cU.second, cU.first,
-                                         cV.second, cV.first,
-                                         cW.second, cW.first);
-
     std::vector<ImageProperties> props;
-    props.emplace_back(fused.wU_star, fused.x_star,
+    props.emplace_back(cU.first, cU.second,
                        fImgW, fImgH, fDriftStepCm, fPitchU,
                        geo::kU);
-    props.emplace_back(fused.wV_star, fused.x_star,
+    props.emplace_back(cV.first, cV.second,
                        fImgW, fImgH, fDriftStepCm, fPitchV,
                        geo::kV);
-    props.emplace_back(fused.wW_star, fused.x_star,
+    props.emplace_back(cW.first, cW.second,
                        fImgW, fImgH, fDriftStepCm, fPitchW,
                        geo::kW);
 
