@@ -83,10 +83,14 @@ class ImageProducer : public art::EDProducer {
     std::unique_ptr<SemanticClassifier> fSemantic;
 
     void loadBadChannels(const std::string &filename);
-    static std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event, art::InputTag const &fHitPrucer);
+    static std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event,
+                                                            art::InputTag const &hitProducer);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
 
     std::vector<bool> buildBlipMask(art::Event &event);
+
+    double neutrinoT0Ticks(art::Event &event,
+                           detinfo::DetectorClocksData const &clockData) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
@@ -150,9 +154,10 @@ void ImageProducer::loadBadChannels(const std::string &filename) {
 }
 
 std::vector<art::Ptr<recob::Hit>>
-ImageProducer::collectAllHits(const art::Event &event) {
+ImageProducer::collectAllHits(const art::Event &event,
+                              art::InputTag const &hitProducer) {
     std::vector<art::Ptr<recob::Hit>> out;
-    auto h = event.getValidHandle<std::vector<recob::Hit>>(fHitProducer);
+    auto h = event.getValidHandle<std::vector<recob::Hit>>(hitProducer);
     out.reserve(h->size());
     for (size_t i = 0; i < h->size(); ++i)
         out.emplace_back(h, i);
@@ -217,8 +222,59 @@ ImageProducer::buildBlipMask(art::Event &event) {
     return mask;
 }
 
+double ImageProducer::neutrinoT0Ticks(art::Event &event,
+                                      detinfo::DetectorClocksData const &clockData) const
+{
+    if (fT0producer.label().empty()) return 0.0;
+
+    auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+
+    size_t nuIndex = std::numeric_limits<size_t>::max();
+    for (size_t i = 0; i < pfp_h->size(); ++i) {
+        auto const &p = pfp_h->at(i);
+        if (!p.IsPrimary()) continue;
+        int pdg = std::abs(p.PdgCode());
+        if (pdg == 12 || pdg == 14 || pdg == 16) { nuIndex = i; break; }
+    }
+    if (nuIndex == std::numeric_limits<size_t>::max()) {
+        for (size_t i = 0; i < pfp_h->size(); ++i)
+            if (pfp_h->at(i).IsPrimary()) { nuIndex = i; break; }
+    }
+    if (nuIndex == std::numeric_limits<size_t>::max()) return 0.0;
+
+    {
+        art::FindManyP<anab::T0> pfpToT0(pfp_h, event, fT0producer);
+        if (pfpToT0.isValid()) {
+            auto const &t0s = pfpToT0.at(nuIndex);
+            if (!t0s.empty()) {
+                double const T0_ns = t0s.front()->Time();
+                return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
+            }
+        }
+    }
+
+    {
+        art::FindManyP<recob::Slice> pfpToSlice(pfp_h, event, fPFPproducer);
+        if (pfpToSlice.isValid()) {
+            auto const slices = pfpToSlice.at(nuIndex);
+            if (!slices.empty()) {
+                auto slc_h = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+                art::FindManyP<anab::T0> slcToT0(slc_h, event, fT0producer);
+                if (slcToT0.isValid()) {
+                    auto const &t0s = slcToT0.at(slices.front().key());
+                    if (!t0s.empty()) {
+                        double const T0_ns = t0s.front()->Time();
+                        return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
+                    }
+                }
+            }
+        }
+    }
+    return 0.0;
+}
+
 void ImageProducer::produce(art::Event &event) {
-    auto all_hits = collectAllHits(event);
+    auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
     auto const clockData =
@@ -226,37 +282,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const detProp =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
 
-    double T0_ticks = 0.0;
-    if (fCalo && !fT0producer.label().empty()) {
-        auto pfp_handle =
-            event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-        art::FindManyP<recob::Slice> pfp_to_slice(pfp_handle, event, fPFPproducer);
-
-        std::optional<size_t> nu_index;
-        for (size_t i = 0; i < pfp_handle->size(); ++i) {
-            auto const &p = pfp_handle->at(i);
-            if (!p.IsPrimary()) continue;
-            int pdg = std::abs(p.PdgCode());
-            if (pdg == 12 || pdg == 14 || pdg == 16) { nu_index = i; break; }
-        }
-        if (!nu_index) {
-            for (size_t i = 0; i < pfp_handle->size(); ++i)
-                if (pfp_handle->at(i).IsPrimary()) { nu_index = i; break; }
-        }
-        if (nu_index) {
-            auto slice_handle =
-                event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-            art::FindManyP<anab::T0> slcToT0(slice_handle, event, fT0producer);
-            auto slices = pfp_to_slice.at(*nu_index);
-            if (!slices.empty()) {
-                auto t0s = slcToT0.at(slices.front().key());
-                if (!t0s.empty()) {
-                    const double T0_us = t0s.front()->Time();
-                    T0_ticks = T0_us / clockData.TPCClock().TickPeriod();
-                }
-            }
-        }
-    }
+    double T0_ticks = (fCalo ? neutrinoT0Ticks(event, clockData) : 0.0);
 
     if (fBlipAlg) {
         auto is_blip = buildBlipMask(event);
