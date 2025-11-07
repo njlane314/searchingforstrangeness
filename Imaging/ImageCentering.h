@@ -13,7 +13,6 @@
 #include <TVector3.h>
 
 namespace image {
-
 class ImageCentering {
   public:
     static std::pair<double, double>
