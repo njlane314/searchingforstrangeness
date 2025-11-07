@@ -72,7 +72,7 @@ class ImageProducer : public art::EDProducer {
     int fImgW{512};
     int fImgH{512};
     float fADCThresh{4.0f};
-    float fCentroidRadiusCm{0.f};
+    std::map<geo::View_t, double> fCentroidRadiusCm{};
 
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
@@ -110,8 +110,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fImgW = pset.get<int>("ImageWidth", 512);
     fImgH = pset.get<int>("ImageHeight", 512);
     fADCThresh = pset.get<float>("ADCImageThreshold", 4.0);
-    const float pixel_size_cm = 0.3f;
-    fCentroidRadiusCm = 0.5f * std::min(fImgW, fImgH) * pixel_size_cm;
 
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
@@ -127,6 +125,13 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
+
+    auto compute_radius = [&](double pitch) {
+        return 0.5 * std::min(fImgH * fDriftStepCm, fImgW * pitch);
+    };
+    fCentroidRadiusCm[geo::kU] = compute_radius(fPitchU);
+    fCentroidRadiusCm[geo::kV] = compute_radius(fPitchV);
+    fCentroidRadiusCm[geo::kW] = compute_radius(fPitchW);
 
     if (pset.has_key("CaloAlg")) {
         auto const calo_alg_config = pset.get<fhicl::ParameterSet>("CaloAlg");
@@ -331,9 +336,9 @@ void ImageProducer::produce(art::Event &event) {
     TVector3 vtxW = common::ProjectToWireView(
         vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_W);
 
-    const double R_U = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchU);
-    const double R_V = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchV);
-    const double R_W = 0.5 * std::min(fImgH * fDriftStepCm, fImgW * fPitchW);
+    const double R_U = fCentroidRadiusCm.at(geo::kU);
+    const double R_V = fCentroidRadiusCm.at(geo::kV);
+    const double R_W = fCentroidRadiusCm.at(geo::kW);
 
     auto cU = ImageCentering::centroidWithinRadius(
         event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
