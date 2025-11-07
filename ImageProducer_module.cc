@@ -345,14 +345,14 @@ void ImageProducer::produce(art::Event &event) {
 
     std::vector<ImageProperties> props;
     props.emplace_back(cU.first, cU.second,
-                       fImgW, fImgH, fDriftStepCm, fPitchU,
-                       geo::kU);
+                       fImgW, fImgH, fDriftStepCm, 
+                       fPitchU, geo::kU);
     props.emplace_back(cV.first, cV.second,
-                       fImgW, fImgH, fDriftStepCm, fPitchV,
-                       geo::kV);
+                       fImgW, fImgH, fDriftStepCm, 
+                       fPitchV, geo::kV);
     props.emplace_back(cW.first, cW.second,
-                       fImgW, fImgH, fDriftStepCm, fPitchW,
-                       geo::kW);
+                       fImgW, fImgH, fDriftStepCm, 
+                       fPitchW, geo::kW);
 
     std::vector<Image<float>> det_slice;
     std::vector<Image<int>> sem_slice;
