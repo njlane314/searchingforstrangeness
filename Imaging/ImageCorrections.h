@@ -24,7 +24,6 @@
 namespace image {
 namespace cal {
 
-// Helper describing geometry results used by rasterization.
 inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const* detprop,
                                            spacecharge::SpaceCharge const* sce,
                                            geo::PlaneID const& planeID,
@@ -46,7 +45,6 @@ struct GeometryResult {
     double wire_coord{0.0};
     std::optional<size_t> col;
 
-    // cached context for tick->row conversions
     detinfo::DetectorPropertiesData const* detprop{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     geo::PlaneID planeID;
@@ -69,8 +67,8 @@ inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detpr
 {
     geo::Point_t p_corr = correctedPointFromTick(detprop, sce, planeID, wire_center, tick_center);
 
-    constexpr double plus60  =  1.04719758034; // +60 deg in rad
-    constexpr double minus60 = -1.04719758034; // -60 deg in rad
+    constexpr double plus60  =  1.04719758034;
+    constexpr double minus60 = -1.04719758034;
     const double y = p_corr.Y();
     const double z = p_corr.Z();
     const geo::View_t view = prop.view();
@@ -129,7 +127,6 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
     return out;
 }
 
-// Thin reference over ADC ranges inside a Wire ROI.
 struct RangeRef { int begin; const std::vector<float>* adcs; };
 
 inline double sum_adc_weights_in_window(std::vector<RangeRef> const& ranges,
@@ -182,7 +179,6 @@ inline void convolveSeparableUnitSum(Image<float>& img,
     Image<float> tmp(prop);
     tmp.clear(0.0f);
 
-    // Row (vertical) pass.
     for (size_t r = 0; r < H; ++r) {
         for (size_t c = 0; c < W; ++c) {
             double acc = 0.0;
@@ -194,7 +190,6 @@ inline void convolveSeparableUnitSum(Image<float>& img,
         }
     }
 
-    // Column (horizontal) pass.
     Image<float> out(prop);
     out.clear(0.0f);
     for (size_t r = 0; r < H; ++r) {
@@ -210,7 +205,7 @@ inline void convolveSeparableUnitSum(Image<float>& img,
     img = std::move(out);
 }
 
-} // namespace cal
-} // namespace image
+}
+}
 
-#endif // IMAGECORRECTIONS_H
+#endif
