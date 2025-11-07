@@ -252,9 +252,7 @@ double ImageProducer::collectNeutrinoTime(art::Event &event,
             break;
         }
     }
-    if (!nu_index) return 0.0;
-
-    {
+    if (nu_index) {
         art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
         if (pfp_to_slice.isValid()) {
             auto const slices = pfp_to_slice.at(*nu_index);
