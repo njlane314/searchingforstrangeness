@@ -100,7 +100,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fWIREproducer = pset.get<art::InputTag>("WIREproducer");
     fMCPproducer = pset.get<art::InputTag>("MCPproducer");
     fBKTproducer = pset.get<art::InputTag>("BKTproducer");
-    fT0producer = pset.get<art::InputTag>("T0producer", art::InputTag{});
+    fT0producer = pset.get<art::InputTag>("T0producer");
 
     fIsData = pset.get<bool>("IsData", false);
 
