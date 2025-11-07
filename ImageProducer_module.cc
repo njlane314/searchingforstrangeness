@@ -90,7 +90,7 @@ class ImageProducer : public art::EDProducer {
     std::vector<bool> buildBlipMask(art::Event &event);
 
     double neutrinoT0Ticks(art::Event &event,
-                           detinfo::DetectorClocksData const &clockData) const;
+                           detinfo::DetectorClocksData const &clock_data) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
@@ -115,12 +115,12 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
 
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-    auto const &detProp =
+    auto const &det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
-    auto const &clockData =
+    auto const &clock_data =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
-    double tick_period = clockData.TPCClock().TickPeriod();
-    double drift_vel = detProp.DriftVelocity();
+    double tick_period = clock_data.TPCClock().TickPeriod();
+    double drift_vel = det_prop.DriftVelocity();
     fDriftStepCm = tick_period * drift_vel * 1.0e1;
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
@@ -231,7 +231,7 @@ ImageProducer::buildBlipMask(art::Event &event) {
 }
 
 double ImageProducer::neutrinoT0Ticks(art::Event &event,
-                                      detinfo::DetectorClocksData const &clockData) const
+                                      detinfo::DetectorClocksData const &clock_data) const
 {
     if (fT0producer.label().empty()) return 0.0;
 
@@ -267,8 +267,8 @@ double ImageProducer::neutrinoT0Ticks(art::Event &event,
                 if (slc_to_t0.isValid()) {
                     auto const &t0s = slc_to_t0.at(slices.front().key());
                     if (!t0s.empty()) {
-                        double const T0_ns = t0s.front()->Time();
-                        return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
+                        double const t0_ns = t0s.front()->Time();
+                        return (t0_ns * 1.0e-3) / clock_data.TPCClock().TickPeriod();
                     }
                 }
             }
@@ -281,12 +281,12 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
-    auto const &clockData =
+    auto const &clock_data =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
-    auto const &detProp =
+    auto const &det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
 
-    double T0_ticks = (fCalo ? neutrinoT0Ticks(event, clockData) : 0.0);
+    double t0_ticks = (fCalo ? neutrinoT0Ticks(event, clock_data) : 0.0);
 
     if (fBlipAlg) {
         auto is_blip = buildBlipMask(event);
@@ -377,9 +377,9 @@ void ImageProducer::produce(art::Event &event) {
     if (fCalo) {
         image::CalibrationContext tmp;
         tmp.calo = fCalo.get();
-        tmp.clocks = &clockData;
-        tmp.detprop = &detProp;
-        tmp.T0_ticks = T0_ticks;
+        tmp.clocks = &clock_data;
+        tmp.detprop = &det_prop;
+        tmp.T0_ticks = t0_ticks;
         cal = tmp;
     }
 
