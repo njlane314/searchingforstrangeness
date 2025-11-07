@@ -45,7 +45,6 @@ using image::Image;
 using image::ImageCentering;
 using image::ImageProperties;
 using image::ImageProduct;
-using image::sem::SemanticClassifier;
 
 class ImageProducer : public art::EDProducer {
   public:
@@ -68,7 +67,7 @@ class ImageProducer : public art::EDProducer {
 
     std::unique_ptr<calo::CalorimetryAlg> fCalo;
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
-    std::unique_ptr<SemanticClassifier> fSemantic;
+    std::unique_ptr<sem::SemanticClassifier> fSemantic;
 
     int fImgW{512};
     int fImgH{512};
@@ -138,7 +137,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
             new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg")));
     }
 
-    fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
+    fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
     produces<std::vector<ImageProduct>>("slice_image");
     produces<std::vector<ImageProduct>>("event_image");
