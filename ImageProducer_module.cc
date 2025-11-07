@@ -368,7 +368,7 @@ void ImageProducer::produce(art::Event &event) {
 
     image::PixelImageOptions opts;
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
-    opts.semantic  = fSemantic.get();
+    opts.semantic  = fIsData ? nullptr : fSemantic.get();
 
     image::ImageProduction builder(*fGeo, opts);
 
