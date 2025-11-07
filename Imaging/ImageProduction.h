@@ -148,7 +148,6 @@ public:
     }
 
 private:
-    static constexpr int   kCollectionPlane = 2;
     static constexpr float kAdcThreshold    = 4.0f;
 
     struct BuildContext {
@@ -278,9 +277,11 @@ private:
         if (wire_ids.empty()) return;
 
         const auto planeID = wire_ids.front().planeID();
-        const unsigned plane = planeID.Plane;
         const geo::View_t view = ctx.geo->View(planeID);
         const size_t view_idx = static_cast<size_t>(view);
+
+        if (view_idx >= ctx.detector_images.size() || view_idx >= ctx.semantic_images.size())
+            return;
 
         const geo::WireGeo* wire_geo = ctx.geo->WirePtr(wire_ids.front());
         const TVector3 wire_center = wire_geo->GetCenter();
@@ -300,9 +301,6 @@ private:
 
 
         for (auto const& ph : hits_filtered) {
-            if (static_cast<int>(plane) != kCollectionPlane)
-                continue;
-
             rasteriseHitEnergy(*ph, wire, planeID, wire_center, view_idx, ranges, ctx);
 
             if (ctx.has_mcps) {
