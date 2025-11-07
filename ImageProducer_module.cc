@@ -59,19 +59,21 @@ class ImageProducer : public art::EDProducer {
     art::InputTag fWIREproducer;
     art::InputTag fMCPproducer;
     art::InputTag fBKTproducer;
+    art::InputTag fT0producer;
+
     bool fIsData{false};
 
-    art::InputTag fT0producer;
+    std::string fBadChannelFile;
+    std::set<unsigned int> fBadChannels;
+
     std::unique_ptr<calo::CalorimetryAlg> fCalo;
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
+    std::unique_ptr<SemanticClassifier> fSemantic;
 
     int fImgW{512};
     int fImgH{512};
     float fADCThresh{4.0f};
     float fCentroidRadiusCm{0.f};
-
-    std::set<unsigned int> fBadChannels;
-    std::string fBadChannelFile;
 
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
@@ -79,8 +81,6 @@ class ImageProducer : public art::EDProducer {
     double fPitchU{0.0};
     double fPitchV{0.0};
     double fPitchW{0.0};
-
-    std::unique_ptr<SemanticClassifier> fSemantic;
 
     void loadBadChannels(const std::string &filename);
     static std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event,
@@ -101,6 +101,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fMCPproducer = pset.get<art::InputTag>("MCPproducer");
     fBKTproducer = pset.get<art::InputTag>("BKTproducer");
     fT0producer = pset.get<art::InputTag>("T0producer", art::InputTag{});
+
     fIsData = pset.get<bool>("IsData", false);
 
     fBadChannelFile = pset.get<std::string>("BadChannelFile", "");
@@ -128,7 +129,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
 
-    fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
     if (pset.has_key("CaloAlg")) {
         auto const calo_alg_config = pset.get<fhicl::ParameterSet>("CaloAlg");
         fCalo = std::make_unique<calo::CalorimetryAlg>(calo_alg_config);
@@ -137,6 +137,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
         fBlipAlg.reset(
             new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg")));
     }
+
+    fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
 
     produces<std::vector<ImageProduct>>("slice_image");
     produces<std::vector<ImageProduct>>("event_image");
