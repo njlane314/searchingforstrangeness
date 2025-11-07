@@ -355,9 +355,11 @@ void ImageProducer::produce(art::Event &event) {
                        fImgW, fImgH, fDriftStepCm, fPitchU,
                        geo::kU);
     props.emplace_back(fused.wV_star, fused.x_star,
-                       fImgW, fImgH, fDriftStepCm, fPitchV, geo::kV);
+                       fImgW, fImgH, fDriftStepCm, fPitchV,
+                       geo::kV);
     props.emplace_back(fused.wW_star, fused.x_star,
-                       fImgW, fImgH, fDriftStepCm, fPitchW, geo::kW);
+                       fImgW, fImgH, fDriftStepCm, fPitchW,
+                       geo::kW);
 
     std::vector<Image<float>> det_slice;
     std::vector<Image<int>> sem_slice;
