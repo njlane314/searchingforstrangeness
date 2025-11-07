@@ -89,8 +89,8 @@ class ImageProducer : public art::EDProducer {
 
     std::vector<bool> buildBlipMask(art::Event &event);
 
-    double neutrinoT0Ticks(art::Event &event,
-                           detinfo::DetectorClocksData const &clockData) const;
+    double collectNeutrinoTime(art::Event &event,
+                               detinfo::DetectorClocksData const &clockData) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -226,8 +226,8 @@ ImageProducer::buildBlipMask(art::Event &event) {
     return mask;
 }
 
-double ImageProducer::neutrinoT0Ticks(art::Event &event,
-                                      detinfo::DetectorClocksData const &clockData) const
+double ImageProducer::collectNeutrinoTime(art::Event &event,
+                                          detinfo::DetectorClocksData const &clockData) const
 {
     if (fT0producer.label().empty()) return 0.0;
 
@@ -274,7 +274,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const detProp =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
 
-    double T0_ticks = (fCalo ? neutrinoT0Ticks(event, clockData) : 0.0);
+    double T0_ticks = (fCalo ? collectNeutrinoTime(event, clockData) : 0.0);
 
     if (fBlipAlg) {
         auto is_blip = buildBlipMask(event);
