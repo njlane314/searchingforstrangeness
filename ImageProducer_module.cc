@@ -49,7 +49,7 @@ using image::SemanticClassifier;
 
 class ImageProducer : public art::EDProducer {
   public:
-    explicit ImageProducer(fhicl::ParameterSet const &p);
+    explicit ImageProducer(fhicl::ParameterSet const &pset);
     void produce(art::Event &e) override;
 
   private:
@@ -93,23 +93,23 @@ class ImageProducer : public art::EDProducer {
                            detinfo::DetectorClocksData const &clockData) const;
 };
 
-ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
-    fPFPproducer = p.get<art::InputTag>("PFPproducer");
-    fSLCproducer = p.get<art::InputTag>("SLCproducer");
-    fHITproducer = p.get<art::InputTag>("HITproducer");
-    fWIREproducer = p.get<art::InputTag>("WIREproducer");
-    fMCPproducer = p.get<art::InputTag>("MCPproducer");
-    fBKTproducer = p.get<art::InputTag>("BKTproducer");
-    fT0producer = p.get<art::InputTag>("T0producer", art::InputTag{});
-    fIsData = p.get<bool>("IsData", false);
+ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
+    fPFPproducer = pset.get<art::InputTag>("PFPproducer");
+    fSLCproducer = pset.get<art::InputTag>("SLCproducer");
+    fHITproducer = pset.get<art::InputTag>("HITproducer");
+    fWIREproducer = pset.get<art::InputTag>("WIREproducer");
+    fMCPproducer = pset.get<art::InputTag>("MCPproducer");
+    fBKTproducer = pset.get<art::InputTag>("BKTproducer");
+    fT0producer = pset.get<art::InputTag>("T0producer", art::InputTag{});
+    fIsData = pset.get<bool>("IsData", false);
 
-    fBadChannelFile = p.get<std::string>("BadChannelFile", "");
+    fBadChannelFile = pset.get<std::string>("BadChannelFile", "");
     if (!fBadChannelFile.empty())
         loadBadChannels(fBadChannelFile);
 
-    fImgW = p.get<int>("ImageWidth", 512);
-    fImgH = p.get<int>("ImageHeight", 512);
-    fADCThresh = p.get<float>("ADCImageThreshold", 4.0);
+    fImgW = pset.get<int>("ImageWidth", 512);
+    fImgH = pset.get<int>("ImageHeight", 512);
+    fADCThresh = pset.get<float>("ADCImageThreshold", 4.0);
     const float pixel_size_cm = 0.3f;
     fCentroidRadiusCm = 0.5f * std::min(fImgW, fImgH) * pixel_size_cm;
 
@@ -124,6 +124,10 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
     fPitchW = fGeo->WirePitch(geo::kW);
 
     fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
+    if (pset.has_key("BlipAlg")) {
+        fBlipAlg.reset(
+            new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg")));
+    }
 
     produces<std::vector<ImageProduct>>("slice_image");
     produces<std::vector<ImageProduct>>("event_image");
@@ -237,14 +241,6 @@ double ImageProducer::neutrinoT0Ticks(art::Event &event,
         if (pdg == 12 || pdg == 14 || pdg == 16) {
             nu_index = i;
             break;
-        }
-    }
-    if (!nu_index) {
-        for (size_t i = 0; i < pfp_h->size(); ++i) {
-            if (pfp_h->at(i).IsPrimary()) {
-                nu_index = i;
-                break;
-            }
         }
     }
     if (!nu_index) return 0.0;
