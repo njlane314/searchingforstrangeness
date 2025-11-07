@@ -45,7 +45,7 @@ using image::Image;
 using image::ImageCentering;
 using image::ImageProperties;
 using image::ImageProduct;
-using image::SemanticClassifier;
+using image::sem::SemanticClassifier;
 
 class ImageProducer : public art::EDProducer {
   public:

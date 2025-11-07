@@ -50,7 +50,7 @@ struct PixelImageOptions {
         art::InputTag mcp;
         art::InputTag bkt;
     } producers;
-    image::SemanticClassifier* semantic{nullptr};
+    sem::SemanticClassifier* semantic{nullptr};
 };
 
 struct CalibrationContext {
@@ -85,7 +85,7 @@ public:
 
         for (auto const& p : properties) {
             Image<float> det(p); det.clear(0.0f); detector_images.push_back(std::move(det));
-            Image<int>   sem(p); sem.clear(static_cast<int>(SemanticClassifier::SemanticLabel::Empty));
+            Image<int>   sem(p); sem.clear(static_cast<int>(sem::SemanticClassifier::SemanticLabel::Empty));
             semantic_images.push_back(std::move(sem));
         }
 
@@ -99,7 +99,7 @@ public:
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>
             mcp_bkth_assoc(all_hits, event, opts_.producers.bkt);
 
-        std::vector<SemanticClassifier::SemanticLabel> sem_labels;
+        std::vector<sem::SemanticClassifier::SemanticLabel> sem_labels;
         if (has_mcps && mcps.isValid() && opts_.semantic)
             sem_labels = opts_.semantic->classifyParticles(event);
 
@@ -162,7 +162,7 @@ private:
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc;
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector;
         const std::map<int, size_t> &trackid_to_index;
-        const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector;
+        const std::vector<sem::SemanticClassifier::SemanticLabel> &semantic_label_vector;
 
         bool has_mcps;
 
@@ -180,15 +180,15 @@ private:
         double T0_ticks{0.0};
     };
 
-    static SemanticClassifier::SemanticLabel labelSemanticPixels(
+    static sem::SemanticClassifier::SemanticLabel labelSemanticPixels(
         const art::Ptr<recob::Hit> &matched_hit,
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
         const std::map<int, size_t> &trackid_to_index,
-        const std::vector<SemanticClassifier::SemanticLabel> &semantic_label_vector,
+        const std::vector<sem::SemanticClassifier::SemanticLabel> &semantic_label_vector,
         bool has_mcps)
     {
-        SemanticClassifier::SemanticLabel out = SemanticClassifier::SemanticLabel::Cosmic;
+        sem::SemanticClassifier::SemanticLabel out = sem::SemanticClassifier::SemanticLabel::Cosmic;
         if (!has_mcps || !mcp_vector.isValid()) return out;
 
         std::vector<art::Ptr<simb::MCParticle>> parts;
@@ -211,7 +211,7 @@ private:
         const size_t idx = it->second;
         if (idx >= semantic_label_vector.size()) return out;
 
-        if (max_ide_fraction <= 0.5f) return SemanticClassifier::SemanticLabel::Ambiguous;
+        if (max_ide_fraction <= 0.5f) return sem::SemanticClassifier::SemanticLabel::Ambiguous;
         return semantic_label_vector[idx];
     }
 
