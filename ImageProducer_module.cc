@@ -363,6 +363,7 @@ void ImageProducer::produce(art::Event &event) {
 
     std::vector<Image<float>> det_slice;
     std::vector<Image<int>> sem_slice;
+  
     std::vector<Image<float>> det_event;
     std::vector<Image<int>> sem_event;
 
