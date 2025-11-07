@@ -1,7 +1,6 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
-#include "canvas/Persistency/Provenance/ProductID.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -198,24 +197,17 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
 
 std::vector<bool>
 ImageProducer::buildBlipMask(art::Event &event) {
-    if (!fBlipAlg)
-        return std::nullopt;
+    if (!fBlipAlg) return {};
 
     fBlipAlg->RunBlipReco(event);
 
-    auto hit_handle = event.getHandle<std::vector<recob::Hit>>(fHitHandle);
-    if (!hit_handle)
-        return std::nullopt;
+    auto hit_h = event.getValidHandle<std::vector<recob::Hit>>(fBlipAlg->fHitProducer);
 
-    std::vector<art::Ptr<recob::Hit>> hit_vec;
-    art::fill_ptr_vector(hit_vec, hit_handle);
-
-    const auto &blip_info = fBlipAlg->hitinfo;
-
-    if (blip_info.size() != hit_vec.size()) {
+    auto const &info = fBlipAlg->hitinfo;
+    if (info.size() != hit_h->size()) {
         throw art::Exception(art::errors::LogicError)
-        << "BlipRecoAlg hitinfo size (" << blip_info.size()
-        << ") does not match hit product size (" << hit_vec.size() << ").";
+            << "BlipRecoAlg hitinfo size (" << info.size()
+            << ") does not match hit product size (" << hit_h->size() << ").";
     }
 
     std::vector<bool> mask(info.size(), false);
@@ -267,15 +259,14 @@ void ImageProducer::produce(art::Event &event) {
     }
 
     if (fBlipAlg) {
-        if (auto mask = buildBlipMask(event)) {
-            const art::ProductID pid = mask->first;
-            const auto &is_blip = mask->second;
+        auto is_blip = buildBlipMask(event);
+        if (!is_blip.empty()) {
             auto apply_mask = [&](std::vector<art::Ptr<recob::Hit>> &v) {
                 v.erase(std::remove_if(v.begin(), v.end(),
                                        [&](auto const &h) {
-                                           const auto same = (h.id() == pid);
+                                           if (h.isNull()) return false;
                                            const auto idx = static_cast<size_t>(h.key());
-                                           return same && idx < is_blip.size() && is_blip[idx];
+                                           return idx < is_blip.size() && is_blip[idx];
                                        }),
                         v.end());
             };
