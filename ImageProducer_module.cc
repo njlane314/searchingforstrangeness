@@ -45,7 +45,6 @@ using image::Image;
 using image::ImageCentering;
 using image::ImageProperties;
 using image::ImageProduct;
-using image::sem::SemanticClassifier;
 
 class ImageProducer : public art::EDProducer {
   public:
@@ -68,7 +67,7 @@ class ImageProducer : public art::EDProducer {
 
     std::unique_ptr<calo::CalorimetryAlg> fCalo;
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
-    std::unique_ptr<SemanticClassifier> fSemantic;
+    std::unique_ptr<sem::SemanticClassifier> fSemantic;
 
     int fImgW{512};
     int fImgH{512};
@@ -138,10 +137,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
             new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg")));
     }
 
-    fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
+    fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
-    produces<std::vector<ImageProduct>>("slice_image");
-    produces<std::vector<ImageProduct>>("event_image");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -346,19 +343,15 @@ void ImageProducer::produce(art::Event &event) {
         event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
         vtxW.Z(), vtxW.X());
 
-    auto fused = image::fuse_and_project(cU.second, cU.first,
-                                         cV.second, cV.first,
-                                         cW.second, cW.first);
-
     std::vector<ImageProperties> props;
-    props.emplace_back(fused.wU_star, fused.x_star,
-                       fImgW, fImgH, fDriftStepCm,
+    props.emplace_back(cU.first, cU.second,
+                       fImgW, fImgH, fDriftStepCm, 
                        fPitchU, geo::kU);
-    props.emplace_back(fused.wV_star, fused.x_star,
-                       fImgW, fImgH, fDriftStepCm,
+    props.emplace_back(cV.first, cV.second,
+                       fImgW, fImgH, fDriftStepCm, 
                        fPitchV, geo::kV);
-    props.emplace_back(fused.wW_star, fused.x_star,
-                       fImgW, fImgH, fDriftStepCm,
+    props.emplace_back(cW.first, cW.second,
+                       fImgW, fImgH, fDriftStepCm, 
                        fPitchW, geo::kW);
 
     std::vector<Image<float>> det_slice;
@@ -430,8 +423,8 @@ void ImageProducer::produce(art::Event &event) {
             pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
-    event.put(std::move(out_slice));
-    event.put(std::move(out_event));
+    event.put(std::move(out_slice), "neutrino_slice_images");
+    event.put(std::move(out_event), "interaction_event_images");
 }
 
 DEFINE_ART_MODULE(ImageProducer)

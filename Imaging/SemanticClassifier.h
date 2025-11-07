@@ -45,7 +45,6 @@
 #include <utility>
 #include <vector>
 
-namespace image {
 namespace sem {
 class SemanticClassifier {
     public:
@@ -169,7 +168,6 @@ class SemanticClassifier {
     art::InputTag fMCPproducer;
 };
 } // namespace sem
-} // namespace image
 
 #endif 
 
