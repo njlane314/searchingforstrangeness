@@ -115,13 +115,21 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &p) {
 
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-    auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
-    double tick_period = clock->TPCClock().TickPeriod();
-    double drift_vel = fDetp->DriftVelocity();
+    auto const &detProp =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
+    auto const &clockData =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+    double tick_period = clockData.TPCClock().TickPeriod();
+    double drift_vel = detProp.DriftVelocity();
     fDriftStepCm = tick_period * drift_vel * 1.0e1;
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
+
+    if (p.has_key("CaloAlg")) {
+        fCalo = std::make_unique<calo::CalorimetryAlg>(
+            p.get<fhicl::ParameterSet>("CaloAlg"));
+    }
 
     fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
 
@@ -273,10 +281,10 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
-    auto const clockData =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
-    auto const detProp =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
+    auto const &clockData =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+    auto const &detProp =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
 
     double T0_ticks = (fCalo ? neutrinoT0Ticks(event, clockData) : 0.0);
 
