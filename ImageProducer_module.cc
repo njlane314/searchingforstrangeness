@@ -115,15 +115,24 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
-    auto clock = art::ServiceHandle<detinfo::DetectorClocksService>()->provider();
-    double tick_period = clock->TPCClock().TickPeriod();
-    double drift_vel = fDetp->DriftVelocity();
-    fDriftStepCm = tick_period * drift_vel * 1.0e1;
+
+    auto const &det_prop_data =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
+    auto const &clock_data =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+
+    double const tick_period = clock_data.TPCClock().TickPeriod();
+    double const drift_velocity = det_prop_data.DriftVelocity();
+    fDriftStepCm = tick_period * drift_velocity * 1.0e1;
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
 
     fSemantic = std::make_unique<SemanticClassifier>(fMCPproducer);
+    if (pset.has_key("CaloAlg")) {
+        auto const calo_alg_config = pset.get<fhicl::ParameterSet>("CaloAlg");
+        fCalo = std::make_unique<calo::CalorimetryAlg>(calo_alg_config);
+    }
     if (pset.has_key("BlipAlg")) {
         fBlipAlg.reset(
             new blip::BlipRecoAlg(pset.get<fhicl::ParameterSet>("BlipAlg")));
@@ -269,12 +278,12 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
-    auto const clockData =
+    auto const clock_data =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
-    auto const detProp =
+    auto const det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
 
-    double T0_ticks = (fCalo ? collectNeutrinoTime(event, clockData) : 0.0);
+    double T0_ticks = (fCalo ? collectNeutrinoTime(event, clock_data) : 0.0);
 
     if (fBlipAlg) {
         auto is_blip = buildBlipMask(event);
@@ -365,8 +374,8 @@ void ImageProducer::produce(art::Event &event) {
     if (fCalo) {
         image::CalibrationContext tmp;
         tmp.calo = fCalo.get();
-        tmp.clocks = &clockData;
-        tmp.detprop = &detProp;
+        tmp.clocks = &clock_data;
+        tmp.detprop = &det_prop;
         tmp.T0_ticks = T0_ticks;
         cal = tmp;
     }
