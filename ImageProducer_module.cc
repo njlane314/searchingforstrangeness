@@ -229,39 +229,35 @@ double ImageProducer::neutrinoT0Ticks(art::Event &event,
 
     auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 
-    size_t nuIndex = std::numeric_limits<size_t>::max();
+    std::optional<size_t> nu_index;
     for (size_t i = 0; i < pfp_h->size(); ++i) {
         auto const &p = pfp_h->at(i);
         if (!p.IsPrimary()) continue;
-        int pdg = std::abs(p.PdgCode());
-        if (pdg == 12 || pdg == 14 || pdg == 16) { nuIndex = i; break; }
+        int const pdg = std::abs(p.PdgCode());
+        if (pdg == 12 || pdg == 14 || pdg == 16) {
+            nu_index = i;
+            break;
+        }
     }
-    if (nuIndex == std::numeric_limits<size_t>::max()) {
-        for (size_t i = 0; i < pfp_h->size(); ++i)
-            if (pfp_h->at(i).IsPrimary()) { nuIndex = i; break; }
-    }
-    if (nuIndex == std::numeric_limits<size_t>::max()) return 0.0;
-
-    {
-        art::FindManyP<anab::T0> pfpToT0(pfp_h, event, fT0producer);
-        if (pfpToT0.isValid()) {
-            auto const &t0s = pfpToT0.at(nuIndex);
-            if (!t0s.empty()) {
-                double const T0_ns = t0s.front()->Time();
-                return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
+    if (!nu_index) {
+        for (size_t i = 0; i < pfp_h->size(); ++i) {
+            if (pfp_h->at(i).IsPrimary()) {
+                nu_index = i;
+                break;
             }
         }
     }
+    if (!nu_index) return 0.0;
 
     {
-        art::FindManyP<recob::Slice> pfpToSlice(pfp_h, event, fPFPproducer);
-        if (pfpToSlice.isValid()) {
-            auto const slices = pfpToSlice.at(nuIndex);
+        art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
+        if (pfp_to_slice.isValid()) {
+            auto const slices = pfp_to_slice.at(*nu_index);
             if (!slices.empty()) {
                 auto slc_h = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-                art::FindManyP<anab::T0> slcToT0(slc_h, event, fT0producer);
-                if (slcToT0.isValid()) {
-                    auto const &t0s = slcToT0.at(slices.front().key());
+                art::FindManyP<anab::T0> slc_to_t0(slc_h, event, fT0producer);
+                if (slc_to_t0.isValid()) {
+                    auto const &t0s = slc_to_t0.at(slices.front().key());
                     if (!t0s.empty()) {
                         double const T0_ns = t0s.front()->Time();
                         return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
