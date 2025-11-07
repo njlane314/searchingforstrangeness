@@ -139,8 +139,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
-    produces<std::vector<ImageProduct>>("slice_image");
-    produces<std::vector<ImageProduct>>("event_image");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -425,8 +423,8 @@ void ImageProducer::produce(art::Event &event) {
             pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
-    event.put(std::move(out_slice));
-    event.put(std::move(out_event));
+    event.put(std::move(out_slice), "neutrino_slice_images");
+    event.put(std::move(out_event), "interaction_event_images");
 }
 
 DEFINE_ART_MODULE(ImageProducer)
