@@ -33,7 +33,6 @@
 #include "nusimdata/SimulationBase/MCParticle.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "larevt/CalibrationServices/ChannelStatusService.h"
 
 #include <TVector3.h>
 
