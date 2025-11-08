@@ -214,7 +214,6 @@ private:
         size_t view_idx;
         TVector3 wire_center;
         std::vector<art::Ptr<recob::Hit>> hits_filtered;
-        std::vector<cal::RangeRef> ranges;
     };
 
     static std::optional<WirePrep> prepareWire(
@@ -243,12 +242,7 @@ private:
             if (ctx.hit_to_key.find(ph) != ctx.hit_to_key.end()) hits_filtered.push_back(ph);
         if (hits_filtered.empty()) return std::nullopt;
 
-        std::vector<cal::RangeRef> ranges;
-        ranges.reserve(wire.SignalROI().get_ranges().size());
-        for (auto const& r : wire.SignalROI().get_ranges())
-            ranges.push_back(cal::RangeRef{ r.begin_index(), &r.data() });
-
-        return WirePrep{planeID, view_idx, wire_center, std::move(hits_filtered), std::move(ranges)};
+        return WirePrep{planeID, view_idx, wire_center, std::move(hits_filtered)};
     }
 
     static void fillImagesForWire(
@@ -287,21 +281,33 @@ private:
 
             const int tick_start = hit.StartTick();
             const int tick_end   = hit.EndTick();
-            const double sumw = cal::windowedSignalSum(w.ranges, tick_start, tick_end, ctx.adc_image_threshold);
 
-            for (auto const& rr : w.ranges) {
-                const int rbeg = rr.begin;
-                const int rend = rbeg + static_cast<int>(rr.adcs->size());
+            struct PixelContribution {
+                int row;
+                float adc;
+            };
+            std::vector<PixelContribution> contributions;
+            contributions.reserve(std::max(0, tick_end - tick_start));
+
+            double sumw = 0.0;
+
+            for (auto const& rr : wire.SignalROI().get_ranges()) {
+                const int rbeg = rr.begin_index();
+                const auto& adcs = rr.data();
+                const int rend = rbeg + static_cast<int>(adcs.size());
                 const int s = std::max(tick_start, rbeg);
                 const int e = std::min(tick_end,   rend);
                 if (s >= e) continue;
 
                 for (int t = s; t < e; ++t) {
-                    const float a = (*rr.adcs)[t - rbeg];
+                    const float a = adcs[t - rbeg];
                     if (a <= ctx.adc_image_threshold) continue;
 
                     auto row = geo_res.row(t);
                     if (!row) continue;
+
+                    contributions.push_back({*row, a});
+                    sumw += static_cast<double>(a);
 
                     const double wgt = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
                     const float E_pix = static_cast<float>(calo_res.E_hit_MeV * wgt);
@@ -310,6 +316,20 @@ private:
                     if (ctx.has_mcps)
                         ctx.semantic_images[w.view_idx].set(*row, *geo_res.col, static_cast<int>(sem), false);
                 }
+            }
+
+            if (contributions.empty()) continue;
+
+            if (sumw <= 0.0)
+                sumw = static_cast<double>(std::max(1, tick_end - tick_start));
+
+            for (auto const& contrib : contributions) {
+                const double wgt = (sumw > 0.0) ? (static_cast<double>(contrib.adc) / sumw) : 0.0;
+                const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
+
+                ctx.detector_images[w.view_idx].set(contrib.row, *geoRes.col, E_pix, true);
+                if (ctx.has_mcps)
+                    ctx.semantic_images[w.view_idx].set(contrib.row, *geoRes.col, static_cast<int>(sem), false);
             }
         }
     }
