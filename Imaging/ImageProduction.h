@@ -316,12 +316,8 @@ private:
 
     static void smoothDetectorImages(BuildContext const& ctx)
     {
-        const auto k = cal::gaussianKernel(kGaussianSigmaPx);
         for (size_t view_idx = 0; view_idx < ctx.detector_images.size(); ++view_idx) {
-            cal::separableConvolveNorm(
-                ctx.detector_images[view_idx], ctx.properties[view_idx],
-                k, k
-            );
+            ctx.detector_images[view_idx].blur(kGaussianSigmaPx);
         }
     }
 

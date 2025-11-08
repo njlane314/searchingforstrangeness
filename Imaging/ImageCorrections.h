@@ -156,62 +156,6 @@ inline double windowedSignalSum(std::vector<RangeRef> const& ranges,
     return sumw;
 }
 
-inline std::vector<float> gaussianKernel(float sigma_px)
-{
-    if (!(sigma_px > 0.f)) return {1.f};
-    const int R = std::max(1, static_cast<int>(std::ceil(3.0f * sigma_px)));
-    std::vector<float> k(2 * R + 1);
-    double s = 0.0;
-    for (int i = -R; i <= R; ++i) {
-        const double v = std::exp(-(static_cast<double>(i) * static_cast<double>(i)) / (2.0 * sigma_px * sigma_px));
-        k[i + R] = static_cast<float>(v);
-        s += v;
-    }
-    const float invs = static_cast<float>(1.0 / s);
-    for (auto& v : k) v *= invs;
-    return k;
-}
-
-inline void separableConvolveNorm(Image<float>& img,
-                                  ImageProperties const& prop,
-                                  std::vector<float> const& k_row,
-                                  std::vector<float> const& k_col)
-{
-    const int Rr = static_cast<int>(k_row.size() / 2);
-    const int Rc = static_cast<int>(k_col.size() / 2);
-
-    const size_t H = prop.height();
-    const size_t W = prop.width();
-
-    Image<float> tmp(prop);
-    tmp.clear(0.0f);
-
-    for (size_t r = 0; r < H; ++r) {
-        for (size_t c = 0; c < W; ++c) {
-            double acc = 0.0;
-            for (int dr = -Rr; dr <= Rr; ++dr) {
-                const int rr = std::min<int>(std::max<int>(0, static_cast<int>(r) + dr), static_cast<int>(H) - 1);
-                acc += k_row[dr + Rr] * img.get(rr, c);
-            }
-            tmp.set(r, c, static_cast<float>(acc));
-        }
-    }
-
-    Image<float> out(prop);
-    out.clear(0.0f);
-    for (size_t r = 0; r < H; ++r) {
-        for (size_t c = 0; c < W; ++c) {
-            double acc = 0.0;
-            for (int dc = -Rc; dc <= Rc; ++dc) {
-                const int cc = std::min<int>(std::max<int>(0, static_cast<int>(c) + dc), static_cast<int>(W) - 1);
-                acc += k_col[dc + Rc] * tmp.get(r, cc);
-            }
-            out.set(r, c, static_cast<float>(acc));
-        }
-    }
-    img = std::move(out);
-}
-
 }
 }
 
