@@ -10,6 +10,9 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+// MCC9: Data types live under lardata/DetectorInfo (not lardataalg/)
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"

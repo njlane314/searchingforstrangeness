@@ -23,9 +23,11 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardataalg/DetectorInfo/DetectorClocksData.h"
-#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
-#include "lardataalg/DetectorInfo/DetectorProperties.h"
+// MCC9: Data headers are provided by lardata (not lardataalg)
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
+// Only a pointer to the provider type is passed around; forward-declare it.
+namespace detinfo { class DetectorProperties; }
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "lardataobj/RecoBase/Hit.h"
