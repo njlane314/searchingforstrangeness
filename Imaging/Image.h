@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+#include <type_traits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -104,7 +105,12 @@ class Image {
     size_t width() const { return prop_.width(); }
     const ImageProperties& properties() const { return prop_; }
 
+    template <typename TT = T, typename = std::enable_if_t<std::is_floating_point<TT>::value>>
     Image<T>& blur(float sigma_px);
+    template <typename TT = T, typename = std::enable_if_t<std::is_integral<TT>::value>>
+    Image<T>& dilate(const Image<float>& mask,
+                     float sigma_px,
+                     T empty_value = T(0));
 
     private:
     ImageProperties prop_;
@@ -112,6 +118,7 @@ class Image {
 };
 
 template <typename T>
+template <typename TT, typename>
 inline Image<T>& Image<T>::blur(float sigma_px)
 {
     if (!(sigma_px > 0.f)) return *this;
@@ -161,6 +168,55 @@ inline Image<T>& Image<T>::blur(float sigma_px)
     *this = std::move(out);
     return *this;
 }
-} 
 
-#endif 
+template <typename T>
+template <typename TT, typename>
+inline Image<T>& Image<T>::dilate(const Image<float>& mask,
+                                  float sigma_px,
+                                  T empty_value)
+{
+    const int H = static_cast<int>(height());
+    const int W = static_cast<int>(width());
+    const int steps = std::max(1, static_cast<int>(std::ceil(3.0f * sigma_px)));
+
+    Image<T> cur(properties());
+    Image<T> nxt(properties());
+    cur.pixels_ = pixels_;
+    nxt.pixels_ = pixels_;
+
+    const int dr8[8] = {-1,-1,-1, 0,0, 1,1,1};
+    const int dc8[8] = {-1, 0, 1,-1,1,-1,0,1};
+
+    for (int s = 0; s < steps; ++s) {
+        bool changed = false;
+        for (int r = 0; r < H; ++r) {
+            for (int c = 0; c < W; ++c) {
+                if (cur.get(static_cast<size_t>(r), static_cast<size_t>(c)) != empty_value) continue;
+                if (!(mask.get(static_cast<size_t>(r), static_cast<size_t>(c)) > 0.0f)) continue;
+                T chosen = empty_value;
+                for (int k = 0; k < 8; ++k) {
+                    const int rr = r + dr8[k];
+                    const int cc = c + dc8[k];
+                    if (rr < 0 || rr >= H || cc < 0 || cc >= W) continue;
+                    const T lab = cur.get(static_cast<size_t>(rr), static_cast<size_t>(cc));
+                    if (lab != empty_value) {
+                        chosen = lab;
+                        break;
+                    }
+                }
+                if (chosen != empty_value) {
+                    nxt.set(static_cast<size_t>(r), static_cast<size_t>(c), chosen, false);
+                    changed = true;
+                }
+            }
+        }
+        cur = nxt;
+        if (!changed) break;
+    }
+
+    *this = std::move(cur);
+    return *this;
+}
+}
+
+#endif

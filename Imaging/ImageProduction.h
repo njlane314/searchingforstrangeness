@@ -318,6 +318,13 @@ private:
     {
         for (size_t view_idx = 0; view_idx < ctx.detector_images.size(); ++view_idx) {
             ctx.detector_images[view_idx].blur(kGaussianSigmaPx);
+            auto& sem_img = ctx.semantic_images[view_idx];
+            auto& det_img = ctx.detector_images[view_idx];
+            const int empty =
+                static_cast<int>(sem::SemanticClassifier::SemanticLabel::Empty);
+            sem_img.dilate(det_img,
+                           kGaussianSigmaPx,
+                           empty);
         }
     }
 
