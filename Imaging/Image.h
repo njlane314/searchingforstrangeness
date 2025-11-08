@@ -24,6 +24,8 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <algorithm>
+#include <cmath>
+#include <utility>
 #include <memory>
 #include <optional>
 #include <string>
@@ -102,10 +104,63 @@ class Image {
     size_t width() const { return prop_.width(); }
     const ImageProperties& properties() const { return prop_; }
 
+    Image<T>& blur(float sigma_px);
+
     private:
     ImageProperties prop_;
     std::vector<T> pixels_;
 };
+
+template <typename T>
+inline Image<T>& Image<T>::blur(float sigma_px)
+{
+    if (!(sigma_px > 0.f)) return *this;
+
+    const int R = std::max(1, static_cast<int>(std::ceil(3.0f * sigma_px)));
+    std::vector<float> k(2 * R + 1);
+    double sum = 0.0;
+    for (int i = -R; i <= R; ++i) {
+        const double v = std::exp(-(1.0 * i * i) / (2.0 * sigma_px * sigma_px));
+        k[i + R] = static_cast<float>(v);
+        sum += v;
+    }
+    const float inv = static_cast<float>(1.0 / sum);
+    for (auto& v : k) v *= inv;
+
+    const size_t H = height();
+    const size_t W = width();
+
+    Image<T> tmp(properties());
+    tmp.clear(T{});
+    for (size_t r = 0; r < H; ++r) {
+        for (size_t c = 0; c < W; ++c) {
+            double acc = 0.0;
+            for (int dr = -R; dr <= R; ++dr) {
+                const int rr = std::clamp<int>(static_cast<int>(r) + dr, 0, static_cast<int>(H) - 1);
+                acc += static_cast<double>(k[dr + R]) *
+                       static_cast<double>(get(static_cast<size_t>(rr), c));
+            }
+            tmp.set(r, c, static_cast<T>(acc), false);
+        }
+    }
+
+    Image<T> out(properties());
+    out.clear(T{});
+    for (size_t r = 0; r < H; ++r) {
+        for (size_t c = 0; c < W; ++c) {
+            double acc = 0.0;
+            for (int dc = -R; dc <= R; ++dc) {
+                const int cc = std::clamp<int>(static_cast<int>(c) + dc, 0, static_cast<int>(W) - 1);
+                acc += static_cast<double>(k[dc + R]) *
+                       static_cast<double>(tmp.get(r, static_cast<size_t>(cc)));
+            }
+            out.set(r, c, static_cast<T>(acc), false);
+        }
+    }
+
+    *this = std::move(out);
+    return *this;
+}
 } 
 
 #endif 
