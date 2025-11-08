@@ -85,7 +85,7 @@ class ImageProducer : public art::EDProducer {
                                                             art::InputTag const &hitProducer);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
 
-    std::vector<bool> buildBlipMask(art::Event &event);
+    std::map<art::Ptr<recob::Hit>, std::size_t> buildBlipMask(art::Event &event);
 
     double collectNeutrinoTime(art::Event &event,
                                detinfo::DetectorClocksData const &clockData) const;
@@ -216,7 +216,7 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
     return out;
 }
 
-std::vector<bool>
+std::map<art::Ptr<recob::Hit>, std::size_t>
 ImageProducer::buildBlipMask(art::Event &event) {
     if (!fBlipAlg) return {};
 
@@ -231,11 +231,14 @@ ImageProducer::buildBlipMask(art::Event &event) {
             << ") does not match hit product size (" << hit_h->size() << ").";
     }
 
-    std::vector<bool> mask(info.size(), false);
-    for (size_t i = 0; i < info.size(); ++i)
-        mask[i] = (info[i].blipid >= 0);
-
-    return mask;
+    std::map<art::Ptr<recob::Hit>, std::size_t> blip_hit_to_key;
+    for (std::size_t i = 0; i < info.size(); ++i) {
+        if (info[i].blipid >= 0) {
+            art::Ptr<recob::Hit> ph(hit_h, i);
+            blip_hit_to_key.emplace(ph, static_cast<std::size_t>(ph.key()));
+        }
+    }
+    return blip_hit_to_key;
 }
 
 double ImageProducer::collectNeutrinoTime(art::Event &event,
@@ -287,14 +290,13 @@ void ImageProducer::produce(art::Event &event) {
     double T0_ticks = (fCalo ? collectNeutrinoTime(event, clock_data) : 0.0);
 
     if (fBlipAlg) {
-        auto is_blip = buildBlipMask(event);
-        if (!is_blip.empty()) {
+        auto blip_hit_to_key = buildBlipMask(event);
+        if (!blip_hit_to_key.empty()) {
             auto apply_mask = [&](std::vector<art::Ptr<recob::Hit>> &v) {
                 v.erase(std::remove_if(v.begin(), v.end(),
                                        [&](auto const &h) {
                                            if (h.isNull()) return false;
-                                           const auto idx = static_cast<size_t>(h.key());
-                                           return idx < is_blip.size() && is_blip[idx];
+                                           return blip_hit_to_key.find(h) != blip_hit_to_key.end();
                                        }),
                         v.end());
             };
