@@ -133,13 +133,7 @@ public:
 
 
         for (size_t wi = 0; wi < wires->size(); ++wi) {
-            fillDetectorImage(wires->at(wi), wi, hit_set, ctx);
-        }
-
-        if (ctx.has_mcps) {
-            for (size_t wi = 0; wi < wires->size(); ++wi) {
-                fillSemanticImage(wires->at(wi), wi, hit_set, ctx);
-            }
+            fillImagesForWire(wires->at(wi), wi, hit_set, ctx);
         }
 
         smoothDetectorImages(ctx);
@@ -255,7 +249,7 @@ private:
         return WirePrep{planeID, view_idx, wire_center, std::move(hits_filtered), std::move(ranges)};
     }
 
-    static void fillDetectorImage(
+    static void fillImagesForWire(
         const recob::Wire &wire,
         size_t wire_idx,
         const std::set<art::Ptr<recob::Hit>> &hit_set,
@@ -281,6 +275,13 @@ private:
                                                 ctx.calo_alg, ctx.clocks, ctx.detprop_data,
                                                 ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
 
+            sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
+            if (ctx.has_mcps) {
+                sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
+                                          ctx.trackid_to_index, ctx.semantic_label_vector,
+                                          ctx.has_mcps);
+            }
+
             const int tick_start = hit.StartTick();
             const int tick_end   = hit.EndTick();
             const double sumw = cal::sum_adc_weights_in_window(w.ranges, tick_start, tick_end, ctx.adc_image_threshold);
@@ -303,51 +304,8 @@ private:
                     const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
 
                     ctx.detector_images[w.view_idx].set(*row, *geoRes.col, E_pix, true);
-                }
-            }
-        }
-    }
-
-    static void fillSemanticImage(
-        const recob::Wire &wire,
-        size_t wire_idx,
-        const std::set<art::Ptr<recob::Hit>> &hit_set,
-        BuildContext const& ctx)
-    {
-        if (!ctx.has_mcps) return;
-
-        auto prep = prepareWire(wire, wire_idx, hit_set, ctx);
-        if (!prep) return;
-        const auto& w = *prep;
-
-        for (auto const& ph : w.hits_filtered) {
-            const int tick_c = static_cast<int>(ph->PeakTime());
-            auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
-                                             tick_c, w.wire_center, ctx.properties[w.view_idx]);
-            if (!geoRes.col) continue;
-
-            auto sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
-                                           ctx.trackid_to_index, ctx.semantic_label_vector,
-                                           ctx.has_mcps);
-
-            const int tick_start = ph->StartTick();
-            const int tick_end   = ph->EndTick();
-
-            for (auto const& rr : w.ranges) {
-                const int rbeg = rr.begin;
-                const int rend = rbeg + static_cast<int>(rr.adcs->size());
-                const int s = std::max(tick_start, rbeg);
-                const int e = std::min(tick_end,   rend);
-                if (s >= e) continue;
-
-                for (int t = s; t < e; ++t) {
-                    const float a = (*rr.adcs)[t - rbeg];
-                    if (a <= ctx.adc_image_threshold) continue;
-
-                    auto row = geoRes.row(t);
-                    if (!row) continue;
-
-                    ctx.semantic_images[w.view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
+                    if (ctx.has_mcps)
+                        ctx.semantic_images[w.view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
                 }
             }
         }
