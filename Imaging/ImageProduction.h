@@ -23,14 +23,14 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
+#include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
-#include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -55,7 +55,6 @@ struct CalibrationContext {
     detinfo::DetectorClocks const* clocks{nullptr};
     detinfo::DetectorProperties const* detprop{nullptr};
 
-    lariov::TPCEnergyCalib const* tpcCalib{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     lariov::ChannelStatusProvider const* chanStatus{nullptr};
     double T0_ticks{0.0};
@@ -124,7 +123,6 @@ public:
             (cal && cal->enabled()) ? cal->calo      : nullptr,
             (cal && cal->enabled()) ? cal->clocks    : nullptr,
             (cal && cal->enabled()) ? cal->detprop   : nullptr,
-            (cal && cal->enabled()) ? cal->tpcCalib  : nullptr,
             (cal && cal->enabled()) ? cal->sce       : nullptr,
             (cal && cal->enabled()) ? cal->chanStatus: nullptr,
             (cal && cal->enabled()) ? cal->T0_ticks  : 0.0
@@ -163,8 +161,7 @@ private:
 
         calo::CalorimetryAlg* calo_alg;
         detinfo::DetectorClocks const* clocks;
-        detinfo::DetectorProperties const* detprop_data;
-        lariov::TPCEnergyCalib const* tpcCalib;
+        detinfo::DetectorProperties const* detprop;
         spacecharge::SpaceCharge const* sce;
         lariov::ChannelStatusProvider const* chanStatus;
 
@@ -257,7 +254,7 @@ private:
             const unsigned plane = w.planeID.Plane;
             const int tick_c = static_cast<int>(hit.PeakTime());
 
-            auto geo_res = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
+            auto geo_res = cal::applyGeometry(ctx.detprop, ctx.sce, w.planeID,
                                               tick_c, w.wire_center, ctx.properties[w.view_idx]);
             if (!geo_res.col) continue;
 
@@ -265,8 +262,8 @@ private:
             if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(w.planeID).WirePitch());
 
             auto calo_res = cal::applyCalorimetry(hit, plane, geo_res.p_corr, pitch_cm,
-                                                  ctx.calo_alg, ctx.clocks, ctx.detprop_data,
-                                                  ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
+                                                  ctx.calo_alg, ctx.clocks, ctx.detprop,
+                                                  ctx.sce, ctx.T0_ticks);
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
