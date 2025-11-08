@@ -142,20 +142,12 @@ public:
             }
         }
 
-        {
-            constexpr float kSigmaPx = 1.0f;
-            const auto k = cal::gaussianKernel1D(kSigmaPx);
-            for (size_t v = 0; v < detector_images.size(); ++v) {
-                cal::convolveSeparableUnitSum(
-                    detector_images[v], properties[v],
-                    k, k
-                );
-            }
-        }
+        smoothDetectorImages(ctx);
     }
 
 private:
     static constexpr float kAdcThreshold    = 4.0f;
+    static constexpr float kGaussianSigmaPx = 1.0f;  // Gaussian blur σ (pixels)
 
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
@@ -369,6 +361,17 @@ private:
                     ctx.semantic_images[w.view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
                 }
             }
+        }
+    }
+
+    static void smoothDetectorImages(BuildContext const& ctx)
+    {
+        const auto k = cal::gaussianKernel1D(kGaussianSigmaPx);
+        for (size_t view_idx = 0; view_idx < ctx.detector_images.size(); ++view_idx) {
+            cal::convolveSeparableUnitSum(
+                ctx.detector_images[view_idx], ctx.properties[view_idx],
+                k, k
+            );
         }
     }
 
