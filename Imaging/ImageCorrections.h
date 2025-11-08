@@ -12,8 +12,8 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardataalg/DetectorInfo/DetectorClocksData.h"
-#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"

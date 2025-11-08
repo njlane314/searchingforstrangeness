@@ -1,6 +1,7 @@
 art_make(
   NO_PLUGINS
   DICT_LIBRARIES
+    lardata_DetectorInfo
     canvas
     art_Persistency_Common
     art_Persistency_Provenance
