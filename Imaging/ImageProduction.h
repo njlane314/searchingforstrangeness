@@ -25,10 +25,14 @@
 
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
+#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
+#include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -50,8 +54,8 @@ struct PixelImageOptions {
 
 struct CalibrationContext {
     calo::CalorimetryAlg* calo{nullptr};
-    detinfo::DetectorClocksData const* clocks{nullptr};
-    detinfo::DetectorPropertiesData const* detprop{nullptr};
+    detinfo::DetectorClocks const* clocks{nullptr};
+    detinfo::DetectorProperties const* detprop{nullptr};
 
     lariov::TPCEnergyCalib const* tpcCalib{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
@@ -160,8 +164,8 @@ private:
         float adc_image_threshold;
 
         calo::CalorimetryAlg* calo_alg;
-        detinfo::DetectorClocksData const* clocks;
-        detinfo::DetectorPropertiesData const* detprop_data;
+        detinfo::DetectorClocks const* clocks;
+        detinfo::DetectorProperties const* detprop_data;
         lariov::TPCEnergyCalib const* tpcCalib;
         spacecharge::SpaceCharge const* sce;
         lariov::ChannelStatusProvider const* chanStatus;
@@ -302,7 +306,10 @@ private:
                     auto row = geo_res.row(t);
                     if (!row) continue;
 
-                    contributions.push_back({*row, a});
+                    PixelContribution pc;
+                    pc.row = static_cast<int>(*row);
+                    pc.adc = a;
+                    contributions.push_back(pc);
                     sumw += static_cast<double>(a);
                 }
             }

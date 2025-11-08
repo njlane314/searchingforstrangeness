@@ -15,6 +15,10 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
+#include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
 #include <TVector3.h>
 
@@ -23,7 +27,7 @@ namespace cal {
 
 // Geometry corrections -------------------------------------------------------
 
-inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const* detprop,
+inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* detprop,
                                            spacecharge::SpaceCharge const* sce,
                                            geo::PlaneID const& planeID,
                                            TVector3 const& wire_center,
@@ -31,9 +35,8 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const
 {
     const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
     geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
-    if (sce && sce->EnableCalSpatialSCE()) {
-        const unsigned tpcID = planeID.TPC;
-        auto off = sce->GetCalPosOffsets(p, tpcID);
+    if (sce) {
+        auto off = sce->GetCalPosOffsets(p);
         p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
     }
     return p;
@@ -44,7 +47,7 @@ struct GeometryResult {
     double wire_coord{0.0};
     std::optional<size_t> col;
 
-    detinfo::DetectorPropertiesData const* detprop{nullptr};
+    detinfo::DetectorProperties const* detprop{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     geo::PlaneID planeID;
     TVector3 wire_center;
@@ -58,7 +61,7 @@ struct GeometryResult {
     }
 };
 
-inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detprop,
+inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
                                     spacecharge::SpaceCharge const* sce,
                                     geo::PlaneID const& planeID,
                                     int tick_center,
@@ -103,27 +106,22 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    geo::Point_t const& p_corr,
                                    double pitch_cm,
                                    calo::CalorimetryAlg* calo_alg,
-                                   detinfo::DetectorClocksData const* clocks,
-                                   detinfo::DetectorPropertiesData const* detprop,
+                                   detinfo::DetectorClocks const* clocks,
+                                   detinfo::DetectorProperties const* detprop,
                                    lariov::TPCEnergyCalib const* tpcCalib,
                                    spacecharge::SpaceCharge const* sce,
                                    double T0_ticks)
 {
     CaloResult out;
     out.yz_corr = (tpcCalib ? tpcCalib->YZdqdxCorrection(plane, p_corr.Y(), p_corr.Z()) : 1.0);
-    out.E_loc_kV_cm = detprop->Efield();
-    if (sce && sce->EnableCalEfieldSCE()) {
-        auto fo = sce->GetCalEfieldOffsets(p_corr, 0);
+    out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
+    if (sce) {
+        auto fo = sce->GetCalEfieldOffsets(p_corr);
         out.E_loc_kV_cm *= std::hypot(1.0 + fo.X(), fo.Y(), fo.Z());
     }
-    if (calo_alg && clocks && detprop && pitch_cm > 0.0) {
-        const double T0_ns = detprop->SamplingRate() * T0_ticks;
-        const double dQdx_adc_cm = (hit.Integral() / pitch_cm) * out.yz_corr;
-        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(*clocks, *detprop,
-                                              dQdx_adc_cm,
-                                              static_cast<double>(hit.PeakTime()),
-                                              plane, T0_ns, out.E_loc_kV_cm,
-                                              0.0);
+    if (calo_alg && clocks && pitch_cm > 0.0) {
+        const double T0_ns = clocks->TPCClock().TickPeriod() * T0_ticks * 1.0e3;
+        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
     }
     return out;

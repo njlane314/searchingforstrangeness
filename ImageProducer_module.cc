@@ -10,6 +10,8 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
@@ -112,13 +114,13 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
 
-    auto const &det_prop_data =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataForJob();
-    auto const &clock_data =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataForJob();
+    auto const* det_prop_data =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
+    auto const* clock_data =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
 
-    double const tick_period = clock_data.TPCClock().TickPeriod();
-    double const drift_velocity = det_prop_data.DriftVelocity();
+    double const tick_period = clock_data->TPCClock().TickPeriod();
+    double const drift_velocity = det_prop_data->DriftVelocity();
     fDriftStepCm = tick_period * drift_velocity * 1.0e1;
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
@@ -224,7 +226,7 @@ ImageProducer::buildBlipMask(art::Event &event) {
 
     fBlipAlg->RunBlipReco(event);
 
-    auto hit_h = event.getValidHandle<std::vector<recob::Hit>>(fBlipAlg->fHitProducer);
+    auto hit_h = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
 
     auto const &info = fBlipAlg->hitinfo;
     if (info.size() != hit_h->size()) {
@@ -245,9 +247,8 @@ ImageProducer::buildBlipMask(art::Event &event) {
 
 double ImageProducer::collectNeutrinoTime(art::Event &event) const
 {
-    // Get clocks on demand here so the header doesn't need the Data includes.
-    auto const &clockData =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
+    auto const* clockData =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
     if (fT0producer.label().empty()) return 0.0;
 
     auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
@@ -273,7 +274,7 @@ double ImageProducer::collectNeutrinoTime(art::Event &event) const
                     auto const &t0s = slc_to_t0.at(slices.front().key());
                     if (!t0s.empty()) {
                         double const T0_ns = t0s.front()->Time();
-                        return (T0_ns * 1.0e-3) / clockData.TPCClock().TickPeriod();
+                        return (T0_ns * 1.0e-3) / clockData->TPCClock().TickPeriod();
                     }
                 }
             }
@@ -286,10 +287,10 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
-    auto const clock_data =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
-    auto const det_prop =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clock_data);
+    auto const* clock_data =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
+    auto const* det_prop =
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
     double T0_ticks = (fCalo ? collectNeutrinoTime(event) : 0.0);
 
@@ -380,8 +381,8 @@ void ImageProducer::produce(art::Event &event) {
     if (fCalo) {
         image::CalibrationContext tmp;
         tmp.calo = fCalo.get();
-        tmp.clocks = &clock_data;
-        tmp.detprop = &det_prop;
+        tmp.clocks = clock_data;
+        tmp.detprop = det_prop;
         tmp.T0_ticks = T0_ticks;
         cal = tmp;
     }
