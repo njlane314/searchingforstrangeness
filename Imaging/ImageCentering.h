@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IMAGING_IMAGECENTERING_H
+#define IMAGING_IMAGECENTERING_H
 #include <cmath>
 #include <set>
 #include <utility>
@@ -46,3 +47,5 @@ class ImageCentering {
     }
 };
 }
+
+#endif // IMAGING_IMAGECENTERING_H
