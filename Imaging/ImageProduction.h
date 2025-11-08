@@ -284,7 +284,7 @@ private:
 
             const int tick_start = hit.StartTick();
             const int tick_end   = hit.EndTick();
-            const double sumw = cal::sum_adc_weights_in_window(w.ranges, tick_start, tick_end, ctx.adc_image_threshold);
+            const double sumw = cal::windowedSignalSum(w.ranges, tick_start, tick_end, ctx.adc_image_threshold);
 
             for (auto const& rr : w.ranges) {
                 const int rbeg = rr.begin;
@@ -313,9 +313,9 @@ private:
 
     static void smoothDetectorImages(BuildContext const& ctx)
     {
-        const auto k = cal::gaussianKernel1D(kGaussianSigmaPx);
+        const auto k = cal::gaussianKernel(kGaussianSigmaPx);
         for (size_t view_idx = 0; view_idx < ctx.detector_images.size(); ++view_idx) {
-            cal::convolveSeparableUnitSum(
+            cal::separableConvolveNorm(
                 ctx.detector_images[view_idx], ctx.properties[view_idx],
                 k, k
             );

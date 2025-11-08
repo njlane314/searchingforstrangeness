@@ -136,9 +136,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
 
 struct RangeRef { int begin; const std::vector<float>* adcs; };
 
-inline double sum_adc_weights_in_window(std::vector<RangeRef> const& ranges,
-                                        int tick_start, int tick_end,
-                                        float adc_threshold)
+inline double windowedSignalSum(std::vector<RangeRef> const& ranges,
+                                int tick_start, int tick_end,
+                                float adc_threshold)
 {
     double sumw = 0.0;
     for (auto const& rr : ranges) {
@@ -156,7 +156,7 @@ inline double sum_adc_weights_in_window(std::vector<RangeRef> const& ranges,
     return sumw;
 }
 
-inline std::vector<float> gaussianKernel1D(float sigma_px)
+inline std::vector<float> gaussianKernel(float sigma_px)
 {
     if (!(sigma_px > 0.f)) return {1.f};
     const int R = std::max(1, static_cast<int>(std::ceil(3.0f * sigma_px)));
@@ -172,10 +172,10 @@ inline std::vector<float> gaussianKernel1D(float sigma_px)
     return k;
 }
 
-inline void convolveSeparableUnitSum(Image<float>& img,
-                                     ImageProperties const& prop,
-                                     std::vector<float> const& k_row,
-                                     std::vector<float> const& k_col)
+inline void separableConvolveNorm(Image<float>& img,
+                                  ImageProperties const& prop,
+                                  std::vector<float> const& k_row,
+                                  std::vector<float> const& k_col)
 {
     const int Rr = static_cast<int>(k_row.size() / 2);
     const int Rc = static_cast<int>(k_col.size() / 2);
