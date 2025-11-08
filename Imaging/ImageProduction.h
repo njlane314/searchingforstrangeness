@@ -132,8 +132,15 @@ public:
         };
 
 
-        for (size_t wi = 0; wi < wires->size(); ++wi)
+        for (size_t wi = 0; wi < wires->size(); ++wi) {
             fillDetectorImage(wires->at(wi), wi, hit_set, ctx);
+        }
+
+        if (ctx.has_mcps) {
+            for (size_t wi = 0; wi < wires->size(); ++wi) {
+                fillSemanticImage(wires->at(wi), wi, hit_set, ctx);
+            }
+        }
 
         {
             constexpr float kSigmaPx = 1.0f;
@@ -214,9 +221,8 @@ private:
         return semantic_label_vector[idx];
     }
 
-    static void rasteriseHitEnergy(
+    static void accumulateHitEnergy(
         recob::Hit const& hit,
-        recob::Wire const&,
         geo::PlaneID const& planeID,
         TVector3 const& wire_center,
         size_t view_idx,
@@ -264,73 +270,103 @@ private:
         }
     }
 
-    static void fillDetectorImage(
+    struct WirePrep {
+        geo::PlaneID planeID;
+        size_t view_idx;
+        TVector3 wire_center;
+        std::vector<art::Ptr<recob::Hit>> hits_filtered;
+        std::vector<cal::RangeRef> ranges;
+    };
+
+    static std::optional<WirePrep> prepareWire(
         const recob::Wire &wire,
         size_t wire_idx,
         const std::set<art::Ptr<recob::Hit>> &hit_set,
         BuildContext const& ctx)
     {
         const unsigned ch = wire.Channel();
-        if (ctx.chanStatus && ctx.chanStatus->IsBad(ch)) return;
+        if (ctx.chanStatus && ctx.chanStatus->IsBad(ch)) return std::nullopt;
 
         auto wire_ids = ctx.geo->ChannelToWire(ch);
-        if (wire_ids.empty()) return;
+        if (wire_ids.empty()) return std::nullopt;
 
         const auto planeID = wire_ids.front().planeID();
         const geo::View_t view = ctx.geo->View(planeID);
         const size_t view_idx = static_cast<size_t>(view);
-
-        if (view_idx >= ctx.detector_images.size() || view_idx >= ctx.semantic_images.size())
-            return;
+        if (view_idx >= ctx.properties.size()) return std::nullopt;
 
         const geo::WireGeo* wire_geo = ctx.geo->WirePtr(wire_ids.front());
         const TVector3 wire_center = wire_geo->GetCenter();
-
 
         auto hits_for_wire = ctx.wire_hit_assoc.at(wire_idx);
         std::vector<art::Ptr<recob::Hit>> hits_filtered;
         hits_filtered.reserve(hits_for_wire.size());
         for (auto const& ph : hits_for_wire) if (hit_set.count(ph)) hits_filtered.push_back(ph);
-        if (hits_filtered.empty()) return;
-
+        if (hits_filtered.empty()) return std::nullopt;
 
         std::vector<cal::RangeRef> ranges;
         ranges.reserve(wire.SignalROI().get_ranges().size());
         for (auto const& r : wire.SignalROI().get_ranges())
             ranges.push_back(cal::RangeRef{ r.begin_index(), &r.data() });
 
+        return WirePrep{planeID, view_idx, wire_center, std::move(hits_filtered), std::move(ranges)};
+    }
 
-        for (auto const& ph : hits_filtered) {
-            rasteriseHitEnergy(*ph, wire, planeID, wire_center, view_idx, ranges, ctx);
+    static void fillDetectorImage(
+        const recob::Wire &wire,
+        size_t wire_idx,
+        const std::set<art::Ptr<recob::Hit>> &hit_set,
+        BuildContext const& ctx)
+    {
+        auto prep = prepareWire(wire, wire_idx, hit_set, ctx);
+        if (!prep) return;
+        const auto& w = *prep;
 
-            if (ctx.has_mcps) {
-                const int tick_c = static_cast<int>(ph->PeakTime());
-                auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
-                                                 tick_c, wire_center, ctx.properties[view_idx]);
-                if (!geoRes.col) continue;
+        for (auto const& ph : w.hits_filtered) {
+            accumulateHitEnergy(*ph, w.planeID, w.wire_center, w.view_idx, w.ranges, ctx);
+        }
+    }
 
-                const int tick_start = ph->StartTick();
-                const int tick_end   = ph->EndTick();
+    static void fillSemanticImage(
+        const recob::Wire &wire,
+        size_t wire_idx,
+        const std::set<art::Ptr<recob::Hit>> &hit_set,
+        BuildContext const& ctx)
+    {
+        if (!ctx.has_mcps) return;
 
-                for (auto const& rr : ranges) {
-                    const int rbeg = rr.begin;
-                    const int rend = rbeg + static_cast<int>(rr.adcs->size());
-                    const int s = std::max(tick_start, rbeg);
-                    const int e = std::min(tick_end,   rend);
-                    if (s >= e) continue;
+        auto prep = prepareWire(wire, wire_idx, hit_set, ctx);
+        if (!prep) return;
+        const auto& w = *prep;
 
-                    for (int t = s; t < e; ++t) {
-                        const float a = (*rr.adcs)[t - rbeg];
-                        if (a <= ctx.adc_image_threshold) continue;
+        for (auto const& ph : w.hits_filtered) {
+            const int tick_c = static_cast<int>(ph->PeakTime());
+            auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
+                                             tick_c, w.wire_center, ctx.properties[w.view_idx]);
+            if (!geoRes.col) continue;
 
-                        auto row = geoRes.row(t);
-                        if (!row) continue;
+            auto sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
+                                           ctx.trackid_to_index, ctx.semantic_label_vector,
+                                           ctx.has_mcps);
 
-                        auto sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
-                                                       ctx.trackid_to_index, ctx.semantic_label_vector,
-                                                       ctx.has_mcps);
-                        ctx.semantic_images[view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
-                    }
+            const int tick_start = ph->StartTick();
+            const int tick_end   = ph->EndTick();
+
+            for (auto const& rr : w.ranges) {
+                const int rbeg = rr.begin;
+                const int rend = rbeg + static_cast<int>(rr.adcs->size());
+                const int s = std::max(tick_start, rbeg);
+                const int e = std::min(tick_end,   rend);
+                if (s >= e) continue;
+
+                for (int t = s; t < e; ++t) {
+                    const float a = (*rr.adcs)[t - rbeg];
+                    if (a <= ctx.adc_image_threshold) continue;
+
+                    auto row = geoRes.row(t);
+                    if (!row) continue;
+
+                    ctx.semantic_images[w.view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
                 }
             }
         }
