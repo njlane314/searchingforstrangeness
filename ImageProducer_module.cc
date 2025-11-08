@@ -288,7 +288,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const clock_data =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
     auto const det_prop =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event);
+        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clock_data);
 
     double T0_ticks = (fCalo ? collectNeutrinoTime(event, clock_data) : 0.0);
 
