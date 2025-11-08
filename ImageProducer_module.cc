@@ -42,7 +42,6 @@
 #include <vector>
 
 using image::Image;
-using image::ImageCentering;
 using image::ImageProperties;
 using image::ImageProduct;
 
@@ -338,13 +337,13 @@ void ImageProducer::produce(art::Event &event) {
     const double R_V = fCentroidRadiusCm.at(geo::kV);
     const double R_W = fCentroidRadiusCm.at(geo::kW);
 
-    auto cU = ImageCentering::centroidWithinRadius(
+    auto cU = image::centroidWithinRadius(
         event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
         vtxU.Z(), vtxU.X());
-    auto cV = ImageCentering::centroidWithinRadius(
+    auto cV = image::centroidWithinRadius(
         event, common::TPC_VIEW_V, neutrino_hits, R_V, fBadChannels,
         vtxV.Z(), vtxV.X());
-    auto cW = ImageCentering::centroidWithinRadius(
+    auto cW = image::centroidWithinRadius(
         event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
         vtxW.Z(), vtxW.X());
 
