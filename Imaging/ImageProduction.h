@@ -141,7 +141,7 @@ public:
 
 private:
     static constexpr float kAdcThreshold    = 4.0f;
-    static constexpr float kGaussianSigmaPx = 1.0f;  // Gaussian blur σ (pixels)
+    static constexpr float kGaussianSigmaPx = 1.0f;  
 
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
