@@ -12,9 +12,11 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 
+// Use service headers available in uboonecode v08 (no lardata/DetectorInfo/*.h)
 // Space charge service (brings in spacecharge::SpaceCharge)
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
