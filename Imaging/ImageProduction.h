@@ -265,16 +265,16 @@ private:
             const unsigned plane = w.planeID.Plane;
             const int tick_c = static_cast<int>(hit.PeakTime());
 
-            auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
-                                             tick_c, w.wire_center, ctx.properties[w.view_idx]);
-            if (!geoRes.col) continue;
+            auto geo_res = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
+                                              tick_c, w.wire_center, ctx.properties[w.view_idx]);
+            if (!geo_res.col) continue;
 
             double pitch_cm = 1.0;
             if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(w.planeID).WirePitch());
 
-            auto calRes = cal::applyCalorimetry(hit, plane, geoRes.p_corr, pitch_cm,
-                                                ctx.calo_alg, ctx.clocks, ctx.detprop_data,
-                                                ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
+            auto calo_res = cal::applyCalorimetry(hit, plane, geo_res.p_corr, pitch_cm,
+                                                  ctx.calo_alg, ctx.clocks, ctx.detprop_data,
+                                                  ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
@@ -300,15 +300,15 @@ private:
                     const float a = (*rr.adcs)[t - rbeg];
                     if (a <= ctx.adc_image_threshold) continue;
 
-                    auto row = geoRes.row(t);
+                    auto row = geo_res.row(t);
                     if (!row) continue;
 
                     const double wgt = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
-                    const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
+                    const float E_pix = static_cast<float>(calo_res.E_hit_MeV * wgt);
 
-                    ctx.detector_images[w.view_idx].set(*row, *geoRes.col, E_pix, true);
+                    ctx.detector_images[w.view_idx].set(*row, *geo_res.col, E_pix, true);
                     if (ctx.has_mcps)
-                        ctx.semantic_images[w.view_idx].set(*row, *geoRes.col, static_cast<int>(sem), false);
+                        ctx.semantic_images[w.view_idx].set(*row, *geo_res.col, static_cast<int>(sem), false);
                 }
             }
         }
