@@ -15,7 +15,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
 #include <TVector3.h>
 
