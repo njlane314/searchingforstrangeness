@@ -43,7 +43,6 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            lardata_RecoObjects
                            lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
                            lardata_DetectorInfoServices_DetectorClocksServiceStandard_service
-                           lardata::DetectorClocksService
                            nusimdata_SimulationBase
                            larevt_Filters
                            larsim_MCCheater_BackTrackerService_service
