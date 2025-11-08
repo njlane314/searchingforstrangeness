@@ -15,8 +15,9 @@
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "lardata/DetectorInfo/DetectorClocks.h"
-#include "lardata/DetectorInfo/DetectorProperties.h"
+// Use service headers (this stack doesn't ship lardata/DetectorInfo/*.h):
+#include "lardata/DetectorInfoServices/DetectorClocksService.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
