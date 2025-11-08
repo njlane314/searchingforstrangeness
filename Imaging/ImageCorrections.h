@@ -12,8 +12,8 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfo/DetectorClocks.h"
-#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardataobj/RecoBase/Hit.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
@@ -26,7 +26,7 @@ namespace cal {
 
 // Geometry corrections -------------------------------------------------------
 
-inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* detprop,
+inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const* detprop,
                                            spacecharge::SpaceCharge const* sce,
                                            geo::PlaneID const& planeID,
                                            TVector3 const& wire_center,
@@ -47,7 +47,7 @@ struct GeometryResult {
     double wire_coord{0.0};
     std::optional<size_t> col;
 
-    detinfo::DetectorProperties const* detprop{nullptr};
+    detinfo::DetectorPropertiesData const* detprop{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
     geo::PlaneID planeID;
     TVector3 wire_center;
@@ -61,7 +61,7 @@ struct GeometryResult {
     }
 };
 
-inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
+inline GeometryResult applyGeometry(detinfo::DetectorPropertiesData const* detprop,
                                     spacecharge::SpaceCharge const* sce,
                                     geo::PlaneID const& planeID,
                                     int tick_center,
@@ -106,8 +106,8 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    geo::Point_t const& p_corr,
                                    double pitch_cm,
                                    calo::CalorimetryAlg* calo_alg,
-                                   detinfo::DetectorClocks const* clocks,
-                                   detinfo::DetectorProperties const* detprop,
+                                   detinfo::DetectorClocksData const* clocks,
+                                   detinfo::DetectorPropertiesData const* detprop,
                                    lariov::TPCEnergyCalib const* tpcCalib,
                                    spacecharge::SpaceCharge const* sce,
                                    double T0_ticks)
