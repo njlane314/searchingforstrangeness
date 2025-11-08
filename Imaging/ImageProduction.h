@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -108,13 +107,15 @@ public:
             for (size_t i = 0; i < mcps->size(); ++i) trkid_to_idx[mcps->at(i).TrackId()] = i;
 
 
-        std::set<art::Ptr<recob::Hit>> hit_set(hits.begin(), hits.end());
+        std::map<art::Ptr<recob::Hit>, std::size_t> hit_to_key;
+        for (auto const& ph : hits)
+            hit_to_key.emplace(ph, static_cast<std::size_t>(ph.key()));
         BuildContext ctx{
             properties,
             detector_images,
             semantic_images,
             wire_hit_assoc,
-            hit_set,
+            hit_to_key,
             mcp_bkth_assoc,
             mcps,
             trkid_to_idx,
@@ -133,7 +134,7 @@ public:
 
 
         for (size_t wi = 0; wi < wires->size(); ++wi) {
-            fillImagesForWire(wires->at(wi), wi, hit_set, ctx);
+            fillImagesForWire(wires->at(wi), wi, ctx);
         }
 
         smoothDetectorImages(ctx);
@@ -149,7 +150,7 @@ private:
         std::vector<Image<int>> &semantic_images;
 
         const art::FindManyP<recob::Hit> &wire_hit_assoc;
-        const std::set<art::Ptr<recob::Hit>> &hit_set;
+        const std::map<art::Ptr<recob::Hit>, std::size_t> &hit_to_key;
 
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc;
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector;
@@ -174,6 +175,7 @@ private:
 
     static sem::SemanticClassifier::SemanticLabel labelSemanticPixels(
         const art::Ptr<recob::Hit> &matched_hit,
+        std::size_t matched_hit_key,
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector,
         const std::map<int, size_t> &trackid_to_index,
@@ -185,7 +187,7 @@ private:
 
         std::vector<art::Ptr<simb::MCParticle>> parts;
         std::vector<anab::BackTrackerHitMatchingData const*> bkd;
-        mcp_bkth_assoc.get(matched_hit.key(), parts, bkd);
+        mcp_bkth_assoc.get(matched_hit_key, parts, bkd);
         if (bkd.empty()) return out;
 
         float max_ide_fraction = -1.0f;
@@ -218,7 +220,6 @@ private:
     static std::optional<WirePrep> prepareWire(
         const recob::Wire &wire,
         size_t wire_idx,
-        const std::set<art::Ptr<recob::Hit>> &hit_set,
         BuildContext const& ctx)
     {
         const unsigned ch = wire.Channel();
@@ -238,7 +239,8 @@ private:
         auto hits_for_wire = ctx.wire_hit_assoc.at(wire_idx);
         std::vector<art::Ptr<recob::Hit>> hits_filtered;
         hits_filtered.reserve(hits_for_wire.size());
-        for (auto const& ph : hits_for_wire) if (hit_set.count(ph)) hits_filtered.push_back(ph);
+        for (auto const& ph : hits_for_wire)
+            if (ctx.hit_to_key.find(ph) != ctx.hit_to_key.end()) hits_filtered.push_back(ph);
         if (hits_filtered.empty()) return std::nullopt;
 
         std::vector<cal::RangeRef> ranges;
@@ -252,10 +254,9 @@ private:
     static void fillImagesForWire(
         const recob::Wire &wire,
         size_t wire_idx,
-        const std::set<art::Ptr<recob::Hit>> &hit_set,
         BuildContext const& ctx)
     {
-        auto prep = prepareWire(wire, wire_idx, hit_set, ctx);
+        auto prep = prepareWire(wire, wire_idx, ctx);
         if (!prep) return;
         const auto& w = *prep;
 
@@ -277,7 +278,9 @@ private:
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
-                sem = labelSemanticPixels(ph, ctx.mcp_bkth_assoc, ctx.mcp_vector,
+                auto hit_it = ctx.hit_to_key.find(ph);
+                if (hit_it == ctx.hit_to_key.end()) continue;
+                sem = labelSemanticPixels(ph, hit_it->second, ctx.mcp_bkth_assoc, ctx.mcp_vector,
                                           ctx.trackid_to_index, ctx.semantic_label_vector,
                                           ctx.has_mcps);
             }
