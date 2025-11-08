@@ -5,9 +5,12 @@
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
+#include "larcore/CoreUtils/ServiceUtil.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -26,6 +29,9 @@
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "lardataobj/AnalysisBase/T0.h"
 #include "ubreco/BlipReco/Alg/BlipRecoAlg.h"
+
+#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
+#include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include <TVector3.h>
 #include <algorithm>
@@ -381,6 +387,8 @@ void ImageProducer::produce(art::Event &event) {
         tmp.calo = fCalo.get();
         tmp.clocks = clock_data;
         tmp.detprop = det_prop;
+        tmp.sce = lar::providerFrom<spacecharge::SpaceChargeService>();
+        tmp.chanStatus = lar::providerFrom<lariov::ChannelStatusService>();
         tmp.T0_ticks = T0_ticks;
         cal = tmp;
     }

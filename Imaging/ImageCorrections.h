@@ -12,14 +12,12 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardataobj/RecoBase/Hit.h"
 
+// Space charge service (brings in spacecharge::SpaceCharge)
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-// Use service headers (this stack doesn't ship lardata/DetectorInfo/*.h):
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
-#include "larevt/CalibrationDBI/Interface/TPCEnergyCalibService.h"
 
 #include <TVector3.h>
 
@@ -36,7 +34,8 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
 {
     const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
     geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
-    if (sce) {
+    if (sce && sce->EnableCalSpatialSCE()) {
+        // v08-era interface takes a single point argument
         auto off = sce->GetCalPosOffsets(p);
         p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
     }
@@ -96,32 +95,35 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
 struct CaloResult {
     double E_hit_MeV{0.0};
     double dEdx_MeV_cm{0.0};
-    double yz_corr{1.0};
+    double yz_corr{1.0}; // kept for completeness; set to 1.0 w/o DB correction
     double E_loc_kV_cm{0.0};
 };
 
 // Calorimetry corrections ----------------------------------------------------
 
 inline CaloResult applyCalorimetry(recob::Hit const& hit,
-                                   unsigned plane,
+                                   unsigned /*plane*/,
                                    geo::Point_t const& p_corr,
                                    double pitch_cm,
                                    calo::CalorimetryAlg* calo_alg,
-                                   detinfo::DetectorClocks const* clocks,
+                                   detinfo::DetectorClocks const* /*clocks*/,
                                    detinfo::DetectorProperties const* detprop,
-                                   lariov::TPCEnergyCalib const* tpcCalib,
                                    spacecharge::SpaceCharge const* sce,
                                    double T0_ticks)
 {
     CaloResult out;
-    out.yz_corr = (tpcCalib ? tpcCalib->YZdqdxCorrection(plane, p_corr.Y(), p_corr.Z()) : 1.0);
+    // No DB correction dependency in this build; leave yz_corr at 1.0
     out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
-    if (sce) {
-        auto fo = sce->GetCalEfieldOffsets(p_corr);
-        out.E_loc_kV_cm *= std::hypot(1.0 + fo.X(), fo.Y(), fo.Z());
+    if (sce && sce->EnableCalEfieldSCE()) {
+        auto fo = sce->GetCalEfieldOffsets(p_corr); // one-arg signature in v08
+        if (detprop) {
+            const double ex = 1.0 + fo.X();
+            out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
+        }
     }
-    if (calo_alg && clocks && pitch_cm > 0.0) {
-        const double T0_ns = clocks->TPCClock().TickPeriod() * T0_ticks * 1.0e3;
+    if (calo_alg && detprop && pitch_cm > 0.0) {
+        const double T0_ns = detprop->SamplingRate() * T0_ticks;
+        // Use legacy CalorimetryAlg signature for v08
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
     }
