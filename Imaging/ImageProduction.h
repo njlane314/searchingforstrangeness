@@ -221,55 +221,6 @@ private:
         return semantic_label_vector[idx];
     }
 
-    static void accumulateHitEnergy(
-        recob::Hit const& hit,
-        geo::PlaneID const& planeID,
-        TVector3 const& wire_center,
-        size_t view_idx,
-        std::vector<cal::RangeRef> const& roi_ranges,
-        BuildContext const& ctx)
-    {
-        const unsigned plane = planeID.Plane;
-        const int tick_c = static_cast<int>(hit.PeakTime());
-
-        auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, planeID,
-                                         tick_c, wire_center, ctx.properties[view_idx]);
-        if (!geoRes.col) return;
-
-        double pitch_cm = 1.0;
-        if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(planeID).WirePitch());
-
-        auto calRes = cal::applyCalorimetry(hit, plane, geoRes.p_corr, pitch_cm,
-                                            ctx.calo_alg, ctx.clocks, ctx.detprop_data,
-                                            ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
-
-        const int tick_start = hit.StartTick();
-        const int tick_end   = hit.EndTick();
-        const double sumw = cal::sum_adc_weights_in_window(roi_ranges, tick_start, tick_end, ctx.adc_image_threshold);
-
-        for (auto const& rr : roi_ranges) {
-            const int rbeg = rr.begin;
-            const int rend = rbeg + static_cast<int>(rr.adcs->size());
-            const int s = std::max(tick_start, rbeg);
-            const int e = std::min(tick_end,   rend);
-            if (s >= e) continue;
-
-            for (int t = s; t < e; ++t) {
-                const float a = (*rr.adcs)[t - rbeg];
-                if (a <= ctx.adc_image_threshold) continue;
-
-                auto row = geoRes.row(t);
-                if (!row) continue;
-
-                const double w = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
-                const float E_pix = static_cast<float>(calRes.E_hit_MeV * w);
-
-                const float prev = ctx.detector_images[view_idx].get(*row, *geoRes.col);
-                ctx.detector_images[view_idx].set(*row, *geoRes.col, prev + E_pix);
-            }
-        }
-    }
-
     struct WirePrep {
         geo::PlaneID planeID;
         size_t view_idx;
@@ -323,7 +274,46 @@ private:
         const auto& w = *prep;
 
         for (auto const& ph : w.hits_filtered) {
-            accumulateHitEnergy(*ph, w.planeID, w.wire_center, w.view_idx, w.ranges, ctx);
+            const recob::Hit& hit = *ph;
+            const unsigned plane = w.planeID.Plane;
+            const int tick_c = static_cast<int>(hit.PeakTime());
+
+            auto geoRes = cal::applyGeometry(ctx.detprop_data, ctx.sce, w.planeID,
+                                             tick_c, w.wire_center, ctx.properties[w.view_idx]);
+            if (!geoRes.col) continue;
+
+            double pitch_cm = 1.0;
+            if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(w.planeID).WirePitch());
+
+            auto calRes = cal::applyCalorimetry(hit, plane, geoRes.p_corr, pitch_cm,
+                                                ctx.calo_alg, ctx.clocks, ctx.detprop_data,
+                                                ctx.tpcCalib, ctx.sce, ctx.T0_ticks);
+
+            const int tick_start = hit.StartTick();
+            const int tick_end   = hit.EndTick();
+            const double sumw = cal::sum_adc_weights_in_window(w.ranges, tick_start, tick_end, ctx.adc_image_threshold);
+
+            for (auto const& rr : w.ranges) {
+                const int rbeg = rr.begin;
+                const int rend = rbeg + static_cast<int>(rr.adcs->size());
+                const int s = std::max(tick_start, rbeg);
+                const int e = std::min(tick_end,   rend);
+                if (s >= e) continue;
+
+                for (int t = s; t < e; ++t) {
+                    const float a = (*rr.adcs)[t - rbeg];
+                    if (a <= ctx.adc_image_threshold) continue;
+
+                    auto row = geoRes.row(t);
+                    if (!row) continue;
+
+                    const double wgt = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
+                    const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
+
+                    const float prev = ctx.detector_images[w.view_idx].get(*row, *geoRes.col);
+                    ctx.detector_images[w.view_idx].set(*row, *geoRes.col, prev + E_pix);
+                }
+            }
         }
     }
 
