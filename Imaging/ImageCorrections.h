@@ -132,30 +132,6 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
     return out;
 }
 
-// Smoothing / filtering ------------------------------------------------------
-
-struct RangeRef { int begin; const std::vector<float>* adcs; };
-
-inline double windowedSignalSum(std::vector<RangeRef> const& ranges,
-                                int tick_start, int tick_end,
-                                float adc_threshold)
-{
-    double sumw = 0.0;
-    for (auto const& rr : ranges) {
-        const int rbeg = rr.begin;
-        const int rend = rbeg + static_cast<int>(rr.adcs->size());
-        const int s = std::max(tick_start, rbeg);
-        const int e = std::min(tick_end,   rend);
-        if (s >= e) continue;
-        for (int t = s; t < e; ++t) {
-            const float a = (*rr.adcs)[t - rbeg];
-            if (a > adc_threshold) sumw += static_cast<double>(a);
-        }
-    }
-    if (sumw <= 0.0) sumw = static_cast<double>(std::max(1, tick_end - tick_start));
-    return sumw;
-}
-
 }
 }
 
