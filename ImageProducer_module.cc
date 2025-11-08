@@ -10,9 +10,6 @@
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-// MCC9: Data types live under lardata/DetectorInfo (not lardataalg/)
-#include "lardata/DetectorInfo/DetectorClocksData.h"
-#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
@@ -90,8 +87,7 @@ class ImageProducer : public art::EDProducer {
 
     std::map<art::Ptr<recob::Hit>, std::size_t> buildBlipMask(art::Event &event);
 
-    double collectNeutrinoTime(art::Event &event,
-                               detinfo::DetectorClocksData const &clockData) const;
+    double collectNeutrinoTime(art::Event &event) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -247,9 +243,11 @@ ImageProducer::buildBlipMask(art::Event &event) {
     return blip_hit_to_key;
 }
 
-double ImageProducer::collectNeutrinoTime(art::Event &event,
-                                          detinfo::DetectorClocksData const &clockData) const
+double ImageProducer::collectNeutrinoTime(art::Event &event) const
 {
+    // Get clocks on demand here so the header doesn't need the Data includes.
+    auto const &clockData =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
     if (fT0producer.label().empty()) return 0.0;
 
     auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
@@ -293,7 +291,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clock_data);
 
-    double T0_ticks = (fCalo ? collectNeutrinoTime(event, clock_data) : 0.0);
+    double T0_ticks = (fCalo ? collectNeutrinoTime(event) : 0.0);
 
     if (fBlipAlg) {
         auto blip_hit_to_key = buildBlipMask(event);
