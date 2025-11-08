@@ -302,8 +302,7 @@ private:
                     const double wgt = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
                     const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
 
-                    const float prev = ctx.detector_images[w.view_idx].get(*row, *geoRes.col);
-                    ctx.detector_images[w.view_idx].set(*row, *geoRes.col, prev + E_pix);
+                    ctx.detector_images[w.view_idx].set(*row, *geoRes.col, E_pix, true);
                 }
             }
         }
