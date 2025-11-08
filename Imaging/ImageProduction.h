@@ -23,10 +23,8 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-// Use services in the header; we only need pointers to the Data types here.
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-namespace detinfo { class DetectorClocksData; class DetectorPropertiesData; class DetectorProperties; }
 
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
@@ -35,7 +33,6 @@ namespace detinfo { class DetectorClocksData; class DetectorPropertiesData; clas
 #include "nusimdata/SimulationBase/MCParticle.h"
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "larevt/CalibrationServices/TPCEnergyCalibService.h"
 #include "larevt/CalibrationServices/ChannelStatusService.h"
 
 #include <TVector3.h>
