@@ -143,6 +143,9 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
+    produces<std::vector<ImageProduct>>("neutrino_slice_images");
+    produces<std::vector<ImageProduct>>("interaction_event_images");
+
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
