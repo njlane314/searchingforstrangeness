@@ -24,6 +24,8 @@
 namespace image {
 namespace cal {
 
+// Geometry corrections -------------------------------------------------------
+
 inline geo::Point_t correctedPointFromTick(detinfo::DetectorPropertiesData const* detprop,
                                            spacecharge::SpaceCharge const* sce,
                                            geo::PlaneID const& planeID,
@@ -51,6 +53,7 @@ struct GeometryResult {
     TVector3 wire_center;
     ImageProperties const* prop{nullptr};
 
+    // Convenience helper using cached context.
     inline std::optional<size_t> row(int tick) const
     {
         auto p = correctedPointFromTick(detprop, sce, planeID, wire_center, tick);
@@ -96,6 +99,8 @@ struct CaloResult {
     double E_loc_kV_cm{0.0};
 };
 
+// Calorimetry corrections ----------------------------------------------------
+
 inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    unsigned plane,
                                    geo::Point_t const& p_corr,
@@ -126,6 +131,8 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
     }
     return out;
 }
+
+// Smoothing / filtering ------------------------------------------------------
 
 struct RangeRef { int begin; const std::vector<float>* adcs; };
 
