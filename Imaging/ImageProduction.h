@@ -308,13 +308,6 @@ private:
 
                     contributions.push_back({*row, a});
                     sumw += static_cast<double>(a);
-
-                    const double wgt = (sumw > 0.0) ? (static_cast<double>(a) / sumw) : 0.0;
-                    const float E_pix = static_cast<float>(calo_res.E_hit_MeV * wgt);
-
-                    ctx.detector_images[w.view_idx].set(*row, *geo_res.col, E_pix, true);
-                    if (ctx.has_mcps)
-                        ctx.semantic_images[w.view_idx].set(*row, *geo_res.col, static_cast<int>(sem), false);
                 }
             }
 
@@ -325,11 +318,11 @@ private:
 
             for (auto const& contrib : contributions) {
                 const double wgt = (sumw > 0.0) ? (static_cast<double>(contrib.adc) / sumw) : 0.0;
-                const float E_pix = static_cast<float>(calRes.E_hit_MeV * wgt);
+                const float E_pix = static_cast<float>(calo_res.E_hit_MeV * wgt);
 
-                ctx.detector_images[w.view_idx].set(contrib.row, *geoRes.col, E_pix, true);
+                ctx.detector_images[w.view_idx].set(contrib.row, *geo_res.col, E_pix, true);
                 if (ctx.has_mcps)
-                    ctx.semantic_images[w.view_idx].set(contrib.row, *geoRes.col, static_cast<int>(sem), false);
+                    ctx.semantic_images[w.view_idx].set(contrib.row, *geo_res.col, static_cast<int>(sem), false);
             }
         }
     }
