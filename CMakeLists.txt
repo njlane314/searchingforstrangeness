@@ -33,7 +33,7 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            lardataobj_RawData
                            lardataobj_AnalysisBase
                            lardataobj_MCBase
-                           lardata_DetectorInfo
+                           lardataalg_DetectorInfo
                            lardata_Utilities
                            lardata_RecoObjects
                            lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
