@@ -1,7 +1,5 @@
 <lcgdict>
-  <include file="Products/ImageProducts.h"/>
-  <include file="Products/InferencePerf.h"/>
-  <include file="Products/InferencePred.h"/>
+  <!-- Headers are included via classes.h; do not use <include> tags here. -->
 
   <class name="image::ImageProduct"/>
   <class name="art::Wrapper<image::ImageProduct>"/>
