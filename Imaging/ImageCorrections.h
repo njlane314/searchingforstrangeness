@@ -12,7 +12,6 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 
@@ -102,11 +101,9 @@ struct CaloResult {
 // Calorimetry corrections ----------------------------------------------------
 
 inline CaloResult applyCalorimetry(recob::Hit const& hit,
-                                   unsigned /*plane*/,
                                    geo::Point_t const& p_corr,
                                    double pitch_cm,
                                    calo::CalorimetryAlg* calo_alg,
-                                   detinfo::DetectorClocks const* /*clocks*/,
                                    detinfo::DetectorProperties const* detprop,
                                    spacecharge::SpaceCharge const* sce,
                                    double T0_ticks)
