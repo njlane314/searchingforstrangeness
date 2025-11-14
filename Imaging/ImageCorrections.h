@@ -95,7 +95,7 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
 struct CaloResult {
     double E_hit_MeV{0.0};
     double dEdx_MeV_cm{0.0};
-    double yz_corr{1.0}; // kept for completeness; set to 1.0 w/o DB correction
+    double yz_corr{1.0};
     double E_loc_kV_cm{0.0};
 };
 
@@ -122,7 +122,6 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
     }
     if (calo_alg && detprop && pitch_cm > 0.0) {
         const double T0_ns = detprop->SamplingRate() * T0_ticks;
-        // Use legacy CalorimetryAlg signature for v08
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
     }
