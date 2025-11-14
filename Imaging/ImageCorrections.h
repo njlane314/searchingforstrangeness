@@ -16,8 +16,6 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 
-// Use service headers available in uboonecode v08 (no lardata/DetectorInfo/*.h)
-// Space charge service (brings in spacecharge::SpaceCharge)
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include <TVector3.h>
@@ -29,16 +27,18 @@ namespace cal {
 
 inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* detprop,
                                            spacecharge::SpaceCharge const* sce,
-                                           geo::PlaneID const& planeID,
+                                           geo::PlaneID const& plane,
                                            TVector3 const& wire_center,
                                            int tick)
 {
-    const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), planeID);
+    const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), plane);
     geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
-    if (sce && sce->EnableCalSpatialSCE()) {
-        // v08-era interface takes a single point argument
-        auto off = sce->GetCalPosOffsets(p);
-        p = geo::Point_t{ p.X() - off.X(), p.Y() + off.Y(), p.Z() + off.Z() };
+
+    if (sce && sce->EnableSimSpatialSCE()) {
+        auto off = sce->GetPosOffsets(p_meas);  // cm
+        return geo::Point_t{ p_meas.X() - off.X(),
+                             p_meas.Y() + off.Y(),
+                             p_meas.Z() + off.Z() };
     }
     return p;
 }
@@ -50,26 +50,25 @@ struct GeometryResult {
 
     detinfo::DetectorProperties const* detprop{nullptr};
     spacecharge::SpaceCharge const* sce{nullptr};
-    geo::PlaneID planeID;
+    geo::PlaneID plane;
     TVector3 wire_center;
     ImageProperties const* prop{nullptr};
 
-    // Convenience helper using cached context.
     inline std::optional<size_t> row(int tick) const
     {
-        auto p = correctedPointFromTick(detprop, sce, planeID, wire_center, tick);
+        auto p = correctedPointFromTick(detprop, sce, plane, wire_center, tick);
         return prop->row(p.X());
     }
 };
 
 inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
                                     spacecharge::SpaceCharge const* sce,
-                                    geo::PlaneID const& planeID,
+                                    geo::PlaneID const& plane,
                                     int tick_center,
                                     TVector3 const& wire_center,
                                     ImageProperties const& prop)
 {
-    geo::Point_t p_corr = correctedPointFromTick(detprop, sce, planeID, wire_center, tick_center);
+    geo::Point_t p_corr = correctedPointFromTick(detprop, sce, plane, wire_center, tick_center);
 
     constexpr double plus60  =  1.04719758034;
     constexpr double minus60 = -1.04719758034;
@@ -87,7 +86,7 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
     out.col = prop.col(wire_coord);
     out.detprop = detprop;
     out.sce = sce;
-    out.planeID = planeID;
+    out.plane = plane;
     out.wire_center = wire_center;
     out.prop = &prop;
     return out;
@@ -113,10 +112,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    double T0_ticks)
 {
     CaloResult out;
-    // No DB correction dependency in this build; leave yz_corr at 1.0
     out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
     if (sce && sce->EnableCalEfieldSCE()) {
-        auto fo = sce->GetCalEfieldOffsets(p_corr); // one-arg signature in v08
+        auto fo = sce->GetCalEfieldOffsets(p_corr); 
         if (detprop) {
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
