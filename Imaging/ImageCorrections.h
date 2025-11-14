@@ -34,10 +34,10 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
     geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
 
     if (sce && sce->EnableSimSpatialSCE()) {
-        auto off = sce->GetPosOffsets(p_meas);  // cm
-        return geo::Point_t{ p_meas.X() - off.X(),
-                             p_meas.Y() + off.Y(),
-                             p_meas.Z() + off.Z() };
+        auto off = sce->GetPosOffsets(p);  // cm
+        return geo::Point_t{ p.X() - off.X(),
+                             p.Y() + off.Y(),
+                             p.Z() + off.Z() };
     }
     return p;
 }
