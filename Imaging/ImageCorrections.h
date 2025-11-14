@@ -113,8 +113,8 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
 {
     CaloResult out;
     out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
-    if (sce && sce->EnableCalEfieldSCE()) {
-        auto fo = sce->GetCalEfieldOffsets(p_corr); 
+    if (sce && sce->EnableSimEfieldSCE()) {
+        auto fo = sce->GetEfieldOffsets(p_corr); 
         if (detprop) {
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
