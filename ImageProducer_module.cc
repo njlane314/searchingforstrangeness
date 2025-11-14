@@ -383,7 +383,6 @@ void ImageProducer::produce(art::Event &event) {
     if (fCalo) {
         image::CalibrationContext tmp;
         tmp.calo = fCalo.get();
-        tmp.clocks = clock_data;
         tmp.detprop = det_prop;
         tmp.sce = lar::providerFrom<spacecharge::SpaceChargeService>();
         tmp.chanStatus = lar::providerFrom<lariov::ChannelStatusService>();

@@ -23,7 +23,6 @@
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "lardataobj/RecoBase/Hit.h"
@@ -52,14 +51,13 @@ struct PixelImageOptions {
 
 struct CalibrationContext {
     calo::CalorimetryAlg* calo{nullptr};
-    detinfo::DetectorClocks const* clocks{nullptr};
     detinfo::DetectorProperties const* detprop{nullptr};
 
     spacecharge::SpaceCharge const* sce{nullptr};
     lariov::ChannelStatusProvider const* chanStatus{nullptr};
     double T0_ticks{0.0};
 
-    bool enabled() const { return calo && clocks && detprop; }
+    bool enabled() const { return calo && detprop; }
 };
 
 class ImageProduction {
@@ -122,7 +120,6 @@ public:
             geo_,
             kAdcThreshold,
             (cal && cal->enabled()) ? cal->calo      : nullptr,
-            (cal && cal->enabled()) ? cal->clocks    : nullptr,
             (cal && cal->enabled()) ? cal->detprop   : nullptr,
             (cal && cal->enabled()) ? cal->sce       : nullptr,
             (cal && cal->enabled()) ? cal->chanStatus: nullptr,
@@ -160,7 +157,6 @@ private:
         float adc_image_threshold;
 
         calo::CalorimetryAlg* calo_alg;
-        detinfo::DetectorClocks const* clocks;
         detinfo::DetectorProperties const* detprop;
         spacecharge::SpaceCharge const* sce;
         lariov::ChannelStatusProvider const* chanStatus;
@@ -251,7 +247,6 @@ private:
 
         for (auto const& ph : w.hits_filtered) {
             const recob::Hit& hit = *ph;
-            const unsigned plane = w.planeID.Plane;
             const int tick_c = static_cast<int>(hit.PeakTime());
 
             auto geo_res = cal::applyGeometry(ctx.detprop, ctx.sce, w.planeID,
@@ -261,8 +256,8 @@ private:
             double pitch_cm = 1.0;
             if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(w.planeID).WirePitch());
 
-            auto calo_res = cal::applyCalorimetry(hit, plane, geo_res.p_corr, pitch_cm,
-                                                  ctx.calo_alg, ctx.clocks, ctx.detprop,
+            auto calo_res = cal::applyCalorimetry(hit, geo_res.p_corr, pitch_cm,
+                                                  ctx.calo_alg, ctx.detprop,
                                                   ctx.sce, ctx.T0_ticks);
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
