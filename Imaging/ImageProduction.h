@@ -107,6 +107,7 @@ public:
         std::map<art::Ptr<recob::Hit>, std::size_t> hit_to_key;
         for (auto const& ph : hits)
             hit_to_key.emplace(ph, static_cast<std::size_t>(ph.key()));
+        
         BuildContext ctx{
             properties,
             detector_images,
@@ -127,7 +128,6 @@ public:
             (cal && cal->enabled()) ? cal->chanStatus: nullptr,
             (cal && cal->enabled()) ? cal->T0_ticks  : 0.0
         };
-
 
         for (size_t wi = 0; wi < wires->size(); ++wi) {
             fillImagesForWire(wires->at(wi), wi, ctx);
