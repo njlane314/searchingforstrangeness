@@ -43,8 +43,8 @@ DefaultAnalysis: {
     ignoreMCFlux: false
 }
 
-LambdaSignalAnalysis: {
-    tool_type: "LambdaSignalAnalysis"
+SignalAnalysis: {
+    tool_type: "SignalAnalysis"
     MCTproducer: @local::standard_producers.MCTproducer
     MCPproducer: @local::standard_producers.MCPproducer
     MCRproducer: @local::standard_producers.MCRproducer
