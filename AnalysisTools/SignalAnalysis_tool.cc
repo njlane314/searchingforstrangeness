@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_LAMBDA_CXX
-#define ANALYSIS_LAMBDA_CXX
+#ifndef ANALYSIS_SIGNAL_CXX
+#define ANALYSIS_SIGNAL_CXX
 
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -40,10 +40,10 @@
 
 namespace analysis {
 
-class LambdaSignalAnalysis : public AnalysisToolBase {
+class SignalAnalysis : public AnalysisToolBase {
 public:
-    explicit LambdaSignalAnalysis(fhicl::ParameterSet const& p);
-    ~LambdaSignalAnalysis() override = default;
+    explicit SignalAnalysis(fhicl::ParameterSet const& p);
+    ~SignalAnalysis() override = default;
 
     void configure(const fhicl::ParameterSet& pset) override;
     void setBranches(TTree* tree) override;
@@ -206,9 +206,9 @@ private:
                                  std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& assocMCPart) const;
 };
 
-LambdaSignalAnalysis::LambdaSignalAnalysis(fhicl::ParameterSet const& p) { this->configure(p); }
+SignalAnalysis::SignalAnalysis(fhicl::ParameterSet const& p) { this->configure(p); }
 
-void LambdaSignalAnalysis::configure(const fhicl::ParameterSet& p) {
+void SignalAnalysis::configure(const fhicl::ParameterSet& p) {
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fMCRproducer = p.get<art::InputTag>("MCRproducer");
@@ -238,7 +238,7 @@ void LambdaSignalAnalysis::configure(const fhicl::ParameterSet& p) {
     fPRMinPurity             = p.get<float>("PatternRecoMinPurity",       0.5f);
 }
 
-void LambdaSignalAnalysis::setBranches(TTree* t) {
+void SignalAnalysis::setBranches(TTree* t) {
     t->Branch("nu_pdg",           &_nu_pdg,           "nu_pdg/I");
     t->Branch("ccnc",             &_ccnc,             "ccnc/I");
     t->Branch("interaction_mode", &_interaction_mode, "interaction_mode/I");
@@ -398,7 +398,7 @@ void LambdaSignalAnalysis::setBranches(TTree* t) {
     t->Branch("n_lambda_from_heavy",&_n_lambda_from_heavy,"n_lambda_from_heavy/I");
 }
 
-void LambdaSignalAnalysis::resetTTree(TTree*) {
+void SignalAnalysis::resetTTree(TTree*) {
     _nu_pdg = 0; _ccnc = -1; _interaction_mode = -1; _interaction_type = -1;
     _nu_E = nan<float>(); _nu_theta = nan<float>(); _nu_pt = nan<float>();
     _nu_vx = nan<float>(); _nu_vy = nan<float>(); _nu_vz = nan<float>(); _nu_t = nan<float>();
@@ -478,8 +478,8 @@ void LambdaSignalAnalysis::resetTTree(TTree*) {
     _n_lambda_from_heavy = 0;
 }
 
-LambdaSignalAnalysis::DecayMatch
-LambdaSignalAnalysis::MatchLambdaToPPi(const art::Ptr<simb::MCParticle>& lam,
+SignalAnalysis::DecayMatch
+SignalAnalysis::MatchLambdaToPPi(const art::Ptr<simb::MCParticle>& lam,
                                        const std::map<int, art::Ptr<simb::MCParticle>>& mp,
                                        bool allowAnti) const {
     DecayMatch ret;
@@ -508,7 +508,7 @@ LambdaSignalAnalysis::MatchLambdaToPPi(const art::Ptr<simb::MCParticle>& lam,
     return ret;
 }
 
-void LambdaSignalAnalysis::SelectBestCandidate() {
+void SignalAnalysis::SelectBestCandidate() {
     _sel_index = -1;
     if (_n_lambda_candidates <= 0) return;
 
@@ -560,7 +560,7 @@ void LambdaSignalAnalysis::SelectBestCandidate() {
     _sel_ppi_opening_angle  = _ppi_opening_angle[i];
 }
 
-void LambdaSignalAnalysis::FindTruthMuon(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h) {
+void SignalAnalysis::FindTruthMuon(const art::ValidHandle<std::vector<simb::MCParticle>>& mcp_h) {
     _mu_truth_trackid = -1; _mu_truth_pdg = 0;
     double bestE = -1.0;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
@@ -588,7 +588,7 @@ void LambdaSignalAnalysis::FindTruthMuon(const art::ValidHandle<std::vector<simb
     }
 }
 
-size_t LambdaSignalAnalysis::CountTruthHitsInSlice(
+size_t SignalAnalysis::CountTruthHitsInSlice(
     int trackid,
     const std::vector<art::Ptr<recob::Hit>>& hits,
     std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>& assocMCPart) const
@@ -604,7 +604,7 @@ size_t LambdaSignalAnalysis::CountTruthHitsInSlice(
     return n;
 }
 
-void LambdaSignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
+void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     this->resetTTree(nullptr);
     if (is_data) return;
 
@@ -807,7 +807,7 @@ void LambdaSignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _pr_eligible_event = _is_nu_mu_cc && _nu_vtx_in_fid && _has_lambda_to_ppi && any_lambda_decay_infid;
 }
 
-void LambdaSignalAnalysis::analyseSlice(const art::Event& event,
+void SignalAnalysis::analyseSlice(const art::Event& event,
                                         std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
                                         bool is_data, bool) {
     if (is_data) return;
@@ -933,7 +933,7 @@ void LambdaSignalAnalysis::analyseSlice(const art::Event& event,
     _pr_pass_event = (pass_mu && pass_p && pass_pi);
 }
 
-DEFINE_ART_CLASS_TOOL(LambdaSignalAnalysis)
+DEFINE_ART_CLASS_TOOL(SignalAnalysis)
 
 }
 
