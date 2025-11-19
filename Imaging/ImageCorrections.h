@@ -118,7 +118,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         }
     }
     if (calo_alg && detprop && pitch_cm > 0.0) {
-        const double T0_ns = detprop->SamplingRate() * T0_ticks;
+        const double T0_ns = 1000.0 * detprop->SamplingRate() * T0_ticks;
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
     }
