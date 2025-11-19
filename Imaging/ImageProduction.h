@@ -130,12 +130,10 @@ public:
             fillImagesForWire(wires->at(wi), wi, ctx);
         }
 
-        smoothDetectorImages(ctx);
     }
 
 private:
-    static constexpr float kAdcThreshold    = 4.0f;
-    static constexpr float kGaussianSigmaPx = 1.0f;  
+    static constexpr float kAdcThreshold = 4.0f;
 
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
@@ -317,20 +315,6 @@ private:
                 if (ctx.has_mcps)
                     ctx.semantic_images[w.view_idx].set(contrib.row, *geo_res.col, static_cast<int>(sem), false);
             }
-        }
-    }
-
-    static void smoothDetectorImages(BuildContext const& ctx)
-    {
-        for (size_t view_idx = 0; view_idx < ctx.detector_images.size(); ++view_idx) {
-            ctx.detector_images[view_idx].blur(kGaussianSigmaPx);
-            auto& sem_img = ctx.semantic_images[view_idx];
-            auto& det_img = ctx.detector_images[view_idx];
-            const int empty =
-                static_cast<int>(sem::SemanticClassifier::SemanticLabel::Empty);
-            sem_img.dilate(det_img,
-                           kGaussianSigmaPx,
-                           empty);
         }
     }
 
