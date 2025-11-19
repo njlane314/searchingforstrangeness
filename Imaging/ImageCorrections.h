@@ -4,10 +4,14 @@
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "Imaging/Image.h"
+
+#include "Common/PandoraUtilities.h"
 
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
@@ -69,15 +73,28 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
 {
     geo::Point_t p_corr = correctedPointFromTick(detprop, sce, plane, wire_center, tick_center);
 
-    constexpr double plus60  =  1.04719758034;
-    constexpr double minus60 = -1.04719758034;
-    const double y = p_corr.Y();
-    const double z = p_corr.Z();
     const geo::View_t view = prop.view();
-    double wire_coord = (view == geo::kW) ? z
-                      : (view == geo::kU)
-                        ? (z * std::cos(plus60) - y * std::sin(plus60))
-                        : (z * std::cos(minus60) - y * std::sin(minus60));
+    common::PandoraView pandora_view;
+    switch (view) {
+        case geo::kU:
+            pandora_view = common::TPC_VIEW_U;
+            break;
+        case geo::kV:
+            pandora_view = common::TPC_VIEW_V;
+            break;
+        case geo::kW:
+        case geo::kY:
+            pandora_view = common::TPC_VIEW_W;
+            break;
+        default:
+            throw std::runtime_error("applyGeometry: Unsupported geo::View_t: " + std::to_string(view));
+    }
+
+    const TVector3 proj = common::ProjectToWireView(static_cast<float>(p_corr.X()),
+                                                    static_cast<float>(p_corr.Y()),
+                                                    static_cast<float>(p_corr.Z()),
+                                                    pandora_view);
+    const double wire_coord = static_cast<double>(proj.Z());
 
     GeometryResult out;
     out.p_corr = p_corr;
