@@ -181,7 +181,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
 {
     CaloResult out;
     out.E_loc_kV_cm = det_prop_data ? det_prop_data->Efield() : 0.0;
-    const bool use_efield_sce = sce && (sce->EnableSimEfieldSCE() || sce->EnableCorrEfieldSCE());
+    const bool use_efield_sce = sce && sce->EnableSimEfieldSCE();
     if (use_efield_sce) {
         auto fo = sce->GetEfieldOffsets(p_corr);
         if (det_prop_data) {
