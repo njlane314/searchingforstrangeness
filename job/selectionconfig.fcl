@@ -124,7 +124,7 @@ ImageAnalysis: {
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    BadChannelFile: "badchannels.txt"
+    BadChannelFile: "assets/badchannels.txt"
     WeightsBaseDir: "weights"         # env override: WEIGHTS_BASE_DIR
     InferenceWrapper: "scripts/inference_wrapper.sh"
     imageWidth: 512
