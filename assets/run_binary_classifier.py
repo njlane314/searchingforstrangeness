@@ -10,7 +10,7 @@ import numpy as np
 import argparse
 import time
 import subprocess
-from models import load_model
+from assets.models import load_model
 
 
 def extract_features(flat_img):
