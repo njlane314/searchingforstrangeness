@@ -110,7 +110,7 @@ EventWeightAnalysis: {
 FlashAnalysis: {
     tool_type: "FlashAnalysis"
     PFPproducer: @local::standard_producers.PFPproducer
-    T0producer: "flashmatch"
+    T0producer: @local::standard_producers.T0producer
     OpFlashProducer: "simpleFlashBeam"
 }
 

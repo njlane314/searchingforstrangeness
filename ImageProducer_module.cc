@@ -249,7 +249,6 @@ double ImageProducer::collectNeutrinoTime(art::Event &event) const
 {
     auto const* clockData =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
-    if (fT0producer.label().empty()) return 0.0;
 
     auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 

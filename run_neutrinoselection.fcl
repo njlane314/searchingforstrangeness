@@ -38,6 +38,7 @@ physics: {
             WIREproducer: @local::standard_producers.WIREproducer
             MCPproducer: @local::standard_producers.MCPproducer
             BKTproducer: @local::standard_producers.BKTproducer
+            T0producer: @local::standard_producers.T0producer
             ContainerImage: "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod"
             BadChannelFile: "assets/badchannels.txt"
             Models: []
