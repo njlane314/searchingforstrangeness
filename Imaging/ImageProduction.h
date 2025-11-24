@@ -211,7 +211,8 @@ private:
         BuildContext const& ctx)
     {
         const unsigned ch = wire.Channel();
-        if (ctx.chanStatus && ctx.chanStatus->IsBad(ch)) return std::nullopt;
+        if (ctx.chanStatus && (ctx.chanStatus->IsBad(ch) || ctx.chanStatus->IsNoisy(ch)))
+            return std::nullopt;
 
         auto wire_ids = ctx.geo->ChannelToWire(ch);
         if (wire_ids.empty()) return std::nullopt;
