@@ -22,6 +22,7 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
+#include <cetlib_except/exception.h>
 
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
@@ -68,7 +69,7 @@ public:
                const std::vector<ImageProperties> &properties,
                std::vector<Image<float>> &detector_images,
                std::vector<Image<int>> &semantic_images,
-               const detinfo::DetectorProperties *,
+               detinfo::DetectorProperties const* detprop,
                std::optional<CalibrationContext> const& cal = std::nullopt) const
     {
         detector_images.clear();
@@ -103,6 +104,18 @@ public:
         for (auto const& ph : hits)
             hit_to_key.emplace(ph, static_cast<std::size_t>(ph.key()));
         
+        auto* detprop_for_build = detprop;
+        auto* calo_for_build = static_cast<calo::CalorimetryAlg*>(nullptr);
+        auto* sce_for_build = static_cast<spacecharge::SpaceCharge const*>(nullptr);
+        double T0_for_build = 0.0;
+
+        if (cal && cal->enabled()) {
+            calo_for_build = cal->calo;
+            if (cal->detprop) detprop_for_build = cal->detprop;
+            sce_for_build = cal->sce;
+            T0_for_build = cal->T0_ticks;
+        }
+
         BuildContext ctx{
             properties,
             detector_images,
@@ -116,11 +129,16 @@ public:
             has_mcps,
             geo_,
             kAdcThreshold,
-            (cal && cal->enabled()) ? cal->calo      : nullptr,
-            (cal && cal->enabled()) ? cal->detprop   : nullptr,
-            (cal && cal->enabled()) ? cal->sce       : nullptr,
-            (cal && cal->enabled()) ? cal->T0_ticks  : 0.0
+            calo_for_build,
+            detprop_for_build,
+            sce_for_build,
+            T0_for_build
         };
+
+        if (!ctx.detprop) {
+            throw cet::exception("ImageProduction")
+                << "ImageProduction::build called with null DetectorProperties pointer.";
+        }
 
         for (size_t wi = 0; wi < wires->size(); ++wi) {
             fillImagesForWire(wires->at(wi), wi, ctx);
