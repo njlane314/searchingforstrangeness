@@ -359,14 +359,11 @@ void ImageProducer::produce(art::Event &event) {
     const double R_W = fCentroidRadius.at(geo::kW);
 
     auto cU = image::centroidWithinRadius(
-        event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
-        vtxU.Z(), vtxU.X());
+        event, common::TPC_VIEW_U, neutrino_hits, R_U, vtxU.Z(), vtxU.X());
     auto cV = image::centroidWithinRadius(
-        event, common::TPC_VIEW_V, neutrino_hits, R_V, fBadChannels,
-        vtxV.Z(), vtxV.X());
+        event, common::TPC_VIEW_V, neutrino_hits, R_V, vtxV.Z(), vtxV.X());
     auto cW = image::centroidWithinRadius(
-        event, common::TPC_VIEW_W, neutrino_hits, R_W, fBadChannels,
-        vtxW.Z(), vtxW.X());
+        event, common::TPC_VIEW_W, neutrino_hits, R_W, vtxW.Z(), vtxW.X());
 
     std::vector<ImageProperties> props;
     props.emplace_back(cU.first, cU.second,
