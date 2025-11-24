@@ -2,7 +2,7 @@
 
 set -e
 
-source "app/initsrc.sh"
+source "assets/initsrc.sh"
 
 fetch_files_from_sam() {
     local files_list=$(samweb list-files defname:"${SAM_DEF}" | head -n "${NUM_FILES}")
