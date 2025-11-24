@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <sstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -27,7 +29,23 @@
 namespace image {
 namespace cal {
 
-// Geometry corrections -------------------------------------------------------
+namespace {
+constexpr bool kImageCorrectionsCout = false;
+
+template <typename F>
+inline void emitImageCorrections(F&& fill)
+{
+    std::ostringstream oss;
+    fill(oss);
+    const auto msg = oss.str();
+
+    if constexpr (kImageCorrectionsCout) {
+        std::cout << "[ImageCorrections] " << msg << std::endl;
+    } else {
+        mf::LogInfo("ImageCorrections") << msg;
+    }
+}
+}
 
 inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* detprop,
                                            spacecharge::SpaceCharge const* sce,
@@ -40,20 +58,21 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
     geo::Point_t p_corr = p;
 
     if (sce && sce->EnableSimSpatialSCE()) {
-        auto off = sce->GetPosOffsets(p);  // cm
+        auto off = sce->GetPosOffsets(p);
         p_corr = geo::Point_t{ p.X() - off.X(),
                                p.Y() + off.Y(),
                                p.Z() + off.Z() };
     }
 
-    mf::LogInfo("ImageCorrections")
-        << "correctedPointFromTick:"
-        << " tick=" << tick
-        << " plane=(" << plane.Cryostat << "," << plane.TPC << "," << plane.Plane << ")"
-        << " x_nom=" << x_nom
-        << " wire_center=(" << wire_center.X() << "," << wire_center.Y() << "," << wire_center.Z() << ")"
-        << " sce=" << (sce && sce->EnableSimSpatialSCE() ? "on" : "off")
-        << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")";
+    emitImageCorrections([&](std::ostream& os) {
+        os << "correctedPointFromTick:"
+           << " tick=" << tick
+           << " plane=(" << plane.Cryostat << "," << plane.TPC << "," << plane.Plane << ")"
+           << " x_nom=" << x_nom
+           << " wire_center=(" << wire_center.X() << "," << wire_center.Y() << "," << wire_center.Z() << ")"
+           << " sce=" << (sce && sce->EnableSimSpatialSCE() ? "on" : "off")
+           << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")";
+    });
 
     return p_corr;
 }
@@ -74,11 +93,12 @@ struct GeometryResult {
         auto p = correctedPointFromTick(detprop, sce, plane, wire_center, tick);
         auto r = prop->row(p.X());
 
-        mf::LogInfo("ImageCorrections")
-            << "GeometryResult::row:"
-            << " tick=" << tick
-            << " x_corr=" << p.X()
-            << " -> row=" << (r ? std::to_string(*r) : std::string{"n/a"});
+        emitImageCorrections([&](std::ostream& os) {
+            os << "GeometryResult::row:"
+               << " tick=" << tick
+               << " x_corr=" << p.X()
+               << " -> row=" << (r ? std::to_string(*r) : std::string{"n/a"});
+        });
 
         return r;
     }
@@ -126,16 +146,17 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
     out.wire_center = wire_center;
     out.prop = &prop;
 
-    mf::LogInfo("ImageCorrections")
-        << "applyGeometry:"
-        << " view=" << static_cast<int>(view)
-        << " pandora_view=" << static_cast<int>(pandora_view)
-        << " tick_center=" << tick_center
-        << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
-        << " wire_coord=" << wire_coord
-        << " col=" << (out.col ? std::to_string(*out.col) : std::string{"n/a"})
-        << " img_width=" << prop.width()
-        << " img_height=" << prop.height();
+    emitImageCorrections([&](std::ostream& os) {
+        os << "applyGeometry:"
+           << " view=" << static_cast<int>(view)
+           << " pandora_view=" << static_cast<int>(pandora_view)
+           << " tick_center=" << tick_center
+           << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
+           << " wire_coord=" << wire_coord
+           << " col=" << (out.col ? std::to_string(*out.col) : std::string{"n/a"})
+           << " img_width=" << prop.width()
+           << " img_height=" << prop.height();
+    });
 
     return out;
 }
@@ -146,8 +167,6 @@ struct CaloResult {
     double yz_corr{1.0};
     double E_loc_kV_cm{0.0};
 };
-
-// Calorimetry corrections ----------------------------------------------------
 
 inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    geo::Point_t const& p_corr,
@@ -165,35 +184,39 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
         }
-        mf::LogInfo("ImageCorrections")
-            << "applyCalorimetry: E-field SCE offsets at p_corr=("
-            << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ") = ("
-            << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
-            << " -> E_loc_kV_cm=" << out.E_loc_kV_cm;
+        emitImageCorrections([&](std::ostream& os) {
+            os << "applyCalorimetry: E-field SCE offsets at p_corr=("
+               << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ") = ("
+               << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
+               << " -> E_loc_kV_cm=" << out.E_loc_kV_cm;
+        });
     } else {
-        mf::LogInfo("ImageCorrections")
-            << "applyCalorimetry: no E-field SCE at p_corr=("
-            << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
-            << " E_loc_kV_cm=" << out.E_loc_kV_cm;
+        emitImageCorrections([&](std::ostream& os) {
+            os << "applyCalorimetry: no E-field SCE at p_corr=("
+               << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
+               << " E_loc_kV_cm=" << out.E_loc_kV_cm;
+        });
     }
     if (calo_alg && detprop && pitch_cm > 0.0) {
         const double T0_ns = 1000.0 * detprop->SamplingRate() * T0_ticks;
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
-        mf::LogInfo("ImageCorrections")
-            << "applyCalorimetry: channel=" << hit.Channel()
-            << " peakTime=" << hit.PeakTime()
-            << " pitch_cm=" << pitch_cm
-            << " T0_ticks=" << T0_ticks
-            << " T0_ns=" << T0_ns
-            << " dEdx=" << out.dEdx_MeV_cm << " MeV/cm"
-            << " E_hit=" << out.E_hit_MeV << " MeV";
+        emitImageCorrections([&](std::ostream& os) {
+            os << "applyCalorimetry: channel=" << hit.Channel()
+               << " peakTime=" << hit.PeakTime()
+               << " pitch_cm=" << pitch_cm
+               << " T0_ticks=" << T0_ticks
+               << " T0_ns=" << T0_ns
+               << " dEdx=" << out.dEdx_MeV_cm << " MeV/cm"
+               << " E_hit=" << out.E_hit_MeV << " MeV";
+        });
     } else {
-        mf::LogInfo("ImageCorrections")
-            << "applyCalorimetry: skipping dEdx/E_hit calc:"
-            << " calo_alg=" << (calo_alg ? "set" : "null")
-            << " detprop=" << (detprop ? "set" : "null")
-            << " pitch_cm=" << pitch_cm;
+        emitImageCorrections([&](std::ostream& os) {
+            os << "applyCalorimetry: skipping dEdx/E_hit calc:"
+               << " calo_alg=" << (calo_alg ? "set" : "null")
+               << " detprop=" << (detprop ? "set" : "null")
+               << " pitch_cm=" << pitch_cm;
+        });
     }
     return out;
 }
