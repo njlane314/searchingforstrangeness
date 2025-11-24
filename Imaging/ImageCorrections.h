@@ -30,7 +30,7 @@ namespace image {
 namespace cal {
 
 namespace {
-constexpr bool kImageCorrectionsCout = true;
+constexpr bool kImageCorrectionsCout = false;
 
 template <typename F>
 inline void emitImageCorrections(F&& fill)
