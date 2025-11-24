@@ -28,7 +28,6 @@
 #include "lardataobj/AnalysisBase/T0.h"
 #include "ubreco/BlipReco/Alg/BlipRecoAlg.h"
 
-#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include <TVector3.h>
@@ -288,6 +287,20 @@ void ImageProducer::produce(art::Event &event) {
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
+    if (!fBadChannels.empty()) {
+        auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
+            hits.erase(std::remove_if(hits.begin(), hits.end(),
+                                      [&](auto const &h) {
+                                          if (h.isNull()) return false;
+                                          return fBadChannels.count(h->Channel()) > 0;
+                                      }),
+                        hits.end());
+        };
+
+        remove_bad_channels(neutrino_hits);
+        remove_bad_channels(all_hits);
+    }
+
     auto const* clock_data =
         art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
     auto const* det_prop =
@@ -384,7 +397,6 @@ void ImageProducer::produce(art::Event &event) {
         tmp.calo = fCalo.get();
         tmp.detprop = det_prop;
         tmp.sce = lar::providerFrom<spacecharge::SpaceChargeService>();
-        tmp.chanStatus = lar::providerFrom<lariov::ChannelStatusService>();
         tmp.T0_ticks = T0_ticks;
         cal = tmp;
     }

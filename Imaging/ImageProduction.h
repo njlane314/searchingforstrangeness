@@ -28,8 +28,6 @@
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
-#include "larevt/CalibrationDBI/Interface/ChannelStatusProvider.h"
-#include "larevt/CalibrationDBI/Interface/ChannelStatusService.h"
 
 #include "nusimdata/SimulationBase/MCParticle.h"
 
@@ -54,7 +52,6 @@ struct CalibrationContext {
     detinfo::DetectorProperties const* detprop{nullptr};
 
     spacecharge::SpaceCharge const* sce{nullptr};
-    lariov::ChannelStatusProvider const* chanStatus{nullptr};
     double T0_ticks{0.0};
 
     bool enabled() const { return calo && detprop; }
@@ -122,7 +119,6 @@ public:
             (cal && cal->enabled()) ? cal->calo      : nullptr,
             (cal && cal->enabled()) ? cal->detprop   : nullptr,
             (cal && cal->enabled()) ? cal->sce       : nullptr,
-            (cal && cal->enabled()) ? cal->chanStatus: nullptr,
             (cal && cal->enabled()) ? cal->T0_ticks  : 0.0
         };
 
@@ -157,7 +153,6 @@ private:
         calo::CalorimetryAlg* calo_alg;
         detinfo::DetectorProperties const* detprop;
         spacecharge::SpaceCharge const* sce;
-        lariov::ChannelStatusProvider const* chanStatus;
 
         double T0_ticks{0.0};
     };
@@ -210,11 +205,7 @@ private:
         size_t wire_idx,
         BuildContext const& ctx)
     {
-        const unsigned ch = wire.Channel();
-        if (ctx.chanStatus && (ctx.chanStatus->IsBad(ch) || ctx.chanStatus->IsNoisy(ch)))
-            return std::nullopt;
-
-        auto wire_ids = ctx.geo->ChannelToWire(ch);
+        auto wire_ids = ctx.geo->ChannelToWire(wire.Channel());
         if (wire_ids.empty()) return std::nullopt;
 
         const auto planeID = wire_ids.front().planeID();
