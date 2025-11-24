@@ -2,8 +2,7 @@
 
 set -e
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-source "${SCRIPT_DIR}/app/initsrc.sh"
+source "app/initsrc.sh"
 
 fetch_files_from_sam() {
     local files_list=$(samweb list-files defname:"${SAM_DEF}" | head -n "${NUM_FILES}")
