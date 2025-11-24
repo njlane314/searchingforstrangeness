@@ -22,6 +22,7 @@
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
 #include <TVector3.h>
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace image {
 namespace cal {
@@ -36,14 +37,25 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
 {
     const double x_nom = detprop->ConvertTicksToX(static_cast<double>(tick), plane);
     geo::Point_t p{x_nom, wire_center.Y(), wire_center.Z()};
+    geo::Point_t p_corr = p;
 
     if (sce && sce->EnableSimSpatialSCE()) {
         auto off = sce->GetPosOffsets(p);  // cm
-        return geo::Point_t{ p.X() - off.X(),
-                             p.Y() + off.Y(),
-                             p.Z() + off.Z() };
+        p_corr = geo::Point_t{ p.X() - off.X(),
+                               p.Y() + off.Y(),
+                               p.Z() + off.Z() };
     }
-    return p;
+
+    mf::LogInfo("ImageCorrections")
+        << "correctedPointFromTick:"
+        << " tick=" << tick
+        << " plane=(" << plane.Cryostat << "," << plane.TPC << "," << plane.Plane << ")"
+        << " x_nom=" << x_nom
+        << " wire_center=(" << wire_center.X() << "," << wire_center.Y() << "," << wire_center.Z() << ")"
+        << " sce=" << (sce && sce->EnableSimSpatialSCE() ? "on" : "off")
+        << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")";
+
+    return p_corr;
 }
 
 struct GeometryResult {
@@ -60,7 +72,15 @@ struct GeometryResult {
     inline std::optional<size_t> row(int tick) const
     {
         auto p = correctedPointFromTick(detprop, sce, plane, wire_center, tick);
-        return prop->row(p.X());
+        auto r = prop->row(p.X());
+
+        mf::LogInfo("ImageCorrections")
+            << "GeometryResult::row:"
+            << " tick=" << tick
+            << " x_corr=" << p.X()
+            << " -> row=" << (r ? std::to_string(*r) : std::string{"n/a"});
+
+        return r;
     }
 };
 
@@ -105,6 +125,18 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
     out.plane = plane;
     out.wire_center = wire_center;
     out.prop = &prop;
+
+    mf::LogInfo("ImageCorrections")
+        << "applyGeometry:"
+        << " view=" << static_cast<int>(view)
+        << " pandora_view=" << static_cast<int>(pandora_view)
+        << " tick_center=" << tick_center
+        << " p_corr=(" << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
+        << " wire_coord=" << wire_coord
+        << " col=" << (out.col ? std::to_string(*out.col) : std::string{"n/a"})
+        << " img_width=" << prop.width()
+        << " img_height=" << prop.height();
+
     return out;
 }
 
@@ -128,16 +160,40 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
     CaloResult out;
     out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
     if (sce && sce->EnableSimEfieldSCE()) {
-        auto fo = sce->GetEfieldOffsets(p_corr); 
+        auto fo = sce->GetEfieldOffsets(p_corr);
         if (detprop) {
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
         }
+        mf::LogInfo("ImageCorrections")
+            << "applyCalorimetry: E-field SCE offsets at p_corr=("
+            << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ") = ("
+            << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
+            << " -> E_loc_kV_cm=" << out.E_loc_kV_cm;
+    } else {
+        mf::LogInfo("ImageCorrections")
+            << "applyCalorimetry: no E-field SCE at p_corr=("
+            << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
+            << " E_loc_kV_cm=" << out.E_loc_kV_cm;
     }
     if (calo_alg && detprop && pitch_cm > 0.0) {
         const double T0_ns = 1000.0 * detprop->SamplingRate() * T0_ticks;
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
+        mf::LogInfo("ImageCorrections")
+            << "applyCalorimetry: channel=" << hit.Channel()
+            << " peakTime=" << hit.PeakTime()
+            << " pitch_cm=" << pitch_cm
+            << " T0_ticks=" << T0_ticks
+            << " T0_ns=" << T0_ns
+            << " dEdx=" << out.dEdx_MeV_cm << " MeV/cm"
+            << " E_hit=" << out.E_hit_MeV << " MeV";
+    } else {
+        mf::LogInfo("ImageCorrections")
+            << "applyCalorimetry: skipping dEdx/E_hit calc:"
+            << " calo_alg=" << (calo_alg ? "set" : "null")
+            << " detprop=" << (detprop ? "set" : "null")
+            << " pitch_cm=" << pitch_cm;
     }
     return out;
 }
