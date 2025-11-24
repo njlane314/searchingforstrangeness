@@ -301,8 +301,6 @@ void ImageProducer::produce(art::Event &event) {
         remove_bad_channels(all_hits);
     }
 
-    auto const* clock_data =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
     auto const* det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
