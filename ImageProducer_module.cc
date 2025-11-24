@@ -75,11 +75,11 @@ class ImageProducer : public art::EDProducer {
     int fImgW{512};
     int fImgH{512};
     float fADCThresh{4.0f};
-    std::map<geo::View_t, double> fCentroidRadiusCm{};
+    std::map<geo::View_t, double> fCentroidRadius{};
 
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
-    double fDriftStepCm{0.0};
+    double fDriftStep{0.0};
     double fPitchU{0.0};
     double fPitchV{0.0};
     double fPitchW{0.0};
@@ -123,17 +123,17 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     double const tick_period = clock_data->TPCClock().TickPeriod();
     double const drift_velocity = det_prop_data->DriftVelocity();
-    fDriftStepCm = tick_period * drift_velocity * 1.0e1;
+    fDriftStep = tick_period * drift_velocity * 1.0e1;
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
 
     auto compute_radius = [&](double pitch) {
-        return 0.5 * std::min(fImgH * fDriftStepCm, fImgW * pitch);
+        return 0.5 * std::min(fImgH * fDriftStep, fImgW * pitch);
     };
-    fCentroidRadiusCm[geo::kU] = compute_radius(fPitchU);
-    fCentroidRadiusCm[geo::kV] = compute_radius(fPitchV);
-    fCentroidRadiusCm[geo::kW] = compute_radius(fPitchW);
+    fCentroidRadius[geo::kU] = compute_radius(fPitchU);
+    fCentroidRadius[geo::kV] = compute_radius(fPitchV);
+    fCentroidRadius[geo::kW] = compute_radius(fPitchW);
 
     if (pset.has_key("CaloAlg")) {
         auto const calo_alg_config = pset.get<fhicl::ParameterSet>("CaloAlg");
@@ -341,9 +341,9 @@ void ImageProducer::produce(art::Event &event) {
     TVector3 vtxW = common::ProjectToWireView(
         vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_W);
 
-    const double R_U = fCentroidRadiusCm.at(geo::kU);
-    const double R_V = fCentroidRadiusCm.at(geo::kV);
-    const double R_W = fCentroidRadiusCm.at(geo::kW);
+    const double R_U = fCentroidRadius.at(geo::kU);
+    const double R_V = fCentroidRadius.at(geo::kV);
+    const double R_W = fCentroidRadius.at(geo::kW);
 
     auto cU = image::centroidWithinRadius(
         event, common::TPC_VIEW_U, neutrino_hits, R_U, fBadChannels,
@@ -357,13 +357,13 @@ void ImageProducer::produce(art::Event &event) {
 
     std::vector<ImageProperties> props;
     props.emplace_back(cU.first, cU.second,
-                       fImgW, fImgH, fDriftStepCm, 
+                       fImgW, fImgH, fDriftStep,
                        fPitchU, geo::kU);
     props.emplace_back(cV.first, cV.second,
-                       fImgW, fImgH, fDriftStepCm, 
+                       fImgW, fImgH, fDriftStep,
                        fPitchV, geo::kV);
     props.emplace_back(cW.first, cW.second,
-                       fImgW, fImgH, fDriftStepCm, 
+                       fImgW, fImgH, fDriftStep,
                        fPitchW, geo::kW);
 
     std::vector<Image<float>> det_slice;
