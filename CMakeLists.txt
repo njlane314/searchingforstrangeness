@@ -14,6 +14,9 @@ set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
 find_ups_product(lardata)
 include_directories(${LARDATA_INC})
 
+find_ups_product(lardataalg)
+include_directories(${LARDATAALG_INC})
+
 add_subdirectory(Common)
 add_subdirectory(Products)
 add_subdirectory(SelectionTools)
