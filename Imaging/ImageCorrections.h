@@ -18,6 +18,8 @@
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 
+#include "lardata/DetectorInfo/DetectorClocksData.h"
+#include "lardata/DetectorInfo/DetectorPropertiesData.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 
@@ -172,16 +174,17 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    geo::Point_t const& p_corr,
                                    double pitch_cm,
                                    calo::CalorimetryAlg* calo_alg,
-                                   detinfo::DetectorProperties const* detprop,
+                                   detinfo::DetectorClocksData const* clock_data,
+                                   detinfo::DetectorPropertiesData const* det_prop_data,
                                    spacecharge::SpaceCharge const* sce,
                                    double T0_ticks)
 {
     CaloResult out;
-    out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
+    out.E_loc_kV_cm = det_prop_data ? det_prop_data->Efield() : 0.0;
     const bool use_efield_sce = sce && (sce->EnableSimEfieldSCE() || sce->EnableCorrEfieldSCE());
     if (use_efield_sce) {
         auto fo = sce->GetEfieldOffsets(p_corr);
-        if (detprop) {
+        if (det_prop_data) {
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
         }
@@ -198,9 +201,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                << " E_loc_kV_cm=" << out.E_loc_kV_cm;
         });
     }
-    if (calo_alg && detprop && pitch_cm > 0.0) {
-        const double T0_ns = 1000.0 * detprop->SamplingRate() * T0_ticks;
-        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
+    if (calo_alg && det_prop_data && clock_data && pitch_cm > 0.0) {
+        const double T0_ns = clock_data->TPCClock().TickPeriod() * 1.0e3 * T0_ticks;
+        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(*clock_data, *det_prop_data, hit, pitch_cm, T0_ns, out.E_loc_kV_cm);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
         emitImageCorrections([&](std::ostream& os) {
             os << "applyCalorimetry: channel=" << hit.Channel()
@@ -215,7 +218,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         emitImageCorrections([&](std::ostream& os) {
             os << "applyCalorimetry: skipping dEdx/E_hit calc:"
                << " calo_alg=" << (calo_alg ? "set" : "null")
-               << " detprop=" << (detprop ? "set" : "null")
+               << " detprop=" << (det_prop_data ? "set" : "null")
                << " pitch_cm=" << pitch_cm;
         });
     }
