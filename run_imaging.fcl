@@ -1,4 +1,4 @@
-#include "job/selectionconfig.fcl"
+#include "selectionconfig.fcl"
 
 process_name: Imaging
 
