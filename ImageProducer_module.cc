@@ -148,7 +148,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     produces<std::vector<ImageProduct>>("neutrino_slice_images");
     produces<std::vector<ImageProduct>>("interaction_event_images");
-
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -294,7 +293,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const* det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
-    double T0_ticks = (fCalo ? collectNeutrinoTime(event) : 0.0);
+    double T0_ticks = collectNeutrinoTime(event);
 
     if (fBlipAlg) {
         auto blip_hit_to_key = buildBlipMask(event);
