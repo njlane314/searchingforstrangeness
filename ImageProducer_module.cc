@@ -36,6 +36,7 @@
 #include <cetlib_except/exception.h>
 #include <cstdint>
 #include <fstream>
+#include <ios>
 #include <limits>
 #include <map>
 #include <optional>
@@ -283,6 +284,9 @@ double ImageProducer::collectNeutrinoTime(art::Event &event) const
 }
 
 void ImageProducer::produce(art::Event &event) {
+    mf::LogDebug("ImageProducer")
+        << "Starting image production for event " << event.id();
+
     auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
@@ -383,6 +387,10 @@ void ImageProducer::produce(art::Event &event) {
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
     opts.semantic  = fIsData ? nullptr : fSemantic.get();
 
+    mf::LogDebug("ImageProducer")
+        << "IsData=" << std::boolalpha << fIsData
+        << ", semantic images " << (fIsData ? "DISABLED" : "ENABLED");
+
     image::ImageProduction builder(*fGeo, opts);
 
     std::optional<image::CalibrationContext> cal;
@@ -413,6 +421,19 @@ void ImageProducer::produce(art::Event &event) {
         fDetp,
         cal);
 
+    mf::LogDebug("ImageProducer")
+        << "Built images: "
+        << "NuSlice det=" << det_slice.size()
+        << ", NuSlice sem=" << sem_slice.size()
+        << ", FullEvent det=" << det_event.size()
+        << ", FullEvent sem=" << sem_event.size();
+
+    for (size_t i = 0; i < props.size(); ++i) {
+        mf::LogDebug("ImageProducer")
+            << "View " << static_cast<int>(props[i].view())
+            << " size " << props[i].width() << "x" << props[i].height();
+    }
+
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                          ImageProperties const &p, bool include_sem) {
         ImageProduct out;
@@ -442,8 +463,15 @@ void ImageProducer::produce(art::Event &event) {
             pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
+    const auto n_slice = out_slice->size();
+    const auto n_event = out_event->size();
+
     event.put(std::move(out_slice), "NuSlice");
     event.put(std::move(out_event), "FullEvent");
+
+    mf::LogInfo("ImageProducer")
+        << "Stored " << n_slice << " NuSlice and " << n_event
+        << " FullEvent ImageProducts for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)
