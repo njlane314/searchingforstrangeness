@@ -202,7 +202,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         });
     }
     if (calo_alg && clocks && pitch_cm > 0.0) {
-        const double T0_ns = clocks->TPCClock().TickPeriod() * 1.0e3 * T0_ticks;
+        const double T0_ns = clocks->TPCClock().TickPeriod() * T0_ticks;
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
         print([&](std::ostream& os) {
