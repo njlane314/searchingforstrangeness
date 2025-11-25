@@ -1,7 +1,7 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
-#include "canvas/Persistency/Provenance/Provenance.h"
+#include "art/Framework/Principal/Provenance.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
