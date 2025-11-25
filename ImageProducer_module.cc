@@ -251,7 +251,8 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
 {
     // TEMP: print all anab::T0 collections in the event
     {
-        auto const t0_lists = event.getMany<std::vector<anab::T0>>();
+        std::vector<art::Handle<std::vector<anab::T0>>> t0_lists;
+        event.getManyByType(t0_lists);
         for (auto const &h : t0_lists) {
             if (!h.isValid()) continue;
             auto const &prov = *(h.provenance());
