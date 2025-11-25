@@ -111,9 +111,8 @@ InferenceProducerModule::InferenceProducerModule(
     : planes_tag_{p.get<std::string>("PlanesTag")},
       scratch_dir_{p.get<std::string>("ScratchDir", "")},
       assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
-      default_wrapper_{resolve_under(
-          assets_base_dir_, p.get<std::string>("DefaultWrapper",
-                                              "scripts/inference_wrapper.sh"))} {
+      default_wrapper_{p.get<std::string>("DefaultWrapper",
+                                          "scripts/inference_wrapper.sh")} {
     produces<image::InferencePerfProduct>();
     produces<image::InferencePredProduct>();
 
