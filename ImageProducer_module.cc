@@ -1,6 +1,7 @@
 #include "art/Framework/Core/EDProducer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
+#include "canvas/Persistency/Provenance/Provenance.h"
 #include "canvas/Persistency/Common/FindManyP.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
@@ -248,6 +249,21 @@ ImageProducer::buildBlipMask(art::Event &event) {
 
 double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period) const
 {
+    // TEMP: print all anab::T0 collections in the event
+    {
+        auto const t0_lists = event.getMany<std::vector<anab::T0>>();
+        for (auto const &h : t0_lists) {
+            if (!h.isValid()) continue;
+            auto const &prov = *(h.provenance());
+            mf::LogInfo("ImageCorrections")
+                << "Found anab::T0 product:"
+                << " moduleLabel=" << prov.moduleLabel()
+                << " instance=\"" << prov.productInstanceName() << "\""
+                << " process=" << prov.processName()
+                << " size=" << h->size();
+        }
+    }
+
     auto const pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 
     if (pfp_h->empty()) {
