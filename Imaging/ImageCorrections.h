@@ -61,12 +61,15 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
 
     if (sce && sce->EnableSimSpatialSCE()) {
         auto off = sce->GetPosOffsets(p);
-        std::cout << "[ImageCorrections] Spatial SCE correction offsets: ("
-                  << off.X() << "," << off.Y() << "," << off.Z() << ")" << std::endl;
+        if constexpr (kImageCorrectionsCout) {
+            std::cout << "[ImageCorrections] Spatial SCE correction offsets: ("
+                      << off.X() << "," << off.Y() << "," << off.Z() << ")" << std::endl;
+        }
+
         p_corr = geo::Point_t{ p.X() - off.X(),
                                p.Y() + off.Y(),
                                p.Z() + off.Z() };
-    } else {
+    } else if constexpr (kImageCorrectionsCout) {
         std::cout << "[ImageCorrections] Spatial SCE correction offsets: (0,0,0)" << std::endl;
     }
 
@@ -193,9 +196,11 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
         }
-        std::cout << "[ImageCorrections] E-field: nominal=" << nominal_E_kV_cm
-                  << " kV/cm sce_offsets=(" << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
-                  << " -> corrected=" << out.E_loc_kV_cm << " kV/cm" << std::endl;
+        if constexpr (kImageCorrectionsCout) {
+            std::cout << "[ImageCorrections] E-field: nominal=" << nominal_E_kV_cm
+                      << " kV/cm sce_offsets=(" << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
+                      << " -> corrected=" << out.E_loc_kV_cm << " kV/cm" << std::endl;
+        }
         print([&](std::ostream& os) {
             os << "applyCalorimetry: E-field SCE offsets at p_corr=("
                << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ") = ("
@@ -203,8 +208,10 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                << " -> E_loc_kV_cm=" << out.E_loc_kV_cm;
         });
     } else {
-        std::cout << "[ImageCorrections] E-field: nominal=" << nominal_E_kV_cm
-                  << " kV/cm (no SCE offsets)" << std::endl;
+        if constexpr (kImageCorrectionsCout) {
+            std::cout << "[ImageCorrections] E-field: nominal=" << nominal_E_kV_cm
+                      << " kV/cm (no SCE offsets)" << std::endl;
+        }
         print([&](std::ostream& os) {
             os << "applyCalorimetry: no E-field SCE at p_corr=("
                << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
@@ -216,10 +223,11 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         double const tick_period_us = clocks->TPCClock().TickPeriod();
         double const drift_time_us  = hit.PeakTime() * tick_period_us - T0_ns * 1.0e-3;
 
-        // Always emit drift time to std::cout for quick inspection
-        std::cout << "[ImageCorrections] drift_time_us≈" << drift_time_us
-                  << " (T0_ns=" << T0_ns << ", tick_period_us=" << tick_period_us << ")"
-                  << std::endl;
+        if constexpr (kImageCorrectionsCout) {
+            std::cout << "[ImageCorrections] drift_time_us≈" << drift_time_us
+                      << " (T0_ns=" << T0_ns << ", tick_period_us=" << tick_period_us << ")"
+                      << std::endl;
+        }
 
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
