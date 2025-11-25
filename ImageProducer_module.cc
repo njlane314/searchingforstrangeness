@@ -74,8 +74,8 @@ class ImageProducer : public art::EDProducer {
     std::unique_ptr<blip::BlipRecoAlg> fBlipAlg;
     std::unique_ptr<sem::SemanticClassifier> fSemantic;
 
-    int fImgW{512};
-    int fImgH{512};
+    int fImgW{1024};
+    int fImgH{1024};
     float fADCThresh{4.0f};
     std::map<geo::View_t, double> fCentroidRadius{};
 
