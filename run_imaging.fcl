@@ -20,7 +20,7 @@ services.DetectorClocksService.InheritClockConfig: false
 services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
 
 services.SpaceCharge.EnableCorrSCE: true
-services.SpaceCharge.EnableSimEFieldSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
 services.SpaceCharge.EnableSimSpatialSCE: true
 
 source: {
