@@ -72,8 +72,6 @@ const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &pla
 
 } // namespace
 
-namespace image {
-
 class InferenceProducerModule : public art::EDProducer {
   public:
     struct ModelConfig {
@@ -212,6 +210,4 @@ void InferenceProducerModule::produce(art::Event &e) {
     e.put(std::move(predProduct));
 }
 
-DEFINE_ART_MODULE(image::InferenceProducerModule)
-
-} // namespace image
+DEFINE_ART_MODULE(InferenceProducerModule)
