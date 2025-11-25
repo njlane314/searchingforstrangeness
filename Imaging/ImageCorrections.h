@@ -35,7 +35,7 @@ namespace {
 constexpr bool kImageCorrectionsCout = false;
 
 template <typename F>
-inline void emitImageCorrections(F&& fill)
+inline void print(F&& fill)
 {
     std::ostringstream oss;
     fill(oss);
@@ -66,7 +66,7 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
                                p.Z() + off.Z() };
     }
 
-    emitImageCorrections([&](std::ostream& os) {
+    print([&](std::ostream& os) {
         os << "correctedPointFromTick:"
            << " tick=" << tick
            << " plane=(" << plane.Cryostat << "," << plane.TPC << "," << plane.Plane << ")"
@@ -95,7 +95,7 @@ struct GeometryResult {
         auto p = correctedPointFromTick(detprop, sce, plane, wire_center, tick);
         auto r = prop->row(p.X());
 
-        emitImageCorrections([&](std::ostream& os) {
+        print([&](std::ostream& os) {
             os << "GeometryResult::row:"
                << " tick=" << tick
                << " x_corr=" << p.X()
@@ -148,7 +148,7 @@ inline GeometryResult applyGeometry(detinfo::DetectorProperties const* detprop,
     out.wire_center = wire_center;
     out.prop = &prop;
 
-    emitImageCorrections([&](std::ostream& os) {
+    print([&](std::ostream& os) {
         os << "applyGeometry:"
            << " view=" << static_cast<int>(view)
            << " pandora_view=" << static_cast<int>(pandora_view)
@@ -188,14 +188,14 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
             const double ex = 1.0 + fo.X();
             out.E_loc_kV_cm *= std::sqrt(ex * ex + fo.Y() * fo.Y() + fo.Z() * fo.Z());
         }
-        emitImageCorrections([&](std::ostream& os) {
+        print([&](std::ostream& os) {
             os << "applyCalorimetry: E-field SCE offsets at p_corr=("
                << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ") = ("
                << fo.X() << "," << fo.Y() << "," << fo.Z() << ")"
                << " -> E_loc_kV_cm=" << out.E_loc_kV_cm;
         });
     } else {
-        emitImageCorrections([&](std::ostream& os) {
+        print([&](std::ostream& os) {
             os << "applyCalorimetry: no E-field SCE at p_corr=("
                << p_corr.X() << "," << p_corr.Y() << "," << p_corr.Z() << ")"
                << " E_loc_kV_cm=" << out.E_loc_kV_cm;
@@ -205,7 +205,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         const double T0_ns = clock_data->TPCClock().TickPeriod() * 1.0e3 * T0_ticks;
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(*clock_data, *det_prop_data, hit, pitch_cm, T0_ns, out.E_loc_kV_cm);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
-        emitImageCorrections([&](std::ostream& os) {
+        print([&](std::ostream& os) {
             os << "applyCalorimetry: channel=" << hit.Channel()
                << " peakTime=" << hit.PeakTime()
                << " pitch_cm=" << pitch_cm
@@ -215,7 +215,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                << " E_hit=" << out.E_hit_MeV << " MeV";
         });
     } else {
-        emitImageCorrections([&](std::ostream& os) {
+        print([&](std::ostream& os) {
             os << "applyCalorimetry: skipping dEdx/E_hit calc:"
                << " calo_alg=" << (calo_alg ? "set" : "null")
                << " detprop=" << (det_prop_data ? "set" : "null")
