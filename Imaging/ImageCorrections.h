@@ -61,9 +61,13 @@ inline geo::Point_t correctedPointFromTick(detinfo::DetectorProperties const* de
 
     if (sce && sce->EnableSimSpatialSCE()) {
         auto off = sce->GetPosOffsets(p);
+        std::cout << "[ImageCorrections] Spatial SCE correction offsets: ("
+                  << off.X() << "," << off.Y() << "," << off.Z() << ")" << std::endl;
         p_corr = geo::Point_t{ p.X() - off.X(),
                                p.Y() + off.Y(),
                                p.Z() + off.Z() };
+    } else {
+        std::cout << "[ImageCorrections] Spatial SCE correction offsets: (0,0,0)" << std::endl;
     }
 
     print([&](std::ostream& os) {
