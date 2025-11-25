@@ -201,9 +201,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                << " E_loc_kV_cm=" << out.E_loc_kV_cm;
         });
     }
-    if (calo_alg && detprop && clocks && pitch_cm > 0.0) {
+    if (calo_alg && clocks && pitch_cm > 0.0) {
         const double T0_ns = clocks->TPCClock().TickPeriod() * 1.0e3 * T0_ticks;
-        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(*clocks, *detprop, hit, pitch_cm, T0_ns, out.E_loc_kV_cm);
+        out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
         print([&](std::ostream& os) {
             os << "applyCalorimetry: channel=" << hit.Channel()
@@ -219,6 +219,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
             os << "applyCalorimetry: skipping dEdx/E_hit calc:"
                << " calo_alg=" << (calo_alg ? "set" : "null")
                << " detprop=" << (detprop ? "set" : "null")
+               << " clocks=" << (clocks ? "set" : "null")
                << " pitch_cm=" << pitch_cm;
         });
     }
