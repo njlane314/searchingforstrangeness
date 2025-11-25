@@ -24,7 +24,7 @@
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include <cetlib_except/exception.h>
 
-#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardataalg/DetectorInfo/DetectorClocks.h"
 #include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
