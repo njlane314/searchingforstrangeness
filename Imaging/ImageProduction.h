@@ -24,8 +24,8 @@
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include <cetlib_except/exception.h>
 
-#include "lardataalg/DetectorInfo/DetectorClocksData.h"
-#include "lardata/DetectorInfo/DetectorPropertiesData.h"
+#include "lardata/DetectorInfo/DetectorClocks.h"
+#include "lardata/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "lardataobj/RecoBase/Hit.h"
@@ -51,15 +51,14 @@ struct PixelImageOptions {
 };
 
 struct CalibrationContext {
-    calo::CalorimetryAlg* calo{nullptr};
+    calo::CalorimetryAlg*              calo{nullptr};
     detinfo::DetectorProperties const* detprop{nullptr};
-    detinfo::DetectorClocksData const* clock_data{nullptr};
-    detinfo::DetectorPropertiesData const* det_prop_data{nullptr};
+    detinfo::DetectorClocks const*     clocks{nullptr};
 
     spacecharge::SpaceCharge const* sce{nullptr};
-    double T0_ticks{0.0};
+    double                           T0_ticks{0.0};
 
-    bool enabled() const { return calo && detprop && clock_data && det_prop_data; }
+    bool enabled() const { return calo && detprop && clocks; }
 };
 
 class ImageProduction {
@@ -74,8 +73,7 @@ public:
                std::vector<Image<float>> &detector_images,
                std::vector<Image<int>> &semantic_images,
                detinfo::DetectorProperties const* detprop,
-               detinfo::DetectorClocksData const* clock_data,
-               detinfo::DetectorPropertiesData const* det_prop_data,
+               detinfo::DetectorClocks const* clocks,
                std::optional<CalibrationContext> const& cal = std::nullopt) const
     {
         detector_images.clear();
@@ -113,16 +111,14 @@ public:
         auto* detprop_for_build = detprop;
         auto* calo_for_build = static_cast<calo::CalorimetryAlg*>(nullptr);
         auto* sce_for_build = static_cast<spacecharge::SpaceCharge const*>(nullptr);
-        auto* clock_data_for_build = clock_data;
-        auto* det_prop_data_for_build = det_prop_data;
+        auto* clocks_for_build = clocks;
         double T0_for_build = 0.0;
 
         if (cal && cal->enabled()) {
             calo_for_build = cal->calo;
             if (cal->detprop) detprop_for_build = cal->detprop;
             sce_for_build = cal->sce;
-            clock_data_for_build = cal->clock_data;
-            det_prop_data_for_build = cal->det_prop_data;
+            clocks_for_build = cal->clocks;
             T0_for_build = cal->T0_ticks;
         }
 
@@ -142,8 +138,7 @@ public:
             calo_for_build,
             detprop_for_build,
             sce_for_build,
-            clock_data_for_build,
-            det_prop_data_for_build,
+            clocks_for_build,
             T0_for_build
         };
 
@@ -183,8 +178,7 @@ private:
         calo::CalorimetryAlg* calo_alg;
         detinfo::DetectorProperties const* detprop;
         spacecharge::SpaceCharge const* sce;
-        detinfo::DetectorClocksData const* clock_data{nullptr};
-        detinfo::DetectorPropertiesData const* det_prop_data{nullptr};
+        detinfo::DetectorClocks const* clocks{nullptr};
 
         double T0_ticks{0.0};
     };
@@ -279,8 +273,8 @@ private:
             if (ctx.geo) pitch_cm = std::max(1e-6, ctx.geo->Plane(w.planeID).WirePitch());
 
             auto calo_res = cal::applyCalorimetry(hit, geo_res.p_corr, pitch_cm,
-                                                  ctx.calo_alg, ctx.clock_data,
-                                                  ctx.det_prop_data, ctx.sce, ctx.T0_ticks);
+                                                  ctx.calo_alg, ctx.clocks,
+                                                  ctx.detprop, ctx.sce, ctx.T0_ticks);
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {

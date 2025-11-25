@@ -9,8 +9,6 @@
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "lardataalg/DetectorInfo/DetectorClocksData.h"
-#include "lardataalg/DetectorInfo/DetectorPropertiesData.h"
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -93,7 +91,7 @@ class ImageProducer : public art::EDProducer {
 
     std::map<art::Ptr<recob::Hit>, std::size_t> buildBlipMask(art::Event &event);
 
-    double collectNeutrinoTime(art::Event &event, detinfo::DetectorClocksData const& clock_data) const;
+    double collectNeutrinoTime(art::Event &event, double tick_period) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -248,7 +246,7 @@ ImageProducer::buildBlipMask(art::Event &event) {
     return blip_hit_to_key;
 }
 
-double ImageProducer::collectNeutrinoTime(art::Event &event, detinfo::DetectorClocksData const& clock_data) const
+double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period) const
 {
     auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 
@@ -262,6 +260,7 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, detinfo::DetectorCl
             break;
         }
     }
+
     if (nu_index) {
         art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
         if (pfp_to_slice.isValid()) {
@@ -272,8 +271,8 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, detinfo::DetectorCl
                 if (slc_to_t0.isValid()) {
                     auto const &t0s = slc_to_t0.at(slices.front().key());
                     if (!t0s.empty()) {
-                        double const T0_ns = t0s.front()->Time();
-                        double const T0_ticks = (T0_ns * 1.0e-3) / clock_data.TPCClock().TickPeriod();
+                        double const T0_ns    = t0s.front()->Time();
+                        double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
                         mf::LogInfo("ImageCorrections")
                             << "collectNeutrinoTime: returning T0_ticks=" << T0_ticks
                             << " (T0_ns=" << T0_ns << ")";
@@ -283,7 +282,9 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, detinfo::DetectorCl
             }
         }
     }
-    mf::LogInfo("ImageCorrections") << "collectNeutrinoTime: returning default T0_ticks=0";
+
+    mf::LogInfo("ImageCorrections")
+        << "collectNeutrinoTime: returning default T0_ticks=0";
     return 0.0;
 }
 
@@ -308,14 +309,16 @@ void ImageProducer::produce(art::Event &event) {
         remove_bad_channels(all_hits);
     }
 
-    auto const clock_data =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
-    auto const det_prop_data =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clock_data);
+    auto const* clocks =
+        art::ServiceHandle<detinfo::DetectorClocksService const>()->provider();
     auto const* det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
-    double T0_ticks = collectNeutrinoTime(event, clock_data);
+    // Tick period from TPC electronics clock
+    double const tick_period = clocks->TPCClock().TickPeriod();
+
+    // Use that to compute T0_ticks
+    double T0_ticks = collectNeutrinoTime(event, tick_period);
 
     if (fBlipAlg) {
         auto blip_hit_to_key = buildBlipMask(event);
@@ -406,8 +409,7 @@ void ImageProducer::produce(art::Event &event) {
         image::CalibrationContext tmp;
         tmp.calo = fCalo.get();
         tmp.detprop = det_prop;
-        tmp.clock_data = &clock_data;
-        tmp.det_prop_data = &det_prop_data;
+        tmp.clocks = clocks;
         tmp.sce = lar::providerFrom<spacecharge::SpaceChargeService>();
         tmp.T0_ticks = T0_ticks;
         cal = tmp;
@@ -420,8 +422,7 @@ void ImageProducer::produce(art::Event &event) {
         det_slice,
         sem_slice,
         fDetp,
-        &clock_data,
-        &det_prop_data,
+        clocks,
         cal);
 
     builder.build(
@@ -431,8 +432,7 @@ void ImageProducer::produce(art::Event &event) {
         det_event,
         sem_event,
         fDetp,
-        &clock_data,
-        &det_prop_data,
+        clocks,
         cal);
 
     mf::LogDebug("ImageProducer")
