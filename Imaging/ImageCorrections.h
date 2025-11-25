@@ -206,6 +206,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         double const tick_period_us = clocks->TPCClock().TickPeriod();
         double const drift_time_us  = hit.PeakTime() * tick_period_us - T0_ns * 1.0e-3;
 
+        // Always emit drift time to std::cout for quick inspection
+        std::cout << "[ImageCorrections] drift_time_us≈" << drift_time_us << std::endl;
+
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
         print([&](std::ostream& os) {
