@@ -9,7 +9,13 @@ physics.producers.inferenceprod: {
     ScratchDir: ""
     AssetsBaseDir: "assets"
     DefaultWrapper: "scripts/inference_wrapper.sh"
-    Models: []
+    Models: [
+      {
+        Label:  "rand_features"
+        Arch:   "w=256,d=2,thr=0.0"
+        Weights: "dummy_weights.pth"
+      }
+    ]
 }
 
 physics.path1: [ imageprod, inferenceprod ]
