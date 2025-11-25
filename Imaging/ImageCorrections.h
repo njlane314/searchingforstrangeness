@@ -177,7 +177,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                                    detinfo::DetectorClocks const* clocks,
                                    detinfo::DetectorProperties const* detprop,
                                    spacecharge::SpaceCharge const* sce,
-                                   double T0_ticks)
+                                   double T0_ns)
 {
     CaloResult out;
     out.E_loc_kV_cm = detprop ? detprop->Efield() : 0.0;
@@ -202,15 +202,17 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         });
     }
     if (calo_alg && clocks && pitch_cm > 0.0) {
-        const double T0_ns = clocks->TPCClock().TickPeriod() * T0_ticks;
+        double const tick_period_ns = clocks->TPCClock().TickPeriod() * 1.0e3;
+        double const T0_ticks = tick_period_ns > 0.0 ? T0_ns / tick_period_ns : 0.0;
+
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
         print([&](std::ostream& os) {
             os << "applyCalorimetry: channel=" << hit.Channel()
                << " peakTime=" << hit.PeakTime()
                << " pitch_cm=" << pitch_cm
-               << " T0_ticks=" << T0_ticks
                << " T0_ns=" << T0_ns
+               << " T0_ticks=" << T0_ticks
                << " dEdx=" << out.dEdx_MeV_cm << " MeV/cm"
                << " E_hit=" << out.E_hit_MeV << " MeV";
         });

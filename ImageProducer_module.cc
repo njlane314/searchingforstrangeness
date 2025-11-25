@@ -331,10 +331,11 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
         mf::LogInfo("ImageCorrections")
             << "collectNeutrinoTime: no PFParticle with associated anab::T0 "
             << "for label '" << fT0producer.encode()
-            << "'; returning default T0_ticks=0";
+            << "'; returning default T0_ns=0";
         return 0.0;
     }
 
+    // best_T0_ns is in nanoseconds from anab::T0
     double const T0_us    = best_T0_ns * 1.0e-3;
     double const T0_ticks = T0_us / tick_period;
 
@@ -349,7 +350,7 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
     std::cout << "collectNeutrinoTime: using T0_ns=" << best_T0_ns
               << " -> T0_ticks=" << T0_ticks << std::endl;
 
-    return T0_ticks;
+    return best_T0_ns;
 }
 
 void ImageProducer::produce(art::Event &event) {
@@ -378,11 +379,11 @@ void ImageProducer::produce(art::Event &event) {
     auto const* det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
-    // Tick period from TPC electronics clock
+    // Tick period from TPC electronics clock (used only for logging in collectNeutrinoTime)
     double const tick_period = clocks->TPCClock().TickPeriod();
 
-    // Use that to compute T0_ticks
-    double T0_ticks = collectNeutrinoTime(event, tick_period);
+    // Get event neutrino T0 in nanoseconds (same convention as anab::T0)
+    double T0_ns = collectNeutrinoTime(event, tick_period);
 
     if (fBlipAlg) {
         auto blip_hit_to_key = buildBlipMask(event);
@@ -475,7 +476,7 @@ void ImageProducer::produce(art::Event &event) {
         tmp.detprop = det_prop;
         tmp.clocks = clocks;
         tmp.sce = lar::providerFrom<spacecharge::SpaceChargeService>();
-        tmp.T0_ticks = T0_ticks;
+        tmp.T0_ns = T0_ns;
         cal = tmp;
     }
 

@@ -56,7 +56,8 @@ struct CalibrationContext {
     detinfo::DetectorClocks const*     clocks{nullptr};
 
     spacecharge::SpaceCharge const* sce{nullptr};
-    double                           T0_ticks{0.0};
+    // Event neutrino T0 in *nanoseconds* (as in anab::T0::Time())
+    double                           T0_ns{0.0};
 
     bool enabled() const { return calo && detprop && clocks; }
 };
@@ -112,14 +113,14 @@ public:
         auto* calo_for_build = static_cast<calo::CalorimetryAlg*>(nullptr);
         auto* sce_for_build = static_cast<spacecharge::SpaceCharge const*>(nullptr);
         auto* clocks_for_build = clocks;
-        double T0_for_build = 0.0;
+        double T0_ns_for_build = 0.0;
 
         if (cal && cal->enabled()) {
             calo_for_build = cal->calo;
             if (cal->detprop) detprop_for_build = cal->detprop;
             sce_for_build = cal->sce;
             clocks_for_build = cal->clocks;
-            T0_for_build = cal->T0_ticks;
+            T0_ns_for_build = cal->T0_ns;
         }
 
         BuildContext ctx{
@@ -139,7 +140,7 @@ public:
             detprop_for_build,
             sce_for_build,
             clocks_for_build,
-            T0_for_build
+            T0_ns_for_build
         };
 
         if (!ctx.detprop) {
@@ -180,7 +181,7 @@ private:
         spacecharge::SpaceCharge const* sce;
         detinfo::DetectorClocks const* clocks{nullptr};
 
-        double T0_ticks{0.0};
+        double T0_ns{0.0};
     };
 
     static sem::SemanticClassifier::SemanticLabel labelSemanticPixels(
@@ -274,7 +275,7 @@ private:
 
             auto calo_res = cal::applyCalorimetry(hit, geo_res.p_corr, pitch_cm,
                                                   ctx.calo_alg, ctx.clocks,
-                                                  ctx.detprop, ctx.sce, ctx.T0_ticks);
+                                                  ctx.detprop, ctx.sce, ctx.T0_ns);
 
             sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
