@@ -124,15 +124,11 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    image::ImageProduct u = *U;
-    image::ImageProduct v = *V;
-    image::ImageProduct w = *W;
-
     std::vector<image::ImageProduct> detector_images;
     detector_images.reserve(3);
-    detector_images.emplace_back(std::move(u));
-    detector_images.emplace_back(std::move(v));
-    detector_images.emplace_back(std::move(w));
+    detector_images.emplace_back(*U);
+    detector_images.emplace_back(*V);
+    detector_images.emplace_back(*W);
 
     std::string scratch = scratch_dir_;
     if (scratch.empty()) {
