@@ -58,13 +58,12 @@ std::string resolve_under(const std::string &base, const std::string &value) {
 }
 
 const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &planes,
-                                     geo::View_t view,
-                                     const image::ImageProduct *fallback) {
+                                     geo::View_t view) {
     for (auto const &plane : planes) {
         if (plane.view == static_cast<int>(view))
             return &plane;
     }
-    return fallback;
+    return nullptr;
 }
 
 } // namespace
@@ -130,11 +129,10 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Need at least three planes (U,V,W), got " << planes->size();
     }
 
-    auto const *first = &planes->front();
-    auto const *U = find_view(*planes, geo::kU, first);
-    auto const *V = find_view(*planes, geo::kV, first);
-    auto const *W = find_view(*planes, geo::kW, first);
-    if (U == nullptr || V == nullptr || W == nullptr) {
+    auto const *U = find_view(*planes, geo::kU);
+    auto const *V = find_view(*planes, geo::kV);
+    auto const *W = find_view(*planes, geo::kW);
+    if (!U || !V || !W) {
         throw cet::exception("InferenceProduction")
             << "Unable to identify U/V/W planes";
     }
