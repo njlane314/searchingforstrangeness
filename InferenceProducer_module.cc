@@ -33,27 +33,15 @@ std::string join_path(std::string base, const std::string &leaf) {
     return base + leaf;
 }
 
-bool is_relative(const std::string &path) {
-    if (path.empty())
-        return false;
-    if (path.front() == '/')
-        return false;
-    if (path.size() > 1 && path[1] == ':')
-        return false; // Windows drive
-    if (path.find("://") != std::string::npos)
-        return false;
-    if (path.rfind("./", 0) == 0 || path.rfind("../", 0) == 0)
-        return true;
-    return true;
-}
-
 std::string resolve_under(const std::string &base, const std::string &value) {
-    if (value.empty())
+    if (value.empty() || base.empty())
         return value;
-    if (base.empty())
+
+    if (value.front() == '/' ||
+        (value.size() > 1 && value[1] == ':') ||
+        value.find("://") != std::string::npos)
         return value;
-    if (!is_relative(value))
-        return value;
+
     return join_path(base, value);
 }
 
