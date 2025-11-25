@@ -14,6 +14,7 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+#include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <string>
@@ -42,6 +43,22 @@ std::string resolve_under(const std::string &base, const std::string &value) {
         return value;
 
     return join_path(base, value);
+}
+
+std::string resolve_scratch_dir(const std::string &configured) {
+    std::string scratch = configured;
+    if (scratch.empty()) {
+        if (const char *env = std::getenv("_CONDOR_SCRATCH_DIR"))
+            scratch = env;
+        else
+            scratch = ".";
+    }
+
+    char buf[4096];
+    if (realpath(scratch.c_str(), buf))
+        return std::string(buf);
+
+    return scratch;
 }
 
 const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &planes,
@@ -124,23 +141,30 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
+    auto check_dims = [](image::ImageProduct const *p, char label) {
+        std::size_t expected =
+            static_cast<std::size_t>(p->width) *
+            static_cast<std::size_t>(p->height);
+        if (p->adc.size() != expected) {
+            throw cet::exception("InferenceProduction")
+                << "Plane " << label << " has incompatible dimensions: "
+                << "width=" << p->width << " height=" << p->height
+                << " adc.size()=" << p->adc.size()
+                << " (expected " << expected << ")";
+        }
+    };
+
+    check_dims(U, 'U');
+    check_dims(V, 'V');
+    check_dims(W, 'W');
+
     std::vector<image::ImageProduct> detector_images;
     detector_images.reserve(3);
     detector_images.emplace_back(*U);
     detector_images.emplace_back(*V);
     detector_images.emplace_back(*W);
 
-    std::string scratch = scratch_dir_;
-    if (scratch.empty()) {
-        if (const char *env = std::getenv("_CONDOR_SCRATCH_DIR"))
-            scratch = env;
-        else
-            scratch = ".";
-    }
-
-    char buf[4096];
-    std::string absoluteScratch =
-        realpath(scratch.c_str(), buf) ? std::string(buf) : scratch;
+    std::string absoluteScratch = resolve_scratch_dir(scratch_dir_);
 
     auto perfProduct = std::make_unique<image::InferencePerfProduct>();
     auto predProduct = std::make_unique<image::InferencePredProduct>();
