@@ -1,10 +1,9 @@
 #include "run_imaging.fcl"
-#include "job/inferencemodels.fcl"
 
 process_name: ImagingInference
 
 physics.producers.inferenceprod: {
-    module_type: "image::InferenceProducerModule"
+    module_type: "InferenceProducerModule"
     PlanesTag: "imageprod:primary_slice"
     ScratchDir: ""
     AssetsBaseDir: "assets"
