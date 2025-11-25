@@ -384,6 +384,16 @@ void ImageProducer::produce(art::Event &event) {
 
     // Get event neutrino T0 in nanoseconds (same convention as anab::T0)
     double T0_ns = collectNeutrinoTime(event, tick_period);
+    double const tick_period_ns = tick_period * 1.0e3;
+    double const T0_ticks = tick_period_ns > 0.0 ? T0_ns / tick_period_ns : 0.0;
+    mf::LogInfo("ImageCorrections")
+        << "ImageProducer: passing T0_ns=" << T0_ns
+        << " (T0_ticks=" << T0_ticks
+        << ") to calorimeter corrections";
+
+    std::cout << "ImageProducer: passing T0_ns=" << T0_ns
+              << " (T0_ticks=" << T0_ticks
+              << ") to calorimeter corrections" << std::endl;
 
     if (fBlipAlg) {
         auto blip_hit_to_key = buildBlipMask(event);
