@@ -25,7 +25,7 @@
 #include <cetlib_except/exception.h>
 
 #include "lardataalg/DetectorInfo/DetectorClocks.h"
-#include "lardata/DetectorInfo/DetectorProperties.h"
+#include "lardataalg/DetectorInfo/DetectorProperties.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 
 #include "lardataobj/RecoBase/Hit.h"
