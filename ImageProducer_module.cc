@@ -37,6 +37,7 @@
 #include <cetlib_except/exception.h>
 #include <cstdint>
 #include <fstream>
+#include <iostream>
 #include <ios>
 #include <limits>
 #include <map>
@@ -344,6 +345,9 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
         << ", IsPrimary=" << best.IsPrimary() << ") "
         << "T0_ns=" << best_T0_ns
         << " -> T0_ticks=" << T0_ticks;
+
+    std::cout << "collectNeutrinoTime: using T0_ns=" << best_T0_ns
+              << " -> T0_ticks=" << T0_ticks << std::endl;
 
     return T0_ticks;
 }
