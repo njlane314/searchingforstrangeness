@@ -265,11 +265,13 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
         }
     }
 
-    auto const pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+    auto const pfp_h =
+        event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 
     if (pfp_h->empty()) {
         mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: PFParticle collection '" << fPFPproducer.encode()
+            << "collectNeutrinoTime: PFParticle collection '"
+            << fPFPproducer.encode()
             << "' is empty; returning default T0_ticks=0";
         return 0.0;
     }
@@ -278,54 +280,69 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
     if (!pfp_to_t0.isValid()) {
         mf::LogInfo("ImageCorrections")
             << "collectNeutrinoTime: PFParticle->T0 association invalid for label '"
-            << fT0producer.encode() << "'; returning default T0_ticks=0";
+            << fT0producer.encode()
+            << "'; returning default T0_ticks=0";
         return 0.0;
     }
 
-    auto find_primary_with_t0 = [&](auto predicate) {
-        for (size_t i = 0; i < pfp_h->size(); ++i) {
-            auto const &p = pfp_h->at(i);
-            if (!p.IsPrimary()) continue;
-
-            if (!predicate(p)) continue;
-
-            auto const &t0s = pfp_to_t0.at(i);
-            if (!t0s.empty()) {
-                return std::make_pair(static_cast<int>(i), t0s.front()->Time());
-            }
-        }
-
-        return std::make_pair(-1, 0.0);
+    auto getFirstT0 = [&pfp_to_t0](std::size_t i, double &T0_ns) -> bool {
+        auto const &t0s = pfp_to_t0.at(i);
+        if (t0s.empty()) return false;
+        T0_ns = t0s.front()->Time();
+        return true;
     };
 
-    auto const [nu_like_index, nu_like_T0] = find_primary_with_t0([](auto const &p) {
-        int const pdg = std::abs(p.PdgCode());
-        return pdg == 12 || pdg == 14 || pdg == 16;
-    });
+    int    best_index = -1;
+    double best_T0_ns = 0.0;
 
-    int best_index = nu_like_index;
-    double best_T0_ns = nu_like_T0;
+    for (std::size_t i = 0; i < pfp_h->size(); ++i) {
+        auto const &p = pfp_h->at(i);
+        if (!p.IsPrimary()) continue;
+        int const pdg = std::abs(p.PdgCode());
+        if (pdg != 12 && pdg != 14 && pdg != 16) continue;
+        if (getFirstT0(i, best_T0_ns)) {
+            best_index = static_cast<int>(i);
+            break;
+        }
+    }
 
     if (best_index < 0) {
-        auto const [any_index, any_T0] =
-            find_primary_with_t0([](auto const &) { return true; });
-        best_index = any_index;
-        best_T0_ns = any_T0;
+        for (std::size_t i = 0; i < pfp_h->size(); ++i) {
+            auto const &p = pfp_h->at(i);
+            if (!p.IsPrimary()) continue;
+            if (getFirstT0(i, best_T0_ns)) {
+                best_index = static_cast<int>(i);
+                break;
+            }
+        }
+    }
+
+    if (best_index < 0) {
+        for (std::size_t i = 0; i < pfp_h->size(); ++i) {
+            if (getFirstT0(i, best_T0_ns)) {
+                best_index = static_cast<int>(i);
+                break;
+            }
+        }
     }
 
     if (best_index < 0) {
         mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: no primary PFParticle with associated anab::T0 for label '"
-            << fT0producer.encode() << "'; returning default T0_ticks=0";
+            << "collectNeutrinoTime: no PFParticle with associated anab::T0 "
+            << "for label '" << fT0producer.encode()
+            << "'; returning default T0_ticks=0";
         return 0.0;
     }
 
-    double const T0_us    = best_T0_ns * 1.0e-3; // ns -> µs
+    double const T0_us    = best_T0_ns * 1.0e-3;
     double const T0_ticks = T0_us / tick_period;
 
+    auto const &best = pfp_h->at(best_index);
     mf::LogInfo("ImageCorrections")
-        << "collectNeutrinoTime: PFParticle index " << best_index
-        << " (PDG=" << pfp_h->at(best_index).PdgCode() << ") has T0_ns=" << best_T0_ns
+        << "collectNeutrinoTime: using PFParticle index " << best_index
+        << " (pdg=" << best.PdgCode()
+        << ", IsPrimary=" << best.IsPrimary() << ") "
+        << "T0_ns=" << best_T0_ns
         << " -> T0_ticks=" << T0_ticks;
 
     return T0_ticks;
