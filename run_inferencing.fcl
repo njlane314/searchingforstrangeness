@@ -3,7 +3,7 @@
 process_name: ImagingInference
 
 physics.producers.inferenceprod: {
-    module_type: "InferenceProducerModule"
+    module_type: "InferenceProducer"
     PlanesTag: "imageprod:primary_slice"
     ScratchDir: ""
     AssetsBaseDir: "assets"
