@@ -248,87 +248,69 @@ ImageProducer::buildBlipMask(art::Event &event) {
 
 double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period) const
 {
-    auto pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+    auto const pfp_h = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
 
-    std::optional<size_t> nu_index;
-    for (size_t i = 0; i < pfp_h->size(); ++i) {
-        auto const &p = pfp_h->at(i);
-        if (!p.IsPrimary()) continue;
-        int const pdg = std::abs(p.PdgCode());
-        if (pdg == 12 || pdg == 14 || pdg == 16) {
-            nu_index = i;
-            break;
-        }
-    }
-
-    if (!nu_index) {
+    if (pfp_h->empty()) {
         mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: no primary neutrino PFParticle found; "
-            << "returning default T0_ticks=0";
+            << "collectNeutrinoTime: PFParticle collection '" << fPFPproducer.encode()
+            << "' is empty; returning default T0_ticks=0";
         return 0.0;
     }
 
-    {
-        art::FindManyP<anab::T0> pfp_to_t0(pfp_h, event, fT0producer);
-        if (pfp_to_t0.isValid()) {
-            auto const &t0s = pfp_to_t0.at(*nu_index);
+    art::FindManyP<anab::T0> pfp_to_t0(pfp_h, event, fT0producer);
+    if (!pfp_to_t0.isValid()) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: PFParticle->T0 association invalid for label '"
+            << fT0producer.encode() << "'; returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    auto find_primary_with_t0 = [&](auto predicate) {
+        for (size_t i = 0; i < pfp_h->size(); ++i) {
+            auto const &p = pfp_h->at(i);
+            if (!p.IsPrimary()) continue;
+
+            if (!predicate(p)) continue;
+
+            auto const &t0s = pfp_to_t0.at(i);
             if (!t0s.empty()) {
-                double const T0_ns    = t0s.front()->Time();
-                double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
-                mf::LogInfo("ImageCorrections")
-                    << "collectNeutrinoTime: PFParticle-based T0 found: "
-                    << "T0_ticks=" << T0_ticks << " (T0_ns=" << T0_ns << ")";
-                return T0_ticks;
-            } else {
-                mf::LogInfo("ImageCorrections")
-                    << "collectNeutrinoTime: PFParticle has no associated anab::T0 "
-                    << "for label '" << fT0producer.encode() << "'";
+                return std::make_pair(static_cast<int>(i), t0s.front()->Time());
             }
-        } else {
-            mf::LogInfo("ImageCorrections")
-                << "collectNeutrinoTime: PFParticle->T0 association invalid for label '"
-                << fT0producer.encode() << "'";
         }
+
+        return std::make_pair(-1, 0.0);
+    };
+
+    auto const [nu_like_index, nu_like_T0] = find_primary_with_t0([](auto const &p) {
+        int const pdg = std::abs(p.PdgCode());
+        return pdg == 12 || pdg == 14 || pdg == 16;
+    });
+
+    int best_index = nu_like_index;
+    double best_T0_ns = nu_like_T0;
+
+    if (best_index < 0) {
+        auto const [any_index, any_T0] =
+            find_primary_with_t0([](auto const &) { return true; });
+        best_index = any_index;
+        best_T0_ns = any_T0;
     }
 
-    art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
-    if (!pfp_to_slice.isValid()) {
+    if (best_index < 0) {
         mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: PFP->Slice association invalid for label '"
-            << fPFPproducer.encode() << "', returning default T0_ticks=0";
+            << "collectNeutrinoTime: no primary PFParticle with associated anab::T0 for label '"
+            << fT0producer.encode() << "'; returning default T0_ticks=0";
         return 0.0;
     }
 
-    auto const slices = pfp_to_slice.at(*nu_index);
-    if (slices.empty()) {
-        mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: neutrino PFP has no associated slices, "
-            << "returning default T0_ticks=0";
-        return 0.0;
-    }
+    double const T0_us    = best_T0_ns * 1.0e-3; // ns -> µs
+    double const T0_ticks = T0_us / tick_period;
 
-    auto slc_h = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-    art::FindManyP<anab::T0> slc_to_t0(slc_h, event, fT0producer);
-    if (!slc_to_t0.isValid()) {
-        mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: Slice->T0 association invalid for label '"
-            << fT0producer.encode() << "', returning default T0_ticks=0";
-        return 0.0;
-    }
-
-    auto const &t0s = slc_to_t0.at(slices.front().key());
-    if (t0s.empty()) {
-        mf::LogInfo("ImageCorrections")
-            << "collectNeutrinoTime: neutrino Slice has no associated anab::T0 "
-            << "for label '" << fT0producer.encode() << "', returning default T0_ticks=0";
-        return 0.0;
-    }
-
-    double const T0_ns    = t0s.front()->Time();
-    double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
     mf::LogInfo("ImageCorrections")
-        << "collectNeutrinoTime: Slice-based T0 found: "
-        << "T0_ticks=" << T0_ticks << " (T0_ns=" << T0_ns << ")";
+        << "collectNeutrinoTime: PFParticle index " << best_index
+        << " (PDG=" << pfp_h->at(best_index).PdgCode() << ") has T0_ns=" << best_T0_ns
+        << " -> T0_ticks=" << T0_ticks;
+
     return T0_ticks;
 }
 
