@@ -202,8 +202,9 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
         });
     }
     if (calo_alg && clocks && pitch_cm > 0.0) {
-        double const tick_period_ns = clocks->TPCClock().TickPeriod() * 1.0e3;
-        double const T0_ticks = tick_period_ns > 0.0 ? T0_ns / tick_period_ns : 0.0;
+        // For debugging: approximate drift time in microseconds
+        double const tick_period_us = clocks->TPCClock().TickPeriod();
+        double const drift_time_us  = hit.PeakTime() * tick_period_us - T0_ns * 1.0e-3;
 
         out.dEdx_MeV_cm = calo_alg->dEdx_AREA(hit, pitch_cm, T0_ns);
         out.E_hit_MeV = out.dEdx_MeV_cm * pitch_cm;
@@ -212,7 +213,7 @@ inline CaloResult applyCalorimetry(recob::Hit const& hit,
                << " peakTime=" << hit.PeakTime()
                << " pitch_cm=" << pitch_cm
                << " T0_ns=" << T0_ns
-               << " T0_ticks=" << T0_ticks
+               << " drift_time_us≈" << drift_time_us
                << " dEdx=" << out.dEdx_MeV_cm << " MeV/cm"
                << " E_hit=" << out.E_hit_MeV << " MeV";
         });
