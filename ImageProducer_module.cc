@@ -261,31 +261,75 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
         }
     }
 
-    if (nu_index) {
-        art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
-        if (pfp_to_slice.isValid()) {
-            auto const slices = pfp_to_slice.at(*nu_index);
-            if (!slices.empty()) {
-                auto slc_h = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
-                art::FindManyP<anab::T0> slc_to_t0(slc_h, event, fT0producer);
-                if (slc_to_t0.isValid()) {
-                    auto const &t0s = slc_to_t0.at(slices.front().key());
-                    if (!t0s.empty()) {
-                        double const T0_ns    = t0s.front()->Time();
-                        double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
-                        mf::LogInfo("ImageCorrections")
-                            << "collectNeutrinoTime: returning T0_ticks=" << T0_ticks
-                            << " (T0_ns=" << T0_ns << ")";
-                        return T0_ticks;
-                    }
-                }
+    if (!nu_index) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: no primary neutrino PFParticle found; "
+            << "returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    {
+        art::FindManyP<anab::T0> pfp_to_t0(pfp_h, event, fT0producer);
+        if (pfp_to_t0.isValid()) {
+            auto const &t0s = pfp_to_t0.at(*nu_index);
+            if (!t0s.empty()) {
+                double const T0_ns    = t0s.front()->Time();
+                double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
+                mf::LogInfo("ImageCorrections")
+                    << "collectNeutrinoTime: PFParticle-based T0 found: "
+                    << "T0_ticks=" << T0_ticks << " (T0_ns=" << T0_ns << ")";
+                return T0_ticks;
+            } else {
+                mf::LogInfo("ImageCorrections")
+                    << "collectNeutrinoTime: PFParticle has no associated anab::T0 "
+                    << "for label '" << fT0producer.encode() << "'";
             }
+        } else {
+            mf::LogInfo("ImageCorrections")
+                << "collectNeutrinoTime: PFParticle->T0 association invalid for label '"
+                << fT0producer.encode() << "'";
         }
     }
 
+    art::FindManyP<recob::Slice> pfp_to_slice(pfp_h, event, fPFPproducer);
+    if (!pfp_to_slice.isValid()) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: PFP->Slice association invalid for label '"
+            << fPFPproducer.encode() << "', returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    auto const slices = pfp_to_slice.at(*nu_index);
+    if (slices.empty()) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: neutrino PFP has no associated slices, "
+            << "returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    auto slc_h = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+    art::FindManyP<anab::T0> slc_to_t0(slc_h, event, fT0producer);
+    if (!slc_to_t0.isValid()) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: Slice->T0 association invalid for label '"
+            << fT0producer.encode() << "', returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    auto const &t0s = slc_to_t0.at(slices.front().key());
+    if (t0s.empty()) {
+        mf::LogInfo("ImageCorrections")
+            << "collectNeutrinoTime: neutrino Slice has no associated anab::T0 "
+            << "for label '" << fT0producer.encode() << "', returning default T0_ticks=0";
+        return 0.0;
+    }
+
+    double const T0_ns    = t0s.front()->Time();
+    double const T0_ticks = (T0_ns * 1.0e-3) / tick_period;
     mf::LogInfo("ImageCorrections")
-        << "collectNeutrinoTime: returning default T0_ticks=0";
-    return 0.0;
+        << "collectNeutrinoTime: Slice-based T0 found: "
+        << "T0_ticks=" << T0_ticks << " (T0_ns=" << T0_ns << ")";
+    return T0_ticks;
 }
 
 void ImageProducer::produce(art::Event &event) {
