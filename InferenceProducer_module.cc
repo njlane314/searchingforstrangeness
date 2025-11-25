@@ -72,7 +72,7 @@ const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &pla
 
 } // namespace
 
-class InferenceProducerModule : public art::EDProducer {
+class InferenceProducer : public art::EDProducer {
   public:
     struct ModelConfig {
         std::string label;
@@ -82,7 +82,7 @@ class InferenceProducerModule : public art::EDProducer {
         std::string assets;
     };
 
-    explicit InferenceProducerModule(fhicl::ParameterSet const &p);
+    explicit InferenceProducer(fhicl::ParameterSet const &p);
 
     void produce(art::Event &e) override;
 
@@ -96,8 +96,8 @@ class InferenceProducerModule : public art::EDProducer {
     std::vector<ModelConfig> models_;
 };
 
-InferenceProducerModule::ModelConfig
-InferenceProducerModule::makeConfig(fhicl::ParameterSet const &p) {
+InferenceProducer::ModelConfig
+InferenceProducer::makeConfig(fhicl::ParameterSet const &p) {
     ModelConfig cfg;
     cfg.label = p.get<std::string>("Label", "");
     cfg.arch = p.get<std::string>("Arch");
@@ -107,8 +107,7 @@ InferenceProducerModule::makeConfig(fhicl::ParameterSet const &p) {
     return cfg;
 }
 
-InferenceProducerModule::InferenceProducerModule(
-    fhicl::ParameterSet const &p)
+InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
     : planes_tag_{p.get<std::string>("PlanesTag")},
       scratch_dir_{p.get<std::string>("ScratchDir", "")},
       assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
@@ -124,7 +123,7 @@ InferenceProducerModule::InferenceProducerModule(
     }
 }
 
-void InferenceProducerModule::produce(art::Event &e) {
+void InferenceProducer::produce(art::Event &e) {
     auto planes = e.getValidHandle<std::vector<image::ImageProduct>>(planes_tag_);
     if (planes->size() < 3) {
         throw cet::exception("InferenceProduction")
@@ -210,4 +209,4 @@ void InferenceProducerModule::produce(art::Event &e) {
     e.put(std::move(predProduct));
 }
 
-DEFINE_ART_MODULE(InferenceProducerModule)
+DEFINE_ART_MODULE(InferenceProducer)
