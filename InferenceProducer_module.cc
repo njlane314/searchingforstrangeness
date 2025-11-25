@@ -163,8 +163,8 @@ void InferenceProducerModule::produce(art::Event &e) {
             << "Running model: " << label_or_arch;
 
         auto result = image::InferenceProduction::runInference(
-            detector_images, absoluteScratch, assets, cfg.arch, weights,
-            wrapper, assets);
+            detector_images, absoluteScratch, cfg.arch, weights, wrapper,
+            assets);
 
         image::ModelPerf perf;
         perf.model = label_or_arch;
