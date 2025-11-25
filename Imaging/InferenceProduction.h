@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
-#include <cetlib_except/exception.h>
 #include <canvas/Utilities/Exception.h>
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
