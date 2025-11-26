@@ -109,6 +109,17 @@ def load_model(weights_path: str, device: str):
 
     model.to(device)
     model.eval()
+
+    if hasattr(model, "input_norm"):
+        with torch.no_grad():
+            shift = model.input_norm.shift.detach().cpu().numpy()
+            scale = model.input_norm.log_scale.exp().detach().cpu().numpy()
+        print(
+            "[infer_bin] input_norm shift="
+            f"{shift.tolist()} scale={scale.tolist()}",
+            flush=True,
+        )
+
     return model
 
 
