@@ -588,7 +588,8 @@ void ImageProducer::produce(art::Event &event) {
     event.put(std::move(out_slice), "NuSlice");
 
     mf::LogInfo("ImageProducer")
-        << "Stored " << n_slice << " NuSlice ImageProducts for event " << event.id();
+        << "Stored " << n_slice
+        << " NuSlice ImageProducts for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)
