@@ -43,6 +43,7 @@ physics: {
             BadChannelFile: "assets/badchannels.txt"
             DumpImages:   true
             DumpTreeName: "ImageDump"
+            StoreUncorrectedInEvent: true
         }
     }
     path1: [ imageprod ]
