@@ -31,7 +31,7 @@
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
-#include "art_root_io/TFileService.h"
+#include "art/Framework/Services/Optional/TFileService.h"
 
 #include <TTree.h>
 #include <TVector3.h>
