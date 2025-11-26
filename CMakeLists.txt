@@ -6,6 +6,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(pybind11 REQUIRED)
+
 include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/include/python2.7)
 
 set(PYTHON_LIB_DIR /cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib)
@@ -29,6 +31,7 @@ message("Compiler: ${CMAKE_CXX_COMPILER}")
 message("Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 art_make( MODULE_LIBRARIES larcorealg_Geometry
+                           pybind11::embed
                            larcore_Geometry_Geometry_service
                            larsim_Simulation nutools_ParticleNavigation
                            lardataobj_Simulation
