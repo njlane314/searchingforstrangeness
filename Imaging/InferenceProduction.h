@@ -51,6 +51,26 @@ inline std::string joinPath(std::string a, const std::string &b) {
     return a + b;
 }
 
+inline std::string makeAbsolutePath(const std::string &path) {
+    if (path.empty())
+        return path;
+
+    if (path.front() == '/' ||
+        (path.size() > 1 && path[1] == ':') ||
+        path.find("://") != std::string::npos)
+        return path;
+
+    char resolved[4096];
+    if (realpath(path.c_str(), resolved))
+        return std::string(resolved);
+
+    char cwd[4096];
+    if (getcwd(cwd, sizeof(cwd)))
+        return joinPath(std::string(cwd), path);
+
+    return path;
+}
+
 namespace _binary_io {
     struct ResultHeader {
         char magic[4];
@@ -114,9 +134,13 @@ inline InferenceProduction::Result InferenceProduction::runInference(
         assets_dir = (pos == std::string::npos) ? std::string{} : inference_wrapper.substr(0, pos);
     }
 
+    std::string abs_assets_dir = makeAbsolutePath(assets_dir);
+    std::string abs_inference_wrapper = makeAbsolutePath(inference_wrapper);
+    std::string abs_weights_file = makeAbsolutePath(weights_file);
+
     std::vector<std::string> binds;
-    if (!assets_dir.empty())
-        binds.push_back(assets_dir);
+    if (!abs_assets_dir.empty())
+        binds.push_back(abs_assets_dir);
     binds.push_back(absolute_scratch_dir);
 
     bool need_cvmfs = true;
@@ -146,14 +170,14 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     std::ostringstream cmd;
     cmd << "apptainer exec --cleanenv --bind " << bind_csv.str() << " "
         << container << " "
-        << "/bin/bash " << inference_wrapper << " "
+        << "/bin/bash " << abs_inference_wrapper << " "
         << "--in " << req_bin << " "
         << "--out " << result_bin << " "
         << "--metrics " << meta_txt << " "
         << "--W " << detector_images[0].width << " "
         << "--H " << detector_images[0].height << " "
         << "--arch " << arch << " "
-        << "--weights " << weights_file << " "
+        << "--weights " << abs_weights_file << " "
         << " > " << script_stdout << " 2> " << script_stderr;
 
     mf::LogInfo("InferenceProduction") << "Executing inference: " << cmd.str();
