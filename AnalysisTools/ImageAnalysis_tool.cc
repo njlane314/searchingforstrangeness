@@ -118,10 +118,10 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fMCPproducer = p.get<art::InputTag>("MCPproducer");
   fBKTproducer = p.get<art::InputTag>("BKTproducer");
 
-  fImagesSliceTag = p.get<art::InputTag>(
-      "ImagesSliceTag", art::InputTag{"imageprod", "primary_slice"});
-  fImagesEventTag = p.get<art::InputTag>(
-      "ImagesEventTag", art::InputTag{"imageprod", "all_hits"});
+  fImagesSliceTag =
+      p.get<art::InputTag>("ImagesSliceTag",
+                           art::InputTag{"imageprod", "NuSlice"});
+  fImagesEventTag = p.get<art::InputTag>("ImagesEventTag");
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
