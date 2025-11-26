@@ -138,11 +138,10 @@ def main():
     with torch.no_grad():
         out = model(sparse)
 
-    logits = out.F
-    prob_pos = torch.sigmoid(logits)[0, 0].item()
+    logit = out.F[0, 0].item()
     t_infer = time.time()
 
-    cls = np.array([float(prob_pos)], dtype=np.float32)
+    cls = np.array([float(logit)], dtype=np.float32)
     write_results_bin(args.out_path, cls)
 
     t_write = time.time()
