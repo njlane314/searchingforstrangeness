@@ -116,7 +116,7 @@ def main():
     parser.add_argument("--input", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--checkpoint", default="")
-    parser.add_argument("--tree", default="ImageDump")
+    parser.add_argument("--tree", default="imageprod/ImageDump")
     parser.add_argument("--random-weights", action="store_true")
     parser.add_argument("--max-entries", type=int, default=-1)
     args = parser.parse_args()
