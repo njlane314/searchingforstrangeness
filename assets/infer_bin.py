@@ -12,7 +12,7 @@ from me_binary_model import build_model
 
 
 def parse_arch(s: str):
-    cfg = dict(seed=12345, device="cpu")
+    cfg = dict(seed=12345, device="cpu", thr=0.0)
     if not s:
         return cfg
     if ":" in s:
@@ -27,6 +27,8 @@ def parse_arch(s: str):
             cfg["seed"] = int(v)
         elif k in ("device", "dev"):
             cfg["device"] = v
+        elif k in ("thr", "threshold"):
+            cfg["thr"] = max(0.0, float(v))
     return cfg
 
 
@@ -47,21 +49,27 @@ def write_results_bin(path, cls_f32: np.ndarray):
             f.write(cls_f32.astype(np.float32, copy=False).tobytes(order="C"))
 
 
-def chw_to_sparse(chw: np.ndarray, device: str) -> ME.SparseTensor:
+def chw_to_sparse(chw: np.ndarray, device: str, thr: float) -> ME.SparseTensor:
     C, H, W = chw.shape
     if C != 3:
         raise RuntimeError(f"Expected 3 channels (U,V,W), got {C}")
 
-    ys, xs = np.meshgrid(
-        np.arange(H, dtype=np.int32),
-        np.arange(W, dtype=np.int32),
-        indexing="ij",
-    )
-    batch = np.zeros_like(ys, dtype=np.int32)
-    coords = np.stack([batch, ys, xs], axis=-1).reshape(-1, 3)
+    mask = np.any(np.abs(chw) > thr, axis=0)
+    ys, xs = np.nonzero(mask)
 
-    hw = H * W
-    feats = chw.reshape(C, hw).T.astype(np.float32)
+    if ys.size == 0:
+        ys = np.array([0], dtype=np.int32)
+        xs = np.array([0], dtype=np.int32)
+        feats = chw[:, 0, 0][None, :].astype(np.float32)
+    else:
+        feats = chw[:, ys, xs].T.astype(np.float32)
+
+    batch = np.zeros_like(ys, dtype=np.int32)
+    coords = np.stack(
+        [batch, ys.astype(np.int32), xs.astype(np.int32)],
+        axis=-1,
+    )
+
     if feats.shape[1] == 3:
         pad = np.zeros((feats.shape[0], 1), dtype=np.float32)
         feats = np.concatenate([feats, pad], axis=1)
@@ -69,12 +77,11 @@ def chw_to_sparse(chw: np.ndarray, device: str) -> ME.SparseTensor:
     coords_t = torch.from_numpy(coords).int()
     feats_t = torch.from_numpy(feats).float()
 
-    st = ME.SparseTensor(
+    return ME.SparseTensor(
         features=feats_t,
         coordinates=coords_t,
         device=device,
     )
-    return st
 
 
 def load_model(weights_path: str, device: str):
@@ -124,7 +131,7 @@ def main():
     chw = read_chw_f32(args.in_path, C, H, W)
 
     model = load_model(args.weights, device=device)
-    sparse = chw_to_sparse(chw, device=device)
+    sparse = chw_to_sparse(chw, device=device, thr=cfg["thr"])
 
     t_setup = time.time()
 
@@ -146,7 +153,6 @@ def main():
         m.write(f"t_infer_ms={(t_infer - t_setup) * 1000.0:.3f}\n")
         m.write(f"t_post_ms={(t_write - t_infer) * 1000.0:.3f}\n")
         m.write("max_rss_mb=0.0\n")
-        m.write("feat_dim=1\n")
         m.write(f"seed={cfg['seed']}\n")
     return 0
 
