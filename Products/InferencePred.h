@@ -7,8 +7,8 @@
 namespace image {
 
 struct ModelPred {
-  std::string model;          // model label or arch
-  std::vector<float> scores;  // K float32 scores read from results.bin
+  std::string model;
+  std::vector<float> scores;
 };
 
 struct InferencePredProduct {

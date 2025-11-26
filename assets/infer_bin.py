@@ -49,38 +49,55 @@ def write_results_bin(path, cls_f32: np.ndarray):
             f.write(cls_f32.astype(np.float32, copy=False).tobytes(order="C"))
 
 
-def chw_to_sparse(chw: np.ndarray, device: str, thr: float) -> ME.SparseTensor:
-    C, H, W = chw.shape
-    if C != 3:
-        raise RuntimeError(f"Expected 3 channels (U,V,W), got {C}")
+def views_to_sparse_3d(chw: np.ndarray, device: str, thr: float) -> ME.SparseTensor:
+    """
+    Convert a 3xHxW array of per-plane images into a 3D sparse tensor with
+    coordinates [batch, view, y, x] and single-channel ADC features.
+    """
 
-    mask = np.any(np.abs(chw) > thr, axis=0)
-    ys, xs = np.nonzero(mask)
+    V, H, W = chw.shape
+    if V != 3:
+        raise RuntimeError(f"Expected 3 views (U,V,W), got {V}")
 
-    nnz = ys.size
-    total = H * W
+    coords_list = []
+    feats_list = []
+    nnz = 0
+
+    for v in range(V):
+        plane = chw[v]
+        mask = np.abs(plane) > thr
+        ys, xs = np.nonzero(mask)
+
+        if ys.size == 0:
+            continue
+
+        nnz += ys.size
+
+        batch = np.zeros_like(ys, dtype=np.int32)
+        v_idx = np.full_like(ys, v, dtype=np.int32)
+
+        coords_v = np.stack(
+            [batch, v_idx, ys.astype(np.int32), xs.astype(np.int32)],
+            axis=-1,
+        )
+        coords_list.append(coords_v)
+
+        feats_v = plane[ys, xs].astype(np.float32)[:, None]
+        feats_list.append(feats_v)
+
+    total = V * H * W
     print(
-        f"[infer_bin] active sites: {nnz}/{total} "
+        f"[infer_bin] active sites (before dummy): {nnz}/{total} "
         f"({100.0 * nnz / total:.4f}% > thr={thr})",
         flush=True,
     )
 
-    if ys.size == 0:
-        ys = np.array([0], dtype=np.int32)
-        xs = np.array([0], dtype=np.int32)
-        feats = chw[:, 0, 0][None, :].astype(np.float32)
+    if not coords_list:
+        coords = np.array([[0, 0, 0, 0]], dtype=np.int32)
+        feats = np.zeros((1, 1), dtype=np.float32)
     else:
-        feats = chw[:, ys, xs].T.astype(np.float32)
-
-    batch = np.zeros_like(ys, dtype=np.int32)
-    coords = np.stack(
-        [batch, ys.astype(np.int32), xs.astype(np.int32)],
-        axis=-1,
-    )
-
-    if feats.shape[1] == 3:
-        pad = np.zeros((feats.shape[0], 1), dtype=np.float32)
-        feats = np.concatenate([feats, pad], axis=1)
+        coords = np.concatenate(coords_list, axis=0)
+        feats = np.concatenate(feats_list, axis=0)
 
     coords_t = torch.from_numpy(coords).int()
     feats_t = torch.from_numpy(feats).float()
@@ -150,7 +167,7 @@ def main():
     chw = read_chw_f32(args.in_path, C, H, W)
 
     model = load_model(args.weights, device=device)
-    sparse = chw_to_sparse(chw, device=device, thr=cfg["thr"])
+    sparse = views_to_sparse_3d(chw, device=device, thr=cfg["thr"])
 
     t_setup = time.time()
 

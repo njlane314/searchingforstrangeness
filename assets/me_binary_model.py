@@ -49,8 +49,17 @@ class InputNorm(nn.Module):
 
 
 class MinkUNetClassifier(nn.Module):
-    def __init__(self, in_channels=4, out_channels=1, dimension=2, base_filters=16, num_strides=3):
+    def __init__(
+        self,
+        in_channels=1,
+        out_channels=1,
+        dimension=3,
+        base_filters=16,
+        num_strides=3,
+    ):
         super().__init__()
+        assert dimension == 3, "This model is configured for 3D coordinates (view,y,x)"
+
         self.input_norm = InputNorm(in_channels)
 
         self.conv0 = ME.MinkowskiConvolution(
@@ -62,7 +71,11 @@ class MinkUNetClassifier(nn.Module):
             self.encoder.append(ResidualBlock(ch, ch * 2, dimension))
             self.encoder.append(
                 ME.MinkowskiConvolution(
-                    ch * 2, ch * 2, kernel_size=2, stride=2, dimension=dimension
+                    ch * 2,
+                    ch * 2,
+                    kernel_size=(1, 2, 2),
+                    stride=(1, 2, 2),
+                    dimension=dimension,
                 )
             )
             ch *= 2
@@ -72,7 +85,11 @@ class MinkUNetClassifier(nn.Module):
             up = ch // 2
             self.decoder.append(
                 ME.MinkowskiConvolutionTranspose(
-                    ch, up, kernel_size=2, stride=2, dimension=dimension
+                    ch,
+                    up,
+                    kernel_size=(1, 2, 2),
+                    stride=(1, 2, 2),
+                    dimension=dimension,
                 )
             )
             skip_ch = base_filters * (2 ** (num_strides - i))
