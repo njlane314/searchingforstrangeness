@@ -131,7 +131,7 @@ ImageAnalysis: {
     imageHeight: 512
     Models: []
     ActiveModels: []  # env override: ACTIVE_MODELS
-    ImagesSliceTag: "imageprod:primary_slice"
+    ImagesSliceTag: "imageprod:NuSlice"
     ImagesEventTag: "imageprod:all_hits"
     ScoresTag: "imageprod"
     SegmentationTag: "imageprod:seg"

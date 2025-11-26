@@ -4,7 +4,7 @@ process_name: ImagingInference
 
 physics.producers.inferenceprod: {
     module_type: "InferenceProducer"
-    PlanesTag: "imageprod:primary_slice"
+    PlanesTag: "imageprod:NuSlice"
     ScratchDir: ""
     AssetsBaseDir: "assets"
     DefaultWrapper: "scripts/inference_wrapper.sh"
