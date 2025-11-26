@@ -46,6 +46,7 @@ physics: {
             ActiveModels: []
             WantClassification: false
             WantSegmentation: false
+            StoreUncorrectedInEvent: true
         }
     }
     filters: {
