@@ -174,9 +174,12 @@ void InferenceProducer::produce(art::Event &e) {
         std::string weights = resolve_under(assets, cfg.weights);
 
         auto label_or_arch = cfg.label.empty() ? cfg.arch : cfg.label;
+        std::string log_model = cfg.arch;
+        if (!cfg.label.empty())
+            log_model = cfg.label + " (arch: " + cfg.arch + ")";
 
         mf::LogInfo("InferenceProduction")
-            << "Running model: " << label_or_arch;
+            << "Running model: " << log_model;
 
         auto result = image::InferenceProduction::runInference(
             detector_images, absoluteScratch, cfg.arch, weights, wrapper,
