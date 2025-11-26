@@ -6,15 +6,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(PYBIND11_PYTHON_VERSION 2.7 CACHE STRING "" FORCE)
-
-find_package(pybind11 REQUIRED)
-
-include_directories(/cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/include/python2.7)
-
-set(PYTHON_LIB_DIR /cvmfs/larsoft.opensciencegrid.org/products/python/v2_7_14b/Linux64bit+3.10-2.17/lib)
-set(PYTHON_LIBRARY ${PYTHON_LIB_DIR}/libpython2.7.so)
-
 find_ups_product(lardata)
 include_directories(${LARDATA_INC})
 
@@ -33,7 +24,6 @@ message("Compiler: ${CMAKE_CXX_COMPILER}")
 message("Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 art_make( MODULE_LIBRARIES larcorealg_Geometry
-                           pybind11::embed
                            larcore_Geometry_Geometry_service
                            larsim_Simulation nutools_ParticleNavigation
                            lardataobj_Simulation
@@ -82,7 +72,6 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            ${ROOT_MINUIT}
                            ${PANDORASDK}
                            larpandora_LArPandoraInterface
-                           ${PYTHON_LIBRARY}
                            larreco_Calorimetry
                            pthread
         )
