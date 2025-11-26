@@ -31,6 +31,9 @@
 
 #include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
+#include "art_root_io/TFileService.h"
+
+#include <TTree.h>
 #include <TVector3.h>
 #include <algorithm>
 #include <cmath>
@@ -54,6 +57,7 @@ using image::ImageProduct;
 class ImageProducer : public art::EDProducer {
   public:
     explicit ImageProducer(fhicl::ParameterSet const &pset);
+    void beginJob() override;
     void produce(art::Event &e) override;
 
   private:
@@ -85,6 +89,22 @@ class ImageProducer : public art::EDProducer {
     double fPitchU{0.0};
     double fPitchV{0.0};
     double fPitchW{0.0};
+
+    bool        fDumpImages{false};
+    std::string fDumpInstance{"FullEvent"};
+    std::string fDumpTreeName{"ImageDump"};
+
+    TTree*      fImageDumpTree{nullptr};
+
+    int   fDumpRun{0};
+    int   fDumpSubrun{0};
+    int   fDumpEvent{0};
+    int   fDumpView{0};
+    int   fDumpWidth{0};
+    int   fDumpHeight{0};
+    float fDumpOriginX{0.f}, fDumpOriginY{0.f};
+    float fDumpPixelW{0.f},  fDumpPixelH{0.f};
+    std::vector<float> fDumpADC;
 
     void loadBadChannels(const std::string &filename);
     static std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event,
@@ -148,8 +168,36 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
+    fDumpImages   = pset.get<bool>("DumpImages", false);
+    fDumpInstance = pset.get<std::string>("DumpInstance", "FullEvent");
+    fDumpTreeName = pset.get<std::string>("DumpTreeName", "ImageDump");
+
     produces<std::vector<ImageProduct>>("NuSlice");
     produces<std::vector<ImageProduct>>("FullEvent");
+}
+
+void ImageProducer::beginJob()
+{
+    if (!fDumpImages) return;
+
+    auto& tfs = *art::ServiceHandle<art::TFileService>{};
+
+    fImageDumpTree = tfs.make<TTree>(fDumpTreeName.c_str(), "Image dump");
+
+    fImageDumpTree->Branch("run",     &fDumpRun,    "run/I");
+    fImageDumpTree->Branch("subrun",  &fDumpSubrun, "subrun/I");
+    fImageDumpTree->Branch("event",   &fDumpEvent,  "event/I");
+
+    fImageDumpTree->Branch("view",    &fDumpView,   "view/I");
+    fImageDumpTree->Branch("width",   &fDumpWidth,  "width/I");
+    fImageDumpTree->Branch("height",  &fDumpHeight, "height/I");
+
+    fImageDumpTree->Branch("origin_x", &fDumpOriginX, "origin_x/F");
+    fImageDumpTree->Branch("origin_y", &fDumpOriginY, "origin_y/F");
+    fImageDumpTree->Branch("pixel_w",  &fDumpPixelW,  "pixel_w/F");
+    fImageDumpTree->Branch("pixel_h",  &fDumpPixelH,  "pixel_h/F");
+
+    fImageDumpTree->Branch("image", &fDumpADC);
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -521,6 +569,39 @@ void ImageProducer::produce(art::Event &event) {
         mf::LogDebug("ImageProducer")
             << "View " << static_cast<int>(props[i].view())
             << " size " << props[i].width() << "x" << props[i].height();
+    }
+
+    if (fDumpImages && fImageDumpTree) {
+        fDumpRun    = event.id().run();
+        fDumpSubrun = event.id().subRun();
+        fDumpEvent  = event.id().event();
+
+        std::vector<Image<float>> const* images = nullptr;
+        if (fDumpInstance == "NuSlice") {
+            images = &det_slice;
+        }
+        else {
+            images = &det_event;
+        }
+
+        if (images) {
+            for (std::size_t i = 0; i < images->size() && i < props.size(); ++i) {
+                auto const& img  = images->at(i);
+                auto const& prop = props[i];
+
+                fDumpView    = static_cast<int>(prop.view());
+                fDumpWidth   = static_cast<int>(prop.width());
+                fDumpHeight  = static_cast<int>(prop.height());
+                fDumpOriginX = static_cast<float>(prop.origin_x());
+                fDumpOriginY = static_cast<float>(prop.origin_y());
+                fDumpPixelW  = static_cast<float>(prop.pixel_w());
+                fDumpPixelH  = static_cast<float>(prop.pixel_h());
+
+                fDumpADC = img.data();
+
+                fImageDumpTree->Fill();
+            }
+        }
     }
 
     auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
