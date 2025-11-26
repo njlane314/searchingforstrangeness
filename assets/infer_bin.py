@@ -79,10 +79,19 @@ def chw_to_sparse(chw: np.ndarray, device: str) -> ME.SparseTensor:
 
 def load_model(weights_path: str, device: str):
     model = build_model()
-    state = torch.load(weights_path, map_location=device)
-    if isinstance(state, dict) and "state_dict" in state:
-        state = state["state_dict"]
-    model.load_state_dict(state)
+
+    if weights_path.startswith("random://"):
+        print(
+            f"[infer_bin] Using randomly initialised weights "
+            f"(weights='{weights_path}')",
+            flush=True,
+        )
+    else:
+        state = torch.load(weights_path, map_location=device)
+        if isinstance(state, dict) and "state_dict" in state:
+            state = state["state_dict"]
+        model.load_state_dict(state)
+
     model.to(device)
     model.eval()
     return model
