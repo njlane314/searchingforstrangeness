@@ -91,7 +91,6 @@ class ImageProducer : public art::EDProducer {
     double fPitchW{0.0};
 
     bool        fDumpImages{false};
-    std::string fDumpInstance{"FullEvent"};
     std::string fDumpTreeName{"ImageDump"};
 
     TTree*      fImageDumpTree{nullptr};
@@ -107,8 +106,6 @@ class ImageProducer : public art::EDProducer {
     std::vector<float> fDumpADC;
 
     void loadBadChannels(const std::string &filename);
-    static std::vector<art::Ptr<recob::Hit>> collectAllHits(const art::Event &event,
-                                                            art::InputTag const &hitProducer);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
 
     std::map<art::Ptr<recob::Hit>, std::size_t> buildBlipMask(art::Event &event);
@@ -169,11 +166,9 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
 
     fDumpImages   = pset.get<bool>("DumpImages", false);
-    fDumpInstance = pset.get<std::string>("DumpInstance", "FullEvent");
     fDumpTreeName = pset.get<std::string>("DumpTreeName", "ImageDump");
 
     produces<std::vector<ImageProduct>>("NuSlice");
-    produces<std::vector<ImageProduct>>("FullEvent");
 }
 
 void ImageProducer::beginJob()
@@ -222,17 +217,6 @@ void ImageProducer::loadBadChannels(const std::string &filename) {
             fBadChannels.insert(first);
         }
     }
-}
-
-std::vector<art::Ptr<recob::Hit>>
-ImageProducer::collectAllHits(const art::Event &event,
-                              art::InputTag const &hitProducer) {
-    std::vector<art::Ptr<recob::Hit>> out;
-    auto h = event.getValidHandle<std::vector<recob::Hit>>(hitProducer);
-    out.reserve(h->size());
-    for (size_t i = 0; i < h->size(); ++i)
-        out.emplace_back(h, i);
-    return out;
 }
 
 std::vector<art::Ptr<recob::Hit>>
@@ -298,7 +282,6 @@ ImageProducer::buildBlipMask(art::Event &event) {
 
 double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period) const
 {
-    // TEMP: print all anab::T0 collections in the event
     {
         std::vector<art::Handle<std::vector<anab::T0>>> t0_lists;
         event.getManyByType(t0_lists);
@@ -383,7 +366,6 @@ double ImageProducer::collectNeutrinoTime(art::Event &event, double tick_period)
         return 0.0;
     }
 
-    // best_T0_ns is in nanoseconds from anab::T0
     double const T0_us    = best_T0_ns * 1.0e-3;
     double const T0_ticks = T0_us / tick_period;
 
@@ -405,7 +387,6 @@ void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer")
         << "Starting image production for event " << event.id();
 
-    auto all_hits = collectAllHits(event, fHITproducer);
     auto neutrino_hits = collectNeutrinoSliceHits(event);
 
     if (!fBadChannels.empty()) {
@@ -419,7 +400,6 @@ void ImageProducer::produce(art::Event &event) {
         };
 
         remove_bad_channels(neutrino_hits);
-        remove_bad_channels(all_hits);
     }
 
     auto const* clocks =
@@ -427,10 +407,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const* det_prop =
         art::ServiceHandle<detinfo::DetectorPropertiesService const>()->provider();
 
-    // Tick period from TPC electronics clock (used only for logging in collectNeutrinoTime)
     double const tick_period = clocks->TPCClock().TickPeriod();
-
-    // Get event neutrino T0 in nanoseconds (same convention as anab::T0)
     double T0_ns = collectNeutrinoTime(event, tick_period);
     double const tick_period_ns = tick_period * 1.0e3;
     double const T0_ticks = tick_period_ns > 0.0 ? T0_ns / tick_period_ns : 0.0;
@@ -455,7 +432,6 @@ void ImageProducer::produce(art::Event &event) {
                         v.end());
             };
             apply_mask(neutrino_hits);
-            apply_mask(all_hits);
         }
     }
 
@@ -513,9 +489,6 @@ void ImageProducer::produce(art::Event &event) {
 
     std::vector<Image<float>> det_slice;
     std::vector<Image<int>> sem_slice;
-  
-    std::vector<Image<float>> det_event;
-    std::vector<Image<int>> sem_event;
 
     image::PixelImageOptions opts;
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
@@ -548,22 +521,10 @@ void ImageProducer::produce(art::Event &event) {
         clocks,
         cal);
 
-    builder.build(
-        event,
-        all_hits,
-        props,
-        det_event,
-        sem_event,
-        fDetp,
-        clocks,
-        cal);
-
     mf::LogDebug("ImageProducer")
         << "Built images: "
         << "NuSlice det=" << det_slice.size()
-        << ", NuSlice sem=" << sem_slice.size()
-        << ", FullEvent det=" << det_event.size()
-        << ", FullEvent sem=" << sem_event.size();
+        << ", NuSlice sem=" << sem_slice.size();
 
     for (size_t i = 0; i < props.size(); ++i) {
         mf::LogDebug("ImageProducer")
@@ -576,13 +537,7 @@ void ImageProducer::produce(art::Event &event) {
         fDumpSubrun = event.id().subRun();
         fDumpEvent  = event.id().event();
 
-        std::vector<Image<float>> const* images = nullptr;
-        if (fDumpInstance == "NuSlice") {
-            images = &det_slice;
-        }
-        else {
-            images = &det_event;
-        }
+        std::vector<Image<float>> const* images = &det_slice;
 
         if (images) {
             for (std::size_t i = 0; i < images->size() && i < props.size(); ++i) {
@@ -623,25 +578,17 @@ void ImageProducer::produce(art::Event &event) {
     };
 
     auto out_slice = std::make_unique<std::vector<ImageProduct>>();
-    auto out_event = std::make_unique<std::vector<ImageProduct>>();
     out_slice->reserve(3);
-    out_event->reserve(3);
     for (size_t i = 0; i < 3; ++i) {
         out_slice->emplace_back(
             pack_plane(det_slice[i], sem_slice[i], props[i], !fIsData));
-        out_event->emplace_back(
-            pack_plane(det_event[i], sem_event[i], props[i], !fIsData));
     }
 
     const auto n_slice = out_slice->size();
-    const auto n_event = out_event->size();
-
     event.put(std::move(out_slice), "NuSlice");
-    event.put(std::move(out_event), "FullEvent");
 
     mf::LogInfo("ImageProducer")
-        << "Stored " << n_slice << " NuSlice and " << n_event
-        << " FullEvent ImageProducts for event " << event.id();
+        << "Stored " << n_slice << " NuSlice ImageProducts for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)
