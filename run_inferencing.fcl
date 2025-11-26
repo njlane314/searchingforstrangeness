@@ -10,8 +10,8 @@ physics.producers.inferenceprod: {
     DefaultWrapper: "scripts/inference_wrapper.sh"
     Models: [
       {
-        Label:  "rand_features"
-        Arch:   "w=256,d=2,thr=0.0"
+        Label:   "mink_binary"
+        Arch:    "binary:device=cpu,seed=12345,thr=0.0"
         Weights: "random://weights"
       }
     ]
