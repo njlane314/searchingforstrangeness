@@ -28,7 +28,7 @@ def parse_arch(s: str):
         elif k in ("device", "dev"):
             cfg["device"] = v
         elif k in ("thr", "threshold"):
-            cfg["thr"] = max(0.0, float(v))
+            cfg["thr"] = float(v)
     return cfg
 
 
@@ -56,6 +56,14 @@ def chw_to_sparse(chw: np.ndarray, device: str, thr: float) -> ME.SparseTensor:
 
     mask = np.any(np.abs(chw) > thr, axis=0)
     ys, xs = np.nonzero(mask)
+
+    nnz = ys.size
+    total = H * W
+    print(
+        f"[infer_bin] active sites: {nnz}/{total} "
+        f"({100.0 * nnz / total:.4f}% > thr={thr})",
+        flush=True,
+    )
 
     if ys.size == 0:
         ys = np.array([0], dtype=np.int32)
