@@ -90,6 +90,8 @@ class ImageProducer : public art::EDProducer {
     double fPitchV{0.0};
     double fPitchW{0.0};
 
+    bool        fStoreUncorrectedInEvent{false};
+
     bool        fDumpImages{false};
     std::string fDumpTreeName{"ImageDump"};
 
@@ -168,7 +170,12 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fDumpImages   = pset.get<bool>("DumpImages", false);
     fDumpTreeName = pset.get<std::string>("DumpTreeName", "ImageDump");
 
+    fStoreUncorrectedInEvent = pset.get<bool>("StoreUncorrectedInEvent", false);
+
     produces<std::vector<ImageProduct>>("NuSlice");
+    if (fStoreUncorrectedInEvent) {
+        produces<std::vector<ImageProduct>>("NuSliceUncorrected");
+    }
 }
 
 void ImageProducer::beginJob()
@@ -488,7 +495,10 @@ void ImageProducer::produce(art::Event &event) {
                        fPitchW, geo::kW);
 
     std::vector<Image<float>> det_slice;
-    std::vector<Image<int>> sem_slice;
+    std::vector<Image<int>>   sem_slice;
+
+    std::vector<Image<float>> det_slice_uncorr;
+    std::vector<Image<int>>   sem_slice_uncorr;
 
     image::PixelImageOptions opts;
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
@@ -511,6 +521,20 @@ void ImageProducer::produce(art::Event &event) {
         cal = tmp;
     }
 
+    std::optional<image::CalibrationContext> noCal;
+
+    if (fStoreUncorrectedInEvent) {
+        builder.build(
+            event,
+            neutrino_hits,
+            props,
+            det_slice_uncorr,
+            sem_slice_uncorr,
+            fDetp,
+            clocks,
+            noCal);
+    }
+
     builder.build(
         event,
         neutrino_hits,
@@ -524,7 +548,8 @@ void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer")
         << "Built images: "
         << "NuSlice det=" << det_slice.size()
-        << ", NuSlice sem=" << sem_slice.size();
+        << ", NuSlice sem=" << sem_slice.size()
+        << ", NuSliceUncorrected det=" << det_slice_uncorr.size();
 
     for (size_t i = 0; i < props.size(); ++i) {
         mf::LogDebug("ImageProducer")
@@ -587,9 +612,26 @@ void ImageProducer::produce(art::Event &event) {
     const auto n_slice = out_slice->size();
     event.put(std::move(out_slice), "NuSlice");
 
+    size_t n_slice_uncorr = 0u;
+    if (fStoreUncorrectedInEvent && !det_slice_uncorr.empty()) {
+        auto out_slice_uncorr = std::make_unique<std::vector<ImageProduct>>();
+        out_slice_uncorr->reserve(3);
+        for (size_t i = 0; i < 3; ++i) {
+            out_slice_uncorr->emplace_back(
+                pack_plane(det_slice_uncorr[i],
+                           sem_slice_uncorr[i],
+                           props[i],
+                           !fIsData));
+        }
+        n_slice_uncorr = out_slice_uncorr->size();
+        event.put(std::move(out_slice_uncorr), "NuSliceUncorrected");
+    }
+
     mf::LogInfo("ImageProducer")
         << "Stored " << n_slice
-        << " NuSlice ImageProducts for event " << event.id();
+        << " NuSlice ImageProducts and "
+        << n_slice_uncorr
+        << " NuSliceUncorrected ImageProducts for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)
