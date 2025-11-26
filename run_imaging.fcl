@@ -41,11 +41,8 @@ physics: {
             T0producer: @local::standard_producers.T0producer
             CaloAlg: @local::microboone_calo_mcc9_data
             BadChannelFile: "assets/badchannels.txt"
-            ContainerImage: "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod"
-            Models: []
-            ActiveModels: []
-            WantClassification: false
-            WantSegmentation: false
+            DumpImages:   true
+            DumpTreeName: "ImageDump"
         }
     }
     path1: [ imageprod ]
