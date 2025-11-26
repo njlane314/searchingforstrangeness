@@ -19,6 +19,8 @@
 #include "lardataobj/AnalysisBase/MVAOutput.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "Products/InferencePerf.h"
+#include "Products/InferencePred.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/Vertex.h"
@@ -72,6 +74,7 @@ private:
   art::InputTag fBKTproducer;
   art::InputTag fImagesSliceTag;
   art::InputTag fImagesEventTag;
+  art::InputTag fInferenceTag;
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
@@ -100,6 +103,20 @@ private:
   bool _is_vtx_in_image_v;
   bool _is_vtx_in_image_w;
 
+  std::vector<std::string> _inf_model;
+  std::vector<float> _inf_t_write_req_ms;
+  std::vector<float> _inf_t_exec_total_ms;
+  std::vector<float> _inf_t_read_resp_ms;
+  std::vector<float> _inf_t_child_total_ms;
+  std::vector<float> _inf_t_child_setup_ms;
+  std::vector<float> _inf_t_child_infer_ms;
+  std::vector<float> _inf_t_child_post_ms;
+  std::vector<float> _inf_child_max_rss_mb;
+
+  std::vector<std::string> _pred_model;
+  std::vector<int> _pred_score_offset;
+  std::vector<float> _pred_scores;
+
   static std::vector<int> countLabels(const std::vector<int> &labels, size_t nlabels);
   void printSummary(const art::Event &event, bool is_data) const;
 };
@@ -122,6 +139,7 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
       p.get<art::InputTag>("ImagesSliceTag",
                            art::InputTag{"imageprod", "NuSlice"});
   fImagesEventTag = p.get<art::InputTag>("ImagesEventTag");
+  fInferenceTag = p.get<art::InputTag>("InferenceTag");
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
@@ -158,6 +176,19 @@ void ImageAnalysis::setBranches(TTree *_tree) {
                 "is_vtx_in_image_v/O");
   _tree->Branch("is_vtx_in_image_w", &_is_vtx_in_image_w,
                 "is_vtx_in_image_w/O");
+  _tree->Branch("inf_model", &_inf_model);
+  _tree->Branch("inf_t_write_req_ms", &_inf_t_write_req_ms);
+  _tree->Branch("inf_t_exec_total_ms", &_inf_t_exec_total_ms);
+  _tree->Branch("inf_t_read_resp_ms", &_inf_t_read_resp_ms);
+  _tree->Branch("inf_t_child_total_ms", &_inf_t_child_total_ms);
+  _tree->Branch("inf_t_child_setup_ms", &_inf_t_child_setup_ms);
+  _tree->Branch("inf_t_child_infer_ms", &_inf_t_child_infer_ms);
+  _tree->Branch("inf_t_child_post_ms", &_inf_t_child_post_ms);
+  _tree->Branch("inf_child_max_rss_mb", &_inf_child_max_rss_mb);
+
+  _tree->Branch("pred_model", &_pred_model);
+  _tree->Branch("pred_score_offset", &_pred_score_offset);
+  _tree->Branch("pred_scores", &_pred_scores);
 }
 
 void ImageAnalysis::resetTTree(TTree *_tree) {
@@ -188,6 +219,20 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _is_vtx_in_image_u = false;
   _is_vtx_in_image_v = false;
   _is_vtx_in_image_w = false;
+
+  _inf_model.clear();
+  _inf_t_write_req_ms.clear();
+  _inf_t_exec_total_ms.clear();
+  _inf_t_read_resp_ms.clear();
+  _inf_t_child_total_ms.clear();
+  _inf_t_child_setup_ms.clear();
+  _inf_t_child_infer_ms.clear();
+  _inf_t_child_post_ms.clear();
+  _inf_child_max_rss_mb.clear();
+
+  _pred_model.clear();
+  _pred_score_offset.clear();
+  _pred_scores.clear();
 }
 
 std::vector<int> ImageAnalysis::countLabels(const std::vector<int> &labels,
@@ -299,6 +344,56 @@ void ImageAnalysis::analyseSlice(
     _is_vtx_in_image_u = (U && in_img(*U, vtx_proj_u.X(), vtx_proj_u.Z()));
     _is_vtx_in_image_v = (V && in_img(*V, vtx_proj_v.X(), vtx_proj_v.Z()));
     _is_vtx_in_image_w = (W && in_img(*W, vtx_proj_w.X(), vtx_proj_w.Z()));
+  }
+
+  _inf_model.clear();
+  _inf_t_write_req_ms.clear();
+  _inf_t_exec_total_ms.clear();
+  _inf_t_read_resp_ms.clear();
+  _inf_t_child_total_ms.clear();
+  _inf_t_child_setup_ms.clear();
+  _inf_t_child_infer_ms.clear();
+  _inf_t_child_post_ms.clear();
+  _inf_child_max_rss_mb.clear();
+
+  _pred_model.clear();
+  _pred_score_offset.clear();
+  _pred_scores.clear();
+
+  auto perfH = event.getHandle<image::InferencePerfProduct>(fInferenceTag);
+  auto predH = event.getHandle<image::InferencePredProduct>(fInferenceTag);
+
+  if (perfH) {
+    for (auto const &mp : perfH->per_model) {
+      _inf_model.push_back(mp.model);
+
+      _inf_t_write_req_ms.push_back(mp.t_write_req_ms);
+      _inf_t_exec_total_ms.push_back(mp.t_exec_total_ms);
+      _inf_t_read_resp_ms.push_back(mp.t_read_resp_ms);
+
+      _inf_t_child_total_ms.push_back(mp.t_child_total_ms);
+      _inf_t_child_setup_ms.push_back(mp.t_child_setup_ms);
+      _inf_t_child_infer_ms.push_back(mp.t_child_infer_ms);
+      _inf_t_child_post_ms.push_back(mp.t_child_post_ms);
+
+      _inf_child_max_rss_mb.push_back(mp.child_max_rss_mb);
+    }
+  }
+
+  if (predH) {
+    int offset = 0;
+    _pred_score_offset.reserve(predH->per_model.size() + 1);
+
+    for (auto const &pm : predH->per_model) {
+      _pred_model.push_back(pm.model);
+      _pred_score_offset.push_back(offset);
+
+      _pred_scores.insert(_pred_scores.end(),
+                          pm.scores.begin(), pm.scores.end());
+
+      offset += static_cast<int>(pm.scores.size());
+    }
+    _pred_score_offset.push_back(offset);
   }
 
   if (fDebug) {
