@@ -12,7 +12,7 @@ physics.producers.inferenceprod: {
       {
         Label:  "rand_features"
         Arch:   "w=256,d=2,thr=0.0"
-        Weights: "dummy_weights.pth"
+        Weights: "random://weights"
       }
     ]
 }
