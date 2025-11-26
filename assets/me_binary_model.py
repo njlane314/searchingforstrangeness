@@ -1,4 +1,5 @@
 import MinkowskiEngine as ME
+import torch
 import torch.nn as nn
 
 
@@ -30,9 +31,28 @@ class ResidualBlock(nn.Module):
         return self.relu(out + identity)
 
 
+class InputNorm(nn.Module):
+    def __init__(self, num_channels: int):
+        super().__init__()
+        self.shift = nn.Parameter(torch.zeros(num_channels))
+        self.log_scale = nn.Parameter(torch.zeros(num_channels))
+
+    def forward(self, x: ME.SparseTensor) -> ME.SparseTensor:
+        F = x.F
+        scale = self.log_scale.exp()
+        F = (F - self.shift) * scale
+        return ME.SparseTensor(
+            features=F,
+            coordinate_map_key=x.coordinate_map_key,
+            coordinate_manager=x.coordinate_manager,
+        )
+
+
 class MinkUNetClassifier(nn.Module):
     def __init__(self, in_channels=4, out_channels=1, dimension=2, base_filters=16, num_strides=3):
         super().__init__()
+        self.input_norm = InputNorm(in_channels)
+
         self.conv0 = ME.MinkowskiConvolution(
             in_channels, base_filters, kernel_size=3, dimension=dimension
         )
@@ -66,6 +86,8 @@ class MinkUNetClassifier(nn.Module):
         self.linear = ME.MinkowskiLinear(base_filters, out_channels)
 
     def forward(self, x):
+        x = self.input_norm(x)
+
         x = self.conv0(x)
         skips = []
         for i in range(0, len(self.encoder), 2):
