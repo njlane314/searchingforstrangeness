@@ -109,6 +109,7 @@ class ImageProducer : public art::EDProducer {
 
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
+    std::vector<art::Ptr<recob::Hit>> collectEventHits(const art::Event &event) const;
 
     std::map<art::Ptr<recob::Hit>, std::size_t> buildBlipMask(art::Event &event);
 
@@ -228,6 +229,13 @@ void ImageProducer::loadBadChannels(const std::string &filename) {
 
 std::vector<art::Ptr<recob::Hit>>
 ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
+    // Preserve the neutrino-slice selection infrastructure, but temporarily
+    // override to use all event hits while we validate downstream changes.
+    constexpr bool kUseFullEventHits = true;
+    if (kUseFullEventHits) {
+        return collectEventHits(event);
+    }
+
     auto pfp_handle =
         event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
     art::FindManyP<recob::Slice> pfp_to_slice(pfp_handle, event, fPFPproducer);
@@ -260,6 +268,20 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
     }
 
     return out;
+}
+
+std::vector<art::Ptr<recob::Hit>>
+ImageProducer::collectEventHits(const art::Event &event) const {
+    auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+
+    std::vector<art::Ptr<recob::Hit>> hits;
+    hits.reserve(hit_handle->size());
+
+    for (std::size_t i = 0; i < hit_handle->size(); ++i) {
+        hits.emplace_back(hit_handle, i);
+    }
+
+    return hits;
 }
 
 std::map<art::Ptr<recob::Hit>, std::size_t>
@@ -394,7 +416,7 @@ void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer")
         << "Starting image production for event " << event.id();
 
-    auto neutrino_hits = collectNeutrinoSliceHits(event);
+    auto event_hits = collectNeutrinoSliceHits(event);
 
     if (!fBadChannels.empty()) {
         auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
@@ -406,7 +428,7 @@ void ImageProducer::produce(art::Event &event) {
                         hits.end());
         };
 
-        remove_bad_channels(neutrino_hits);
+        remove_bad_channels(event_hits);
     }
 
     auto const* clocks =
@@ -438,7 +460,7 @@ void ImageProducer::produce(art::Event &event) {
                                        }),
                         v.end());
             };
-            apply_mask(neutrino_hits);
+            apply_mask(event_hits);
         }
     }
 
@@ -477,11 +499,11 @@ void ImageProducer::produce(art::Event &event) {
     const double R_W = fCentroidRadius.at(geo::kW);
 
     auto cU = image::centroidWithinRadius(
-        event, common::TPC_VIEW_U, neutrino_hits, R_U, vtxU.Z(), vtxU.X());
+        event, common::TPC_VIEW_U, event_hits, R_U, vtxU.Z(), vtxU.X());
     auto cV = image::centroidWithinRadius(
-        event, common::TPC_VIEW_V, neutrino_hits, R_V, vtxV.Z(), vtxV.X());
+        event, common::TPC_VIEW_V, event_hits, R_V, vtxV.Z(), vtxV.X());
     auto cW = image::centroidWithinRadius(
-        event, common::TPC_VIEW_W, neutrino_hits, R_W, vtxW.Z(), vtxW.X());
+        event, common::TPC_VIEW_W, event_hits, R_W, vtxW.Z(), vtxW.X());
 
     std::vector<ImageProperties> props;
     props.emplace_back(cU.first, cU.second,
@@ -526,7 +548,7 @@ void ImageProducer::produce(art::Event &event) {
     if (fStoreUncorrectedInEvent) {
         builder.build(
             event,
-            neutrino_hits,
+            event_hits,
             props,
             det_slice_uncorr,
             sem_slice_uncorr,
@@ -537,7 +559,7 @@ void ImageProducer::produce(art::Event &event) {
 
     builder.build(
         event,
-        neutrino_hits,
+        event_hits,
         props,
         det_slice,
         sem_slice,
