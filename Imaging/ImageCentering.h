@@ -46,16 +46,18 @@ centroidWithinRadius(const art::Event &event, common::PandoraView view,
 inline TVector3
 robustGlobalCentroid(const art::Event &event,
                      const std::vector<art::Ptr<recob::Hit>> &hits,
-                     double min_charge = 0.0,
-                     double trim_factor = 2.0)
+                     double min_charge /* ADC integral threshold */ = 0.0,
+                     double trim_factor = 2.0 /* unused, kept for API compat */)
 {
-    struct HitPoint {
+    (void)trim_factor;
+
+    struct Sample {
         TVector3 pos;
-        double   q;
+        double   w;
     };
 
-    std::vector<HitPoint> hp;
-    hp.reserve(hits.size());
+    std::vector<Sample> pts;
+    pts.reserve(hits.size());
 
     for (auto const &h : hits) {
         if (!h) continue;
@@ -69,51 +71,61 @@ robustGlobalCentroid(const art::Event &event,
         if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
             continue;
 
-        hp.push_back({p, q});
+        pts.push_back(Sample{p, q});
     }
 
-    if (hp.empty()) {
+    if (pts.empty()) {
         return TVector3(std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN(),
                         std::numeric_limits<double>::quiet_NaN());
     }
 
-    double   sumw = 0.0;
-    TVector3 c1(0., 0., 0.);
-    for (auto const &hpt : hp) {
-        sumw += hpt.q;
-        c1   += hpt.q * hpt.pos;
+    TVector3 m(0., 0., 0.);
+    double   W = 0.0;
+    for (auto const &s : pts) {
+        m += s.w * s.pos;
+        W += s.w;
     }
-    if (sumw > 0.0) c1 *= (1.0 / sumw);
+    if (W > 0.0) m *= (1.0 / W);
 
-    std::vector<double> dists;
-    dists.reserve(hp.size());
-    for (auto const &hpt : hp) {
-        dists.push_back((hpt.pos - c1).Mag());
+    constexpr int    kMaxIter = 25;
+    constexpr double kTol     = 0.1;
+
+    for (int iter = 0; iter < kMaxIter; ++iter) {
+        TVector3 num(0., 0., 0.);
+        double   denom = 0.0;
+        bool     singular = false;
+        TVector3 singular_pos;
+
+        for (auto const &s : pts) {
+            TVector3 diff = m - s.pos;
+            double   d    = diff.Mag();
+
+            if (d < 1e-3) {
+                singular      = true;
+                singular_pos  = s.pos;
+                break;
+            }
+
+            double w_over_d = s.w / d;
+            num   += w_over_d * s.pos;
+            denom += w_over_d;
+        }
+
+        if (singular || denom == 0.0) {
+            if (singular) m = singular_pos;
+            break;
+        }
+
+        TVector3 m_new = num * (1.0 / denom);
+        if ((m_new - m).Mag() < kTol) {
+            m = m_new;
+            break;
+        }
+        m = m_new;
     }
 
-    auto mid = dists.begin() + dists.size() / 2;
-    std::nth_element(dists.begin(), mid, dists.end());
-    double med = *mid;
-    if (med <= 0.0) {
-        return c1;
-    }
-
-    const double R = trim_factor * med;
-
-    sumw = 0.0;
-    TVector3 c2(0., 0., 0.);
-    for (auto const &hpt : hp) {
-        if ((hpt.pos - c1).Mag() > R) continue;
-        sumw += hpt.q;
-        c2   += hpt.q * hpt.pos;
-    }
-
-    if (sumw <= 0.0)
-        return c1;
-
-    c2 *= (1.0 / sumw);
-    return c2;
+    return m;
 }
 
 }
