@@ -221,6 +221,7 @@ NeutrinoSelectionFilter: {
         weight: @local::EventWeightAnalysis
         flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
+        signal: @local::SignalAnalysis
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
