@@ -236,7 +236,7 @@ void ImageAnalysis::analyseSlice(
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
 
-  if (sliceUncorrH && sliceUncorrH.isValid()) {
+  if (sliceUncorrH.isValid()) {
     auto assignPlaneUncorr = [&](const image::ImageProduct &img, bool slice) {
       std::vector<float> *det_slice = nullptr;
       std::vector<int32_t> *sem_slice = nullptr;
