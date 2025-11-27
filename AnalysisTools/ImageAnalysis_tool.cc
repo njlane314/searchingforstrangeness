@@ -210,8 +210,8 @@ void ImageAnalysis::analyseSlice(
   }
 
   auto sliceH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesSliceTag);
-  auto sliceUncorrH = event.getHandle<std::vector<image::ImageProduct>>(
-      fImagesSliceUncorrectedTag);
+  art::Handle<std::vector<image::ImageProduct>> sliceUncorrH;
+  event.getByLabel(fImagesSliceUncorrectedTag, sliceUncorrH);
 
   auto assignPlane = [&](const image::ImageProduct &img, bool slice) {
     std::vector<float> *det_slice = nullptr;
@@ -236,7 +236,7 @@ void ImageAnalysis::analyseSlice(
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
 
-  if (sliceUncorrH && sliceUncorrH->isValid()) {
+  if (sliceUncorrH && sliceUncorrH.isValid()) {
     auto assignPlaneUncorr = [&](const image::ImageProduct &img, bool slice) {
       std::vector<float> *det_slice = nullptr;
       std::vector<int32_t> *sem_slice = nullptr;
