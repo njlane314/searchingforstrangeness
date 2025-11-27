@@ -229,13 +229,6 @@ void ImageProducer::loadBadChannels(const std::string &filename) {
 
 std::vector<art::Ptr<recob::Hit>>
 ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
-    // Preserve the neutrino-slice selection infrastructure, but temporarily
-    // override to use all event hits while we validate downstream changes.
-    constexpr bool kUseFullEventHits = true;
-    if (kUseFullEventHits) {
-        return collectEventHits(event);
-    }
-
     auto pfp_handle =
         event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
     art::FindManyP<recob::Slice> pfp_to_slice(pfp_handle, event, fPFPproducer);
@@ -416,7 +409,8 @@ void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer")
         << "Starting image production for event " << event.id();
 
-    auto event_hits = collectNeutrinoSliceHits(event);
+    auto neutrino_hits = collectNeutrinoSliceHits(event);
+    auto event_hits = collectEventHits(event);
 
     if (!fBadChannels.empty()) {
         auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
@@ -428,6 +422,7 @@ void ImageProducer::produce(art::Event &event) {
                         hits.end());
         };
 
+        remove_bad_channels(neutrino_hits);
         remove_bad_channels(event_hits);
     }
 
@@ -460,6 +455,7 @@ void ImageProducer::produce(art::Event &event) {
                                        }),
                         v.end());
             };
+            apply_mask(neutrino_hits);
             apply_mask(event_hits);
         }
     }
@@ -487,32 +483,31 @@ void ImageProducer::produce(art::Event &event) {
     }
 
     TVector3 vtx_world(vtx_x, vtx_y, vtx_z);
-    TVector3 vtxU = common::ProjectToWireView(
-        vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_U);
-    TVector3 vtxV = common::ProjectToWireView(
-        vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_V);
-    TVector3 vtxW = common::ProjectToWireView(
-        vtx_world.X(), vtx_world.Y(), vtx_world.Z(), common::TPC_VIEW_W);
 
-    const double R_U = fCentroidRadius.at(geo::kU);
-    const double R_V = fCentroidRadius.at(geo::kV);
-    const double R_W = fCentroidRadius.at(geo::kW);
+    TVector3 center_world = image::robustGlobalCentroid(
+        event, neutrino_hits, static_cast<double>(fADCThresh), 2.0);
 
-    auto cU = image::centroidWithinRadius(
-        event, common::TPC_VIEW_U, event_hits, R_U, vtxU.Z(), vtxU.X());
-    auto cV = image::centroidWithinRadius(
-        event, common::TPC_VIEW_V, event_hits, R_V, vtxV.Z(), vtxV.X());
-    auto cW = image::centroidWithinRadius(
-        event, common::TPC_VIEW_W, event_hits, R_W, vtxW.Z(), vtxW.X());
+    if (!std::isfinite(center_world.X()) ||
+        !std::isfinite(center_world.Y()) ||
+        !std::isfinite(center_world.Z())) {
+        center_world = vtx_world;
+    }
+
+    TVector3 cU = common::ProjectToWireView(
+        center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
+    TVector3 cV = common::ProjectToWireView(
+        center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_V);
+    TVector3 cW = common::ProjectToWireView(
+        center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_W);
 
     std::vector<ImageProperties> props;
-    props.emplace_back(cU.first, cU.second,
+    props.emplace_back(cU.Z(), cU.X(),
                        fImgW, fImgH, fDriftStep,
                        fPitchU, geo::kU);
-    props.emplace_back(cV.first, cV.second,
+    props.emplace_back(cV.Z(), cV.X(),
                        fImgW, fImgH, fDriftStep,
                        fPitchV, geo::kV);
-    props.emplace_back(cW.first, cW.second,
+    props.emplace_back(cW.Z(), cW.X(),
                        fImgW, fImgH, fDriftStep,
                        fPitchW, geo::kW);
 
