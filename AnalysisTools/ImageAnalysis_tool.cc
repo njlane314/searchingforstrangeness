@@ -39,6 +39,7 @@
 #include <TTree.h>
 #include <TVector3.h>
 #include <algorithm>
+#include <cstdint>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -71,36 +72,24 @@ private:
   art::InputTag fMCPproducer;
   art::InputTag fBKTproducer;
   art::InputTag fImagesSliceTag;
-  art::InputTag fImagesEventTag;
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
   std::vector<float> _detector_image_u;
   std::vector<float> _detector_image_v;
   std::vector<float> _detector_image_w;
-  std::vector<int> _semantic_image_u;
-  std::vector<int> _semantic_image_v;
-  std::vector<int> _semantic_image_w;
-  std::vector<float> _event_detector_image_u;
-  std::vector<float> _event_detector_image_v;
-  std::vector<float> _event_detector_image_w;
-  std::vector<int> _event_semantic_image_u;
-  std::vector<int> _event_semantic_image_v;
-  std::vector<int> _event_semantic_image_w;
-  float _event_adc_u;
-  float _event_adc_v;
-  float _event_adc_w;
+  std::vector<int32_t> _semantic_image_u;
+  std::vector<int32_t> _semantic_image_v;
+  std::vector<int32_t> _semantic_image_w;
   std::vector<int> _slice_semantic_counts_u;
   std::vector<int> _slice_semantic_counts_v;
   std::vector<int> _slice_semantic_counts_w;
-  std::vector<int> _event_semantic_counts_u;
-  std::vector<int> _event_semantic_counts_v;
-  std::vector<int> _event_semantic_counts_w;
   bool _is_vtx_in_image_u;
   bool _is_vtx_in_image_v;
   bool _is_vtx_in_image_w;
 
-  static std::vector<int> countLabels(const std::vector<int> &labels, size_t nlabels);
+  static std::vector<int> countLabels(const std::vector<int32_t> &labels,
+                                      size_t nlabels);
   void printSummary(const art::Event &event, bool is_data) const;
 };
 
@@ -121,7 +110,6 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fImagesSliceTag =
       p.get<art::InputTag>("ImagesSliceTag",
                            art::InputTag{"imageprod", "NuSlice"});
-  fImagesEventTag = p.get<art::InputTag>("ImagesEventTag");
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
@@ -137,21 +125,9 @@ void ImageAnalysis::setBranches(TTree *_tree) {
   _tree->Branch("semantic_image_u", &_semantic_image_u);
   _tree->Branch("semantic_image_v", &_semantic_image_v);
   _tree->Branch("semantic_image_w", &_semantic_image_w);
-  _tree->Branch("event_detector_image_u", &_event_detector_image_u);
-  _tree->Branch("event_detector_image_v", &_event_detector_image_v);
-  _tree->Branch("event_detector_image_w", &_event_detector_image_w);
-  _tree->Branch("event_semantic_image_u", &_event_semantic_image_u);
-  _tree->Branch("event_semantic_image_v", &_event_semantic_image_v);
-  _tree->Branch("event_semantic_image_w", &_event_semantic_image_w);
-  _tree->Branch("event_adc_u", &_event_adc_u, "event_adc_u/F");
-  _tree->Branch("event_adc_v", &_event_adc_v, "event_adc_v/F");
-  _tree->Branch("event_adc_w", &_event_adc_w, "event_adc_w/F");
   _tree->Branch("slice_semantic_counts_u", &_slice_semantic_counts_u);
   _tree->Branch("slice_semantic_counts_v", &_slice_semantic_counts_v);
   _tree->Branch("slice_semantic_counts_w", &_slice_semantic_counts_w);
-  _tree->Branch("event_semantic_counts_u", &_event_semantic_counts_u);
-  _tree->Branch("event_semantic_counts_v", &_event_semantic_counts_v);
-  _tree->Branch("event_semantic_counts_w", &_event_semantic_counts_w);
   _tree->Branch("is_vtx_in_image_u", &_is_vtx_in_image_u,
                 "is_vtx_in_image_u/O");
   _tree->Branch("is_vtx_in_image_v", &_is_vtx_in_image_v,
@@ -170,30 +146,18 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _semantic_image_u.clear();
   _semantic_image_v.clear();
   _semantic_image_w.clear();
-  _event_detector_image_u.clear();
-  _event_detector_image_v.clear();
-  _event_detector_image_w.clear();
-  _event_semantic_image_u.clear();
-  _event_semantic_image_v.clear();
-  _event_semantic_image_w.clear();
-  _event_adc_u = std::numeric_limits<float>::quiet_NaN();
-  _event_adc_v = std::numeric_limits<float>::quiet_NaN();
-  _event_adc_w = std::numeric_limits<float>::quiet_NaN();
   _slice_semantic_counts_u.clear();
   _slice_semantic_counts_v.clear();
   _slice_semantic_counts_w.clear();
-  _event_semantic_counts_u.clear();
-  _event_semantic_counts_v.clear();
-  _event_semantic_counts_w.clear();
   _is_vtx_in_image_u = false;
   _is_vtx_in_image_v = false;
   _is_vtx_in_image_w = false;
 }
 
-std::vector<int> ImageAnalysis::countLabels(const std::vector<int> &labels,
+std::vector<int> ImageAnalysis::countLabels(const std::vector<int32_t> &labels,
                                             size_t nlabels) {
   std::vector<int> counts(nlabels, 0);
-  for (int v : labels) {
+  for (int32_t v : labels) {
     if (v >= 0 && static_cast<size_t>(v) < nlabels) {
       ++counts[v];
     }
@@ -218,58 +182,35 @@ void ImageAnalysis::analyseSlice(
   }
 
   auto sliceH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesSliceTag);
-  auto eventH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesEventTag);
 
   auto assignPlane = [&](const image::ImageProduct &img, bool slice) {
     std::vector<float> *det_slice = nullptr;
-    std::vector<int> *sem_slice = nullptr;
-    std::vector<float> *det_event = nullptr;
-    std::vector<int> *sem_event = nullptr;
+    std::vector<int32_t> *sem_slice = nullptr;
     if (img.view == static_cast<int>(geo::kU)) {
       det_slice = &_detector_image_u;
       sem_slice = &_semantic_image_u;
-      det_event = &_event_detector_image_u;
-      sem_event = &_event_semantic_image_u;
     } else if (img.view == static_cast<int>(geo::kV)) {
       det_slice = &_detector_image_v;
       sem_slice = &_semantic_image_v;
-      det_event = &_event_detector_image_v;
-      sem_event = &_event_semantic_image_v;
     } else if (img.view == static_cast<int>(geo::kW)) {
       det_slice = &_detector_image_w;
       sem_slice = &_semantic_image_w;
-      det_event = &_event_detector_image_w;
-      sem_event = &_event_semantic_image_w;
     } else {
       return;
     }
     if (slice) {
       if (det_slice) *det_slice = img.adc;
       if (sem_slice) sem_slice->assign(img.semantic.begin(), img.semantic.end());
-    } else {
-      if (det_event) *det_event = img.adc;
-      if (sem_event) sem_event->assign(img.semantic.begin(), img.semantic.end());
     }
   };
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
-  for (const auto &pi : *eventH) assignPlane(pi, false);
-
-  _event_adc_u = std::accumulate(_event_detector_image_u.begin(),
-                                 _event_detector_image_u.end(), 0.0f);
-  _event_adc_v = std::accumulate(_event_detector_image_v.begin(),
-                                 _event_detector_image_v.end(), 0.0f);
-  _event_adc_w = std::accumulate(_event_detector_image_w.begin(),
-                                 _event_detector_image_w.end(), 0.0f);
 
   if (!is_data) {
     size_t nlabels = sem::SemanticClassifier::semantic_label_names.size();
     _slice_semantic_counts_u = countLabels(_semantic_image_u, nlabels);
     _slice_semantic_counts_v = countLabels(_semantic_image_v, nlabels);
     _slice_semantic_counts_w = countLabels(_semantic_image_w, nlabels);
-    _event_semantic_counts_u = countLabels(_event_semantic_image_u, nlabels);
-    _event_semantic_counts_v = countLabels(_event_semantic_image_v, nlabels);
-    _event_semantic_counts_w = countLabels(_event_semantic_image_w, nlabels);
   }
 
   if (!std::isnan(_reco_neutrino_vertex_x)) {
@@ -314,7 +255,7 @@ void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
                    << " Event " << eid.event() << " ===";
 
   auto checkPair = [&](const char *name, const std::vector<float> &adc,
-                       const std::vector<int> &sem) {
+                       const std::vector<int32_t> &sem) {
     bool mismatch = (!adc.empty() && !sem.empty() && adc.size() != sem.size());
     mf::LogInfo(cat) << "  " << name << " ADC=" << adc.size()
                      << "px, SEM=" << sem.size()
@@ -325,12 +266,6 @@ void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
   checkPair("Slice U", _detector_image_u, _semantic_image_u);
   checkPair("Slice V", _detector_image_v, _semantic_image_v);
   checkPair("Slice W", _detector_image_w, _semantic_image_w);
-  checkPair("Event U", _event_detector_image_u, _event_semantic_image_u);
-  checkPair("Event V", _event_detector_image_v, _event_semantic_image_v);
-  checkPair("Event W", _event_detector_image_w, _event_semantic_image_w);
-
-  mf::LogInfo(cat) << "  Event ADC sums [U,V,W] = [" << _event_adc_u << ", "
-                   << _event_adc_v << ", " << _event_adc_w << "]";
 
   mf::LogInfo(cat) << "  Reco vtx: (" << _reco_neutrino_vertex_x << ", "
                    << _reco_neutrino_vertex_y << ", "
@@ -347,14 +282,6 @@ void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
       int u = (i < _slice_semantic_counts_u.size()) ? _slice_semantic_counts_u[i] : 0;
       int v = (i < _slice_semantic_counts_v.size()) ? _slice_semantic_counts_v[i] : 0;
       int w = (i < _slice_semantic_counts_w.size()) ? _slice_semantic_counts_w[i] : 0;
-      mf::LogInfo(cat) << "    [" << i << "] " << names[i]
-                       << ": U=" << u << " V=" << v << " W=" << w;
-    }
-    mf::LogInfo(cat) << "  Event semantic counts by label:";
-    for (size_t i = 0; i < names.size(); ++i) {
-      int u = (i < _event_semantic_counts_u.size()) ? _event_semantic_counts_u[i] : 0;
-      int v = (i < _event_semantic_counts_v.size()) ? _event_semantic_counts_v[i] : 0;
-      int w = (i < _event_semantic_counts_w.size()) ? _event_semantic_counts_w[i] : 0;
       mf::LogInfo(cat) << "    [" << i << "] " << names[i]
                        << ": U=" << u << " V=" << v << " W=" << w;
     }
