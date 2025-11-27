@@ -78,7 +78,7 @@ cleanup_temp_dir() {
 FHICL_FILE="$1"
 NUM_FILES="$2"
 #SAM_DEF="prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2"
-SAM_DEF="New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2"
+SAM_DEF="prod_strange_resample_fhc_run2_fhc_reco2_reco2"
 #SAM_DEF="nl_prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2_3000"
 OUTPUT_BASE_DIR="/exp/uboone/data/users/$USER/analysis"
 FHICL_BASE=$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')
