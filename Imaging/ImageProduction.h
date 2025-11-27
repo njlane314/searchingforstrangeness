@@ -232,23 +232,37 @@ private:
         size_t wire_idx,
         BuildContext const& ctx)
     {
-        auto wire_ids = ctx.geo->ChannelToWire(wire.Channel());
-        if (wire_ids.empty()) return std::nullopt;
-
-        const auto planeID = wire_ids.front().planeID();
-        const geo::View_t view = ctx.geo->View(planeID);
-        const size_t view_idx = static_cast<size_t>(view);
-        if (view_idx >= ctx.properties.size()) return std::nullopt;
-
-        const geo::WireGeo* wire_geo = ctx.geo->WirePtr(wire_ids.front());
-        const TVector3 wire_center = wire_geo->GetCenter();
-
         auto hits_for_wire = ctx.wire_hit_assoc.at(wire_idx);
+
         std::vector<art::Ptr<recob::Hit>> hits_filtered;
         hits_filtered.reserve(hits_for_wire.size());
-        for (auto const& ph : hits_for_wire)
-            if (ctx.hit_to_key.find(ph) != ctx.hit_to_key.end()) hits_filtered.push_back(ph);
-        if (hits_filtered.empty()) return std::nullopt;
+        for (auto const& ph : hits_for_wire) {
+            if (ctx.hit_to_key.find(ph) != ctx.hit_to_key.end())
+                hits_filtered.push_back(ph);
+        }
+        if (hits_filtered.empty())
+            return std::nullopt;
+
+        recob::Hit const& firstHit = *hits_filtered.front();
+        geo::WireID const& wid     = firstHit.WireID();
+        geo::PlaneID const planeID = wid.planeID();
+
+        geo::View_t const view = ctx.geo->View(planeID);
+
+        std::size_t view_idx = 0;
+        bool found_view_idx = false;
+        for (std::size_t i = 0; i < ctx.properties.size(); ++i) {
+            if (ctx.properties[i].view() == view) {
+                view_idx = i;
+                found_view_idx = true;
+                break;
+            }
+        }
+        if (!found_view_idx)
+            return std::nullopt;
+
+        geo::WireGeo const& wire_geo = ctx.geo->WireIDToWireGeo(wid);
+        TVector3 const wire_center   = wire_geo.GetCenter();
 
         return WirePrep{planeID, view_idx, wire_center, std::move(hits_filtered)};
     }
