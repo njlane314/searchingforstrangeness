@@ -72,15 +72,22 @@ private:
   art::InputTag fMCPproducer;
   art::InputTag fBKTproducer;
   art::InputTag fImagesSliceTag;
+  art::InputTag fImagesSliceUncorrectedTag;
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
   std::vector<float> _detector_image_u;
   std::vector<float> _detector_image_v;
   std::vector<float> _detector_image_w;
+  std::vector<float> _detector_image_uncorrected_u;
+  std::vector<float> _detector_image_uncorrected_v;
+  std::vector<float> _detector_image_uncorrected_w;
   std::vector<int32_t> _semantic_image_u;
   std::vector<int32_t> _semantic_image_v;
   std::vector<int32_t> _semantic_image_w;
+  std::vector<int32_t> _semantic_image_uncorrected_u;
+  std::vector<int32_t> _semantic_image_uncorrected_v;
+  std::vector<int32_t> _semantic_image_uncorrected_w;
   std::vector<int> _slice_semantic_counts_u;
   std::vector<int> _slice_semantic_counts_v;
   std::vector<int> _slice_semantic_counts_w;
@@ -110,6 +117,9 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
   fImagesSliceTag =
       p.get<art::InputTag>("ImagesSliceTag",
                            art::InputTag{"imageprod", "NuSlice"});
+  fImagesSliceUncorrectedTag =
+      p.get<art::InputTag>("ImagesSliceUncorrectedTag",
+                           art::InputTag{"imageprod", "NuSliceUncorrected"});
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
@@ -122,9 +132,21 @@ void ImageAnalysis::setBranches(TTree *_tree) {
   _tree->Branch("detector_image_u", &_detector_image_u);
   _tree->Branch("detector_image_v", &_detector_image_v);
   _tree->Branch("detector_image_w", &_detector_image_w);
+  _tree->Branch("detector_image_uncorrected_u",
+                &_detector_image_uncorrected_u);
+  _tree->Branch("detector_image_uncorrected_v",
+                &_detector_image_uncorrected_v);
+  _tree->Branch("detector_image_uncorrected_w",
+                &_detector_image_uncorrected_w);
   _tree->Branch("semantic_image_u", &_semantic_image_u);
   _tree->Branch("semantic_image_v", &_semantic_image_v);
   _tree->Branch("semantic_image_w", &_semantic_image_w);
+  _tree->Branch("semantic_image_uncorrected_u",
+                &_semantic_image_uncorrected_u);
+  _tree->Branch("semantic_image_uncorrected_v",
+                &_semantic_image_uncorrected_v);
+  _tree->Branch("semantic_image_uncorrected_w",
+                &_semantic_image_uncorrected_w);
   _tree->Branch("slice_semantic_counts_u", &_slice_semantic_counts_u);
   _tree->Branch("slice_semantic_counts_v", &_slice_semantic_counts_v);
   _tree->Branch("slice_semantic_counts_w", &_slice_semantic_counts_w);
@@ -143,9 +165,15 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _detector_image_u.clear();
   _detector_image_v.clear();
   _detector_image_w.clear();
+  _detector_image_uncorrected_u.clear();
+  _detector_image_uncorrected_v.clear();
+  _detector_image_uncorrected_w.clear();
   _semantic_image_u.clear();
   _semantic_image_v.clear();
   _semantic_image_w.clear();
+  _semantic_image_uncorrected_u.clear();
+  _semantic_image_uncorrected_v.clear();
+  _semantic_image_uncorrected_w.clear();
   _slice_semantic_counts_u.clear();
   _slice_semantic_counts_v.clear();
   _slice_semantic_counts_w.clear();
@@ -182,6 +210,8 @@ void ImageAnalysis::analyseSlice(
   }
 
   auto sliceH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesSliceTag);
+  auto sliceUncorrH = event.getHandle<std::vector<image::ImageProduct>>(
+      fImagesSliceUncorrectedTag);
 
   auto assignPlane = [&](const image::ImageProduct &img, bool slice) {
     std::vector<float> *det_slice = nullptr;
@@ -205,6 +235,32 @@ void ImageAnalysis::analyseSlice(
   };
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
+
+  if (sliceUncorrH && sliceUncorrH->isValid()) {
+    auto assignPlaneUncorr = [&](const image::ImageProduct &img, bool slice) {
+      std::vector<float> *det_slice = nullptr;
+      std::vector<int32_t> *sem_slice = nullptr;
+      if (img.view == static_cast<int>(geo::kU)) {
+        det_slice = &_detector_image_uncorrected_u;
+        sem_slice = &_semantic_image_uncorrected_u;
+      } else if (img.view == static_cast<int>(geo::kV)) {
+        det_slice = &_detector_image_uncorrected_v;
+        sem_slice = &_semantic_image_uncorrected_v;
+      } else if (img.view == static_cast<int>(geo::kW)) {
+        det_slice = &_detector_image_uncorrected_w;
+        sem_slice = &_semantic_image_uncorrected_w;
+      } else {
+        return;
+      }
+      if (slice) {
+        if (det_slice) *det_slice = img.adc;
+        if (sem_slice)
+          sem_slice->assign(img.semantic.begin(), img.semantic.end());
+      }
+    };
+
+    for (const auto &pi : *sliceUncorrH) assignPlaneUncorr(pi, true);
+  }
 
   if (!is_data) {
     size_t nlabels = sem::SemanticClassifier::semantic_label_names.size();
@@ -266,6 +322,12 @@ void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
   checkPair("Slice U", _detector_image_u, _semantic_image_u);
   checkPair("Slice V", _detector_image_v, _semantic_image_v);
   checkPair("Slice W", _detector_image_w, _semantic_image_w);
+  checkPair("Slice U (uncorr)", _detector_image_uncorrected_u,
+            _semantic_image_uncorrected_u);
+  checkPair("Slice V (uncorr)", _detector_image_uncorrected_v,
+            _semantic_image_uncorrected_v);
+  checkPair("Slice W (uncorr)", _detector_image_uncorrected_w,
+            _semantic_image_uncorrected_w);
 
   mf::LogInfo(cat) << "  Reco vtx: (" << _reco_neutrino_vertex_x << ", "
                    << _reco_neutrino_vertex_y << ", "
