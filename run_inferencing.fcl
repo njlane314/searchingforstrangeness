@@ -17,4 +17,11 @@ physics.producers.inferenceprod: {
     ]
 }
 
-physics.path1: [ imageprod, inferenceprod ]
+physics.filters: {
+    nuselection: {
+        @table::NeutrinoSelectionFilter
+    }
+}
+
+physics.path1: [ imageprod, inferenceprod, nuselection ]
+physics.trigger_paths: [ path1 ]
