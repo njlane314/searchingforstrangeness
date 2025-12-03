@@ -39,7 +39,7 @@ DefaultAnalysis: {
     fidvolZstart: @local::FidVol.Zstart
     fidvolZend:   @local::FidVol.Zend
 
-    makeNuMINtuple: false
+    makeNuMINtuple: true
     ignoreMCFlux: false
 }
 
