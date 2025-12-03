@@ -39,9 +39,11 @@
 #include <array>
 
 namespace {
-  constexpr float kMuonPMin   = 0.10f;
-  constexpr float kLambdaPMin = 0.42f;
-  constexpr float kSigma0PMin = 0.80f;
+  constexpr float kMuonPMin             = 0.10f;
+  constexpr float kLambdaPMin           = 0.42f;
+  constexpr float kSigma0PMin           = 0.80f;
+  constexpr float kProtonDaughterPMin   = 0.0f;
+  constexpr float kPionDaughterPMin     = 0.0f;
 }
 
 namespace analysis {
@@ -694,6 +696,18 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
         const simb::MCParticle* p  = (dm.p_trkid  >= 0 && mp.count(dm.p_trkid))  ? mp.at(dm.p_trkid).get()  : nullptr;
         const simb::MCParticle* pi = (dm.pi_trkid >= 0 && mp.count(dm.pi_trkid)) ? mp.at(dm.pi_trkid).get() : nullptr;
+        if (p && kProtonDaughterPMin > 0.f) {
+            const float pp = std::sqrt(p->Px()*p->Px() +
+                                       p->Py()*p->Py() +
+                                       p->Pz()*p->Pz());
+            if (pp < kProtonDaughterPMin) continue;
+        }
+        if (pi && kPionDaughterPMin > 0.f) {
+            const float pip = std::sqrt(pi->Px()*pi->Px() +
+                                        pi->Py()*pi->Py() +
+                                        pi->Pz()*pi->Pz());
+            if (pip < kPionDaughterPMin) continue;
+        }
         if (p && fProtonKEThreshold > 0.f) {
             const float pKE = p->E() - p->Mass();
             if (pKE < fProtonKEThreshold) continue;
@@ -832,7 +846,25 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
     bool any_lambda_decay_infid = false;
     for (auto v : _lambda_decay_in_fid) if (v) { any_lambda_decay_infid = true; break; }
-    _pr_eligible_event = _is_nu_mu_cc && _nu_vtx_in_fid && _has_lambda_to_ppi && any_lambda_decay_infid;
+    bool daughters_above_pmin = true;
+    if (kProtonDaughterPMin > 0.f && _sel_proton_trackid >= 0) {
+        const float pp = std::sqrt(_sel_proton_px*_sel_proton_px +
+                                   _sel_proton_py*_sel_proton_py +
+                                   _sel_proton_pz*_sel_proton_pz);
+        if (pp < kProtonDaughterPMin) daughters_above_pmin = false;
+    }
+    if (kPionDaughterPMin > 0.f && _sel_pion_trackid >= 0) {
+        const float pip = std::sqrt(_sel_pion_px*_sel_pion_px +
+                                    _sel_pion_py*_sel_pion_py +
+                                    _sel_pion_pz*_sel_pion_pz);
+        if (pip < kPionDaughterPMin) daughters_above_pmin = false;
+    }
+
+    _pr_eligible_event = _is_nu_mu_cc &&
+                         _nu_vtx_in_fid &&
+                         _has_lambda_to_ppi &&
+                         any_lambda_decay_infid &&
+                         daughters_above_pmin;
 }
 
 void SignalAnalysis::analyseSlice(const art::Event& event,
