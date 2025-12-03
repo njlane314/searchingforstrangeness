@@ -43,7 +43,6 @@
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
-#include <iomanip>
 #include <limits>
 #include <numeric>
 #include <string>
@@ -65,7 +64,6 @@ public:
   void resetTTree(TTree *_tree) override;
 
 private:
-  bool fDebug = false;
   art::InputTag fPFPproducer;
   art::InputTag fCLSproducer;
   art::InputTag fSLCproducer;
@@ -116,7 +114,6 @@ private:
 
   static std::vector<int> countLabels(const std::vector<int32_t> &labels,
                                       size_t nlabels);
-  void printSummary(const art::Event &event, bool is_data) const;
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -124,7 +121,6 @@ ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
 }
 
 void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
-  fDebug = p.get<bool>("Debug", false);
   fPFPproducer = p.get<art::InputTag>("PFPproducer");
   fCLSproducer = p.get<art::InputTag>("CLSproducer");
   fSLCproducer = p.get<art::InputTag>("SLCproducer");
@@ -388,58 +384,6 @@ void ImageAnalysis::analyseSlice(
     }
   }
 
-  if (fDebug) {
-    printSummary(event, is_data);
-  }
-}
-
-void ImageAnalysis::printSummary(const art::Event &event, bool is_data) const {
-  const char *cat = "ImageAnalysis";
-  const auto eid = event.id();
-  mf::LogInfo(cat) << "=== ImageAnalysis summary: Run " << eid.run()
-                   << " SubRun " << eid.subRun()
-                   << " Event " << eid.event() << " ===";
-
-  auto checkPair = [&](const char *name, const std::vector<float> &adc,
-                       const std::vector<int32_t> &sem) {
-    bool mismatch = (!adc.empty() && !sem.empty() && adc.size() != sem.size());
-    mf::LogInfo(cat) << "  " << name << " ADC=" << adc.size()
-                     << "px, SEM=" << sem.size()
-                     << "px" << (mismatch ? "  [SIZE-MISMATCH]" : "");
-  };
-  auto yesno = [](bool v) { return v ? "Y" : "N"; };
-
-  checkPair("Slice U", _detector_image_u, _semantic_image_u);
-  checkPair("Slice V", _detector_image_v, _semantic_image_v);
-  checkPair("Slice W", _detector_image_w, _semantic_image_w);
-  checkPair("Slice U (uncorr)", _detector_image_uncorrected_u,
-            _semantic_image_uncorrected_u);
-  checkPair("Slice V (uncorr)", _detector_image_uncorrected_v,
-            _semantic_image_uncorrected_v);
-  checkPair("Slice W (uncorr)", _detector_image_uncorrected_w,
-            _semantic_image_uncorrected_w);
-
-  mf::LogInfo(cat) << "  Reco vtx: (" << _reco_neutrino_vertex_x << ", "
-                   << _reco_neutrino_vertex_y << ", "
-                   << _reco_neutrino_vertex_z << ")";
-  mf::LogInfo(cat) << "  Vertex in image [U,V,W] = ["
-                   << yesno(_is_vtx_in_image_u) << ", "
-                   << yesno(_is_vtx_in_image_v) << ", "
-                   << yesno(_is_vtx_in_image_w) << "]";
-
-  if (!is_data) {
-    const auto &names = sem::SemanticClassifier::semantic_label_names;
-    mf::LogInfo(cat) << "  Slice semantic counts by label:";
-    for (size_t i = 0; i < names.size(); ++i) {
-      int u = (i < _slice_semantic_counts_u.size()) ? _slice_semantic_counts_u[i] : 0;
-      int v = (i < _slice_semantic_counts_v.size()) ? _slice_semantic_counts_v[i] : 0;
-      int w = (i < _slice_semantic_counts_w.size()) ? _slice_semantic_counts_w[i] : 0;
-      mf::LogInfo(cat) << "    [" << i << "] " << names[i]
-                       << ": U=" << u << " V=" << v << " W=" << w;
-    }
-  }
-
-  mf::LogInfo(cat) << "=== end ImageAnalysis summary ===";
 }
 
 DEFINE_ART_CLASS_TOOL(ImageAnalysis)
