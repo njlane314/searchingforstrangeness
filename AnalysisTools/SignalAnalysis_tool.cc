@@ -844,8 +844,7 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                        _nu_vtx_in_fid &&
                        has_exit_hyperon;
 
-    bool any_lambda_decay_infid = false;
-    for (auto v : _lambda_decay_in_fid) if (v) { any_lambda_decay_infid = true; break; }
+    const bool sel_lambda_infid = (_sel_index >= 0) ? (_lambda_decay_in_fid[_sel_index] != 0) : false;
     bool daughters_above_pmin = true;
     if (kProtonDaughterPMin > 0.f && _sel_proton_trackid >= 0) {
         const float pp = std::sqrt(_sel_proton_px*_sel_proton_px +
@@ -863,7 +862,7 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _pr_eligible_event = _is_nu_mu_cc &&
                          _nu_vtx_in_fid &&
                          _has_lambda_to_ppi &&
-                         any_lambda_decay_infid &&
+                         sel_lambda_infid &&
                          daughters_above_pmin;
 }
 
