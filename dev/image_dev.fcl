@@ -36,4 +36,6 @@ EventWeightAnalysisDev: {
 }
 
 physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisDev
+physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.BeamSWTrigProcName: ""
+physics.filters.nuselection.OpFilterProcName: ""
