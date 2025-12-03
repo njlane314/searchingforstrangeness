@@ -32,7 +32,7 @@ physics.trigger_paths: [ path1 ]
 EventWeightAnalysisDev: {
   @table::EventWeightAnalysis
   genieAllUniverses: 100
-  eventWeightProcessName: "EventWeightSep24"
+  eventWeightProcessName00: "ImagingDev"
 }
 
-NeutrinoSelectionFilter.AnalysisTools.weight: @local::EventWeightAnalysisDev
+physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisDev
