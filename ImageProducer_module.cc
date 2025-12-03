@@ -116,8 +116,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
   if (!fBadChannelFile.empty())
     loadBadChannels(fBadChannelFile);
 
-  fImgW      = pset.get<int>("ImageWidth", 1024);
-  fImgH      = pset.get<int>("ImageHeight", 1024);
+  fImgW      = pset.get<int>("ImageWidth", 512);
+  fImgH      = pset.get<int>("ImageHeight", 512);
   fADCThresh = pset.get<float>("ADCImageThreshold", 4.0);
 
   fGeo  = art::ServiceHandle<geo::Geometry>()->provider();
