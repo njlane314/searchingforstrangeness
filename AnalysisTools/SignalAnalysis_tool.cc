@@ -499,41 +499,14 @@ void SignalAnalysis::SelectBestCandidate() {
     if (_n_lambda_candidates <= 0) return;
 
     int sel = -1;
-
-    if (fChooseClosestToNuVertex) {
-        float best_dist = std::numeric_limits<float>::max();
-        for (int i = 0; i < _n_lambda_candidates; ++i) {
-            const bool is_primary  = (_lambda_is_primary[i]   != 0);
-            const bool from_sigma0 = (_lambda_from_sigma0[i] != 0);
-            if (!is_primary && !from_sigma0) continue;
-            const float d = _lambda_dist_to_nu_vtx[i];
-            if (d < best_dist) {
-                best_dist = d;
-                sel = i;
-            }
+    float best_E = -std::numeric_limits<float>::max();
+    for (int i = 0; i < _n_lambda_candidates; ++i) {
+        float E = _lambda_energy[i];
+        if (E > best_E) {
+            best_E = E;
+            sel = i;
         }
-        if (sel < 0) {
-            float best_dist_any = std::numeric_limits<float>::max();
-            for (int i = 0; i < _n_lambda_candidates; ++i) {
-                const float d = _lambda_dist_to_nu_vtx[i];
-                if (d < best_dist_any) {
-                    best_dist_any = d;
-                    sel = i;
-                }
-            }
-        }
-    } else {
-        for (int i = 0; i < _n_lambda_candidates; ++i) {
-            const bool is_primary  = (_lambda_is_primary[i]   != 0);
-            const bool from_sigma0 = (_lambda_from_sigma0[i] != 0);
-            if (is_primary || from_sigma0) {
-                sel = i;
-                break;
-            }
-        }
-        if (sel < 0) sel = 0;
     }
-
     if (sel < 0) return;
     _sel_index = sel;
 
