@@ -38,6 +38,12 @@
 #include <algorithm>
 #include <array>
 
+namespace {
+  constexpr float kMuonPMin   = 0.10f;
+  constexpr float kLambdaPMin = 0.42f;
+  constexpr float kSigma0PMin = 0.80f;
+}
+
 namespace analysis {
 
 class SignalAnalysis : public AnalysisToolBase {
@@ -608,6 +614,7 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     this->resetTTree(nullptr);
     if (is_data) return;
 
+    // --- Neutrino information and fiducial cut ---
     auto const& mct_h = event.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
     if (!mct_h.isValid() || mct_h->empty()) return;
     const auto& mct = mct_h->front();
@@ -640,8 +647,8 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                                                   fFidvolXend,   fFidvolYend,   fFidvolZend);
     }
 
-    const bool is_numu_like = (std::abs(_nu_pdg) == 14);
-    _is_nu_mu_cc = (!fRequireNuMu || is_numu_like) && (!fRequireCC || _ccnc == 0);
+    bool muon_above_threshold = false;
+    bool has_exit_hyperon     = false;
 
     auto const& mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mp;
@@ -652,9 +659,20 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _n_kshort_truth = 0;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         const auto& p = mcp_h->at(i);
-        const int apdg = std::abs(p.PdgCode());
+        const int pdg  = p.PdgCode();
+        const int apdg = std::abs(pdg);
         if (apdg == 3212) ++_n_sigma0_truth;
-        if (p.PdgCode() == 310) ++_n_kshort_truth;
+        if (pdg  == 310) ++_n_kshort_truth;
+
+        if (p.StatusCode() == 1) {
+            const float pmag = std::sqrt(p.Px()*p.Px() +
+                                         p.Py()*p.Py() +
+                                         p.Pz()*p.Pz());
+            if ((apdg == 3122 && pmag >= kLambdaPMin) ||
+                (apdg == 3212 && pmag >= kSigma0PMin)) {
+                has_exit_hyperon = true;
+            }
+        }
     }
     _has_sigma0_truth = (_n_sigma0_truth > 0);
     _has_kshort_truth = (_n_kshort_truth > 0);
@@ -796,11 +814,21 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
     if (_has_lambda_to_ppi) SelectBestCandidate();
 
+    FindTruthMuon(mcp_h);
+    if (_mu_truth_trackid >= 0) {
+        const float pmu = std::sqrt(_mu_truth_px*_mu_truth_px +
+                                    _mu_truth_py*_mu_truth_py +
+                                    _mu_truth_pz*_mu_truth_pz);
+        muon_above_threshold = (pmu >= kMuonPMin);
+    }
+
     const bool accept_nu_flavor = fAcceptAntiNu ? (std::abs(_nu_pdg)==14) : (_nu_pdg==14);
     _is_nu_mu_cc = (!fRequireNuMu || accept_nu_flavor) && (!fRequireCC || _ccnc == 0);
-    _is_signal_event = _is_nu_mu_cc && _has_lambda_to_ppi;
 
-    FindTruthMuon(mcp_h);
+    _is_signal_event = _is_nu_mu_cc &&
+                       muon_above_threshold &&
+                       _nu_vtx_in_fid &&
+                       has_exit_hyperon;
 
     bool any_lambda_decay_infid = false;
     for (auto v : _lambda_decay_in_fid) if (v) { any_lambda_decay_infid = true; break; }
