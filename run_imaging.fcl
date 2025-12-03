@@ -38,6 +38,7 @@ physics: {
             WIREproducer: @local::standard_producers.WIREproducer
             MCPproducer: @local::standard_producers.MCPproducer
             BKTproducer: @local::standard_producers.BKTproducer
+            SPproducer: @local::standard_producers.SPproducer
             T0producer: @local::standard_producers.T0producer
             CaloAlg: @local::microboone_calo_mcc9_data
             BadChannelFile: "assets/badchannels.txt"
