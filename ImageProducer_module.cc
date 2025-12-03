@@ -260,19 +260,34 @@ void ImageProducer::produce(art::Event &event) {
     remove_bad_channels(event_hits);
   }
 
+  // If there is no neutrino slice (after bad-channel removal), do not build
+  // any images. Produce an empty NuSlice collection so downstream modules
+  // can see that there was "no image" for this event.
+  if (neutrino_hits.empty()) {
+    mf::LogDebug("ImageProducer")
+      << "No neutrino slice hits found; producing empty NuSlice for event "
+      << event.id();
+
+    auto out_slice = std::make_unique<std::vector<ImageProduct>>();
+    event.put(std::move(out_slice), "NuSlice");
+
+    mf::LogInfo("ImageProducer")
+      << "Stored 0 NuSlice ImageProducts for event " << event.id()
+      << " (no neutrino slice)";
+    return;
+  }
+
   std::vector<art::Ptr<recob::SpacePoint>> nu_spacepoints;
-  if (!neutrino_hits.empty()) {
-    auto hit_handle =
-      event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+  auto hit_handle =
+    event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
 
-    art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
+  art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
 
-    for (auto const &h : neutrino_hits) {
-      auto const &sps_for_hit = hit_to_sp.at(h.key());
-      nu_spacepoints.insert(nu_spacepoints.end(),
-                            sps_for_hit.begin(),
-                            sps_for_hit.end());
-    }
+  for (auto const &h : neutrino_hits) {
+    auto const &sps_for_hit = hit_to_sp.at(h.key());
+    nu_spacepoints.insert(nu_spacepoints.end(),
+                          sps_for_hit.begin(),
+                          sps_for_hit.end());
   }
 
   double vtx_x = std::numeric_limits<double>::quiet_NaN();
