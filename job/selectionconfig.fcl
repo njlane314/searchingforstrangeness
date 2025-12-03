@@ -40,6 +40,8 @@ DefaultAnalysis: {
     fidvolZend:   @local::FidVol.Zend
 
     makeNuMINtuple: true
+
+    NuMISWTriggerProcName: "DataOverlayOptical"
 }
 
 SignalAnalysis: {
