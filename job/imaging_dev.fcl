@@ -1,5 +1,5 @@
-#include "run_eventweight_microboone_sep24.fcl"
 #include "run_neutrinoselection.fcl"
+#include "run_eventweight_microboone_sep24.fcl"
 
 process_name: ImagingDev
 
