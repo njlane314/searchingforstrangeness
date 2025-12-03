@@ -1,11 +1,13 @@
-#include "imaging_selection.fcl"
-#include "microboone_eventweight_service.fcl"
-#include "seedservice_microboone.fcl"
-#include "eventweight_microboone_sep24.fcl"
+include "run_neutrinoselection.fcl"
 
-process_name: ImagingEvtwDev
+include "microboone_eventweight_service.fcl"
+include "seedservice_microboone.fcl"
+include "eventweight_microboone_sep24.fcl"
 
-services.TFileService.fileName: "imaging_evtw_dev.root"
+process_name: ImagingDev
+
+services.TFileService.fileName: "imaging_dev.root"
+
 services.UBEventWeight:      @local::microboone_eventweight_service
 services.NuRandomService:    @local::microboone_seedservice
 services.G4RWManagerService: @local::microboone_g4rw_manager
@@ -36,8 +38,9 @@ physics.trigger_paths: [ path1 ]
 
 EventWeightAnalysisDev: {
   @table::EventWeightAnalysis
+
   genieAllUniverses: 100
-  eventWeightProcessName00: "ImagingEvtwDev"
+  eventWeightProcessName00: "ImagingDev"
 }
 
 NeutrinoSelectionFilter.AnalysisTools.weight: @local::EventWeightAnalysisDev
