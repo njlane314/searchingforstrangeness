@@ -47,7 +47,6 @@ public:
                   PixelImageOptions const& opts)
     : geo_{&geo}, opts_{opts} {}
 
-  /// Build images filled directly with ADC (no calorimetry / SCE corrections).
   void build(const art::Event &event,
              const std::vector<art::Ptr<recob::Hit>> &hits,
              const std::vector<ImageProperties> &properties,
@@ -58,7 +57,6 @@ public:
     detector_images.clear();
     semantic_images.clear();
 
-    // Allocate images
     for (auto const& p : properties) {
       Image<float> det(p);
       det.clear(0.0f);
