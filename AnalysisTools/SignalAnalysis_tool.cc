@@ -955,9 +955,9 @@ void SignalAnalysis::analyseSlice(const art::Event& event,
     fill_pair(best_j, 1, _pr_p_nshared,  _pr_p_nhits_O,  _pr_p_nhits_T,  _pr_p_purity,  _pr_p_completeness);
     fill_pair(best_k, 2, _pr_pi_nshared, _pr_pi_nhits_O, _pr_pi_nhits_T, _pr_pi_purity, _pr_pi_completeness);
 
-    const bool pass_mu = (_pr_mu_completeness > fPRMinCompleteness) && (_pr_mu_purity > fPRMinPurity);
-    const bool pass_p  = (_pr_p_completeness  > fPRMinCompleteness) && (_pr_p_purity  > fPRMinPurity);
-    const bool pass_pi = (_pr_pi_completeness > fPRMinCompleteness) && (_pr_pi_purity > fPRMinPurity);
+    const bool pass_mu = (_pr_mu_completeness > kPRMinCompleteness) && (_pr_mu_purity > kPRMinPurity);
+    const bool pass_p  = (_pr_p_completeness  > kPRMinCompleteness) && (_pr_p_purity  > kPRMinPurity);
+    const bool pass_pi = (_pr_pi_completeness > kPRMinCompleteness) && (_pr_pi_purity > kPRMinPurity);
 
     _pr_pass_event = (pass_mu && pass_p && pass_pi);
 }
