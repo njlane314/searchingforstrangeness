@@ -11,6 +11,7 @@ standard_producers: {
   PCAproducer: "pandora"
   MCPproducer: "largeant"
   WIREproducer: "butcher"
+  SPproducer: "pandora"
   MCTproducer: "generator"
   MCFproducer: "generator"
   BKTproducer: "gaushitTruthMatch"
