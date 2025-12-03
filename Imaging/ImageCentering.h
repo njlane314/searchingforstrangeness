@@ -1,6 +1,7 @@
 #ifndef IMAGING_IMAGECENTERING_H
 #define IMAGING_IMAGECENTERING_H
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -11,16 +12,58 @@
 
 namespace image {
 
+/// Trimmed 3D charge‑weighted centroid for a set of space points.
+///  - sps[i]     : i‑th spacepoint
+///  - weights[i] : weight (e.g. charge) assigned to that spacepoint
+///  - seed       : reference point used for trimming
+///  - radius     : 3D trimming radius (only SPs within this of seed contribute)
 inline TVector3
-trimmedMeanCenterFromSpacePoints(
-    const std::vector<art::Ptr<recob::SpacePoint>> &sps,
-    const TVector3 &seed,
-    double radius)
+trimmedCentroid3D(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
+                  const std::vector<double> &weights,
+                  const TVector3 &seed,
+                  double radius)
 {
     const double R2 = radius * radius;
 
     TVector3 sum(0., 0., 0.);
-    double   W = 0.0;
+    double   W   = 0.0;
+
+    const std::size_t n = std::min(sps.size(), weights.size());
+
+    for (std::size_t i = 0; i < n; ++i) {
+        auto const &sp = sps[i];
+        if (!sp) continue;
+
+        double w = weights[i];
+        if (!(w > 0.0)) continue;
+
+        auto const *xyz = sp->XYZ();
+        TVector3 p(xyz[0], xyz[1], xyz[2]);
+
+        if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
+            continue;
+
+        if ((p - seed).Mag2() > R2)
+            continue;
+
+        sum += w * p;
+        W   += w;
+    }
+
+    if (W == 0.0) return seed;
+    return sum * (1.0 / W);
+}
+
+/// Convenience overload: unweighted centroid (all weights = 1).
+inline TVector3
+trimmedCentroid3D(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
+                  const TVector3 &seed,
+                  double radius)
+{
+    const double R2 = radius * radius;
+
+    TVector3 sum(0., 0., 0.);
+    double   W   = 0.0;
 
     for (auto const &sp : sps) {
         if (!sp) continue;

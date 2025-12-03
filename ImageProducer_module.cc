@@ -38,6 +38,7 @@
 #include <ios>
 #include <limits>
 #include <optional>
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -244,6 +245,7 @@ void ImageProducer::produce(art::Event &event) {
   mf::LogDebug("ImageProducer")
     << "Starting image production for event " << event.id();
 
+  // Collect hits
   auto neutrino_hits = collectNeutrinoSliceHits(event);
   auto event_hits    = collectEventHits(event);
 
@@ -277,17 +279,40 @@ void ImageProducer::produce(art::Event &event) {
     return;
   }
 
-  std::vector<art::Ptr<recob::SpacePoint>> nu_spacepoints;
+  // Build a charge‑weighted set of spacepoints for centering:
+  // distribute each hit's charge across its associated spacepoints.
+  std::map<art::Ptr<recob::SpacePoint>, double> sp_charge;
+
   auto hit_handle =
     event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
 
   art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
 
   for (auto const &h : neutrino_hits) {
+    if (!h) continue;
+
+    double q = std::max(0.f, h->Integral());
+    if (!(q > 0.0)) continue;
+
     auto const &sps_for_hit = hit_to_sp.at(h.key());
-    nu_spacepoints.insert(nu_spacepoints.end(),
-                          sps_for_hit.begin(),
-                          sps_for_hit.end());
+    if (sps_for_hit.empty()) continue;
+
+    double q_each = q / static_cast<double>(sps_for_hit.size());
+
+    for (auto const &sp : sps_for_hit) {
+      if (!sp) continue;
+      sp_charge[sp] += q_each;
+    }
+  }
+
+  std::vector<art::Ptr<recob::SpacePoint>> nu_spacepoints;
+  std::vector<double>                      sp_weights;
+  nu_spacepoints.reserve(sp_charge.size());
+  sp_weights.reserve(sp_charge.size());
+
+  for (auto const &kv : sp_charge) {
+    nu_spacepoints.push_back(kv.first);
+    sp_weights.push_back(kv.second);
   }
 
   double vtx_x = std::numeric_limits<double>::quiet_NaN();
@@ -321,9 +346,10 @@ void ImageProducer::produce(art::Event &event) {
 
   if (!nu_spacepoints.empty()) {
     center_world =
-      image::trimmedMeanCenterFromSpacePoints(nu_spacepoints,
-                                              vtx_world,
-                                              center_radius);
+      image::trimmedCentroid3D(nu_spacepoints,
+                               sp_weights,
+                               vtx_world,
+                               center_radius);
   }
 
   if (!std::isfinite(center_world.X()) ||
