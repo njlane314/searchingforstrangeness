@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -124,10 +125,21 @@ InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
 }
 
 void InferenceProducer::produce(art::Event &e) {
+    auto perfProduct = std::make_unique<image::InferencePerfProduct>();
+    auto predProduct = std::make_unique<image::InferencePredProduct>();
+
     auto planes = e.getValidHandle<std::vector<image::ImageProduct>>(planes_tag_);
     if (planes->size() < 3) {
-        throw cet::exception("InferenceProduction")
-            << "Need at least three planes (U,V,W), got " << planes->size();
+        // This happens, for example, when ImageProducer produced an empty
+        // NuSlice (no neutrino slice). In that case we simply skip inference
+        // and leave the perf/pred products empty.
+        mf::LogDebug("InferenceProduction")
+            << "Need at least three planes (U,V,W), got " << planes->size()
+            << "; skipping inference for event " << e.id();
+
+        e.put(std::move(perfProduct));
+        e.put(std::move(predProduct));
+        return;
     }
 
     auto const *U = find_view(*planes, geo::kU);
@@ -161,10 +173,29 @@ void InferenceProducer::produce(art::Event &e) {
     detector_images.emplace_back(*V);
     detector_images.emplace_back(*W);
 
-    std::string absoluteScratch = resolve_scratch_dir(scratch_dir_);
+    // Short-circuit if all detector images are effectively empty.
+    // This avoids spinning up the external inference stack when
+    // there is nothing in the images (e.g. no neutrino slice).
+    auto is_empty = [](image::ImageProduct const &p) {
+        if (p.adc.empty())
+            return true;
+        return std::all_of(p.adc.begin(), p.adc.end(),
+                           [](float v) { return v == 0.0f; });
+    };
 
-    auto perfProduct = std::make_unique<image::InferencePerfProduct>();
-    auto predProduct = std::make_unique<image::InferencePredProduct>();
+    if (is_empty(detector_images[0]) &&
+        is_empty(detector_images[1]) &&
+        is_empty(detector_images[2])) {
+        mf::LogDebug("InferenceProduction")
+            << "Detector images are empty; skipping inference for event "
+            << e.id();
+
+        e.put(std::move(perfProduct));
+        e.put(std::move(predProduct));
+        return;
+    }
+
+    std::string absoluteScratch = resolve_scratch_dir(scratch_dir_);
 
     for (auto const &cfg : models_) {
         std::string assets = cfg.assets.empty() ? assets_base_dir_ : cfg.assets;
