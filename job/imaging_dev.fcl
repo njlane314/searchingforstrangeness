@@ -1,8 +1,12 @@
+#include "run_eventweight_microboone_sep24.fcl"
+#include "run_neutrinoselection.fcl"
+
 process_name: ImagingDev
+
 services.TFileService.fileName: "imaging_dev.root"
-services.UBEventWeight:   @local::microboone_eventweight_service
+services.UBEventWeight: @local::microboone_eventweight_service
 services.NuRandomService: @local::microboone_seedservice
-physics.producers.eventweightSep24: @local::microboone_eventweight_sep24
+
 physics.producers.inferenceprod: {
   module_type: "InferenceProducer"
   PlanesTag: "imageprod:NuSlice"
@@ -11,21 +15,20 @@ physics.producers.inferenceprod: {
   DefaultWrapper: "scripts/inference_wrapper.sh"
   Models: [
     {
-      Label:   "mink_binary"
-      Arch:    "binary:device=cpu,seed=12345,thr=0.0"
+      Label: "mink_binary"
+      Arch: "binary:device=cpu,seed=12345,thr=0.0"
       Weights: "random://weights"
     }
   ]
 }
-physics.filters.nuselection: {
-  @table::NeutrinoSelectionFilter
-}
+
 physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
+
 EventWeightAnalysisDev: {
   @table::EventWeightAnalysis
-
   genieAllUniverses: 100
   eventWeightProcessName00: "ImagingDev"
 }
+
 NeutrinoSelectionFilter.AnalysisTools.weight: @local::EventWeightAnalysisDev
