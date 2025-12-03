@@ -1,19 +1,32 @@
+# Dev job: reco2 → eventweightSep24 → imaging → inference → selection
+
+# PROLOG-style includes MUST come first and be contiguous
 #include "services_microboone.fcl"
 #include "microboone_eventweight_service.fcl"
 #include "seedservice_microboone.fcl"
 #include "eventweight_microboone_sep24.fcl"
 
+# Now include your existing neutrino-selection + imaging config
 #include "run_neutrinoselection.fcl"
 
 process_name: ImagingDev
+
+# distinct output file so it doesn't stomp on the normal imaging.root
 services.TFileService.fileName: "imaging_dev.root"
 
-services.UBEventWeight:      @local::microboone_eventweight_service
-services.NuRandomService:    @local::microboone_seedservice
-services.G4RWManagerService: @local::microboone_g4rw_manager
+# services needed for EventWeight
+services.UBEventWeight:   @local::microboone_eventweight_service
+services.NuRandomService: @local::microboone_seedservice
 
+# NOTE: For this dev chain we skip the G4RWManagerService on purpose.
+# That means you won't get the Geant4 reinteraction weights (reinteractions_*),
+# but GENIE + flux/PPFX will still work.
+# services.G4RWManagerService: @local::microboone_g4rw_manager
+
+# base Sep24 EventWeight producer (≈100 All_UBGenie universes)
 physics.producers.eventweightSep24: @local::microboone_eventweight_sep24
 
+# inference producer (same as before)
 physics.producers.inferenceprod: {
   module_type: "InferenceProducer"
   PlanesTag: "imageprod:NuSlice"
@@ -29,13 +42,18 @@ physics.producers.inferenceprod: {
   ]
 }
 
+# NeutrinoSelectionFilter is defined in run_neutrinoselection.fcl
 physics.filters.nuselection: {
   @table::NeutrinoSelectionFilter
 }
 
+# dev path: evtw → imaging → inference → selection
+# imageprod comes from run_neutrinoselection.fcl
 physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
+# dev weight-analysis tool: base it on your existing EventWeightAnalysis
+# but only look at THIS dev process (ImagingDev) and 100 universes
 EventWeightAnalysisDev: {
   @table::EventWeightAnalysis
 
@@ -43,4 +61,5 @@ EventWeightAnalysisDev: {
   eventWeightProcessName00: "ImagingDev"
 }
 
+# tell the selection to use the dev weight-analysis tool for this job
 NeutrinoSelectionFilter.AnalysisTools.weight: @local::EventWeightAnalysisDev
