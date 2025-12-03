@@ -42,8 +42,10 @@ namespace {
   constexpr float kMuonPMin             = 0.10f;
   constexpr float kLambdaPMin           = 0.42f;
   constexpr float kSigma0PMin           = 0.80f;
-  constexpr float kProtonDaughterPMin   = 0.0f;
-  constexpr float kPionDaughterPMin     = 0.0f;
+  constexpr float kProtonDaughterPMin   = 0.10f;
+  constexpr float kPionDaughterPMin     = 0.10f;
+  constexpr float kPRMinCompleteness    = 0.10f;
+  constexpr float kPRMinPurity          = 0.50f;
 }
 
 namespace analysis {
@@ -73,19 +75,7 @@ private:
     float fFidvolYstart, fFidvolYend;
     float fFidvolZstart, fFidvolZend;
 
-    bool  fRequireNuMu;
-    bool  fRequireCC;
-    bool  fAllowAntiLambda;
-    bool  fRequireSpecificDecay;
-    bool  fRequirePrimaryLambda;
     bool  fChooseClosestToNuVertex;
-    int   fMaxAncestorSteps;
-    float fProtonKEThreshold;
-    float fPionKEThreshold;
-
-    bool  fAcceptAntiNu;
-    float fPRMinCompleteness;
-    float fPRMinPurity;
 
     int   _nu_pdg;
     int   _ccnc;
@@ -231,19 +221,7 @@ void SignalAnalysis::configure(const fhicl::ParameterSet& p) {
     fFidvolZstart = p.get<double>("fidvolZstart", 10);
     fFidvolZend   = p.get<double>("fidvolZend",   50);
 
-    fRequireNuMu             = p.get<bool>("RequireNuMu", true);
-    fRequireCC               = p.get<bool>("RequireCC",   true);
-    fAllowAntiLambda         = p.get<bool>("AllowAntiLambda", false);
-    fRequireSpecificDecay    = p.get<bool>("RequireSpecificDecay", true);
-    fRequirePrimaryLambda    = p.get<bool>("RequirePrimaryLambda", false);
     fChooseClosestToNuVertex = p.get<bool>("ChooseClosestToNuVertex", true);
-    fMaxAncestorSteps        = p.get<int> ("MaxAncestorSteps", 16);
-    fProtonKEThreshold       = p.get<float>("ProtonKEThreshold",  0.0f);
-    fPionKEThreshold         = p.get<float>("PionKEThreshold",    0.0f);
-
-    fAcceptAntiNu            = p.get<bool>("AcceptAntiNu", true);
-    fPRMinCompleteness       = p.get<float>("PatternRecoMinCompleteness", 0.1f);
-    fPRMinPurity             = p.get<float>("PatternRecoMinPurity",       0.5f);
 }
 
 void SignalAnalysis::setBranches(TTree* t) {
@@ -520,12 +498,44 @@ void SignalAnalysis::SelectBestCandidate() {
     _sel_index = -1;
     if (_n_lambda_candidates <= 0) return;
 
+    int sel = -1;
+
     if (fChooseClosestToNuVertex) {
-        auto it = std::min_element(_lambda_dist_to_nu_vtx.begin(), _lambda_dist_to_nu_vtx.end());
-        _sel_index = static_cast<int>(std::distance(_lambda_dist_to_nu_vtx.begin(), it));
+        float best_dist = std::numeric_limits<float>::max();
+        for (int i = 0; i < _n_lambda_candidates; ++i) {
+            const bool is_primary  = (_lambda_is_primary[i]   != 0);
+            const bool from_sigma0 = (_lambda_from_sigma0[i] != 0);
+            if (!is_primary && !from_sigma0) continue;
+            const float d = _lambda_dist_to_nu_vtx[i];
+            if (d < best_dist) {
+                best_dist = d;
+                sel = i;
+            }
+        }
+        if (sel < 0) {
+            float best_dist_any = std::numeric_limits<float>::max();
+            for (int i = 0; i < _n_lambda_candidates; ++i) {
+                const float d = _lambda_dist_to_nu_vtx[i];
+                if (d < best_dist_any) {
+                    best_dist_any = d;
+                    sel = i;
+                }
+            }
+        }
     } else {
-        _sel_index = 0;
+        for (int i = 0; i < _n_lambda_candidates; ++i) {
+            const bool is_primary  = (_lambda_is_primary[i]   != 0);
+            const bool from_sigma0 = (_lambda_from_sigma0[i] != 0);
+            if (is_primary || from_sigma0) {
+                sel = i;
+                break;
+            }
+        }
+        if (sel < 0) sel = 0;
     }
+
+    if (sel < 0) return;
+    _sel_index = sel;
 
     const int i = _sel_index;
     _sel_lambda_trackid = _lambda_trackid[i];
@@ -659,6 +669,8 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
     _n_sigma0_truth = 0;
     _n_kshort_truth = 0;
+    bool has_exit_primary_lambda = false;
+    bool has_exit_primary_sigma0 = false;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         const auto& p = mcp_h->at(i);
         const int pdg  = p.PdgCode();
@@ -666,56 +678,35 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (apdg == 3212) ++_n_sigma0_truth;
         if (pdg  == 310) ++_n_kshort_truth;
 
-        if (p.StatusCode() == 1) {
-            const float pmag = std::sqrt(p.Px()*p.Px() +
-                                         p.Py()*p.Py() +
-                                         p.Pz()*p.Pz());
-            if ((apdg == 3122 && pmag >= kLambdaPMin) ||
-                (apdg == 3212 && pmag >= kSigma0PMin)) {
-                has_exit_hyperon = true;
-            }
+        if (p.StatusCode() != 1) continue;
+
+        const float pmag = std::sqrt(p.Px()*p.Px() +
+                                     p.Py()*p.Py() +
+                                     p.Pz()*p.Pz());
+        if (apdg == 3122 && p.Process() == "primary" && pmag >= kLambdaPMin) {
+            has_exit_primary_lambda = true;
+        }
+        if (apdg == 3212 && p.Process() == "primary" && pmag >= kSigma0PMin) {
+            has_exit_primary_sigma0 = true;
         }
     }
+    has_exit_hyperon = has_exit_primary_lambda || has_exit_primary_sigma0;
     _has_sigma0_truth = (_n_sigma0_truth > 0);
     _has_kshort_truth = (_n_kshort_truth > 0);
 
     auto isSigma0 = [](int pdg){ return std::abs(pdg) == 3212; };
-    auto isHeavyStrangeBaryon = [](int pdg){ int a=std::abs(pdg); return (a==3312 || a==3322 || a==3334); };
-    auto isCharmHadron = [](int pdg){ int a=std::abs(pdg); return ((a>400 && a<500) || (a>4000 && a<5000)); };
-    auto isTau = [](int pdg){ return std::abs(pdg)==15; };
+
+    bool any_lambda_to_ppi = false;
 
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         const auto lam_ptr = art::Ptr<simb::MCParticle>(mcp_h, i);
         const auto& lam    = *lam_ptr;
         if (std::abs(lam.PdgCode()) != 3122) continue;
-        if (!fAllowAntiLambda && lam.PdgCode() != 3122) continue;
-        if (fRequirePrimaryLambda && lam.Process() != "primary") continue;
-
-        DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp, fAllowAntiLambda);
-        if (fRequireSpecificDecay && !dm.ok) continue;
+        DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp, true);
+        if (dm.ok) any_lambda_to_ppi = true;
 
         const simb::MCParticle* p  = (dm.p_trkid  >= 0 && mp.count(dm.p_trkid))  ? mp.at(dm.p_trkid).get()  : nullptr;
         const simb::MCParticle* pi = (dm.pi_trkid >= 0 && mp.count(dm.pi_trkid)) ? mp.at(dm.pi_trkid).get() : nullptr;
-        if (p && kProtonDaughterPMin > 0.f) {
-            const float pp = std::sqrt(p->Px()*p->Px() +
-                                       p->Py()*p->Py() +
-                                       p->Pz()*p->Pz());
-            if (pp < kProtonDaughterPMin) continue;
-        }
-        if (pi && kPionDaughterPMin > 0.f) {
-            const float pip = std::sqrt(pi->Px()*pi->Px() +
-                                        pi->Py()*pi->Py() +
-                                        pi->Pz()*pi->Pz());
-            if (pip < kPionDaughterPMin) continue;
-        }
-        if (p && fProtonKEThreshold > 0.f) {
-            const float pKE = p->E() - p->Mass();
-            if (pKE < fProtonKEThreshold) continue;
-        }
-        if (pi && fPionKEThreshold > 0.f) {
-            const float piKE = pi->E() - pi->Mass();
-            if (piKE < fPionKEThreshold) continue;
-        }
 
         const float L = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(), lam.Vx(), lam.Vy(), lam.Vz());
         const float p_mag = std::sqrt(lam.Px()*lam.Px() + lam.Py()*lam.Py() + lam.Pz()*lam.Pz());
@@ -749,45 +740,24 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (lam.Process() == "primary") bits |= (1u<<0); else bits |= (1u<<1);
 
         bool from_sigma0 = false;
-        bool heavy_feed  = false;
         int  parent_pdg = 0;
         int  grandparent_pdg = 0;
 
         if (mp.count(lam.Mother())) {
-            auto cur = mp.at(lam.Mother());
-            parent_pdg = cur->PdgCode();
+            auto parent = mp.at(lam.Mother());
+            parent_pdg = parent->PdgCode();
 
             if (isSigma0(parent_pdg)) {
                 from_sigma0 = true;
                 bits |= (1u<<2);
             }
-
-            int steps = 0;
-            while (cur && steps < fMaxAncestorSteps) {
-                if (steps == 0) {
-                } else if (steps == 1) {
-                    grandparent_pdg = cur->PdgCode();
-                }
-
-                const int a = cur->PdgCode();
-                if (isHeavyStrangeBaryon(a) || isCharmHadron(a) || isTau(a)) {
-                    heavy_feed = true;
-                    bits |= (1u<<3);
-                }
-
-                if (!mp.count(cur->Mother())) break;
-                cur = mp.at(cur->Mother());
-                ++steps;
-            }
         }
 
         _lambda_origin_bits.push_back(bits);
         _lambda_from_sigma0.push_back(from_sigma0 ? 1 : 0);
-        _lambda_heavy_feed.push_back(heavy_feed ? 1 : 0);
+        _lambda_heavy_feed.push_back(0);
         _lambda_parent_pdg.push_back(parent_pdg);
         _lambda_grandparent_pdg.push_back(grandparent_pdg);
-
-        if (heavy_feed) ++_n_lambda_from_heavy;
 
         _lambda_proton_trackid.push_back(dm.p_trkid);
         _lambda_pion_trackid.push_back(dm.pi_trkid);
@@ -824,9 +794,9 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     }
 
     _n_lambda_candidates = static_cast<int>(_lambda_trackid.size());
-    _has_lambda_to_ppi = (_n_lambda_candidates > 0);
+    _has_lambda_to_ppi = any_lambda_to_ppi;
 
-    if (_has_lambda_to_ppi) SelectBestCandidate();
+    if (_n_lambda_candidates > 0) SelectBestCandidate();
 
     FindTruthMuon(mcp_h);
     if (_mu_truth_trackid >= 0) {
@@ -835,14 +805,6 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                                     _mu_truth_pz*_mu_truth_pz);
         muon_above_threshold = (pmu >= kMuonPMin);
     }
-
-    const bool accept_nu_flavor = fAcceptAntiNu ? (std::abs(_nu_pdg)==14) : (_nu_pdg==14);
-    _is_nu_mu_cc = (!fRequireNuMu || accept_nu_flavor) && (!fRequireCC || _ccnc == 0);
-
-    _is_signal_event = _is_nu_mu_cc &&
-                       muon_above_threshold &&
-                       _nu_vtx_in_fid &&
-                       has_exit_hyperon;
 
     bool any_lambda_decay_infid = false;
     for (auto v : _lambda_decay_in_fid) if (v) { any_lambda_decay_infid = true; break; }
@@ -860,8 +822,15 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (pip < kPionDaughterPMin) daughters_above_pmin = false;
     }
 
-    _pr_eligible_event = _is_nu_mu_cc &&
-                         _nu_vtx_in_fid &&
+    _is_nu_mu_cc = (std::abs(_nu_pdg) == 14) && (_ccnc == 0);
+
+    _is_signal_event = _is_nu_mu_cc &&
+                       muon_above_threshold &&
+                       _nu_vtx_in_fid &&
+                       has_exit_hyperon &&
+                       any_lambda_decay_infid;
+
+    _pr_eligible_event = _is_signal_event &&
                          _has_lambda_to_ppi &&
                          any_lambda_decay_infid &&
                          daughters_above_pmin;
