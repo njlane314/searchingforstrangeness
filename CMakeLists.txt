@@ -82,4 +82,4 @@ install_headers()
 install_fhicl()
 install_source()
 
-# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/ DESTINATION assets)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/ DESTINATION assets)
