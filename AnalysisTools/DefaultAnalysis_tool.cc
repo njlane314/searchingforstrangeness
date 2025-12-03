@@ -9,7 +9,6 @@
 #include "lardataobj/RecoBase/Shower.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "ubobj/CRT/CRTHit.hh"
 #include "ubobj/Optical/UbooneOpticalFilter.h"
@@ -69,8 +68,6 @@ private:
     float fFidvolZend;
 
     bool fMakeNuMINtuple;
-    bool fIgnoreMCFlux;
-
     std::vector<float> _slice_topological_scores;
     float _reco_neutrino_vertex_x;
     float _reco_neutrino_vertex_y;
@@ -177,7 +174,6 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fFidvolZend = p.get<double>("fidvolZend", 50);
 
     fMakeNuMINtuple = p.get<bool>("makeNuMINtuple", true);
-    fIgnoreMCFlux = p.get<bool>("ignoreMCFlux", false);
     NuMIOpFilterProd = p.get<std::string>("NuMIOpFiltProcName", "DataStage1Optical");
     NuMISWTrigProd = p.get<std::string>("NuMISWTriggerProcName", "DataOverlayOpticalNuMI");
 }
