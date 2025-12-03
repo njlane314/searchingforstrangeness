@@ -39,7 +39,7 @@ DefaultAnalysis: {
     fidvolZstart: @local::FidVol.Zstart
     fidvolZend:   @local::FidVol.Zend
 
-    makeNuMINtuple: false
+    makeNuMINtuple: true
     ignoreMCFlux: false
 }
 
@@ -59,12 +59,6 @@ SignalAnalysis: {
     fidvolZstart: @local::FidVol.Zstart
     fidvolZend:   @local::FidVol.Zend
 
-    RequireNuMu: true
-    RequireCC:   true
-    AllowAntiLambda: false
-    RequireSpecificDecay: true
-    RequirePrimaryLambda: false
-    ChooseClosestToNuVertex: true
     MaxAncestorSteps: 16
     ProtonKEThreshold: 0.0
     PionKEThreshold: 0.0

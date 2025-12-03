@@ -75,7 +75,6 @@ private:
     float fFidvolYstart, fFidvolYend;
     float fFidvolZstart, fFidvolZend;
 
-    bool  fChooseClosestToNuVertex;
 
     int   _nu_pdg;
     int   _ccnc;
@@ -221,7 +220,6 @@ void SignalAnalysis::configure(const fhicl::ParameterSet& p) {
     fFidvolZstart = p.get<double>("fidvolZstart", 10);
     fFidvolZend   = p.get<double>("fidvolZend",   50);
 
-    fChooseClosestToNuVertex = p.get<bool>("ChooseClosestToNuVertex", true);
 }
 
 void SignalAnalysis::setBranches(TTree* t) {

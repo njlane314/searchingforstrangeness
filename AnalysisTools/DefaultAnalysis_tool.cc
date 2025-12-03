@@ -176,7 +176,7 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fFidvolZstart = p.get<double>("fidvolZstart", 10);
     fFidvolZend = p.get<double>("fidvolZend", 50);
 
-    fMakeNuMINtuple = p.get<bool>("makeNuMINtuple", false);
+    fMakeNuMINtuple = p.get<bool>("makeNuMINtuple", true);
     fIgnoreMCFlux = p.get<bool>("ignoreMCFlux", false);
     NuMIOpFilterProd = p.get<std::string>("NuMIOpFiltProcName", "DataStage1Optical");
     NuMISWTrigProd = p.get<std::string>("NuMISWTriggerProcName", "DataOverlayOpticalNuMI");
