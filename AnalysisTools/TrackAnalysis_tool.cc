@@ -35,6 +35,12 @@ private:
                                          unsigned skip_each_end=3,
                                          double qlow=0.10, double qhigh=0.80,
                                          unsigned min_hits_in_band=8);
+
+    bool compute_mip_core_stats(const std::vector<float>& dedx_values,
+                                float& T70,
+                                float& Q50,
+                                float& Q90,
+                                unsigned min_hits = 8);
     art::InputTag fTRKproducer;
     art::InputTag fCALproducer;
 
@@ -73,6 +79,16 @@ private:
     std::vector<float> _track_trunk_rr_dedx_u;
     std::vector<float> _track_trunk_rr_dedx_v;
     std::vector<float> _track_trunk_rr_dedx_y;
+
+    std::vector<float> _track_dedx_T70_u;
+    std::vector<float> _track_dedx_T70_v;
+    std::vector<float> _track_dedx_T70_y;
+    std::vector<float> _track_dedx_Q50_u;
+    std::vector<float> _track_dedx_Q50_v;
+    std::vector<float> _track_dedx_Q50_y;
+    std::vector<float> _track_dedx_Q90_u;
+    std::vector<float> _track_dedx_Q90_v;
+    std::vector<float> _track_dedx_Q90_y;
 };
 
 TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet& parameter_set) {
@@ -177,18 +193,35 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
                     dedx_values, residual_range,
                     0.25f, 0.75f, 3, 0.10, 0.80, 8);
 
+                float T70 = std::numeric_limits<float>::quiet_NaN();
+                float Q50 = std::numeric_limits<float>::quiet_NaN();
+                float Q90 = std::numeric_limits<float>::quiet_NaN();
+                bool ok_stats = compute_mip_core_stats(dedx_values, T70, Q50, Q90, 8);
+                if (!ok_stats) {
+                    T70 = Q50 = Q90 = std::numeric_limits<float>::quiet_NaN();
+                }
+
                 if (plane == 0) {
                     _track_calo_energy_u.push_back(calo_energy);
                     _track_trunk_dedx_u.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_u.push_back(trunk_rr_dedx);
+                    _track_dedx_T70_u.push_back(T70);
+                    _track_dedx_Q50_u.push_back(Q50);
+                    _track_dedx_Q90_u.push_back(Q90);
                 } else if (plane == 1) {
                     _track_calo_energy_v.push_back(calo_energy);
                     _track_trunk_dedx_v.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_v.push_back(trunk_rr_dedx);
+                    _track_dedx_T70_v.push_back(T70);
+                    _track_dedx_Q50_v.push_back(Q50);
+                    _track_dedx_Q90_v.push_back(Q90);
                 } else if (plane == 2) {
                     _track_calo_energy_y.push_back(calo_energy);
                     _track_trunk_dedx_y.push_back(trunk_dedx);
                     _track_trunk_rr_dedx_y.push_back(trunk_rr_dedx);
+                    _track_dedx_T70_y.push_back(T70);
+                    _track_dedx_Q50_y.push_back(Q50);
+                    _track_dedx_Q90_y.push_back(Q90);
                 }
             }
         } else {
@@ -227,6 +260,16 @@ void TrackAnalysis::fill_default() {
     _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
     _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
+
+    _track_dedx_T70_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_T70_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_T70_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q50_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q50_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q50_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q90_u.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q90_v.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_dedx_Q90_y.push_back(std::numeric_limits<float>::quiet_NaN());
 }
 
 void TrackAnalysis::setBranches(TTree* tree) {
@@ -259,6 +302,16 @@ void TrackAnalysis::setBranches(TTree* tree) {
     tree->Branch("track_trunk_rr_dedx_u", "std::vector<float>", &_track_trunk_rr_dedx_u);
     tree->Branch("track_trunk_rr_dedx_v", "std::vector<float>", &_track_trunk_rr_dedx_v);
     tree->Branch("track_trunk_rr_dedx_y", "std::vector<float>", &_track_trunk_rr_dedx_y);
+
+    tree->Branch("track_dedx_T70_u", "std::vector<float>", &_track_dedx_T70_u);
+    tree->Branch("track_dedx_T70_v", "std::vector<float>", &_track_dedx_T70_v);
+    tree->Branch("track_dedx_T70_y", "std::vector<float>", &_track_dedx_T70_y);
+    tree->Branch("track_dedx_Q50_u", "std::vector<float>", &_track_dedx_Q50_u);
+    tree->Branch("track_dedx_Q50_v", "std::vector<float>", &_track_dedx_Q50_v);
+    tree->Branch("track_dedx_Q50_y", "std::vector<float>", &_track_dedx_Q50_y);
+    tree->Branch("track_dedx_Q90_u", "std::vector<float>", &_track_dedx_Q90_u);
+    tree->Branch("track_dedx_Q90_v", "std::vector<float>", &_track_dedx_Q90_v);
+    tree->Branch("track_dedx_Q90_y", "std::vector<float>", &_track_dedx_Q90_y);
 }
 
 void TrackAnalysis::resetTTree(TTree* tree) {
@@ -291,6 +344,16 @@ void TrackAnalysis::resetTTree(TTree* tree) {
     _track_trunk_rr_dedx_u.clear();
     _track_trunk_rr_dedx_v.clear();
     _track_trunk_rr_dedx_y.clear();
+
+    _track_dedx_T70_u.clear();
+    _track_dedx_T70_v.clear();
+    _track_dedx_T70_y.clear();
+    _track_dedx_Q50_u.clear();
+    _track_dedx_Q50_v.clear();
+    _track_dedx_Q50_y.clear();
+    _track_dedx_Q90_u.clear();
+    _track_dedx_Q90_v.clear();
+    _track_dedx_Q90_y.clear();
 }
 
 float TrackAnalysis::calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values) {
@@ -380,6 +443,56 @@ float TrackAnalysis::calculate_track_trunk_rr_qtrim(
     }
     if (n == 0) return std::numeric_limits<float>::lowest();
     return static_cast<float>(sum / n);
+}
+
+bool TrackAnalysis::compute_mip_core_stats(
+    const std::vector<float>& dedx_values,
+    float& T70,
+    float& Q50,
+    float& Q90,
+    unsigned min_hits)
+{
+    std::vector<float> vals;
+    vals.reserve(dedx_values.size());
+    for (float v : dedx_values) {
+        if (std::isfinite(v) && v > 0.0f)
+            vals.push_back(v);
+    }
+
+    if (vals.size() < min_hits) {
+        return false;
+    }
+
+    std::sort(vals.begin(), vals.end());
+    const size_t n = vals.size();
+    const double frac = 0.15;
+    size_t n_drop = static_cast<size_t>(frac * static_cast<double>(n));
+    if (2 * n_drop >= n) {
+        n_drop = 0;
+    }
+
+    const size_t lo = n_drop;
+    const size_t hi = n - n_drop;
+    if (lo >= hi) {
+        return false;
+    }
+
+    std::vector<float> core(vals.begin() + lo, vals.begin() + hi);
+    if (core.empty()) {
+        return false;
+    }
+
+    double sum = std::accumulate(core.begin(), core.end(), 0.0);
+    T70 = static_cast<float>(sum / static_cast<double>(core.size()));
+
+    Q50 = common::quantile_linear(core, 0.50);
+    Q90 = common::quantile_linear(core, 0.90);
+
+    if (!(T70 > 0.0f) || !(Q50 > 0.0f) || !(Q90 > 0.0f)) {
+        return false;
+    }
+
+    return true;
 }
 DEFINE_ART_CLASS_TOOL(TrackAnalysis)
 
