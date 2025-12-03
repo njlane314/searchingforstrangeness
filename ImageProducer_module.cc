@@ -12,6 +12,7 @@
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/Vertex.h"
@@ -59,6 +60,7 @@ private:
   art::InputTag fWIREproducer;
   art::InputTag fMCPproducer;
   art::InputTag fBKTproducer;
+  art::InputTag fSPproducer;
 
   bool fIsData{false};
 
@@ -105,6 +107,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
   fWIREproducer = pset.get<art::InputTag>("WIREproducer");
   fMCPproducer = pset.get<art::InputTag>("MCPproducer");
   fBKTproducer = pset.get<art::InputTag>("BKTproducer");
+  fSPproducer  = pset.get<art::InputTag>("SPproducer");
 
   fIsData = pset.get<bool>("IsData", false);
 
@@ -244,7 +247,6 @@ void ImageProducer::produce(art::Event &event) {
   auto neutrino_hits = collectNeutrinoSliceHits(event);
   auto event_hits    = collectEventHits(event);
 
-  // Remove hits on bad channels, if configured.
   if (!fBadChannels.empty()) {
     auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
       hits.erase(std::remove_if(hits.begin(), hits.end(),
@@ -256,6 +258,21 @@ void ImageProducer::produce(art::Event &event) {
     };
     remove_bad_channels(neutrino_hits);
     remove_bad_channels(event_hits);
+  }
+
+  std::vector<art::Ptr<recob::SpacePoint>> nu_spacepoints;
+  if (!neutrino_hits.empty()) {
+    auto hit_handle =
+      event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+
+    art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
+
+    for (auto const &h : neutrino_hits) {
+      auto const &sps_for_hit = hit_to_sp.at(h.key());
+      nu_spacepoints.insert(nu_spacepoints.end(),
+                            sps_for_hit.begin(),
+                            sps_for_hit.end());
+    }
   }
 
   double vtx_x = std::numeric_limits<double>::quiet_NaN();
@@ -282,8 +299,17 @@ void ImageProducer::produce(art::Event &event) {
 
   TVector3 vtx_world(vtx_x, vtx_y, vtx_z);
 
-  TVector3 center_world = image::robustGlobalCentroid(
-    event, neutrino_hits, static_cast<double>(fADCThresh), 2.0);
+  double center_radius =
+    0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
+
+  TVector3 center_world = vtx_world;
+
+  if (!nu_spacepoints.empty()) {
+    center_world =
+      image::trimmedMeanCenterFromSpacePoints(nu_spacepoints,
+                                              vtx_world,
+                                              center_radius);
+  }
 
   if (!std::isfinite(center_world.X()) ||
       !std::isfinite(center_world.Y()) ||
@@ -291,7 +317,6 @@ void ImageProducer::produce(art::Event &event) {
     center_world = vtx_world;
   }
 
-  // Project centre to each view
   TVector3 cU = common::ProjectToWireView(
     center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
   TVector3 cV = common::ProjectToWireView(
@@ -341,7 +366,6 @@ void ImageProducer::produce(art::Event &event) {
       << " size " << props[i].width() << "x" << props[i].height();
   }
 
-  // Optional dump to ROOT TTree
   if (fDumpImages && fImageDumpTree) {
     fDumpRun    = event.id().run();
     fDumpSubrun = event.id().subRun();
@@ -367,7 +391,6 @@ void ImageProducer::produce(art::Event &event) {
     }
   }
 
-  // Pack into ImageProduct and store in event
   auto pack_plane = [](Image<float> const &det, Image<int> const &sem,
                        ImageProperties const &p, bool include_sem) {
     ImageProduct out;
