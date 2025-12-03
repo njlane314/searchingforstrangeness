@@ -36,7 +36,7 @@
 
     <stage name="dev_beam_imaging_evtw">
       <inputdef>&input_beam;</inputdef>
-      <fcl>job/imaging_evtw_dev.fcl</fcl>
+      <fcl>dev/image_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/out</outdir>
