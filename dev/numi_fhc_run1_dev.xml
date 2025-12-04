@@ -60,7 +60,7 @@
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/work</workdir>
 
       <datatier>selected</datatier>
-      <numjobs>350</numjobs>
+      <numjobs>3000</numjobs>
     </stage>
 
     <stage name="dev_strange_imaging_evtw">
@@ -86,7 +86,7 @@
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/work</workdir>
 
       <datatier>selected</datatier>
-      <numjobs>350</numjobs>
+      <numjobs>1800</numjobs>
     </stage>
 
     <stage name="dev_dirt_imaging_evtw">
@@ -138,20 +138,7 @@
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic2/work</workdir>
 
       <datatier>selected</datatier>
-      <numjobs>1500</numjobs>
-    </stage>
-
-    <stage name="dev_cosmic_imaging_data_3">
-      <inputdef>&input_ext;</inputdef>
-      <fcl>dev/image_dev_cosmic.fcl</fcl>
-      <initsource>&initsrc;</initsource>
-
-      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic3/out</outdir>
-      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic3/log</logdir>
-      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic3/work</workdir>
-
-      <datatier>selected</datatier>
-      <numjobs>1500</numjobs>
+      <numjobs>5000</numjobs>
     </stage>
 
   </project>
