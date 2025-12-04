@@ -11,6 +11,9 @@
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
     <!ENTITY input_beam "New_NuMI_Flux_Run_1_FHC_Pandora_Reco2_reco2_reco2">
+    <!ENTITY input_strangeness "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
+    <!ENTITY input_ext "prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2">
+    <!ENTITY input_dirt "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all">
 ]>
 
 <job>
@@ -42,6 +45,45 @@
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/work</workdir>
+
+      <datatier>selected</datatier>
+      <numjobs>50</numjobs>
+    </stage>
+
+    <stage name="dev_strange_imaging_evtw">
+      <inputdef>&input_strangeness;</inputdef>
+      <fcl>dev/image_dev.fcl</fcl>
+      <initsource>&initsrc;</initsource>
+
+      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/out</outdir>
+      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/log</logdir>
+      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/work</workdir>
+
+      <datatier>selected</datatier>
+      <numjobs>50</numjobs>
+    </stage>
+
+    <stage name="dev_dirt_imaging_evtw">
+      <inputdef>&input_dirt;</inputdef>
+      <fcl>dev/image_dev.fcl</fcl>
+      <initsource>&initsrc;</initsource>
+
+      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/out</outdir>
+      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/log</logdir>
+      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/work</workdir>
+
+      <datatier>selected</datatier>
+      <numjobs>50</numjobs>
+    </stage>
+
+    <stage name="dev_cosmic_imaging_data">
+      <inputdef>&input_ext;</inputdef>
+      <fcl>dev/image_dev_cosmic.fcl</fcl>
+      <initsource>&initsrc;</initsource>
+
+      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/out</outdir>
+      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/log</logdir>
+      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/work</workdir>
 
       <datatier>selected</datatier>
       <numjobs>50</numjobs>
