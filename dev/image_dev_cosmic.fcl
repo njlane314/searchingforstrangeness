@@ -1,0 +1,30 @@
+#include "seedservice_microboone.fcl"
+#include "run_neutrinoselection.fcl"
+#include "isdata.fcl"
+
+process_name: ImagingDevCosmic
+
+services.TFileService.fileName: "imaging_dev_cosmic.root"
+services.NuRandomService: @local::microboone_seedservice
+
+physics.producers.inferenceprod: {
+  module_type: "InferenceProducer"
+  PlanesTag: "imageprod:NuSlice"
+  ScratchDir: ""
+  AssetsBaseDir: "assets"
+  DefaultWrapper: "scripts/inference_wrapper.sh"
+  Models: [
+    {
+      Label: "mink_binary"
+      Arch: "binary:device=cpu,seed=12345,thr=0.0"
+      Weights: "random://weights"
+    }
+  ]
+}
+
+physics.path1: [ imageprod, inferenceprod, nuselection ]
+physics.trigger_paths: [ path1 ]
+
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.BeamSWTrigProcName: ""
+physics.filters.nuselection.OpFilterProcName: ""
