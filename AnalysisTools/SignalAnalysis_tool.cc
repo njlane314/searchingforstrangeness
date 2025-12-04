@@ -665,6 +665,10 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _has_kshort_truth = (_n_kshort_truth > 0);
 
     auto isSigma0 = [](int pdg){ return std::abs(pdg) == 3212; };
+    auto isHeavyHyperon = [](int pdg){
+        const int apdg = std::abs(pdg);
+        return apdg == 3312 || apdg == 3322 || apdg == 3334;
+    };
 
     bool any_lambda_to_ppi = false;
 
@@ -710,6 +714,7 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (lam.Process() == "primary") bits |= (1u<<0); else bits |= (1u<<1);
 
         bool from_sigma0 = false;
+        bool from_heavy_hyperon = false;
         int  parent_pdg = 0;
         int  grandparent_pdg = 0;
 
@@ -721,13 +726,22 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 from_sigma0 = true;
                 bits |= (1u<<2);
             }
+
+            if (mp.count(parent->Mother())) {
+                auto grandparent = mp.at(parent->Mother());
+                grandparent_pdg = grandparent->PdgCode();
+                from_heavy_hyperon = from_heavy_hyperon || isHeavyHyperon(grandparent_pdg);
+            }
+            from_heavy_hyperon = from_heavy_hyperon || isHeavyHyperon(parent_pdg);
         }
 
         _lambda_origin_bits.push_back(bits);
         _lambda_from_sigma0.push_back(from_sigma0 ? 1 : 0);
-        _lambda_heavy_feed.push_back(0);
+        _lambda_heavy_feed.push_back(from_heavy_hyperon ? 1 : 0);
         _lambda_parent_pdg.push_back(parent_pdg);
         _lambda_grandparent_pdg.push_back(grandparent_pdg);
+
+        if (from_heavy_hyperon) ++_n_lambda_from_heavy;
 
         _lambda_proton_trackid.push_back(dm.p_trkid);
         _lambda_pion_trackid.push_back(dm.pi_trkid);
