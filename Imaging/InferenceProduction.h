@@ -255,6 +255,9 @@ inline InferenceProduction::Result InferenceProduction::runInference(
         << "Inference time: " << duration << " seconds";
     if (!out.cls.empty())
         mf::LogInfo("InferenceProduction") << "First class score: " << out.cls.front();
+    else
+        mf::LogWarning("InferenceProduction")
+            << "No class scores returned; out.cls is empty";
     mf::LogInfo("InferenceProduction")
         << "t_write_req_ms=" << out.perf.t_write_req_ms
         << " t_exec_total_ms=" << out.perf.t_exec_total_ms

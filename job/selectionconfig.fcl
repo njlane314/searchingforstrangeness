@@ -120,6 +120,8 @@ ImageAnalysis: {
     Models: []
     ActiveModels: []  # env override: ACTIVE_MODELS
     ImagesSliceTag: "imageprod:NuSlice"
+    InferencePredTag: "inferenceprod"
+    InferencePerfTag: "inferenceprod"
     ImagesSliceUncorrectedTag: "imageprod:NuSliceUncorrected"
     ScoresTag: "imageprod"
     SegmentationTag: "imageprod:seg"
