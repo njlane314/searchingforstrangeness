@@ -222,26 +222,6 @@ void SignalAnalysis::configure(const fhicl::ParameterSet& p) {
 }
 
 void SignalAnalysis::setBranches(TTree* t) {
-    t->Branch("nu_pdg",           &_nu_pdg,           "nu_pdg/I");
-    t->Branch("ccnc",             &_ccnc,             "ccnc/I");
-    t->Branch("interaction_mode", &_interaction_mode, "interaction_mode/I");
-    t->Branch("interaction_type", &_interaction_type, "interaction_type/I");
-    t->Branch("nu_E",             &_nu_E,             "nu_E/F");
-    t->Branch("nu_theta",         &_nu_theta,         "nu_theta/F");
-    t->Branch("nu_pt",            &_nu_pt,            "nu_pt/F");
-    t->Branch("nu_vx",            &_nu_vx,            "nu_vx/F");
-    t->Branch("nu_vy",            &_nu_vy,            "nu_vy/F");
-    t->Branch("nu_vz",            &_nu_vz,            "nu_vz/F");
-    t->Branch("nu_t",             &_nu_t,             "nu_t/F");
-    t->Branch("nu_sce_vx",        &_nu_sce_vx,        "nu_sce_vx/F");
-    t->Branch("nu_sce_vy",        &_nu_sce_vy,        "nu_sce_vy/F");
-    t->Branch("nu_sce_vz",        &_nu_sce_vz,        "nu_sce_vz/F");
-    t->Branch("nu_vtx_in_fid",    &_nu_vtx_in_fid,    "nu_vtx_in_fid/O");
-
-    t->Branch("true_nu_dir_x", &_true_nu_dir_x, "true_nu_dir_x/F");
-    t->Branch("true_nu_dir_y", &_true_nu_dir_y, "true_nu_dir_y/F");
-    t->Branch("true_nu_dir_z", &_true_nu_dir_z, "true_nu_dir_z/F");
-
     t->Branch("is_nu_mu_cc",      &_is_nu_mu_cc,      "is_nu_mu_cc/O");
     t->Branch("has_lambda_to_ppi",&_has_lambda_to_ppi,"has_lambda_to_ppi/O");
     t->Branch("is_signal_event",  &_is_signal_event,  "is_signal_event/O");
