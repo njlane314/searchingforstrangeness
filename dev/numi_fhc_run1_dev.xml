@@ -102,14 +102,14 @@
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_dirt_imaging_evtw_2">
+    <stage name="dev_dirt_imaging_evtw_full">
       <inputdef>&input_dirt;</inputdef>
       <fcl>dev/image_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
-      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt2/out</outdir>
-      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt2/log</logdir>
-      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt2/work</workdir>
+      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/out</outdir>
+      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/log</logdir>
+      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/work</workdir>
 
       <datatier>selected</datatier>
       <numjobs>1000</numjobs>
@@ -128,14 +128,14 @@
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_cosmic_imaging_data_2">
+    <stage name="dev_cosmic_imaging_data_full">
       <inputdef>&input_ext;</inputdef>
       <fcl>dev/image_dev_cosmic.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
-      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic2/out</outdir>
-      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic2/log</logdir>
-      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic2/work</workdir>
+      <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/out</outdir>
+      <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/log</logdir>
+      <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/work</workdir>
 
       <datatier>selected</datatier>
       <numjobs>5000</numjobs>
