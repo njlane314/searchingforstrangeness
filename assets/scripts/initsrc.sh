@@ -16,6 +16,10 @@ if [[ ! -d "$ASSETS_BASE_DIR" ]]; then
   return 1
 fi
 
+if [[ ! -e "$PWD/assets" ]]; then
+  ln -s "$ASSETS_BASE_DIR" "$PWD/assets"
+fi
+
 export ASSETS_BASE_DIR
 export WEIGHTS_BASE_DIR="${WEIGHTS_BASE_DIR:-$ASSETS_BASE_DIR/weights}"
 export IA_BADCHANNELS="${IA_BADCHANNELS:-$ASSETS_BASE_DIR/badchannels.txt}"
