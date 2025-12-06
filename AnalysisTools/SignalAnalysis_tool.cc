@@ -41,7 +41,7 @@
 namespace {
   constexpr float kMuonPMin             = 0.10f;
   constexpr float kLambdaPMin           = 0.42f;
-  constexpr float kSigma0PMin           = 0.80f;
+  constexpr float kSigma0PMin           = 0.50f;
   constexpr float kProtonDaughterPMin   = 0.30f;
   constexpr float kPionDaughterPMin     = 0.12f;
   constexpr float kPRMinCompleteness    = 0.10f;
