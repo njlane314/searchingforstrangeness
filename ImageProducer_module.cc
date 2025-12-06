@@ -98,7 +98,6 @@ private:
 
   void loadBadChannels(const std::string &filename);
   std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
-  std::vector<art::Ptr<recob::Hit>> collectEventHits(const art::Event &event) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -227,27 +226,12 @@ ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
     return out;
 }
 
-std::vector<art::Ptr<recob::Hit>>
-ImageProducer::collectEventHits(const art::Event &event) const {
-    auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-
-    std::vector<art::Ptr<recob::Hit>> hits;
-    hits.reserve(hit_handle->size());
-
-    for (std::size_t i = 0; i < hit_handle->size(); ++i) {
-        hits.emplace_back(hit_handle, i);
-    }
-
-    return hits;
-}
-
 void ImageProducer::produce(art::Event &event) {
   mf::LogDebug("ImageProducer")
     << "Starting image production for event " << event.id();
 
   // Collect hits
   auto neutrino_hits = collectNeutrinoSliceHits(event);
-  auto event_hits    = collectEventHits(event);
 
   if (!fBadChannels.empty()) {
     auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
@@ -259,7 +243,6 @@ void ImageProducer::produce(art::Event &event) {
                  hits.end());
     };
     remove_bad_channels(neutrino_hits);
-    remove_bad_channels(event_hits);
   }
 
   // If there is no neutrino slice (after bad-channel removal), do not build
@@ -464,7 +447,7 @@ void ImageProducer::produce(art::Event &event) {
 
   builder.build(
     event,
-    event_hits,
+    neutrino_hits,
     props,
     det_slice,
     sem_slice,
