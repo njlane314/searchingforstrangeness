@@ -42,10 +42,19 @@ namespace {
   constexpr float kMuonPMin             = 0.10f;
   constexpr float kLambdaPMin           = 0.42f;
   constexpr float kSigma0PMin           = 0.80f;
-  constexpr float kProtonDaughterPMin   = 0.10f;
-  constexpr float kPionDaughterPMin     = 0.10f;
+  constexpr float kProtonDaughterPMin   = 0.30f;
+  constexpr float kPionDaughterPMin     = 0.12f;
   constexpr float kPRMinCompleteness    = 0.10f;
   constexpr float kPRMinPurity          = 0.50f;
+
+  constexpr unsigned int kSignalFailNotNuMuCC        = 1u << 0;
+  constexpr unsigned int kSignalFailMuonBelowPMin    = 1u << 1;
+  constexpr unsigned int kSignalFailNuVtxOutOfFid    = 1u << 2;
+  constexpr unsigned int kSignalFailNoExitHyperon    = 1u << 3;
+  constexpr unsigned int kSignalFailNoLambdaInFid    = 1u << 4;
+
+  constexpr unsigned int kPREligibleFailNoLambdaToPPi   = 1u << 0;
+  constexpr unsigned int kPREligibleFailDaughtersBelowP = 1u << 1;
 }
 
 namespace analysis {
@@ -177,6 +186,9 @@ private:
     bool _has_sigma0_truth;
     bool _has_kshort_truth;
     int  _n_lambda_from_heavy;
+
+    unsigned int _signal_fail_bits;
+    unsigned int _pr_eligible_fail_bits;
 
     template <class T> static T nan() { return std::numeric_limits<T>::quiet_NaN(); }
     static float ThreeDistance(float x1,float y1,float z1,float x2,float y2,float z2) {
@@ -359,6 +371,9 @@ void SignalAnalysis::setBranches(TTree* t) {
     t->Branch("n_kshort_truth",  &_n_kshort_truth,  "n_kshort_truth/I");
     t->Branch("has_kshort_truth",&_has_kshort_truth,"has_kshort_truth/O");
     t->Branch("n_lambda_from_heavy",&_n_lambda_from_heavy,"n_lambda_from_heavy/I");
+
+    t->Branch("signal_fail_bits",      &_signal_fail_bits,      "signal_fail_bits/i");
+    t->Branch("pr_eligible_fail_bits", &_pr_eligible_fail_bits, "pr_eligible_fail_bits/i");
 }
 
 void SignalAnalysis::resetTTree(TTree*) {
@@ -439,6 +454,9 @@ void SignalAnalysis::resetTTree(TTree*) {
     _has_sigma0_truth = false;
     _has_kshort_truth = false;
     _n_lambda_from_heavy = 0;
+
+    _signal_fail_bits = 0u;
+    _pr_eligible_fail_bits = 0u;
 }
 
 SignalAnalysis::DecayMatch
@@ -788,16 +806,21 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
     _is_nu_mu_cc = (std::abs(_nu_pdg) == 14) && (_ccnc == 0);
 
-    _is_signal_event = _is_nu_mu_cc &&
-                       muon_above_threshold &&
-                       _nu_vtx_in_fid &&
-                       has_exit_hyperon &&
-                       any_lambda_decay_infid;
+    _signal_fail_bits = 0u;
+    if (!_is_nu_mu_cc)          _signal_fail_bits |= kSignalFailNotNuMuCC;
+    if (!muon_above_threshold)  _signal_fail_bits |= kSignalFailMuonBelowPMin;
+    if (!_nu_vtx_in_fid)        _signal_fail_bits |= kSignalFailNuVtxOutOfFid;
+    if (!has_exit_hyperon)      _signal_fail_bits |= kSignalFailNoExitHyperon;
+    if (!any_lambda_decay_infid)_signal_fail_bits |= kSignalFailNoLambdaInFid;
+
+    _is_signal_event = (_signal_fail_bits == 0u);
+
+    _pr_eligible_fail_bits = 0u;
+    if (!_has_lambda_to_ppi)    _pr_eligible_fail_bits |= kPREligibleFailNoLambdaToPPi;
+    if (!daughters_above_pmin)  _pr_eligible_fail_bits |= kPREligibleFailDaughtersBelowP;
 
     _pr_eligible_event = _is_signal_event &&
-                         _has_lambda_to_ppi &&
-                         any_lambda_decay_infid &&
-                         daughters_above_pmin;
+                         (_pr_eligible_fail_bits == 0u);
 }
 
 void SignalAnalysis::analyseSlice(const art::Event& event,
