@@ -98,9 +98,8 @@ private:
 
     float _true_nu_dir_x, _true_nu_dir_y, _true_nu_dir_z;
 
-    bool  _is_nu_mu_cc;
     bool  _has_lambda_to_ppi;
-    bool  _is_signal_event;
+    bool  _is_nu_mu_cc;
 
     int _n_lambda_candidates;
     std::vector<int>   _lambda_trackid;
@@ -234,9 +233,8 @@ void SignalAnalysis::configure(const fhicl::ParameterSet& p) {
 }
 
 void SignalAnalysis::setBranches(TTree* t) {
-    t->Branch("is_nu_mu_cc",      &_is_nu_mu_cc,      "is_nu_mu_cc/O");
     t->Branch("has_lambda_to_ppi",&_has_lambda_to_ppi,"has_lambda_to_ppi/O");
-    t->Branch("is_signal_event",  &_is_signal_event,  "is_signal_event/O");
+    t->Branch("is_nu_mu_cc",      &_is_nu_mu_cc,      "is_nu_mu_cc/O");
 
     t->Branch("n_lambda_candidates", &_n_lambda_candidates, "n_lambda_candidates/I");
     t->Branch("lambda_trackid",       "std::vector<int>",   &_lambda_trackid);
@@ -384,7 +382,7 @@ void SignalAnalysis::resetTTree(TTree*) {
     _nu_vtx_in_fid = false;
     _true_nu_dir_x = nan<float>(); _true_nu_dir_y = nan<float>(); _true_nu_dir_z = nan<float>();
 
-    _is_nu_mu_cc = false; _has_lambda_to_ppi = false; _is_signal_event = false;
+    _has_lambda_to_ppi = false; _is_nu_mu_cc = false;
 
     _n_lambda_candidates = 0;
     _lambda_trackid.clear(); _lambda_pdg.clear(); _lambda_mother_trackid.clear();
@@ -813,13 +811,11 @@ void SignalAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     if (!has_exit_hyperon)      _signal_fail_bits |= kSignalFailNoExitHyperon;
     if (!any_lambda_decay_infid)_signal_fail_bits |= kSignalFailNoLambdaInFid;
 
-    _is_signal_event = (_signal_fail_bits == 0u);
-
     _pr_eligible_fail_bits = 0u;
     if (!_has_lambda_to_ppi)    _pr_eligible_fail_bits |= kPREligibleFailNoLambdaToPPi;
     if (!daughters_above_pmin)  _pr_eligible_fail_bits |= kPREligibleFailDaughtersBelowP;
 
-    _pr_eligible_event = _is_signal_event &&
+    _pr_eligible_event = (_signal_fail_bits == 0u) &&
                          (_pr_eligible_fail_bits == 0u);
 }
 
