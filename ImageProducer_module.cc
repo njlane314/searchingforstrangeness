@@ -315,48 +315,121 @@ void ImageProducer::produce(art::Event &event) {
     sp_weights.push_back(kv.second);
   }
 
-  double vtx_x = std::numeric_limits<double>::quiet_NaN();
-  double vtx_y = std::numeric_limits<double>::quiet_NaN();
-  double vtx_z = std::numeric_limits<double>::quiet_NaN();
-  {
-    auto pfp_handle =
-      event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
-    art::FindManyP<recob::Vertex> pfpToVtx(pfp_handle, event, fPFPproducer);
-    for (std::size_t i = 0; i < pfp_handle->size(); ++i) {
-      auto const &p = pfp_handle->at(i);
-      if (!p.IsPrimary())
+  double center_radius_max =
+    0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
+
+  TVector3 center_world(0., 0., 0.);
+  bool     center_from_spacepoints = false;
+
+  if (!nu_spacepoints.empty()) {
+    TVector3 c0(0., 0., 0.);
+    double   W0 = 0.0;
+
+    const std::size_t nsp =
+      std::min(nu_spacepoints.size(), sp_weights.size());
+
+    for (std::size_t i = 0; i < nsp; ++i) {
+      auto const& sp = nu_spacepoints[i];
+      double      w  = sp_weights[i];
+      if (!sp || !(w > 0.0)) continue;
+
+      auto const* xyz = sp->XYZ();
+      TVector3 p(xyz[0], xyz[1], xyz[2]);
+
+      if (!std::isfinite(p.X()) ||
+          !std::isfinite(p.Y()) ||
+          !std::isfinite(p.Z()))
         continue;
-      auto const &v = pfpToVtx.at(i);
-      if (!v.empty()) {
-        auto const &pos = v.front()->position();
-        vtx_x = pos.X();
-        vtx_y = pos.Y();
-        vtx_z = pos.Z();
-        break;
+
+      c0 += w * p;
+      W0 += w;
+    }
+
+    if (W0 > 0.0) {
+      c0 *= (1.0 / W0);
+
+      struct RadiusWeight {
+        double r;
+        double w;
+      };
+
+      std::vector<RadiusWeight> rw;
+      rw.reserve(nsp);
+
+      double Wtot = 0.0;
+
+      for (std::size_t i = 0; i < nsp; ++i) {
+        auto const& sp = nu_spacepoints[i];
+        double      w  = sp_weights[i];
+        if (!sp || !(w > 0.0)) continue;
+
+        auto const* xyz = sp->XYZ();
+        TVector3 p(xyz[0], xyz[1], xyz[2]);
+
+        if (!std::isfinite(p.X()) ||
+            !std::isfinite(p.Y()) ||
+            !std::isfinite(p.Z()))
+          continue;
+
+        double r = (p - c0).Mag();
+        rw.push_back({r, w});
+        Wtot += w;
+      }
+
+      if (!rw.empty() && Wtot > 0.0) {
+        std::sort(
+          rw.begin(), rw.end(),
+          [](RadiusWeight const& a, RadiusWeight const& b)
+          {
+            return a.r < b.r;
+          });
+
+        double frac_core = 0.7;
+
+        double target = frac_core * Wtot;
+        double acc    = 0.0;
+        double Rc     = 0.0;
+
+        for (auto const& x : rw) {
+          acc += x.w;
+          Rc   = x.r;
+          if (acc >= target) break;
+        }
+
+        if (!(Rc > 0.0) || !std::isfinite(Rc))
+          Rc = center_radius_max;
+        else
+          Rc = std::min(Rc, center_radius_max);
+
+        center_world =
+          image::trimmedCentroid3D(nu_spacepoints,
+                                   sp_weights,
+                                   c0,
+                                   Rc);
+        center_from_spacepoints = true;
+      }
+      else {
+        center_world = c0;
+        center_from_spacepoints = true;
       }
     }
   }
 
-  TVector3 vtx_world(vtx_x, vtx_y, vtx_z);
-
-  double center_radius =
-    0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
-
-  TVector3 center_world = vtx_world;
-
-  if (!nu_spacepoints.empty()) {
-    center_world =
-      image::trimmedCentroid3D(nu_spacepoints,
-                               sp_weights,
-                               vtx_world,
-                               center_radius);
-  }
+  bool center_defaulted = !center_from_spacepoints;
 
   if (!std::isfinite(center_world.X()) ||
       !std::isfinite(center_world.Y()) ||
       !std::isfinite(center_world.Z())) {
-    center_world = vtx_world;
+    center_world.SetXYZ(0., 0., 0.);
+    center_defaulted = true;
   }
+
+  std::cout << "[ImageProducer] center_world = ("
+            << center_world.X() << ", "
+            << center_world.Y() << ", "
+            << center_world.Z() << ") - "
+            << (center_defaulted ? "DEFAULTED" : "COMPUTED")
+            << std::endl;
 
   TVector3 cU = common::ProjectToWireView(
     center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
