@@ -247,7 +247,6 @@ void ImageProducer::produce(art::Event &event) {
 
   // Collect hits
   auto neutrino_hits = collectNeutrinoSliceHits(event);
-  auto event_hits    = collectEventHits(event);
 
   if (!fBadChannels.empty()) {
     auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
@@ -259,7 +258,6 @@ void ImageProducer::produce(art::Event &event) {
                  hits.end());
     };
     remove_bad_channels(neutrino_hits);
-    remove_bad_channels(event_hits);
   }
 
   // If there is no neutrino slice (after bad-channel removal), do not build
@@ -464,7 +462,7 @@ void ImageProducer::produce(art::Event &event) {
 
   builder.build(
     event,
-    event_hits,
+    neutrino_hits,
     props,
     det_slice,
     sem_slice,
