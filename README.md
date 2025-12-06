@@ -421,6 +421,13 @@ cthorpe_prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2_pt1    # EXT**
 cthorpe_make_hyperon_events_numi_rhc_run3b_hyperon_reco2_reco2           # Hyperons**
 ```
 
+### Main CV reco2 for strangeness
+
+- prod_strange_resample_fhc_run1_fhc_reco2_reco2
+- prod_strange_resample_fhc_run2_fhc_reco2_reco2
+- prod_strange_resample_rhc_run2_rhc_reco2_reco2
+- prod_strange_resample_rhc_run3_rhc_reco2_reco2
+
 ### **Splitting Input Definitions**
 nl_numi_fhc_beam_run1_reco2_1000
 nl_numi_fhc_ext_run1_reco2_6000
