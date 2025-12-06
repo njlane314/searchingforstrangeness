@@ -115,8 +115,8 @@ ImageAnalysis: {
     BadChannelFile: "assets/badchannels.txt"
     WeightsBaseDir: "weights"         # env override: WEIGHTS_BASE_DIR
     InferenceWrapper: "scripts/inference_wrapper.sh"
-    imageWidth: 512
-    imageHeight: 512
+    imageWidth: 1024
+    imageHeight: 1024
     Models: []
     ActiveModels: []  # env override: ACTIVE_MODELS
     ImagesSliceTag: "imageprod:NuSlice"
