@@ -50,13 +50,18 @@ while IFS= read -r def; do
   echo
   echo "  Representative file meta-data:"
 
-  rep_file=$(samweb list-definition-files "$def" 2>/dev/null | head -n 1)
+  sample_files=$(samweb list-definition-files "$def" 2>/dev/null)
+  sample_count=$(wc -l <<< "$sample_files")
 
-  if [[ -z "$rep_file" ]]; then
+  if [[ -z "$sample_files" ]]; then
     echo "    No files found (or samweb list-definition-files failed)."
     echo
     continue
   fi
+
+  echo "    Sample files          : $sample_count"
+
+  rep_file=$(head -n 1 <<< "$sample_files")
 
   echo "    File: $rep_file"
 
