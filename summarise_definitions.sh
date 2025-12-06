@@ -1,108 +1,100 @@
 #!/usr/bin/env bash
 
-infile=${1:-definitions.txt}
+set -u
 
-if [[ ! -f "$infile" ]]; then
-  echo "Input file '$infile' not found."
+TIMEOUT=60
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 definitions.txt" >&2
   exit 1
 fi
 
-while IFS= read -r def; do
-  [[ -z "$def" ]] && continue
-  [[ "$def" =~ ^# ]] && continue
+defs_file="$1"
+if [[ ! -f "$defs_file" ]]; then
+  echo "Definitions file '$defs_file' not found" >&2
+  exit 1
+fi
+
+while IFS= read -r def || [[ -n "$def" ]]; do
+  [[ -z "$def" || "$def" =~ ^# ]] && continue
 
   echo "================================================================"
   echo "Definition: $def"
 
-  desc=$(samweb describe-definition "$def" 2>/dev/null)
+  desc="$(samweb describe-definition "$def" 2>/dev/null || true)"
 
   if [[ -z "$desc" ]]; then
-    echo "  WARNING: samweb describe-definition failed or returned nothing."
-  else
-    created=$(echo "$desc" | sed -n 's/^ *Create date: *//p')
-    owner=$(  echo "$desc" | sed -n 's/^ *Username: *//p')
-    group=$(  echo "$desc" | sed -n 's/^ *Group: *//p')
-    nfiles=$( echo "$desc" | sed -n 's/^ *Files: *//p')
-    dims=$(   echo "$desc" | sed -n 's/^ *Dimensions: *//p')
-
-    stage=$( echo "$dims" | sed -n "s/.*ub_project.stage *'\\([^']*\\)'.*/\\1/p")
-    [[ -z "$stage" ]] && stage=$(echo "$dims" | sed -n "s/.*ub_project.stage *\\([^ ]*\\).*/\\1/p")
-
-    version=$( echo "$dims" | sed -n "s/.*ub_project.version *'\\([^']*\\)'.*/\\1/p")
-    [[ -z "$version" ]] && version=$(echo "$dims" | sed -n "s/.*ub_project.version *\\([^ ]*\\).*/\\1/p")
-
-    projname=$( echo "$dims" | sed -n "s/.*ub_project.name *'\\([^']*\\)'.*/\\1/p")
-
     echo "  Definition summary:"
-    [[ -n "$created" ]] && echo "    Created : $created"
-    [[ -n "$owner"   ]] && echo "    Owner   : $owner"
-    [[ -n "$group"   ]] && echo "    Group   : $group"
-    [[ -n "$nfiles"  ]] && echo "    Files   : $nfiles"
-
-    [[ -n "$projname" ]] && echo "    ub_project.name    : $projname"
-    [[ -n "$stage"    ]] && echo "    ub_project.stage   : $stage"
-    [[ -n "$version"  ]] && echo "    ub_project.version : $version"
-
-    echo "    Dimensions:"
-    echo "      $dims"
-  fi
-
-  echo
-  echo "  Representative file meta-data:"
-
-  sample_files=$(samweb list-definition-files "$def" 2>/dev/null)
-  sample_count=$(wc -l <<< "$sample_files")
-
-  if [[ -z "$sample_files" ]]; then
-    echo "    No files found (or samweb list-definition-files failed)."
+    echo "    (samweb describe-definition failed)"
+    echo
+    echo "  Representative file meta-data:"
+    echo "    (skipped because describe-definition failed)"
     echo
     continue
   fi
 
-  echo "    Sample files          : $sample_count"
+  owner="$(awk -F: '/^Owner/ {gsub(/^[ \t]+/, "", $2); print $2}' <<<"$desc" | head -n1)"
+  group="$(awk -F: '/^Group/ {gsub(/^[ \t]+/, "", $2); print $2}' <<<"$desc" | head -n1)"
+  dims="$(awk -F: '/^Definition:/ {$1=""; sub(/^ /,""); print}' <<<"$desc" | head -n1)"
 
-  rep_file=$(head -n 1 <<< "$sample_files")
+  echo "  Definition summary:"
+  [[ -n "$owner" ]] && echo "    Owner   : $owner"
+  [[ -n "$group" ]] && echo "    Group   : $group"
+
+  ver="$(grep -o 'ub_project.version [^ ]*' <<<"$dims" 2>/dev/null | awk '{print $2}' | head -n1 || true)"
+  [[ -n "$ver" ]] && echo "    ub_project.version : $ver"
+
+  echo "    Dimensions:"
+  echo "      $dims"
+  echo
+
+  echo "  Representative file meta-data:"
+
+  if grep -q 'minus isparentof' <<<"$dims"; then
+    echo "    Skipped (definition uses 'minus isparentof'; listing files can hang)."
+    echo
+    continue
+  fi
+
+  rep_file="$(timeout "$TIMEOUT" samweb list-files "defname: $def with limit 1" 2>/dev/null | head -n1 || true)"
+  rc=$?
+
+  if [[ $rc -eq 124 ]]; then
+    echo "    Timed out after ${TIMEOUT}s trying to get a representative file; skipping."
+    echo
+    continue
+  fi
+
+  if [[ -z "$rep_file" ]]; then
+    echo "    No files found (or samweb list-files failed)."
+    echo
+    continue
+  fi
+
+  summary="$(timeout "$TIMEOUT" samweb list-files --summary "defname: $def" 2>/dev/null || true)"
+  if [[ $? -eq 124 ]]; then
+    echo "    File summary        : (timed out after ${TIMEOUT}s)"
+  elif [[ -n "$summary" ]]; then
+    echo "    File summary        : $summary"
+  fi
 
   echo "    File: $rep_file"
 
-  fmeta=$(samweb get-metadata "$rep_file" 2>/dev/null)
-
-  if [[ -z "$fmeta" ]]; then
-    echo "    WARNING: samweb get-metadata failed for this file."
+  meta="$(samweb get-metadata "$rep_file" 2>/dev/null || true)"
+  if [[ -z "$meta" ]]; then
+    echo "    (samweb get-metadata failed)"
     echo
     continue
   fi
 
-  data_tier=$(echo "$fmeta" | sed -n 's/^ *data_tier *: *//p')
-  file_type=$(echo "$fmeta" | sed -n 's/^ *file_type *: *//p')
+  name="$(grep '^ub_project.name'    <<<"$meta" | awk -F= '{print $2}' | xargs || true)"
+  stage="$(grep '^ub_project.stage'  <<<"$meta" | awk -F= '{print $2}' | xargs || true)"
+  vers2="$(grep '^ub_project.version' <<<"$meta" | awk -F= '{print $2}' | xargs || true)"
 
-  proj_name=$(        echo "$fmeta" | sed -n 's/^ *ub_project.name *: *//p')
-  proj_stage=$(       echo "$fmeta" | sed -n 's/^ *ub_project.stage *: *//p')
-  proj_version=$(     echo "$fmeta" | sed -n 's/^ *ub_project.version *: *//p')
-  proj_release_ver=$( echo "$fmeta" | sed -n 's/^ *ub_project.release_version *: *//p')
-  proj_production=$(  echo "$fmeta" | sed -n 's/^ *ub_project.production *: *//p')
-  proj_campaign=$(    echo "$fmeta" | sed -n 's/^ *ub_project.campaign *: *//p')
-  proj_release_type=$(echo "$fmeta" | sed -n 's/^ *ub_project.release_type *: *//p')
-
-  app_family=$(  echo "$fmeta" | sed -n 's/^ *application.family *: *//p')
-  app_name=$(    echo "$fmeta" | sed -n 's/^ *application.name *: *//p')
-  app_version=$( echo "$fmeta" | sed -n 's/^ *application.version *: *//p')
-
-  [[ -n "$data_tier" ]]        && echo "    data_tier              : $data_tier"
-  [[ -n "$file_type" ]]        && echo "    file_type              : $file_type"
-
-  [[ -n "$proj_name" ]]        && echo "    ub_project.name        : $proj_name"
-  [[ -n "$proj_stage" ]]       && echo "    ub_project.stage       : $proj_stage"
-  [[ -n "$proj_version" ]]     && echo "    ub_project.version     : $proj_version"
-  [[ -n "$proj_release_ver" ]] && echo "    ub_project.release_version : $proj_release_ver"
-  [[ -n "$proj_production" ]]  && echo "    ub_project.production  : $proj_production"
-  [[ -n "$proj_campaign" ]]    && echo "    ub_project.campaign    : $proj_campaign"
-  [[ -n "$proj_release_type" ]]&& echo "    ub_project.release_type: $proj_release_type"
-
-  [[ -n "$app_family" ]]       && echo "    application.family     : $app_family"
-  [[ -n "$app_name" ]]         && echo "    application.name       : $app_name"
-  [[ -n "$app_version" ]]      && echo "    application.version    : $app_version"
+  [[ -n "$name"  ]] && printf '    %-20s : %s\n' 'ub_project.name'    "$name"
+  [[ -n "$stage" ]] && printf '    %-20s : %s\n' 'ub_project.stage'   "$stage"
+  [[ -n "$vers2" ]] && printf '    %-20s : %s\n' 'ub_project.version' "$vers2"
 
   echo
 
-done < "$infile"
+done < "$defs_file"
