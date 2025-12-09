@@ -3,59 +3,6 @@
 #include "seedservice_microboone.fcl"
 #include "eventweight_microboone_sept24_numi_rhc.fcl"
 
-process_name: NuMISystematicWeights_RHC
-
-microboone_g4rw_manager: {
-  Material: {
-    Name: "liquidArgon"
-    Density: 1.400
-    Components: [
-      {
-        Z: 18
-        Mass: 39.948
-        Fraction: 1.
-      }
-    ]
-  }
-}
-
-services: {
-  TimeTracker: {}
-  MemoryTracker: {}
-  RandomNumberGenerator: {}
-  FileCatalogMetadata: @local::art_file_catalog_mc
-  NuRandomService: @local::microboone_seedservice
-  UBEventWeight: @local::microboone_eventweight_service
-  TFileService: { fileName: "microboone_reint_hist_rhc.root" }
-  Geometry: @local::microboone_geo
-  G4RWManagerService: @local::microboone_g4rw_manager
-}
-
-source: {
-  module_type: RootInput
-}
-
-physics: {
-  producers: {
-    eventweightSep24: @local::microboone_eventweight_sept24
-    rns: { module_type: "RandomNumberSaver" }
-  }
-
-  simulate: [ rns, eventweightSep24 ]
-  stream1: [ out1 ]
-  trigger_paths: [ simulate ]
-  end_paths: [ stream1 ]
-}
-
-outputs: {
-  out1: {
-    module_type: RootOutput
-    fileName: "%ifb_%tc_systematicweights_rhc.root"
-    dataTier: "detector-simulated"
-    compressionLevel: 1
-  }
-}
-
 BEGIN_PROLOG
 
 microboone_eventweight_reint: {
@@ -317,3 +264,56 @@ NeutronParameters: [
 ]
 
 END_PROLOG
+
+process_name: NuMISystematicWeights_RHC
+
+microboone_g4rw_manager: {
+  Material: {
+    Name: "liquidArgon"
+    Density: 1.400
+    Components: [
+      {
+        Z: 18
+        Mass: 39.948
+        Fraction: 1.
+      }
+    ]
+  }
+}
+
+services: {
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+  FileCatalogMetadata: @local::art_file_catalog_mc
+  NuRandomService: @local::microboone_seedservice
+  UBEventWeight: @local::microboone_eventweight_service
+  TFileService: { fileName: "microboone_reint_hist_rhc.root" }
+  Geometry: @local::microboone_geo
+  G4RWManagerService: @local::microboone_g4rw_manager
+}
+
+source: {
+  module_type: RootInput
+}
+
+physics: {
+  producers: {
+    eventweightSep24: @local::microboone_eventweight_sept24
+    rns: { module_type: "RandomNumberSaver" }
+  }
+
+  simulate: [ rns, eventweightSep24 ]
+  stream1: [ out1 ]
+  trigger_paths: [ simulate ]
+  end_paths: [ stream1 ]
+}
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_systematicweights_rhc.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}
