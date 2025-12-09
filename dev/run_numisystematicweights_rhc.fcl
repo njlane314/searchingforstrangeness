@@ -1,0 +1,320 @@
+#include "services_microboone.fcl"
+#include "microboone_eventweight_service.fcl"
+#include "seedservice_microboone.fcl"
+#include "eventweight_microboone_sept24_numi_rhc.fcl"
+
+process_name: NuMISystematicWeights_RHC
+
+services: {
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+  FileCatalogMetadata: @local::art_file_catalog_mc
+  NuRandomService: @local::microboone_seedservice
+  UBEventWeight: @local::microboone_eventweight_service
+  TFileService: { fileName: "microboone_reint_hist_rhc.root" }
+  WireReadout: @local::microboone_wire_readout
+  Geometry: @local::microboone_geo
+  G4RWManagerService: @local::microboone_g4rw_manager
+}
+
+source: {
+  module_type: RootInput
+}
+
+physics: {
+  producers: {
+    eventweightSep24: @local::microboone_eventweight_sept24
+    rns: { module_type: "RandomNumberSaver" }
+  }
+
+  simulate: [ rns, eventweightSep24 ]
+  stream1: [ out1 ]
+  trigger_paths: [ simulate ]
+  end_paths: [ stream1 ]
+}
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_systematicweights_rhc.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}
+
+BEGIN_PROLOG
+
+microboone_g4rw_manager: {
+  Material: {
+    Name: "liquidArgon"
+    Density: 1.400
+    Components: [
+      {
+        Z: 18
+        Mass: 39.948
+        Fraction: 1.
+      }
+    ]
+  }
+}
+
+microboone_eventweight_reint: {
+  weight_functions_reint: [
+    reinteractions_piplus,
+    reinteractions_piminus,
+    reinteractions_proton,
+    reinteractions_kplus,
+    reinteractions_kminus,
+    reinteractions_neutron
+  ]
+
+  reinteractions_piplus: {
+    type: Geant4
+    random_seed: 58
+    parameters: @local::PiPlusParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piplus.root"
+    makeoutputtree: false
+    pdg_to_reweight: 211
+    debug: false
+  }
+
+  reinteractions_piminus: {
+    type: Geant4
+    random_seed: 59
+    parameters: @local::PiMinusParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piminus.root"
+    makeoutputtree: false
+    pdg_to_reweight: -211
+    debug: false
+  }
+
+  reinteractions_proton: {
+    type: Geant4
+    random_seed: 60
+    parameters: @local::ProtonParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
+    makeoutputtree: false
+    pdg_to_reweight: 2212
+    debug: false
+  }
+
+  reinteractions_kplus: {
+    type: Geant4
+    random_seed: 61
+    parameters: @local::KPlusParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/kplus_cross_section.root"
+    makeoutputtree: false
+    pdg_to_reweight: 321
+    debug: false
+  }
+
+  reinteractions_kminus: {
+    type: Geant4
+    random_seed: 62
+    parameters: @local::KMinusParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/kminus_cross_section.root"
+    makeoutputtree: false
+    pdg_to_reweight: -321
+    debug: false
+  }
+
+  reinteractions_neutron: {
+    type: Geant4
+    random_seed: 63
+    parameters: @local::NeutronParameters
+    mode: multisim
+    number_of_multisims: 1000
+    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/neutron_cross_section.root"
+    makeoutputtree: false
+    pdg_to_reweight: 2112
+    debug: false
+  }
+}
+
+PiMinusParameters: [
+  {
+    Name: "fPiMinusReacLow"
+    Cut: "reac"
+    Range: [10., 200.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusReacHigh"
+    Cut: "reac"
+    Range: [700., 2005.]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusAbs"
+    Cut: "abs"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusCex"
+    Cut: "cex"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusDCex"
+    Cut: "dcex"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusPiProd"
+    Cut: "prod"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiMinusElast"
+    Cut: "elast"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+PiPlusParameters: [
+  {
+    Name: "fPiPlusReacLow"
+    Cut: "reac"
+    Range: [10., 200.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusReacHigh"
+    Cut: "reac"
+    Range: [700., 2005.]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusAbs"
+    Cut: "abs"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusCex"
+    Cut: "cex"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusDCex"
+    Cut: "dcex"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusPiProd"
+    Cut: "prod"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  },
+  {
+    Name: "fPiPlusElast"
+    Cut: "elast"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+ProtonParameters: [
+  {
+    Name: "fProtonReac"
+    Cut: "reac"
+    Range: [10., 2005.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fProtonElast"
+    Cut: "elast"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+KPlusParameters: [
+  {
+    Name: "fKPlusReac"
+    Cut: "reac"
+    Range: [10., 2005.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fKPlusElast"
+    Cut: "elast"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+KMinusParameters: [
+  {
+    Name: "fKMinusReac"
+    Cut: "reac"
+    Range: [10., 2005.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fKMinusElast"
+    Cut: "elast"
+    Range: [10.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+NeutronParameters: [
+  {
+    Name: "fNeutronReac"
+    Cut: "reac"
+    Range: [55., 2005.]
+    Nominal: 1
+    Sigma: 0.2
+  },
+  {
+    Name: "fNeutronElast"
+    Cut: "elast"
+    Range: [100.0, 2005.00]
+    Nominal: 1.0
+    Sigma: 0.2
+  }
+]
+
+END_PROLOG
