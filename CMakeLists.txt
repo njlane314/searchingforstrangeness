@@ -17,6 +17,7 @@ add_subdirectory(Products)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(Imaging)
+add_subdirectory(dev)
 add_subdirectory(job)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
