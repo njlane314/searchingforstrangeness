@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Setup once per session
 setup sam_web_client
 export SAM_EXPERIMENT=uboone
 
@@ -49,17 +48,18 @@ for def in "${datasets[@]}"; do
   echo "================================================================"
   echo "DATASET: $def"
   echo
+
   echo ">>> samweb describe-definition $def"
-  samweb describe-definition "$def" || echo "  (describe-definition failed)"
+  samweb describe-definition "$def" || { echo "  (describe-definition failed)"; echo; continue; }
 
   echo
   echo ">>> samweb list-definition-files --summary $def"
   samweb list-definition-files --summary "$def" || echo "  (list-definition-files failed)"
 
-  # If you prefer the query form instead, uncomment this:
-  # echo
-  # echo ">>> samweb list-files --summary \"defname: $def\""
-  # samweb list-files --summary "defname: $def" || echo "  (list-files failed)"
+  echo
+  echo ">>> samweb list-files --summary \"isparentof:( defname: $def ) and availability: anylocation\""
+  samweb list-files --summary "isparentof:( defname: $def ) and availability: anylocation" \
+    || echo "  (list-files parents summary failed)"
 
   echo
 
