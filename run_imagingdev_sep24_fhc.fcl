@@ -1,0 +1,43 @@
+#include "microboone_eventweight_service.fcl"
+#include "seedservice_microboone.fcl"
+#include "eventweight_microboone_sept24_numi_fhc.fcl"
+#include "run_neutrinoselection.fcl"
+
+process_name: ImagingDevFHC
+
+services.TFileService.fileName: "imaging_dev_fhc.root"
+services.UBEventWeight: @local::microboone_eventweight_service
+services.NuRandomService: @local::microboone_seedservice
+
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
+
+physics.producers.inferenceprod: {
+  module_type: "InferenceProducer"
+  PlanesTag: "imageprod:NuSlice"
+  ScratchDir: ""
+  AssetsBaseDir: "assets"
+  DefaultWrapper: "scripts/inference_wrapper.sh"
+  Models: [
+    {
+      Label: "mink_binary"
+      Arch: "binary:device=cpu,seed=12345,thr=0.0"
+      Weights: "random://weights"
+    }
+  ]
+}
+
+physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
+physics.trigger_paths: [ path1 ]
+
+EventWeightAnalysisDev: {
+  @table::EventWeightAnalysis
+  genieAllUniverses: 100
+  makeNuMINtuple: true
+  useReweightedFlux: true
+  eventWeightProcessName00: "ImagingDevFHC"
+}
+
+physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisDev
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.BeamSWTrigProcName: ""
+physics.filters.nuselection.OpFilterProcName: ""
