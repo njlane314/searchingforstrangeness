@@ -3,7 +3,6 @@
 #include "seedservice_microboone.fcl"
 #include "eventweight_microboone_sept24_numi_rhc.fcl"
 
-BEGIN_PROLOG
 
 PiMinusParameters: [
   {
@@ -262,8 +261,6 @@ microboone_eventweight_reint: {
     debug: false
   }
 }
-
-END_PROLOG
 
 process_name: NuMISystematicWeights_RHC
 
