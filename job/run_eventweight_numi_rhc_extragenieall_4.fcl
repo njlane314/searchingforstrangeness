@@ -1,0 +1,35 @@
+#include "run_eventweight_numi_rhc_cv.fcl"
+
+process_name: EventWeightNuMI_RHC_ExtraGENIEAll4
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_eventweight_extragenieall4_rhc.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}
+
+physics.producers.eventweightSep24.weight_functions: [
+  All, ppfx_ms, ppfx_mipppi, ppfx_mippk, ppfx_thinmes, ppfx_thinpi,
+  ppfx_other, ppfx_thinnpi, ppfx_totabs, ppfx_targatt, ppfx_thinna,
+  ppfx_think, ppfx_thinn
+]
+
+physics.producers.eventweightSep24.All.random_seed: 1104
+
+physics.producers.eventweightSep24.ppfx_mipppi.random_seed: 4051
+physics.producers.eventweightSep24.ppfx_mippk.random_seed: 87151
+physics.producers.eventweightSep24.ppfx_thinmes.random_seed: 47114
+physics.producers.eventweightSep24.ppfx_thinpi.random_seed: 91010
+physics.producers.eventweightSep24.ppfx_other.random_seed: 12912
+physics.producers.eventweightSep24.ppfx_thinnpi.random_seed: 4868
+physics.producers.eventweightSep24.ppfx_thinnp.random_seed: 4868
+physics.producers.eventweightSep24.ppfx_totabs.random_seed: 9663
+physics.producers.eventweightSep24.ppfx_targatt.random_seed: 4223
+physics.producers.eventweightSep24.ppfx_thinna.random_seed: 1601
+physics.producers.eventweightSep24.ppfx_think.random_seed: 1701
+physics.producers.eventweightSep24.ppfx_thinn.random_seed: 828
+physics.producers.eventweightSep24.ppfx_cv.random_seed: 842
+physics.producers.eventweightSep24.ppfx_ms.random_seed: 884
