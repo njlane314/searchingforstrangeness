@@ -1,0 +1,19 @@
+BEGIN_PROLOG
+
+imaging_cfg_imageprod: {
+  module_type: "ImageProducer"
+  PFPproducer:  @local::standard_producers.PFPproducer
+  SLCproducer:  @local::standard_producers.SLCproducer
+  HITproducer:  @local::standard_producers.HITproducer
+  WIREproducer: @local::standard_producers.WIREproducer
+  MCPproducer:  @local::standard_producers.MCPproducer
+  BKTproducer:  @local::standard_producers.BKTproducer
+  SPproducer:   @local::standard_producers.SPproducer
+  T0producer:   @local::standard_producers.T0producer
+  CaloAlg:      @local::microboone_calo_mcc9_data
+  BadChannelFile: "assets/badchannels.txt"
+  DumpImages: false
+  StoreUncorrectedInEvent: true
+}
+
+END_PROLOG
