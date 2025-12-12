@@ -1,0 +1,6 @@
+#include "run_eventweight_microboone_sept24_numi_fhc.fcl"
+#include "eventweight_sept24_numi_fhc_syst_singleknobs.fcl"
+
+process_name: EventWeightNuMIFHC_SystSingleKnobs
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_syst_singleknobs
+outputs.out1.fileName: "%ifb_%tc_eventweight_syst_singleknobs_fhc.root"
