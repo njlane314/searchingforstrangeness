@@ -5,7 +5,8 @@ set -o pipefail
 
 source "assets/scripts/initsrc.sh"
 
-export FHICL_FILE_PATH="$(pwd):${FHICL_FILE_PATH:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+export FHICL_FILE_PATH="${SCRIPT_DIR}/job:${SCRIPT_DIR}:${FHICL_FILE_PATH:-}"
 
 SAM_DEF="prod_strange_resample_fhc_run2_fhc_reco2_reco2"
 NUM_EVENTS=1
