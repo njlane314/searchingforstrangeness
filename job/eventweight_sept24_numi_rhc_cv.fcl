@@ -1,5 +1,3 @@
-BEGIN_PROLOG
-
 #include "eventweight_microboone_genie.fcl"
 #include "eventweight_microboone_spline.fcl"
 #include "ppfx_numi_reweight_sept24_rhc.fcl"
@@ -26,5 +24,3 @@ microboone_eventweight_sept24_cv.weight_functions: [
   RootinoFix,
   splines_general
 ]
-
-END_PROLOG
