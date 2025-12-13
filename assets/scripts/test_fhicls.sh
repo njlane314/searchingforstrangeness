@@ -12,7 +12,7 @@ SAM_DEF="prod_strange_resample_fhc_run2_fhc_reco2_reco2"
 NUM_EVENTS=1
 
 FHICLS=(
-  "imaging_inference_nuselection.fcl"
+  "/job/imaging_inference_nuselection.fcl"
 
   "run_eventweight_numi_fhc_cv.fcl"
   "run_eventweight_numi_fhc_syst_singleknobs.fcl"
