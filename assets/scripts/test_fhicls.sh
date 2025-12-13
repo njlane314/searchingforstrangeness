@@ -12,23 +12,23 @@ SAM_DEF="prod_strange_resample_fhc_run2_fhc_reco2_reco2"
 NUM_EVENTS=1
 
 FHICLS=(
-  "/job/imaging_inference_nuselection.fcl"
+  "${SCRIPT_DIR}/job/imaging_inference_nuselection.fcl"
 
-  "run_eventweight_numi_fhc_cv.fcl"
-  "run_eventweight_numi_fhc_syst_singleknobs.fcl"
-  "run_eventweight_numi_fhc_extragenieall_1.fcl"
-  "run_eventweight_numi_fhc_extragenieall_2.fcl"
-  "run_eventweight_numi_fhc_extragenieall_3.fcl"
-  "run_eventweight_numi_fhc_extragenieall_4.fcl"
-  "run_eventweight_numi_fhc_extragenieall_5.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_cv.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_syst_singleknobs.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_extragenieall_1.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_extragenieall_2.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_extragenieall_3.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_extragenieall_4.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_fhc_extragenieall_5.fcl"
 
-  "run_eventweight_numi_rhc_cv.fcl"
-  "run_eventweight_numi_rhc_syst_singleknobs.fcl"
-  "run_eventweight_numi_rhc_extragenieall_1.fcl"
-  "run_eventweight_numi_rhc_extragenieall_2.fcl"
-  "run_eventweight_numi_rhc_extragenieall_3.fcl"
-  "run_eventweight_numi_rhc_extragenieall_4.fcl"
-  "run_eventweight_numi_rhc_extragenieall_5.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_cv.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_syst_singleknobs.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_extragenieall_1.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_extragenieall_2.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_extragenieall_3.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_extragenieall_4.fcl"
+  "${SCRIPT_DIR}/job/run_eventweight_numi_rhc_extragenieall_5.fcl"
 )
 
 FILE="$(samweb list-files defname:"${SAM_DEF}" | head -n 1 || true)"
