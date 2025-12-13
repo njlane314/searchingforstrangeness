@@ -1,5 +1,3 @@
-BEGIN_PROLOG
-
 imaging_cfg_imageprod: {
   module_type: "ImageProducer"
   PFPproducer:  @local::standard_producers.PFPproducer
@@ -15,5 +13,3 @@ imaging_cfg_imageprod: {
   DumpImages: false
   StoreUncorrectedInEvent: true
 }
-
-END_PROLOG
