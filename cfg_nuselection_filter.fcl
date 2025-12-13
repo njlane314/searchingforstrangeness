@@ -1,5 +1,1 @@
-BEGIN_PROLOG
-
 imaging_cfg_nuselection: { @table::NeutrinoSelectionFilter }
-
-END_PROLOG

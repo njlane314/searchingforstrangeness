@@ -1,6 +1,6 @@
 #include "run_eventweight_microboone_sept24_numi_fhc.fcl"
 #include "eventweight_sept24_numi_fhc_cv.fcl"
 
-process_name: EventWeightNuMIFHC_CV
+process_name: EventWeightNuMIFHCCV
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_cv
 outputs.out1.fileName: "%ifb_%tc_eventweight_cv_fhc.root"

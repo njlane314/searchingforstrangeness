@@ -1,5 +1,3 @@
-BEGIN_PROLOG
-
 imaging_cfg_inferenceprod: {
   module_type: "InferenceProducer"
   PlanesTag: "imageprod:NuSlice"
@@ -14,5 +12,3 @@ imaging_cfg_inferenceprod: {
     }
   ]
 }
-
-END_PROLOG

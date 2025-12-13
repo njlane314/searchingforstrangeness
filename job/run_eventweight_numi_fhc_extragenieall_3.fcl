@@ -1,6 +1,6 @@
 #include "run_eventweight_numi_fhc_cv.fcl"
 
-process_name: EventWeightNuMI_FHC_ExtraGENIEAll3
+process_name: EventWeightNuMIFHCExtraGENIEAll3
 
 outputs: {
   out1: {
