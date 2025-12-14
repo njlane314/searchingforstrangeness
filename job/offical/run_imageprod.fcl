@@ -1,0 +1,74 @@
+#include "services_microboone.fcl"
+#include "selectionconfig.fcl"
+#include "seedservice_microboone.fcl"
+
+process_name: ImageProd
+
+services: {
+  TFileService: { fileName: "imageprod_hist.root" }
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+
+  Geometry: @local::microboone_geo
+  DetectorPropertiesService: @local::microboone_detproperties
+  ParticleInventoryService: @local::standard_particleinventoryservice
+  LArProperties: @local::microboone_properties
+  DetectorClocksService: @local::microboone_detectorclocks
+
+  @table::microboone_services_reco
+  message: @local::standard_info
+
+  NuRandomService: @local::microboone_seedservice
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics: {
+  producers: {
+    imageprod: {
+      module_type: "ImageProducer"
+      PFPproducer: @local::standard_producers.PFPproducer
+      SLCproducer: @local::standard_producers.SLCproducer
+      HITproducer: @local::standard_producers.HITproducer
+      WIREproducer: @local::standard_producers.WIREproducer
+      MCPproducer: @local::standard_producers.MCPproducer
+      BKTproducer: @local::standard_producers.BKTproducer
+      SPproducer: @local::standard_producers.SPproducer
+      T0producer: @local::standard_producers.T0producer
+      CaloAlg: @local::microboone_calo_mcc9_data
+      ContainerImage: "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod"
+      BadChannelFile: "assets/badchannels.txt"
+      Models: []
+      ActiveModels: []
+      WantClassification: false
+      WantSegmentation: false
+      StoreUncorrectedInEvent: true
+    }
+  }
+
+  path1: [ imageprod ]
+  trigger_paths: [ path1 ]
+
+  stream1: [ out1 ]
+  end_paths: [ stream1 ]
+}
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_imageprod.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}

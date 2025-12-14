@@ -1,0 +1,69 @@
+#include "services_microboone.fcl"
+#include "selectionconfig.fcl"
+#include "seedservice_microboone.fcl"
+
+process_name: InferenceProd
+
+services: {
+  TFileService: { fileName: "inferenceprod_hist.root" }
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+
+  Geometry: @local::microboone_geo
+  DetectorPropertiesService: @local::microboone_detproperties
+  ParticleInventoryService: @local::standard_particleinventoryservice
+  LArProperties: @local::microboone_properties
+  DetectorClocksService: @local::microboone_detectorclocks
+
+  @table::microboone_services_reco
+  message: @local::standard_info
+
+  NuRandomService: @local::microboone_seedservice
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics: {
+  producers: {
+    inferenceprod: {
+      module_type: "InferenceProducer"
+      PlanesTag: "imageprod:NuSlice"
+      ScratchDir: ""
+      AssetsBaseDir: "assets"
+      DefaultWrapper: "scripts/inference_wrapper.sh"
+      Models: [
+        {
+          Label: "mink_binary"
+          Arch: "binary:device=cpu,seed=12345,thr=0.0"
+          Weights: "random://weights"
+        }
+      ]
+    }
+  }
+
+  path1: [ inferenceprod ]
+  trigger_paths: [ path1 ]
+
+  stream1: [ out1 ]
+  end_paths: [ stream1 ]
+}
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_inference.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}

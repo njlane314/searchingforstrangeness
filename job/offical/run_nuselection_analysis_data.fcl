@@ -1,0 +1,55 @@
+#include "services_microboone.fcl"
+#include "selectionconfig.fcl"
+#include "seedservice_microboone.fcl"
+#include "isdata.fcl"
+
+process_name: NuSelectionDATA
+
+services: {
+  TFileService: { fileName: "nu_selection_data.root" }
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+
+  Geometry: @local::microboone_geo
+  DetectorPropertiesService: @local::microboone_detproperties
+  ParticleInventoryService: @local::standard_particleinventoryservice
+  LArProperties: @local::microboone_properties
+  DetectorClocksService: @local::microboone_detectorclocks
+
+  @table::microboone_services_reco
+  message: @local::standard_info
+
+  NuRandomService: @local::microboone_seedservice
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics: {
+  filters: {
+    nuselection: {
+      @table::NeutrinoSelectionFilter
+    }
+  }
+
+  path1: [ nuselection ]
+  trigger_paths: [ path1 ]
+}
+
+physics.filters.nuselection.IsNuMI: true
+physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
+physics.filters.nuselection.AnalysisTools.image.ActiveModels: []
+
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.BeamSWTrigProcName: ""
+physics.filters.nuselection.OpFilterProcName: ""

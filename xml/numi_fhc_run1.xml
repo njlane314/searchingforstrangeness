@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE project [
+    <!ENTITY release "v08_00_00_82">
+    <!ENTITY user "nlane">
+    <!ENTITY name "numi_fhc_run1">
+    <!ENTITY initsrc "assets/scripts/initsrc.sh">
+
+    <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
+    <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
+
+    <!ENTITY input_beam_s0 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0_goodruns">
+    <!ENTITY input_beam_s1 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1_goodruns">
+    <!ENTITY input_beam_s2 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2_goodruns">
+    <!ENTITY input_beam_s3 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3_goodruns">
+
+    <!ENTITY input_dirt_s0 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0_goodruns">
+    <!ENTITY input_dirt_s1 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1_goodruns">
+
+    <!ENTITY input_ext_p0 "nl_extnumi_run1_all_mcc9_goodruns_reco2_p0">
+    <!ENTITY input_ext_p1 "nl_extnumi_run1_all_mcc9_goodruns_reco2_p1">
+    <!ENTITY input_ext_p2 "nl_extnumi_run1_all_mcc9_goodruns_reco2_p2">
+
+    <!ENTITY input_strange_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2_goodruns">
+
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
+
+    <!ENTITY fcl_evtw_slim "run_eventweight_microboone_sept24_numi_fhc_slim.fcl">
+
+    <!ENTITY fcl_image "run_imageprod.fcl">
+    <!ENTITY fcl_infer "run_inferenceprod.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_analysis.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_analysis_data.fcl">
+]>
+
+<job>
+<project name="&name;">
+
+    <numevents>-1</numevents>
+    <os>SL7</os>
+    <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+    <larsoft>
+        <tag>&release;</tag>
+        <qual>e17:prof</qual>
+        <local>&larsoft_tar;</local>
+    </larsoft>
+    <check>1</check>
+    <copy>0</copy>
+    <version>prod_&release;</version>
+    <memory>4000</memory>
+    <disk>20GB</disk>
+    <schema>https</schema>
+    <maxfilesperjob>1</maxfilesperjob>
+
+    <stage name="beam_s0">
+        <inputdef>&input_beam_s0;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_evtw_01;</fcl>
+        <fcl>&fcl_evtw_02;</fcl>
+        <fcl>&fcl_evtw_03;</fcl>
+        <fcl>&fcl_evtw_04;</fcl>
+        <fcl>&fcl_evtw_05;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="beam_s1">
+        <inputdef>&input_beam_s1;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_evtw_01;</fcl>
+        <fcl>&fcl_evtw_02;</fcl>
+        <fcl>&fcl_evtw_03;</fcl>
+        <fcl>&fcl_evtw_04;</fcl>
+        <fcl>&fcl_evtw_05;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s1</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="beam_s2">
+        <inputdef>&input_beam_s2;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_evtw_01;</fcl>
+        <fcl>&fcl_evtw_02;</fcl>
+        <fcl>&fcl_evtw_03;</fcl>
+        <fcl>&fcl_evtw_04;</fcl>
+        <fcl>&fcl_evtw_05;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s2</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="beam_s3">
+        <inputdef>&input_beam_s3;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_evtw_01;</fcl>
+        <fcl>&fcl_evtw_02;</fcl>
+        <fcl>&fcl_evtw_03;</fcl>
+        <fcl>&fcl_evtw_04;</fcl>
+        <fcl>&fcl_evtw_05;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s3/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s3/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s3</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="dirt_s0">
+        <inputdef>&input_dirt_s0;</inputdef>
+        <fcl>&fcl_evtw_slim;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt/s0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="dirt_s1">
+        <inputdef>&input_dirt_s1;</inputdef>
+        <fcl>&fcl_evtw_slim;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt/s1</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="strangeness_run1_fhc">
+        <inputdef>&input_strange_run1_fhc;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_evtw_01;</fcl>
+        <fcl>&fcl_evtw_02;</fcl>
+        <fcl>&fcl_evtw_03;</fcl>
+        <fcl>&fcl_evtw_04;</fcl>
+        <fcl>&fcl_evtw_05;</fcl>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/strangeness/run1_fhc</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="ext_p0">
+        <inputdef>&input_ext_p0;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="ext_p1">
+        <inputdef>&input_ext_p1;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p1</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+    <stage name="ext_p2">
+        <inputdef>&input_ext_p2;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_infer;</fcl>
+        <fcl>&fcl_sel_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p2</workdir>
+        <datatier>selected</datatier>
+        <numjobs>20</numjobs>
+    </stage>
+
+</project>
+</job>
