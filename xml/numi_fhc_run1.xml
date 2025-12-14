@@ -60,11 +60,11 @@
     <stage name="beam_s0">
         <inputdef>&input_beam_s0;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
@@ -79,11 +79,11 @@
     <stage name="beam_s1">
         <inputdef>&input_beam_s1;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
@@ -98,11 +98,11 @@
     <stage name="beam_s2">
         <inputdef>&input_beam_s2;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
@@ -117,11 +117,11 @@
     <stage name="beam_s3">
         <inputdef>&input_beam_s3;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
@@ -164,11 +164,11 @@
     <stage name="strangeness_run1_fhc">
         <inputdef>&input_strange_run1_fhc;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
