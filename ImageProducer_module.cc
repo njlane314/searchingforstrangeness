@@ -70,8 +70,8 @@ private:
 
   std::unique_ptr<sem::SemanticClassifier> fSemantic;
 
-  int   fImgW{1024};
-  int   fImgH{1024};
+  int   fImgW{512};
+  int   fImgH{512};
   float fADCThresh{4.0f};
 
   const geo::GeometryCore           *fGeo{nullptr};
@@ -116,8 +116,8 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
   if (!fBadChannelFile.empty())
     loadBadChannels(fBadChannelFile);
 
-  fImgW      = pset.get<int>("ImageWidth", 1024);
-  fImgH      = pset.get<int>("ImageHeight", 1024);
+  fImgW      = pset.get<int>("ImageWidth", 512);
+  fImgH      = pset.get<int>("ImageHeight", 512);
   fADCThresh = pset.get<float>("ADCImageThreshold", 4.0);
 
   fGeo  = art::ServiceHandle<geo::Geometry>()->provider();
@@ -245,7 +245,6 @@ void ImageProducer::produce(art::Event &event) {
   mf::LogDebug("ImageProducer")
     << "Starting image production for event " << event.id();
 
-  // Collect hits
   auto neutrino_hits = collectNeutrinoSliceHits(event);
 
   if (!fBadChannels.empty()) {
@@ -260,9 +259,6 @@ void ImageProducer::produce(art::Event &event) {
     remove_bad_channels(neutrino_hits);
   }
 
-  // If there is no neutrino slice (after bad-channel removal), do not build
-  // any images. Produce an empty NuSlice collection so downstream modules
-  // can see that there was "no image" for this event.
   if (neutrino_hits.empty()) {
     mf::LogDebug("ImageProducer")
       << "No neutrino slice hits found; producing empty NuSlice for event "
@@ -277,8 +273,6 @@ void ImageProducer::produce(art::Event &event) {
     return;
   }
 
-  // Build a charge‑weighted set of spacepoints for centering:
-  // distribute each hit's charge across its associated spacepoints.
   std::map<art::Ptr<recob::SpacePoint>, double> sp_charge;
 
   auto hit_handle =
