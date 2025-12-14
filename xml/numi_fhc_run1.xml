@@ -73,7 +73,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s0/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s0</workdir>
         <datatier>selected</datatier>
-        <numjobs>3765</numjobs>
+        <!-- <numjobs>3765</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="beam_s1">
@@ -92,7 +93,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s1/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s1</workdir>
         <datatier>selected</datatier>
-        <numjobs>3894</numjobs>
+        <!-- <numjobs>3894</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="beam_s2">
@@ -111,7 +113,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s2/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s2</workdir>
         <datatier>selected</datatier>
-        <numjobs>3806</numjobs>
+        <!-- <numjobs>3806</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="beam_s3">
@@ -130,7 +133,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s3/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s3</workdir>
         <datatier>selected</datatier>
-        <numjobs>3654</numjobs>
+        <!-- <numjobs>3654</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="dirt_s0">
@@ -144,7 +148,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s0/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/s0</workdir>
         <datatier>selected</datatier>
-        <numjobs>3900</numjobs>
+        <!-- <numjobs>3900</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="dirt_s1">
@@ -158,7 +163,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s1/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/s1</workdir>
         <datatier>selected</datatier>
-        <numjobs>3904</numjobs>
+        <!-- <numjobs>3904</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="strangeness_run1_fhc">
@@ -177,7 +183,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc</workdir>
         <datatier>selected</datatier>
-        <numjobs>4593</numjobs>
+        <!-- <numjobs>4593</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="ext_p0">
@@ -190,7 +197,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p0/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p0</workdir>
         <datatier>selected</datatier>
-        <numjobs>10000</numjobs>
+        <!-- <numjobs>10000</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="ext_p1">
@@ -203,7 +211,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p1/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p1</workdir>
         <datatier>selected</datatier>
-        <numjobs>10000</numjobs>
+        <!-- <numjobs>10000</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
     <stage name="ext_p2">
@@ -216,7 +225,8 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p2/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p2</workdir>
         <datatier>selected</datatier>
-        <numjobs>4868</numjobs>
+        <!-- <numjobs>4868</numjobs> -->
+        <numjobs>20</numjobs>
     </stage>
 
 </project>
