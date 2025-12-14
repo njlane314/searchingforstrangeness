@@ -71,9 +71,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s0/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s0</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s0</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3765</numjobs>
     </stage>
 
     <stage name="beam_s1">
@@ -90,9 +90,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s1/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s1</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s1</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3894</numjobs>
     </stage>
 
     <stage name="beam_s2">
@@ -109,9 +109,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s2/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s2</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s2</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3806</numjobs>
     </stage>
 
     <stage name="beam_s3">
@@ -128,9 +128,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s3/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/s3/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/beam/s3</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/s3</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3654</numjobs>
     </stage>
 
     <stage name="dirt_s0">
@@ -142,9 +142,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s0/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt/s0</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/s0</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3900</numjobs>
     </stage>
 
     <stage name="dirt_s1">
@@ -156,9 +156,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s1/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/s1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/dirt/s1</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/s1</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>3904</numjobs>
     </stage>
 
     <stage name="strangeness_run1_fhc">
@@ -175,9 +175,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/strangeness/run1_fhc</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>4593</numjobs>
     </stage>
 
     <stage name="ext_p0">
@@ -188,9 +188,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p0/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p0</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p0</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>10000</numjobs>
     </stage>
 
     <stage name="ext_p1">
@@ -201,9 +201,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p1/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p1</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p1</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>10000</numjobs>
     </stage>
 
     <stage name="ext_p2">
@@ -214,9 +214,9 @@
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p2/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/p2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/work/ntuples/&release;/&name;/ext/p2</workdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/p2</workdir>
         <datatier>selected</datatier>
-        <numjobs>20</numjobs>
+        <numjobs>4868</numjobs>
     </stage>
 
 </project>
