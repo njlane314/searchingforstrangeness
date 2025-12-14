@@ -53,3 +53,4 @@ physics.filters.nuselection.AnalysisTools.image.ActiveModels: []
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.BeamSWTrigProcName: ""
 physics.filters.nuselection.OpFilterProcName: ""
+physics.filters.nuselection.AnalysisTools.default.NuMISWTriggerProcName: ""
