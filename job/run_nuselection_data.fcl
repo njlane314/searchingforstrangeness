@@ -46,6 +46,7 @@ physics: {
   trigger_paths: [ path1 ]
 }
 
+physics.filters.nuselection.IsData: true
 physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
 physics.filters.nuselection.AnalysisTools.image.ActiveModels: []
