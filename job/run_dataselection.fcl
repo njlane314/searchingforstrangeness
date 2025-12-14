@@ -1,2 +1,0 @@
-#include "run_neutrinoselection.fcl"
-#include "isdata.fcl"
