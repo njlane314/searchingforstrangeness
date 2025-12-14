@@ -34,8 +34,8 @@
 
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_analysis.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_analysis_data.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data.fcl">
 ]>
 
 <job>
