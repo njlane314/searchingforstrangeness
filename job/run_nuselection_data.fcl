@@ -1,6 +1,6 @@
+#include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
-#include "seedservice_microboone.fcl"
 #include "isdata.fcl"
 
 process_name: NuSelectionDATA
