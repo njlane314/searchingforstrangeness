@@ -58,7 +58,7 @@ art::Ptr<simb::MCParticle> getAssocMCParticle(art::FindManyP<simb::MCParticle, a
 }
 
 struct BtPart {
-    public:
+  public:
     BtPart(const int pdg_, const float px_, const float py_, const float pz_, const float e_, const std::vector<unsigned int> &tids_)
         : pdg(pdg_), px(px_), py(py_), pz(pz_), e(e_), tids(tids_) {}
     BtPart(const int pdg_, const float px_, const float py_, const float pz_, const float e_, const unsigned int tid_)

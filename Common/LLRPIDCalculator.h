@@ -7,7 +7,7 @@
 namespace common {
 
 class LLRPID {
-    public:
+  public:
     LLRPID() {}
 
     void set_dedx_binning(size_t plane, std::vector<float> bin_edges) {
@@ -165,7 +165,7 @@ class LLRPID {
         return dqdx_values_corrected;
     }
 
-    private:
+  private:
     size_t dedx_num_bins[3];
     std::vector<float> dedx_bin_edges[3];
 
