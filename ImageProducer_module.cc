@@ -64,7 +64,7 @@ class ImageProducer : public art::EDProducer {
     std::string fBadChannelFile;
     std::set<unsigned int> fBadChannels;
 
-    std::unique_ptr<sem::SemanticClassifier> fSemantic;
+    std::unique_ptr<image::SemanticClassifier> fSemantic;
 
     int fImgW{512};
     int fImgH{512};
@@ -116,7 +116,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
 
-    fSemantic = std::make_unique<sem::SemanticClassifier>(fMCPproducer);
+    fSemantic = std::make_unique<image::SemanticClassifier>(fMCPproducer);
 
     produces<std::vector<ImageProduct>>("NuSlice");
 }

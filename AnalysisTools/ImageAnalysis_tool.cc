@@ -256,7 +256,7 @@ void ImageAnalysis::analyseSlice(
   for (const auto &pi : *sliceH) assignPlane(pi, true);
 
   if (!is_data) {
-    size_t nlabels = sem::SemanticClassifier::semantic_label_names.size();
+    size_t nlabels = image::SemanticClassifier::semantic_label_names.size();
     _slice_semantic_counts_u = countLabels(_semantic_image_u, nlabels);
     _slice_semantic_counts_v = countLabels(_semantic_image_v, nlabels);
     _slice_semantic_counts_w = countLabels(_semantic_image_w, nlabels);
