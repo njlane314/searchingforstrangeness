@@ -7,12 +7,12 @@
 namespace image {
 
 struct ModelPred {
-  std::string model;
-  std::vector<float> scores;
+    std::string model;
+    std::vector<float> scores;
 };
 
 struct InferencePredProduct {
-  std::vector<ModelPred> per_model;
+    std::vector<ModelPred> per_model;
 };
 
 } // namespace image
