@@ -13,6 +13,7 @@ class ImageProduct {
         int view{static_cast<int>(geo::kUnknown)}; ///< Readout plane/view identifier.
         uint32_t width{0}; ///< Image width in pixels.
         uint32_t height{0}; ///< Image height in pixels.
+        uint32_t hit_count{0}; ///< Number of hits contributing to this plane image.
         float origin_x{0.f}; ///< World x-coordinate of the image origin.
         float origin_y{0.f}; ///< World y-coordinate of the image origin.
         float pixel_w{0.f}; ///< Pixel width in world units.
