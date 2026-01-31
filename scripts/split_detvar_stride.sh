@@ -3,22 +3,22 @@
 usage() {
   cat <<'USAGE'
 Usage:
-  split_detvar_stride.sh <source_def> <training_def> <nominal_def>
+  split_detvar_stride.sh <source_def> <training_def> <plotting_def>
   split_detvar_stride.sh --batch <triples_file>
 
 Creates two SAM definitions from a nominal detector-variation sample using
 stride-2 splitting:
   - <training_def>: defname:<source_def> with stride 2
-  - <nominal_def>: defname:<source_def> with stride 2 with offset 1
+  - <plotting_def>: defname:<source_def> with stride 2 with offset 1
 
 Arguments:
   <source_def>   Source SAM definition (strangeness, beam, dirt, EXT, etc.).
   <training_def> Training subset definition name.
-  <nominal_def>  Nominal (complement) subset definition name.
+  <plotting_def> Plotting (nominal, orthogonal) subset definition name.
 
 Batch mode:
   Provide a file with whitespace-separated triples per line:
-    <source_def> <training_def> <nominal_def>
+    <source_def> <training_def> <plotting_def>
   Empty lines and lines starting with # are ignored.
 
 Examples:
