@@ -19,31 +19,32 @@
 #include <messagefacility/MessageLogger/MessageLogger.h>
 
 namespace image {
-    class InferenceProduction {
-    public:
-        struct Perf {
-            double t_write_req_ms{0.0};
-            double t_exec_total_ms{0.0};
-            double t_read_resp_ms{0.0};
-            double t_child_total_ms{0.0};
-            double t_child_setup_ms{0.0};
-            double t_child_infer_ms{0.0};
-            double t_child_post_ms{0.0};
-            double child_max_rss_mb{0.0};
-        };
 
-        struct Result {
-            std::vector<float> cls;
-            Perf perf;
-        };
-
-        static Result runInference(const std::vector<ImageProduct> &detector_images,
-                                   const std::string &absolute_scratch_dir,
-                                   const std::string &arch,
-                                   const std::string &weights_file,
-                                   const std::string &inference_wrapper,
-                                   const std::string &assets_base_dir);
+class InferenceProduction {
+public:
+    struct Perf {
+        double t_write_req_ms{0.0};
+        double t_exec_total_ms{0.0};
+        double t_read_resp_ms{0.0};
+        double t_child_total_ms{0.0};
+        double t_child_setup_ms{0.0};
+        double t_child_infer_ms{0.0};
+        double t_child_post_ms{0.0};
+        double child_max_rss_mb{0.0};
     };
+
+    struct Result {
+        std::vector<float> cls;
+        Perf perf;
+    };
+
+    static Result runInference(const std::vector<ImageProduct> &detector_images,
+                               const std::string &absolute_scratch_dir,
+                               const std::string &arch,
+                               const std::string &weights_file,
+                               const std::string &inference_wrapper,
+                               const std::string &assets_base_dir);
+};
 
 inline std::string joinPath(std::string a, const std::string &b) {
     if (a.empty()) return b;
