@@ -20,6 +20,6 @@ export WRK_DIR=$(pwd)
 source ../../../../localProducts_*/setup
 mrbslp
 
-htgettoken -a htvaultprod.fnal.gov -i uboone
+#htgettoken -a htvaultprod.fnal.gov -i uboone
 
 which jobsub_submit
