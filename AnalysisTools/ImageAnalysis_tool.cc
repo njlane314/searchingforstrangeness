@@ -200,8 +200,9 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _slice_semantic_active_pixels_v.clear();
   _slice_semantic_active_pixels_w.clear();
   if (_semantic_label_names.empty()) {
-    _semantic_label_names =
-        image::SemanticClassifier::semantic_label_names;
+    _semantic_label_names.assign(
+        image::SemanticClassifier::semantic_label_names.begin(),
+        image::SemanticClassifier::semantic_label_names.end());
   }
   _active_pixels_u = 0;
   _active_pixels_v = 0;
