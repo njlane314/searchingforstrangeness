@@ -38,7 +38,7 @@ struct PixelImageOptions {
         art::InputTag mcp;
         art::InputTag bkt;
     } producers;
-    sem::SemanticClassifier *semantic{nullptr};
+    image::SemanticClassifier *semantic{nullptr};
 };
 
 class ImageProduction {
@@ -57,7 +57,7 @@ class ImageProduction {
             detector_images.push_back(std::move(det));
 
             Image<int> sem(p);
-            sem.clear(static_cast<int>(sem::SemanticClassifier::SemanticLabel::Empty));
+            sem.clear(static_cast<int>(image::SemanticClassifier::SemanticLabel::Empty));
             semantic_images.push_back(std::move(sem));
         }
 
@@ -70,7 +70,7 @@ class ImageProduction {
         art::FindManyP<recob::Hit> wire_hit_assoc(wires, event, opts_.producers.hit);
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> mcp_bkth_assoc(all_hits, event, opts_.producers.bkt);
 
-        std::vector<sem::SemanticClassifier::SemanticLabel> sem_labels;
+        std::vector<image::SemanticClassifier::SemanticLabel> sem_labels;
         if (has_mcps && mcps.isValid() && opts_.semantic)
             sem_labels = opts_.semantic->classifyParticles(event);
 
@@ -110,7 +110,7 @@ class ImageProduction {
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc;
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector;
         const std::map<int, std::size_t> &trackid_to_index;
-        const std::vector<sem::SemanticClassifier::SemanticLabel> &semantic_label_vector;
+        const std::vector<image::SemanticClassifier::SemanticLabel> &semantic_label_vector;
 
         bool has_mcps{false};
 
@@ -121,12 +121,12 @@ class ImageProduction {
         detinfo::DetectorProperties const *detprop{nullptr};
     };
 
-    static sem::SemanticClassifier::SemanticLabel
+    static image::SemanticClassifier::SemanticLabel
     labelSemanticPixels(const art::Ptr<recob::Hit> &matched_hit, std::size_t matched_hit_key,
                         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc,
                         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector, const std::map<int, std::size_t> &trackid_to_index,
-                        const std::vector<sem::SemanticClassifier::SemanticLabel> &semantic_label_vector, bool has_mcps) {
-        sem::SemanticClassifier::SemanticLabel out = sem::SemanticClassifier::SemanticLabel::Cosmic;
+                        const std::vector<image::SemanticClassifier::SemanticLabel> &semantic_label_vector, bool has_mcps) {
+        image::SemanticClassifier::SemanticLabel out = image::SemanticClassifier::SemanticLabel::Cosmic;
         if (!has_mcps || !mcp_vector.isValid())
             return out;
 
@@ -155,7 +155,7 @@ class ImageProduction {
             return out;
 
         if (max_ide_fraction <= 0.5f)
-            return sem::SemanticClassifier::SemanticLabel::Ambiguous;
+            return image::SemanticClassifier::SemanticLabel::Ambiguous;
         return semantic_label_vector[idx];
     }
 
@@ -235,7 +235,7 @@ class ImageProduction {
         for (auto const &ph : w.hits_filtered) {
             const recob::Hit &hit = *ph;
 
-            sem::SemanticClassifier::SemanticLabel sem = sem::SemanticClassifier::SemanticLabel::Cosmic;
+            image::SemanticClassifier::SemanticLabel sem = image::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
                 auto hit_it = ctx.hit_to_key.find(ph);
                 if (hit_it == ctx.hit_to_key.end())
