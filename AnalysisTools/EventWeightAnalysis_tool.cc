@@ -196,7 +196,7 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                             "RDecBR1eta_UBGenie","RDecBR1gamma_UBGenie","RPA_CCQE_UBGenie","Theta_Delta2Npi_UBGenie","TunedCentralValue_UBGenie",
                             "VecFFCCQEshape_UBGenie","XSecShape_CCMEC_UBGenie","splines_general_Spline"};
 
-                std::map<std::string, std::vector<double>> evtwgt_map_knobs = eventweights.at(0)->fWeights;
+                std::map<std::string, std::vector<double>> evtwgt_map_knobs = eventweights.at(0)->fWeight;
                 for (size_t count=0; count<knobList.size(); count++) {
                     bool knobFound = false;
                     for(std::map<std::string, std::vector<double>>::iterator it=evtwgt_map_knobs.begin(); it!=evtwgt_map_knobs.end(); ++it){
@@ -229,7 +229,7 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 }
             }
 
-            std::map<std::string, std::vector<double>> evtwgt_map = eventweights.at(0)->fWeights;
+            std::map<std::string, std::vector<double>> evtwgt_map = eventweights.at(0)->fWeight;
 
             std::cout << "--- Weights from art::Event label: " << thisTag.label() << " ---" << std::endl;
             for (const auto& pair : evtwgt_map) {
