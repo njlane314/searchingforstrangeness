@@ -46,8 +46,9 @@
 #include <vector>
 
 namespace sem {
+
 class SemanticClassifier {
-    public:
+public:
     enum class SemanticLabel {
         Empty = 0,
         Cosmic,
