@@ -1,6 +1,8 @@
 #ifndef PARTICLEIDENTIFIERUTILS_H
 #define PARTICLEIDENTIFIERUTILS_H
+
 #include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
+
 #include <limits>
 
 namespace common {

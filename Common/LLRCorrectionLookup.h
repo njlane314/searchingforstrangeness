@@ -1,5 +1,6 @@
 #ifndef LLRCORRECTIONLOOKUP_H
 #define LLRCORRECTIONLOOKUP_H
+
 #include <stdlib.h>
 #include <vector>
 
