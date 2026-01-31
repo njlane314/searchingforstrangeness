@@ -97,9 +97,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     if (!fBadChannelFile.empty())
         loadBadChannels(fBadChannelFile);
 
-    fImgW = 1024;
-    fImgH = 1024;
-
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
 
