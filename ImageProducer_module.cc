@@ -253,93 +253,14 @@ TVector3 ImageProducer::computeImageCenter(const art::Event &event,
     }
 
     TVector3 center_world(0., 0., 0.);
-    bool center_from_vertex = false;
+    TVector3 center_reference = *findNeutrinoVertex(event);
 
-    if (auto const vtx = findNeutrinoVertex(event)) {
-        center_world = *vtx;
-        center_from_vertex = true;
-    } else if (!spacepoints.empty()) {
-        TVector3 c0(0., 0., 0.);
-        double W0 = 0.0;
-
-        const std::size_t nsp = std::min(spacepoints.size(), weights.size());
-
-        for (std::size_t i = 0; i < nsp; ++i) {
-            auto const &sp = spacepoints[i];
-            double w = weights[i];
-            if (!sp || !(w > 0.0))
-                continue;
-
-            auto const *xyz = sp->XYZ();
-            TVector3 p(xyz[0], xyz[1], xyz[2]);
-
-            if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
-                continue;
-
-            c0 += w * p;
-            W0 += w;
-        }
-
-        if (W0 > 0.0) {
-            c0 *= (1.0 / W0);
-
-            struct RadiusWeight {
-                double r;
-                double w;
-            };
-
-            std::vector<RadiusWeight> rw;
-            rw.reserve(nsp);
-
-            double Wtot = 0.0;
-
-            for (std::size_t i = 0; i < nsp; ++i) {
-                auto const &sp = spacepoints[i];
-                double w = weights[i];
-                if (!sp || !(w > 0.0))
-                    continue;
-
-                auto const *xyz = sp->XYZ();
-                TVector3 p(xyz[0], xyz[1], xyz[2]);
-
-                if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
-                    continue;
-
-                double r = (p - c0).Mag();
-                rw.push_back({r, w});
-                Wtot += w;
-            }
-
-            if (!rw.empty() && Wtot > 0.0) {
-                std::sort(rw.begin(), rw.end(), [](RadiusWeight const &a, RadiusWeight const &b) { return a.r < b.r; });
-
-                double frac_core = 0.7;
-
-                double target = frac_core * Wtot;
-                double acc = 0.0;
-                double Rc = 0.0;
-
-                for (auto const &x : rw) {
-                    acc += x.w;
-                    Rc = x.r;
-                    if (acc >= target)
-                        break;
-                }
-
-                double center_radius_max = 0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
-                if (!(Rc > 0.0) || !std::isfinite(Rc))
-                    Rc = center_radius_max;
-                else
-                    Rc = std::min(Rc, center_radius_max);
-
-                center_world = image::trimmedCentroid3D(spacepoints, weights, c0, Rc);
-            } else {
-                center_world = c0;
-            }
-        }
+    double Rc = 0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
+    if (Rc > 0.0 && std::isfinite(Rc) && !spacepoints.empty()) {
+        center_world = image::trimmedCentroid(spacepoints, weights, center_reference, Rc);
+    } else {
+        center_world = center_reference;
     }
-
-    center_defaulted = !center_from_vertex;
 
     if (!std::isfinite(center_world.X()) || !std::isfinite(center_world.Y()) || !std::isfinite(center_world.Z())) {
         center_world.SetXYZ(0., 0., 0.);
