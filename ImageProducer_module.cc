@@ -67,8 +67,8 @@ class ImageProducer : public art::EDProducer {
 
     std::unique_ptr<image::SemanticClassifier> fSemantic;
 
-    int fImgW{1024};
-    int fImgH{1024};
+    int fImgW{512};
+    int fImgH{512};
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
     double fDriftStep{0.0};
