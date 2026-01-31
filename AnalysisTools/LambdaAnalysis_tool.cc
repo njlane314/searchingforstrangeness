@@ -65,7 +65,6 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     float _lam_ct;
     float _lam_decay_sep;
 
-
     int _p_trackid;
     int _pi_trackid;
     float _p_p;
@@ -128,7 +127,6 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("lam_end", _lam_end, "lam_end[3]/F");
     t->Branch("lam_ct", &_lam_ct, "lam_ct/F");
     t->Branch("lam_decay_sep", &_lam_decay_sep, "lam_decay_sep/F");
-
 
     t->Branch("p_trackid", &_p_trackid, "p_trackid/I");
     t->Branch("pi_trackid", &_pi_trackid, "pi_trackid/I");
@@ -342,7 +340,6 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
                                       lam.Vx(), lam.Vy(), lam.Vz());
         const float p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
         _lam_ct = (p_mag > 0.f) ? (L * lam.Mass() / p_mag) : nan<float>();
-
 
         _p_trackid = dm.p_trkid;
         _pi_trackid = dm.pi_trkid;
