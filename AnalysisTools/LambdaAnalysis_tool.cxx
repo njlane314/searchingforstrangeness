@@ -558,7 +558,7 @@ void LambdaAnalysis_tool::analyseSlice(
     if (_mu_truth_trackid < 0 || _p_trackid < 0 || _pi_trackid < 0)
         return;
 
-    const std::array<int, 3> tids = {_mu_truth_trackid, _p_trackid, _pi_trackid};
+    const std::vector<int> tids = {_mu_truth_trackid, _p_trackid, _pi_trackid};
     const auto metrics = common::ComputePRMetrics(
         event, fCLSproducer, fHITproducer, fBKTproducer, slice_pfp_vec, tids);
     if (!metrics.valid)
