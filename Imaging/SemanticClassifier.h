@@ -50,7 +50,7 @@
 #include <TTree.h>
 #include <TVector3.h>
 
-namespace sem {
+namespace image {
 
 class SemanticClassifier {
 public:
@@ -173,6 +173,6 @@ public:
     private:
     art::InputTag fMCPproducer;
 };
-} // namespace sem
+} // namespace image
 
 #endif 
