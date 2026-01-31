@@ -104,7 +104,6 @@ FlashAnalysis: {
 
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
-    AssetsBaseDir: "assets"           # env override: ASSETS_BASE_DIR
     PFPproducer: @local::standard_producers.PFPproducer
     CLSproducer: @local::standard_producers.CLSproducer
     HITproducer: @local::standard_producers.HITproducer
@@ -112,21 +111,9 @@ ImageAnalysis: {
     MCPproducer: @local::standard_producers.MCPproducer
     BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    BadChannelFile: "assets/badchannels.txt"
-    WeightsBaseDir: "weights"         # env override: WEIGHTS_BASE_DIR
-    InferenceWrapper: "scripts/inference_wrapper.sh"
-    imageWidth: 1024
-    imageHeight: 1024
-    Models: []
-    ActiveModels: []  # env override: ACTIVE_MODELS
     ImagesSliceTag: "imageprod:NuSlice"
     InferencePredTag: "inferenceprod"
     InferencePerfTag: "inferenceprod"
-    ImagesSliceUncorrectedTag: "imageprod:NuSliceUncorrected"
-    ScoresTag: "imageprod"
-    SegmentationTag: "imageprod:seg"
-    PerfTag: "imageprod:perf"
-    Debug: true
 }
 
 SliceAnalysis: {
@@ -180,16 +167,10 @@ EventSelectionFilter: {
     WIREproducer: @local::standard_producers.WIREproducer
     MCTproducer: @local::standard_producers.MCTproducer
     BKTproducer: @local::standard_producers.BKTproducer
-    DeadChannelTag: "nfbadchannel:badchannels:OverlayDetsim"
-
     verbose: false
     filter: true
     IsData: false
     IsFakeData: false
-
-    BeamSWTrigProcName: "DataOverlayOptical"
-    BeamGateAlgoNames:  ["NUMI_FEMBeamTriggerAlgo", "NUMI_2018May_FEMBeamTriggerAlgo"]   # or BNB equivalents
-    ExtGateAlgoNames:   ["EXT_NUMIwin_FEMBeamTriggerAlgo", "EXT_NUMIwin_2018May_FEMBeamTriggerAlgo"]
     CountWithOpFilter:  true
     OpFilterProcName:   "DataStage1Optical"
     OpFilterPEBeamMin:  0.0
