@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "canvas/Persistency/Common/Ptr.h"
+
 #include "lardataobj/RecoBase/SpacePoint.h"
 
 #include <TVector3.h>

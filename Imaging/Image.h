@@ -1,36 +1,34 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include "TDirectoryFile.h"
+#include <TFile.h>
+#include <TTree.h>
+
+#include <algorithm>
+#include <memory>
+#include <optional>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Utilities/InputTag.h"
+
 #include "larcore/Geometry/Geometry.h"
 #include "larcorealg/Geometry/GeometryCore.h"
 #include "larcorealg/Geometry/geo_vectors_utils.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/Utilities/GeometryUtilities.h"
+
 #include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/Wire.h"
-#include "larcorealg/Geometry/GeometryCore.h"
-#include "larcore/Geometry/Geometry.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-#include "canvas/Utilities/InputTag.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-
-#include "TDirectoryFile.h"
-#include <TFile.h>
-#include <TTree.h>
-#include <algorithm>
-#include <utility>
-#include <type_traits>
-#include <memory>
-#include <optional>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 namespace image {
 
