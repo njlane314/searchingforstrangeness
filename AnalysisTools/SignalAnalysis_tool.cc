@@ -950,4 +950,3 @@ DEFINE_ART_CLASS_TOOL(SignalAnalysis)
 }
 
 #endif
-

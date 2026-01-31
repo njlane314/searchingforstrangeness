@@ -12,6 +12,7 @@
 #include "lardataobj/RecoBase/Slice.h"
 
 #include "AnalysisToolBase.h"
+
 #include <limits>
 
 namespace analysis {

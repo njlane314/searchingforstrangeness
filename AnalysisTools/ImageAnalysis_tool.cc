@@ -16,6 +16,7 @@
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "lardata/Utilities/GeometryUtilities.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/AnalysisBase/MVAOutput.h"
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
@@ -26,7 +27,6 @@
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
 
 #include "AnalysisToolBase.h"
 #include "Products/InferencePerf.h"
@@ -40,6 +40,7 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <TVector3.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cmath>

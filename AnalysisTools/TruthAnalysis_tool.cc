@@ -26,13 +26,13 @@
 #include "TLorentzVector.h"
 #include "TTree.h"
 #include "TVector3.h"
+
+#include <algorithm>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <string>
 #include <vector>
-// Explicit STL deps used below
-#include <map>
-#include <algorithm>
 
 namespace analysis {
 
