@@ -8,11 +8,12 @@
 #include "Common/SpaceChargeCorrections.h"
 #include "Common/Quantile.h"
 
+#include "TVector3.h"
+
 #include <cmath>
 #include <algorithm>
 #include <numeric>
 #include <limits>
-#include "TVector3.h"
 
 namespace analysis {
 
