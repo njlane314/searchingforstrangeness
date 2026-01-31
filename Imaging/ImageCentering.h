@@ -12,11 +12,6 @@
 
 namespace image {
 
-/// Trimmed 3D charge‑weighted centroid for a set of space points.
-///  - sps[i]     : i‑th spacepoint
-///  - weights[i] : weight (e.g. charge) assigned to that spacepoint
-///  - seed       : reference point used for trimming
-///  - radius     : 3D trimming radius (only SPs within this of seed contribute)
 inline TVector3
 trimmedCentroid3D(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
                   const std::vector<double> &weights,
