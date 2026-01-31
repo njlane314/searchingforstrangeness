@@ -53,16 +53,6 @@ LambdaAnalysis: {
     BKTproducer: @local::standard_producers.BKTproducer
 }
 
-SigmaZeroAnalysis: {
-    tool_type: "SigmaZeroAnalysis"
-    MCPproducer: @local::standard_producers.MCPproducer
-}
-
-KaonShortAnalysis: {
-    tool_type: "KaonShortAnalysis"
-    MCPproducer: @local::standard_producers.MCPproducer
-}
-
 NeutrinoAnalysis: {
     tool_type: "NeutrinoAnalysis"
     MCTproducer: @local::standard_producers.MCTproducer
@@ -199,10 +189,8 @@ NeutrinoSelectionFilter: {
         weight: @local::EventWeightAnalysis
         flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
-        kaonShort: @local::KaonShortAnalysis
         lambda: @local::LambdaAnalysis
         neutrino: @local::NeutrinoAnalysis
-        sigmaZero: @local::SigmaZeroAnalysis
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis

@@ -211,7 +211,6 @@ counter=1
 for file in $files; do
     filedir=$(samweb locate-file $file | grep -o '/pnfs/.*' | head -n 1)
     filepath="${filedir}/${file}"
-#Aftering configuring the ficl properly 
     lar -c run_eventselectionfilter.fcl -s $filepath -T output_$counter.root
     counter=$((counter + 1))
 done
