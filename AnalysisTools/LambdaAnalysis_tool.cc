@@ -13,7 +13,6 @@
 #include "Common/BacktrackingUtilities.h"
 #include "Common/PatternRecognitionUtils.h"
 
-#include "TLorentzVector.h"
 #include "TTree.h"
 #include "TVector3.h"
 
@@ -61,9 +60,7 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     int _n_lambda_total;
     int _n_lambda_exit_primary;
     int _n_lambda_ppi;
-    int _n_lambda_ppi_above_thresh;
     float _lambda_ppi_max_decay_sep;
-    float _lambda_ppi_above_thresh_max_decay_sep;
     int _n_lambda_from_heavy;
 
     int _lam_trackid;
@@ -76,18 +73,12 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     float _lam_ct;
     float _lam_decay_sep;
 
-    bool _lam_from_sigma0;
-    bool _lam_heavy_feed;
-    int _lam_parent_pdg;
-    int _lam_grandparent_pdg;
 
     int _p_trackid;
     int _pi_trackid;
     float _p_p;
     float _pi_p;
-    float _ppi_invariant_mass;
     float _ppi_opening_angle;
-    bool _lam_ppi_above_thresh;
 
     bool _pr_valid_assignment;
     int _pr_mu_nshared;
@@ -157,13 +148,8 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("n_lambda_exit_primary", &_n_lambda_exit_primary,
               "n_lambda_exit_primary/I");
     t->Branch("n_lambda_ppi", &_n_lambda_ppi, "n_lambda_ppi/I");
-    t->Branch("n_lambda_ppi_above_thresh", &_n_lambda_ppi_above_thresh,
-              "n_lambda_ppi_above_thresh/I");
     t->Branch("lambda_ppi_max_decay_sep", &_lambda_ppi_max_decay_sep,
               "lambda_ppi_max_decay_sep/F");
-    t->Branch("lambda_ppi_above_thresh_max_decay_sep",
-              &_lambda_ppi_above_thresh_max_decay_sep,
-              "lambda_ppi_above_thresh_max_decay_sep/F");
     t->Branch("n_lambda_from_heavy", &_n_lambda_from_heavy,
               "n_lambda_from_heavy/I");
 
@@ -177,21 +163,12 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("lam_ct", &_lam_ct, "lam_ct/F");
     t->Branch("lam_decay_sep", &_lam_decay_sep, "lam_decay_sep/F");
 
-    t->Branch("lam_from_sigma0", &_lam_from_sigma0, "lam_from_sigma0/O");
-    t->Branch("lam_heavy_feed", &_lam_heavy_feed, "lam_heavy_feed/O");
-    t->Branch("lam_parent_pdg", &_lam_parent_pdg, "lam_parent_pdg/I");
-    t->Branch("lam_grandparent_pdg", &_lam_grandparent_pdg,
-              "lam_grandparent_pdg/I");
 
     t->Branch("p_trackid", &_p_trackid, "p_trackid/I");
     t->Branch("pi_trackid", &_pi_trackid, "pi_trackid/I");
     t->Branch("p_p", &_p_p, "p_p/F");
     t->Branch("pi_p", &_pi_p, "pi_p/F");
-    t->Branch("ppi_invariant_mass", &_ppi_invariant_mass,
-              "ppi_invariant_mass/F");
     t->Branch("ppi_opening_angle", &_ppi_opening_angle, "ppi_opening_angle/F");
-    t->Branch("lam_ppi_above_thresh", &_lam_ppi_above_thresh,
-              "lam_ppi_above_thresh/O");
 
     t->Branch("pr_valid_assignment", &_pr_valid_assignment,
               "pr_valid_assignment/O");
@@ -225,9 +202,7 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _n_lambda_total = 0;
     _n_lambda_exit_primary = 0;
     _n_lambda_ppi = 0;
-    _n_lambda_ppi_above_thresh = 0;
     _lambda_ppi_max_decay_sep = nan<float>();
-    _lambda_ppi_above_thresh_max_decay_sep = nan<float>();
     _n_lambda_from_heavy = 0;
 
     _lam_trackid = -1;
@@ -240,18 +215,12 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _lam_ct = nan<float>();
     _lam_decay_sep = nan<float>();
 
-    _lam_from_sigma0 = false;
-    _lam_heavy_feed = false;
-    _lam_parent_pdg = 0;
-    _lam_grandparent_pdg = 0;
 
     _p_trackid = -1;
     _pi_trackid = -1;
     _p_p = nan<float>();
     _pi_p = nan<float>();
-    _ppi_invariant_mass = nan<float>();
     _ppi_opening_angle = nan<float>();
-    _lam_ppi_above_thresh = false;
 
     _pr_valid_assignment = false;
     _pr_mu_nshared = 0;
@@ -378,7 +347,6 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     FindTruthMuon(mcp_h, nu_dir);
 
     bool have_sel = false;
-    int best_above = -1;
     float best_sep = -1.f;
     float best_E = -std::numeric_limits<float>::max();
 
@@ -392,19 +360,13 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         if (lam.StatusCode() == 1 && lam.Process() == "primary")
             ++_n_lambda_exit_primary;
 
-        bool from_sigma0 = false;
         bool from_heavy = false;
-        int parent_pdg = 0;
-        int grandparent_pdg = 0;
         if (mp.count(lam.Mother())) {
             auto parent = mp.at(lam.Mother());
-            parent_pdg = parent->PdgCode();
-            from_sigma0 = IsSigma0(parent_pdg);
-            from_heavy = from_heavy || IsHeavyHyperon(parent_pdg);
+            from_heavy = from_heavy || IsHeavyHyperon(parent->PdgCode());
             if (mp.count(parent->Mother())) {
                 auto gp = mp.at(parent->Mother());
-                grandparent_pdg = gp->PdgCode();
-                from_heavy = from_heavy || IsHeavyHyperon(grandparent_pdg);
+                from_heavy = from_heavy || IsHeavyHyperon(gp->PdgCode());
             }
         }
         if (from_heavy)
@@ -423,10 +385,6 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         const float pip =
             pi ? Mag3(pi->Px(), pi->Py(), pi->Pz()) : nan<float>();
 
-        const bool above = (p != nullptr) && (pi != nullptr);
-        if (above)
-            ++_n_lambda_ppi_above_thresh;
-
         float decay_sep = nan<float>();
         if (std::isfinite(nu_v[0]) && std::isfinite(nu_v[1]) &&
             std::isfinite(nu_v[2])) {
@@ -437,26 +395,19 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
             if (!std::isfinite(_lambda_ppi_max_decay_sep) ||
                 decay_sep > _lambda_ppi_max_decay_sep)
                 _lambda_ppi_max_decay_sep = decay_sep;
-            if (above &&
-                (!std::isfinite(_lambda_ppi_above_thresh_max_decay_sep) ||
-                 decay_sep > _lambda_ppi_above_thresh_max_decay_sep))
-                _lambda_ppi_above_thresh_max_decay_sep = decay_sep;
         }
 
-        const int above_rank = above ? 1 : 0;
         const float sep_rank = std::isfinite(decay_sep) ? decay_sep : -1.f;
         const float E = lam.E();
 
         const bool better =
-            (!have_sel) || (above_rank > best_above) ||
-            (above_rank == best_above && sep_rank > best_sep) ||
-            (above_rank == best_above && sep_rank == best_sep && E > best_E);
+            (!have_sel) || (sep_rank > best_sep) ||
+            (sep_rank == best_sep && E > best_E);
 
         if (!better)
             continue;
 
         have_sel = true;
-        best_above = above_rank;
         best_sep = sep_rank;
         best_E = E;
 
@@ -474,30 +425,20 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         _lam_end[1] = lam.EndY();
         _lam_end[2] = lam.EndZ();
         _lam_decay_sep = decay_sep;
-        _lam_ppi_above_thresh = above;
 
         const float L = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
                                       lam.Vx(), lam.Vy(), lam.Vz());
         const float p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
         _lam_ct = (p_mag > 0.f) ? (L * lam.Mass() / p_mag) : nan<float>();
 
-        _lam_from_sigma0 = from_sigma0;
-        _lam_heavy_feed = from_heavy;
-        _lam_parent_pdg = parent_pdg;
-        _lam_grandparent_pdg = grandparent_pdg;
 
         _p_trackid = dm.p_trkid;
         _pi_trackid = dm.pi_trkid;
         _p_p = pp;
         _pi_p = pip;
 
-        _ppi_invariant_mass = nan<float>();
         _ppi_opening_angle = nan<float>();
         if (p && pi) {
-            TLorentzVector Pp, Ppi;
-            Pp.SetXYZM(p->Px(), p->Py(), p->Pz(), p->Mass());
-            Ppi.SetXYZM(pi->Px(), pi->Py(), pi->Pz(), pi->Mass());
-            _ppi_invariant_mass = (Pp + Ppi).M();
             TVector3 vp(p->Px(), p->Py(), p->Pz());
             TVector3 vpi(pi->Px(), pi->Py(), pi->Pz());
             if (vp.Mag() > 0.f && vpi.Mag() > 0.f)
