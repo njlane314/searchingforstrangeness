@@ -44,22 +44,28 @@ DefaultAnalysis: {
     NuMISWTriggerProcName: "DataOverlayOptical"
 }
 
-SignalAnalysis: {
-    tool_type: "SignalAnalysis"
+LambdaAnalysis: {
+    tool_type: "LambdaAnalysis"
     MCTproducer: @local::standard_producers.MCTproducer
     MCPproducer: @local::standard_producers.MCPproducer
-    MCRproducer: @local::standard_producers.MCRproducer
     CLSproducer: @local::standard_producers.CLSproducer
     HITproducer: @local::standard_producers.HITproducer
     BKTproducer: @local::standard_producers.BKTproducer
+}
 
-    fidvolXstart: @local::FidVol.Xstart
-    fidvolXend:   @local::FidVol.Xend
-    fidvolYstart: @local::FidVol.Ystart
-    fidvolYend:   @local::FidVol.Yend
-    fidvolZstart: @local::FidVol.Zstart
-    fidvolZend:   @local::FidVol.Zend
+SigmaZeroAnalysis: {
+    tool_type: "SigmaZeroAnalysis"
+    MCPproducer: @local::standard_producers.MCPproducer
+}
 
+KaonShortAnalysis: {
+    tool_type: "KaonShortAnalysis"
+    MCPproducer: @local::standard_producers.MCPproducer
+}
+
+NeutrinoAnalysis: {
+    tool_type: "NeutrinoAnalysis"
+    MCTproducer: @local::standard_producers.MCTproducer
 }
 
 EnergyAnalysis: {
@@ -193,7 +199,10 @@ NeutrinoSelectionFilter: {
         weight: @local::EventWeightAnalysis
         flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
-        signal: @local::SignalAnalysis
+        kaonShort: @local::KaonShortAnalysis
+        lambda: @local::LambdaAnalysis
+        neutrino: @local::NeutrinoAnalysis
+        sigmaZero: @local::SigmaZeroAnalysis
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
