@@ -11,6 +11,8 @@
 #include "Common/BacktrackingUtilities.h"
 
 #include <array>
+#include <algorithm>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -18,11 +20,11 @@ namespace common {
 
 struct PRMetrics {
     bool valid = false;
-    std::array<int, 3> nshared = {0, 0, 0};
-    std::array<int, 3> nhits_O = {0, 0, 0};
-    std::array<int, 3> nhits_T = {0, 0, 0};
-    std::array<float, 3> purity = {0.f, 0.f, 0.f};
-    std::array<float, 3> completeness = {0.f, 0.f, 0.f};
+    std::vector<int> nshared;
+    std::vector<int> nhits_O;
+    std::vector<int> nhits_T;
+    std::vector<float> purity;
+    std::vector<float> completeness;
 };
 
 inline size_t CountTruthHitsInSlice(
@@ -49,8 +51,17 @@ inline PRMetrics ComputePRMetrics(
     const art::Event &event, const art::InputTag &cls_tag,
     const art::InputTag &hit_tag, const art::InputTag &bkt_tag,
     std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-    const std::array<int, 3> &tids) {
+    const std::vector<int> &tids) {
     PRMetrics out;
+    const size_t n_truth = tids.size();
+    if (n_truth == 0)
+        return out;
+
+    out.nshared.assign(n_truth, 0);
+    out.nhits_O.assign(n_truth, 0);
+    out.nhits_T.assign(n_truth, 0);
+    out.purity.assign(n_truth, 0.f);
+    out.completeness.assign(n_truth, 0.f);
 
     auto const &cluster_h =
         event.getValidHandle<std::vector<recob::Cluster>>(cls_tag);
@@ -75,78 +86,101 @@ inline PRMetrics ComputePRMetrics(
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
         hit_h, event, bkt_tag);
 
-    out.nhits_T[0] = static_cast<int>(
-        CountTruthHitsInSlice(tids[0], inputHits, assocMCPart));
-    out.nhits_T[1] = static_cast<int>(
-        CountTruthHitsInSlice(tids[1], inputHits, assocMCPart));
-    out.nhits_T[2] = static_cast<int>(
-        CountTruthHitsInSlice(tids[2], inputHits, assocMCPart));
+    for (size_t t = 0; t < n_truth; ++t) {
+        out.nhits_T[t] = static_cast<int>(
+            CountTruthHitsInSlice(tids[t], inputHits, assocMCPart));
+    }
 
     const int n_pfp = static_cast<int>(pfp_hits.size());
-    if (n_pfp < 3)
+    if (n_pfp < static_cast<int>(n_truth))
         return out;
 
-    std::vector<std::array<int, 3>> shared(n_pfp, {0, 0, 0});
+    std::vector<std::vector<int>> shared(n_pfp, std::vector<int>(n_truth, 0));
     std::vector<int> n_hits_O(n_pfp, 0);
 
     for (int i = 0; i < n_pfp; ++i) {
         n_hits_O[i] = static_cast<int>(pfp_hits[i].size());
         for (auto const &h : pfp_hits[i]) {
             auto parts = assocMCPart->at(h.key());
-            bool has[3] = {false, false, false};
+            std::vector<bool> has(n_truth, false);
             for (auto const &mcp : parts) {
                 const int tid = mcp->TrackId();
-                for (int t = 0; t < 3; ++t) {
-                    if (!has[t] && tid == tids[t])
+                for (size_t t = 0; t < n_truth; ++t) {
+                    if (!has[t] && tid == tids[t]) {
                         has[t] = true;
+                    }
                 }
             }
-            for (int t = 0; t < 3; ++t) {
-                if (has[t])
+            for (size_t t = 0; t < n_truth; ++t) {
+                if (has[t]) {
                     ++shared[i][t];
+                }
             }
         }
     }
 
-    int best_i = -1, best_j = -1, best_k = -1, best_sum = -1;
-    for (int i = 0; i < n_pfp; ++i) {
-        for (int j = 0; j < n_pfp; ++j) {
-            if (j == i)
-                continue;
-            for (int k = 0; k < n_pfp; ++k) {
-                if (k == i || k == j)
-                    continue;
-                const int sum = shared[i][0] + shared[j][1] + shared[k][2];
-                if (sum > best_sum) {
-                    best_sum = sum;
-                    best_i = i;
-                    best_j = j;
-                    best_k = k;
+    int best_sum = -1;
+    std::vector<int> best_assignment(n_truth, -1);
+    std::vector<int> current_assignment(n_truth, -1);
+    std::vector<bool> used(n_pfp, false);
+
+    std::function<void(size_t, int)> search = [&](size_t t, int sum) {
+        int upper_bound = sum;
+        for (size_t tt = t; tt < n_truth; ++tt) {
+            int max_val = 0;
+            for (int p = 0; p < n_pfp; ++p) {
+                if (!used[p]) {
+                    max_val = std::max(max_val, shared[p][tt]);
                 }
             }
+            upper_bound += max_val;
         }
-    }
+        if (upper_bound <= best_sum)
+            return;
+
+        if (t == n_truth) {
+            if (sum > best_sum) {
+                best_sum = sum;
+                best_assignment = current_assignment;
+            }
+            return;
+        }
+
+        for (int p = 0; p < n_pfp; ++p) {
+            if (used[p])
+                continue;
+            used[p] = true;
+            current_assignment[t] = p;
+            search(t + 1, sum + shared[p][t]);
+            current_assignment[t] = -1;
+            used[p] = false;
+        }
+    };
+
+    search(0, 0);
     if (best_sum < 0)
         return out;
 
     out.valid = true;
 
-    auto fill_pair = [&](int i, int t) {
-        out.nshared[t] = shared[i][t];
-        out.nhits_O[t] = n_hits_O[i];
-        out.purity[t] =
-            (out.nhits_O[t] > 0)
-                ? static_cast<float>(out.nshared[t]) / out.nhits_O[t]
-                : 0.f;
-        out.completeness[t] =
-            (out.nhits_T[t] > 0)
-                ? static_cast<float>(out.nshared[t]) / out.nhits_T[t]
-                : 0.f;
+    auto fill_pair = [&](int p, size_t t) {
+        if (p < 0)
+            return;
+        out.nshared[t] = shared[p][t];
+        out.nhits_O[t] = n_hits_O[p];
+        out.purity[t] = (out.nhits_O[t] > 0)
+                            ? static_cast<float>(out.nshared[t]) /
+                                  out.nhits_O[t]
+                            : 0.f;
+        out.completeness[t] = (out.nhits_T[t] > 0)
+                                  ? static_cast<float>(out.nshared[t]) /
+                                        out.nhits_T[t]
+                                  : 0.f;
     };
 
-    fill_pair(best_i, 0);
-    fill_pair(best_j, 1);
-    fill_pair(best_k, 2);
+    for (size_t t = 0; t < n_truth; ++t) {
+        fill_pair(best_assignment[t], t);
+    }
 
     return out;
 }
