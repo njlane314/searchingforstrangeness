@@ -6,6 +6,9 @@
 #include "art/Framework/Principal/Handle.h"
 #include "fhiclcpp/ParameterSet.h"
 
+#include "lardataobj/RecoBase/Cluster.h"
+#include "lardataobj/RecoBase/Hit.h"
+
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
 
@@ -78,6 +81,9 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     float _pr_p_completeness;
     float _pr_pi_purity;
     float _pr_pi_completeness;
+    int _mu_true_hits;
+    int _p_true_hits;
+    int _pi_true_hits;
 
     template <class T> static T nan() {
         return std::numeric_limits<T>::quiet_NaN();
@@ -145,6 +151,9 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("pr_pi_purity", &_pr_pi_purity, "pr_pi_purity/F");
     t->Branch("pr_pi_completeness", &_pr_pi_completeness,
               "pr_pi_completeness/F");
+    t->Branch("mu_true_hits", &_mu_true_hits, "mu_true_hits/I");
+    t->Branch("p_true_hits", &_p_true_hits, "p_true_hits/I");
+    t->Branch("pi_true_hits", &_pi_true_hits, "pi_true_hits/I");
 }
 
 void LambdaAnalysis_tool::resetTTree(TTree *) {
@@ -176,6 +185,9 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _pr_p_completeness = nan<float>();
     _pr_pi_purity = nan<float>();
     _pr_pi_completeness = nan<float>();
+    _mu_true_hits = -1;
+    _p_true_hits = -1;
+    _pi_true_hits = -1;
 }
 
 LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
@@ -373,6 +385,34 @@ void LambdaAnalysis_tool::analyseSlice(
 
     if (_mu_truth_trackid < 0 || _p_trackid < 0 || _pi_trackid < 0)
         return;
+
+    auto const &cluster_h =
+        event.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
+    art::FindManyP<recob::Hit> assocHits(cluster_h, event, fCLSproducer);
+
+    std::vector<art::Ptr<recob::Hit>> inputHits;
+    inputHits.reserve(1024);
+
+    for (size_t ip = 0; ip < slice_pfp_vec.size(); ++ip) {
+        auto clusters = slice_pfp_vec[ip].get<recob::Cluster>();
+        for (auto const &c : clusters) {
+            auto hits = assocHits.at(c.key());
+            inputHits.insert(inputHits.end(), hits.begin(), hits.end());
+        }
+    }
+
+    auto const &hit_h =
+        event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+    auto assocMCPart = std::make_unique<
+        art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
+        hit_h, event, fBKTproducer);
+
+    _mu_true_hits = static_cast<int>(common::CountTruthHitsInSlice(
+        _mu_truth_trackid, inputHits, assocMCPart));
+    _p_true_hits = static_cast<int>(
+        common::CountTruthHitsInSlice(_p_trackid, inputHits, assocMCPart));
+    _pi_true_hits = static_cast<int>(
+        common::CountTruthHitsInSlice(_pi_trackid, inputHits, assocMCPart));
 
     const std::vector<int> tids = {_mu_truth_trackid, _p_trackid, _pi_trackid};
     const auto metrics = common::ComputePRMetrics(
