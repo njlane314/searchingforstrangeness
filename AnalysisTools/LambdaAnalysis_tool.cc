@@ -55,14 +55,6 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     int _mu_truth_pdg;
     float _mu_p;
     float _mu_theta;
-    bool _mu_above_pmin;
-
-    int _n_lambda_total;
-    int _n_lambda_exit_primary;
-    int _n_lambda_ppi;
-    float _lambda_ppi_max_decay_sep;
-    int _n_lambda_from_heavy;
-
     int _lam_trackid;
     int _lam_pdg;
     float _lam_E;
@@ -105,12 +97,6 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
         int pi_trkid = -1;
     };
 
-    static bool IsSigma0(const int pdg) { return std::abs(pdg) == 3212; }
-    static bool IsHeavyHyperon(const int pdg) {
-        const int apdg = std::abs(pdg);
-        return apdg == 3312 || apdg == 3322 || apdg == 3334;
-    }
-
     DecayMatch
     MatchLambdaToPPi(const art::Ptr<simb::MCParticle> &lam,
                      const std::map<int, art::Ptr<simb::MCParticle>> &mp) const;
@@ -133,17 +119,6 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("mu_truth_pdg", &_mu_truth_pdg, "mu_truth_pdg/I");
     t->Branch("mu_p", &_mu_p, "mu_p/F");
     t->Branch("mu_theta", &_mu_theta, "mu_theta/F");
-    t->Branch("mu_above_pmin", &_mu_above_pmin, "mu_above_pmin/O");
-
-    t->Branch("n_lambda_total", &_n_lambda_total, "n_lambda_total/I");
-    t->Branch("n_lambda_exit_primary", &_n_lambda_exit_primary,
-              "n_lambda_exit_primary/I");
-    t->Branch("n_lambda_ppi", &_n_lambda_ppi, "n_lambda_ppi/I");
-    t->Branch("lambda_ppi_max_decay_sep", &_lambda_ppi_max_decay_sep,
-              "lambda_ppi_max_decay_sep/F");
-    t->Branch("n_lambda_from_heavy", &_n_lambda_from_heavy,
-              "n_lambda_from_heavy/I");
-
     t->Branch("lam_trackid", &_lam_trackid, "lam_trackid/I");
     t->Branch("lam_pdg", &_lam_pdg, "lam_pdg/I");
     t->Branch("lam_E", &_lam_E, "lam_E/F");
@@ -179,14 +154,6 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
     _mu_theta = nan<float>();
-    _mu_above_pmin = false;
-
-    _n_lambda_total = 0;
-    _n_lambda_exit_primary = 0;
-    _n_lambda_ppi = 0;
-    _lambda_ppi_max_decay_sep = nan<float>();
-    _n_lambda_from_heavy = 0;
-
     _lam_trackid = -1;
     _lam_pdg = 0;
     _lam_E = nan<float>();
@@ -253,8 +220,6 @@ void LambdaAnalysis_tool::FindTruthMuon(
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
     _mu_theta = nan<float>();
-    _mu_above_pmin = false;
-
     double bestE = -1.0;
     float best_px = 0.f, best_py = 0.f, best_pz = 0.f;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
@@ -277,8 +242,6 @@ void LambdaAnalysis_tool::FindTruthMuon(
         return;
 
     _mu_p = Mag3(best_px, best_py, best_pz);
-    _mu_above_pmin = std::isfinite(_mu_p);
-
     if (nu_dir.Mag() > 0.f && _mu_p > 0.f) {
         TVector3 mu_p(best_px, best_py, best_pz);
         _mu_theta = nu_dir.Angle(mu_p);
@@ -328,27 +291,9 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         const auto &lam = *lam_ptr;
         if (std::abs(lam.PdgCode()) != 3122)
             continue;
-        ++_n_lambda_total;
-
-        if (lam.StatusCode() == 1 && lam.Process() == "primary")
-            ++_n_lambda_exit_primary;
-
-        bool from_heavy = false;
-        if (mp.count(lam.Mother())) {
-            auto parent = mp.at(lam.Mother());
-            from_heavy = from_heavy || IsHeavyHyperon(parent->PdgCode());
-            if (mp.count(parent->Mother())) {
-                auto gp = mp.at(parent->Mother());
-                from_heavy = from_heavy || IsHeavyHyperon(gp->PdgCode());
-            }
-        }
-        if (from_heavy)
-            ++_n_lambda_from_heavy;
-
         const DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp);
         if (!dm.ok)
             continue;
-        ++_n_lambda_ppi;
 
         const simb::MCParticle *p =
             (mp.count(dm.p_trkid) ? mp.at(dm.p_trkid).get() : nullptr);
@@ -364,12 +309,6 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
             decay_sep = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
                                       nu_v[0], nu_v[1], nu_v[2]);
         }
-        if (std::isfinite(decay_sep)) {
-            if (!std::isfinite(_lambda_ppi_max_decay_sep) ||
-                decay_sep > _lambda_ppi_max_decay_sep)
-                _lambda_ppi_max_decay_sep = decay_sep;
-        }
-
         const float sep_rank = std::isfinite(decay_sep) ? decay_sep : -1.f;
         const float E = lam.E();
 
