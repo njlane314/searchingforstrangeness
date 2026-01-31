@@ -1,6 +1,8 @@
 #ifndef EVENTWEIGHT_ANALYSIS_CXX
 #define EVENTWEIGHT_ANALYSIS_CXX
 
+#include <map>
+
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 
 #include "AnalysisToolBase.h"
@@ -10,7 +12,6 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
-#include <map>
 #include <numeric>
 #include <string>
 #include <vector>
