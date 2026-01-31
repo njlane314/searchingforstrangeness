@@ -9,27 +9,30 @@
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
 #include "art/Framework/Services/Optional/TFileService.h"
+
 #include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+
 #include "larcoreobj/SummaryData/POTSummary.h"
 #include "lardata/RecoBaseProxy/ProxyBase.h"
 #include "lardata/Utilities/AssociationUtil.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "lardataobj/RecoBase/PFParticleMetadata.h"
 #include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include <lardataobj/AnalysisBase/BackTrackerMatchingData.h>
-
 #include "ubobj/Optical/UbooneOpticalFilter.h"
+
 #include "Rtypes.h"
+#include "TTree.h"
+#include "TVector3.h"
+
 #include "AnalysisTools/AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
 
-#include "TTree.h"
-#include "TVector3.h"
 #include <map>
 #include <memory>
 #include <string>
