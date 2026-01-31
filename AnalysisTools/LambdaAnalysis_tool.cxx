@@ -18,6 +18,7 @@
 #include "TVector3.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -50,15 +51,6 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     art::InputTag fCLSproducer;
     art::InputTag fHITproducer;
     art::InputTag fBKTproducer;
-
-    int _nu_pdg;
-    int _ccnc;
-    int _interaction_mode;
-    int _interaction_type;
-    float _nu_E;
-    float _nu_v[3];
-    float _nu_dir[3];
-    bool _is_nu_mu_cc;
 
     int _mu_truth_trackid;
     int _mu_truth_pdg;
@@ -155,15 +147,6 @@ void LambdaAnalysis_tool::configure(const fhicl::ParameterSet &p) {
 }
 
 void LambdaAnalysis_tool::setBranches(TTree *t) {
-    t->Branch("nu_pdg", &_nu_pdg, "nu_pdg/I");
-    t->Branch("ccnc", &_ccnc, "ccnc/I");
-    t->Branch("interaction_mode", &_interaction_mode, "interaction_mode/I");
-    t->Branch("interaction_type", &_interaction_type, "interaction_type/I");
-    t->Branch("nu_E", &_nu_E, "nu_E/F");
-    t->Branch("nu_v", _nu_v, "nu_v[3]/F");
-    t->Branch("nu_dir", _nu_dir, "nu_dir[3]/F");
-    t->Branch("is_nu_mu_cc", &_is_nu_mu_cc, "is_nu_mu_cc/O");
-
     t->Branch("mu_truth_trackid", &_mu_truth_trackid, "mu_truth_trackid/I");
     t->Branch("mu_truth_pdg", &_mu_truth_pdg, "mu_truth_pdg/I");
     t->Branch("mu_p", &_mu_p, "mu_p/F");
@@ -233,15 +216,6 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
 }
 
 void LambdaAnalysis_tool::resetTTree(TTree *) {
-    _nu_pdg = 0;
-    _ccnc = -1;
-    _interaction_mode = -1;
-    _interaction_type = -1;
-    _nu_E = nan<float>();
-    _nu_v[0] = _nu_v[1] = _nu_v[2] = nan<float>();
-    _nu_dir[0] = _nu_dir[1] = _nu_dir[2] = nan<float>();
-    _is_nu_mu_cc = false;
-
     _mu_truth_trackid = -1;
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
@@ -374,6 +348,7 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     if (is_data)
         return;
 
+    std::array<float, 3> nu_v = {nan<float>(), nan<float>(), nan<float>()};
     TVector3 nu_dir(0.f, 0.f, 0.f);
     auto const &mct_h =
         event.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
@@ -383,25 +358,16 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     if (mct.NeutrinoSet()) {
         const auto nuinfo = mct.GetNeutrino();
         const auto &nu = nuinfo.Nu();
-        _nu_pdg = nu.PdgCode();
-        _ccnc = nuinfo.CCNC();
-        _interaction_mode = nuinfo.Mode();
-        _interaction_type = nuinfo.InteractionType();
-        _nu_E = nu.Trajectory().E(0);
-        _nu_v[0] = nu.Vx();
-        _nu_v[1] = nu.Vy();
-        _nu_v[2] = nu.Vz();
+        nu_v[0] = nu.Vx();
+        nu_v[1] = nu.Vy();
+        nu_v[2] = nu.Vz();
 
         const double pnu = std::sqrt(nu.Px() * nu.Px() + nu.Py() * nu.Py() +
                                      nu.Pz() * nu.Pz());
         if (pnu > 0.0) {
             nu_dir.SetXYZ(nu.Px() / pnu, nu.Py() / pnu, nu.Pz() / pnu);
-            _nu_dir[0] = nu_dir.X();
-            _nu_dir[1] = nu_dir.Y();
-            _nu_dir[2] = nu_dir.Z();
         }
     }
-    _is_nu_mu_cc = (std::abs(_nu_pdg) == 14) && (_ccnc == 0);
 
     auto const &mcp_h =
         event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
@@ -462,10 +428,10 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
             ++_n_lambda_ppi_above_thresh;
 
         float decay_sep = nan<float>();
-        if (std::isfinite(_nu_v[0]) && std::isfinite(_nu_v[1]) &&
-            std::isfinite(_nu_v[2])) {
+        if (std::isfinite(nu_v[0]) && std::isfinite(nu_v[1]) &&
+            std::isfinite(nu_v[2])) {
             decay_sep = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
-                                      _nu_v[0], _nu_v[1], _nu_v[2]);
+                                      nu_v[0], nu_v[1], nu_v[2]);
         }
         if (std::isfinite(decay_sep)) {
             if (!std::isfinite(_lambda_ppi_max_decay_sep) ||
