@@ -71,7 +71,7 @@ const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &pla
     return nullptr;
 }
 
-} // namespace
+}
 
 class InferenceProducer : public art::EDProducer {
   public:
@@ -130,9 +130,6 @@ void InferenceProducer::produce(art::Event &e) {
 
     auto planes = e.getValidHandle<std::vector<image::ImageProduct>>(planes_tag_);
     if (planes->size() < 3) {
-        // This happens, for example, when ImageProducer produced an empty
-        // NuSlice (no neutrino slice). In that case we simply skip inference
-        // and leave the perf/pred products empty.
         mf::LogDebug("InferenceProduction")
             << "Need at least three planes (U,V,W), got " << planes->size()
             << "; skipping inference for event " << e.id();
@@ -173,9 +170,6 @@ void InferenceProducer::produce(art::Event &e) {
     detector_images.emplace_back(*V);
     detector_images.emplace_back(*W);
 
-    // Short-circuit if all detector images are effectively empty.
-    // This avoids spinning up the external inference stack when
-    // there is nothing in the images (e.g. no neutrino slice).
     auto is_empty = [](image::ImageProduct const &p) {
         if (p.adc.empty())
             return true;
