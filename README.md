@@ -131,7 +131,7 @@ $$
 \right).
 $$
 
-  With 1024\,px images at 3\,mm per pixel, this radius is fixed at
+  With 512\,px images at 3\,mm per pixel, this radius is fixed at
   $R = 153.6\,\text{cm}$ so that all hits within that circle fit inside the
 square image.
 
