@@ -12,11 +12,10 @@
 
 namespace image {
 
-inline TVector3
-trimmedCentroid3D(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
-                  const std::vector<double> &weights,
-                  const TVector3 &seed,
-                  double radius)
+inline TVector3 trimmedCentroid3D(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
+                                  const std::vector<double> &weights,
+                                  const TVector3 &seed,
+                                  double radius)
 {
     const double R2 = radius * radius;
 
