@@ -12,11 +12,13 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
+
 #include <sys/stat.h>
 #include <unistd.h>
-#include <vector>
-#include <canvas/Utilities/Exception.h>
-#include <messagefacility/MessageLogger/MessageLogger.h>
+
+#include "canvas/Utilities/Exception.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
 
 namespace image {
 
