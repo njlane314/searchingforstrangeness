@@ -59,6 +59,7 @@ class ImageProducer : public art::EDProducer {
     art::InputTag fMCPproducer;
     art::InputTag fBKTproducer;
     art::InputTag fSPproducer;
+    art::InputTag fVTXproducer;
 
     bool fIsData{false};
 
@@ -78,6 +79,7 @@ class ImageProducer : public art::EDProducer {
 
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
+    std::optional<TVector3> findNeutrinoVertex(const art::Event &event) const;
     TVector3 computeImageCenter(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
                                 bool &center_defaulted) const;
 };
@@ -90,6 +92,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fMCPproducer = pset.get<art::InputTag>("MCPproducer");
     fBKTproducer = pset.get<art::InputTag>("BKTproducer");
     fSPproducer = pset.get<art::InputTag>("SPproducer");
+    fVTXproducer = pset.get<art::InputTag>("VTXproducer", fPFPproducer);
 
     fIsData = pset.get<bool>("IsData", false);
 
@@ -171,13 +174,51 @@ std::vector<art::Ptr<recob::Hit>> ImageProducer::collectNeutrinoSliceHits(const 
     return out;
 }
 
+std::optional<TVector3> ImageProducer::findNeutrinoVertex(const art::Event &event) const {
+    auto pfp_handle = event.getValidHandle<std::vector<recob::PFParticle>>(fPFPproducer);
+
+    std::optional<size_t> nu_index;
+    for (size_t i = 0; i < pfp_handle->size(); ++i) {
+        auto const &p = pfp_handle->at(i);
+        if (!p.IsPrimary())
+            continue;
+        int pdg = std::abs(p.PdgCode());
+        if (pdg == 12 || pdg == 14 || pdg == 16) {
+            nu_index = i;
+            break;
+        }
+    }
+    if (!nu_index)
+        return std::nullopt;
+
+    try {
+        art::FindManyP<recob::Vertex> pfp_to_vtx(pfp_handle, event, fVTXproducer);
+        auto const vtxs = pfp_to_vtx.at(*nu_index);
+        if (vtxs.empty() || !vtxs.front())
+            return std::nullopt;
+
+        double xyz[3] = {0., 0., 0.};
+        vtxs.front()->XYZ(xyz);
+        TVector3 v(xyz[0], xyz[1], xyz[2]);
+
+        if (!std::isfinite(v.X()) || !std::isfinite(v.Y()) || !std::isfinite(v.Z()))
+            return std::nullopt;
+
+        return v;
+    } catch (cet::exception const &ex) {
+        mf::LogDebug("ImageProducer") << "PFParticle->Vertex association unavailable for VTXproducer='"
+                                      << fVTXproducer.label() << "': " << ex;
+    }
+
+    return std::nullopt;
+}
+
 TVector3 ImageProducer::computeImageCenter(const art::Event &event,
                                            const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
                                            bool &center_defaulted) const {
     std::map<art::Ptr<recob::SpacePoint>, double> sp_charge;
 
     auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-
     art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
 
     for (auto const &h : neutrino_hits) {
@@ -211,12 +252,13 @@ TVector3 ImageProducer::computeImageCenter(const art::Event &event,
         weights.push_back(kv.second);
     }
 
-    double center_radius_max = 0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
-
     TVector3 center_world(0., 0., 0.);
-    bool center_from_spacepoints = false;
+    bool center_from_vertex = false;
 
-    if (!spacepoints.empty()) {
+    if (auto const vtx = findNeutrinoVertex(event)) {
+        center_world = *vtx;
+        center_from_vertex = true;
+    } else if (!spacepoints.empty()) {
         TVector3 c0(0., 0., 0.);
         double W0 = 0.0;
 
@@ -284,21 +326,20 @@ TVector3 ImageProducer::computeImageCenter(const art::Event &event,
                         break;
                 }
 
+                double center_radius_max = 0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
                 if (!(Rc > 0.0) || !std::isfinite(Rc))
                     Rc = center_radius_max;
                 else
                     Rc = std::min(Rc, center_radius_max);
 
                 center_world = image::trimmedCentroid3D(spacepoints, weights, c0, Rc);
-                center_from_spacepoints = true;
             } else {
                 center_world = c0;
-                center_from_spacepoints = true;
             }
         }
     }
 
-    center_defaulted = !center_from_spacepoints;
+    center_defaulted = !center_from_vertex;
 
     if (!std::isfinite(center_world.X()) || !std::isfinite(center_world.Y()) || !std::isfinite(center_world.Z())) {
         center_world.SetXYZ(0., 0., 0.);
@@ -342,7 +383,8 @@ void ImageProducer::produce(art::Event &event) {
     TVector3 center_world = computeImageCenter(event, neutrino_hits, center_defaulted);
 
     std::cout << "[ImageProducer] center_world = (" << center_world.X() << ", " << center_world.Y() << ", "
-              << center_world.Z() << ") - " << (center_defaulted ? "DEFAULTED" : "COMPUTED") << std::endl;
+              << center_world.Z() << ") - " << (center_defaulted ? "NO VERTEX (FALLBACK)" : "VERTEX-SEEDED")
+              << std::endl;
 
     TVector3 cU = common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
     TVector3 cV = common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_V);
