@@ -68,7 +68,6 @@ class ImageProducer : public art::EDProducer {
 
     int fImgW{512};
     int fImgH{512};
-    float fADCThresh{4.0f};
 
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
@@ -101,7 +100,6 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fImgW = pset.get<int>("ImageWidth", 512);
     fImgH = pset.get<int>("ImageHeight", 512);
-    fADCThresh = pset.get<float>("ADCImageThreshold", 4.0);
 
     fGeo = art::ServiceHandle<geo::Geometry>()->provider();
     fDetp = art::ServiceHandle<detinfo::DetectorPropertiesService>()->provider();
