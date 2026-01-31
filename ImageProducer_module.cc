@@ -26,8 +26,9 @@
 #include "Products/ImageProducts.h"
 
 #include <TVector3.h>
-#include <algorithm>
 #include <cetlib_except/exception.h>
+
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <fstream>

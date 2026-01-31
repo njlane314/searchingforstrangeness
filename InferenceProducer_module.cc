@@ -14,11 +14,11 @@
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <string>
-#include <algorithm>
 #include <utility>
 #include <vector>
 
