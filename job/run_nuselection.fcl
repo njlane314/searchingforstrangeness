@@ -49,8 +49,5 @@ physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
 physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true
 
-physics.filters.nuselection.AnalysisTools.image.ActiveModels: []
-
 physics.filters.nuselection.CountWithOpFilter: false
-physics.filters.nuselection.BeamSWTrigProcName: ""
 physics.filters.nuselection.OpFilterProcName: ""

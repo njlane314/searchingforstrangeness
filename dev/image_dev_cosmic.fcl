@@ -26,5 +26,4 @@ physics.path1: [ imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
 physics.filters.nuselection.CountWithOpFilter: false
-physics.filters.nuselection.BeamSWTrigProcName: ""
 physics.filters.nuselection.OpFilterProcName: ""
