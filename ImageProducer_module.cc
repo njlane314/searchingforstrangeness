@@ -29,6 +29,7 @@
 #include <cetlib_except/exception.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -337,11 +338,30 @@ void ImageProducer::produce(art::Event &event) {
                                       << "x" << props[i].height();
     }
 
-    auto pack_plane = [](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem) {
+    std::array<uint32_t, 3> hit_counts{0, 0, 0};
+    for (auto const &hit : neutrino_hits) {
+        switch (hit->View()) {
+        case geo::kU:
+            ++hit_counts[0];
+            break;
+        case geo::kV:
+            ++hit_counts[1];
+            break;
+        case geo::kW:
+            ++hit_counts[2];
+            break;
+        default:
+            break;
+        }
+    }
+
+    auto pack_plane = [](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem,
+                         uint32_t hit_count) {
         ImageProduct out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
         out.height = static_cast<uint32_t>(p.height());
+        out.hit_count = hit_count;
         out.origin_x = static_cast<float>(p.origin_x());
         out.origin_y = static_cast<float>(p.origin_y());
         out.pixel_w = static_cast<float>(p.pixel_w());
@@ -357,7 +377,7 @@ void ImageProducer::produce(art::Event &event) {
     auto out_slice = std::make_unique<std::vector<ImageProduct>>();
     out_slice->reserve(3);
     for (std::size_t i = 0; i < 3 && i < det_slice.size(); ++i) {
-        out_slice->emplace_back(pack_plane(det_slice[i], sem_slice[i], props[i], !fIsData));
+        out_slice->emplace_back(pack_plane(det_slice[i], sem_slice[i], props[i], !fIsData, hit_counts[i]));
     }
 
     auto const n_slice = out_slice->size();
