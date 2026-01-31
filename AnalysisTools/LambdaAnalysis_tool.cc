@@ -63,6 +63,7 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     float _lam_E;
     float _lam_mass;
     float _lam_p[3];
+    float _lam_p_mag;
     float _lam_v[3];
     float _lam_end[3];
     float _lam_ct;
@@ -129,6 +130,7 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("lam_E", &_lam_E, "lam_E/F");
     t->Branch("lam_mass", &_lam_mass, "lam_mass/F");
     t->Branch("lam_p", _lam_p, "lam_p[3]/F");
+    t->Branch("lam_p_mag", &_lam_p_mag, "lam_p_mag/F");
     t->Branch("lam_v", _lam_v, "lam_v[3]/F");
     t->Branch("lam_end", _lam_end, "lam_end[3]/F");
     t->Branch("lam_ct", &_lam_ct, "lam_ct/F");
@@ -166,6 +168,7 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _lam_E = nan<float>();
     _lam_mass = nan<float>();
     _lam_p[0] = _lam_p[1] = _lam_p[2] = nan<float>();
+    _lam_p_mag = nan<float>();
     _lam_v[0] = _lam_v[1] = _lam_v[2] = nan<float>();
     _lam_end[0] = _lam_end[1] = _lam_end[2] = nan<float>();
     _lam_ct = nan<float>();
@@ -340,6 +343,7 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         _lam_p[0] = lam.Px();
         _lam_p[1] = lam.Py();
         _lam_p[2] = lam.Pz();
+        _lam_p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
         _lam_v[0] = lam.Vx();
         _lam_v[1] = lam.Vy();
         _lam_v[2] = lam.Vz();
