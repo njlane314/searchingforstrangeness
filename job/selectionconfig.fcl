@@ -53,11 +53,6 @@ LambdaAnalysis: {
     BKTproducer: @local::standard_producers.BKTproducer
 }
 
-NeutrinoAnalysis: {
-    tool_type: "NeutrinoAnalysis"
-    MCTproducer: @local::standard_producers.MCTproducer
-}
-
 EnergyAnalysis: {
     tool_type: "EnergyAnalysis"
     TRKproducer: @local::standard_producers.TRKproducer
@@ -190,7 +185,6 @@ NeutrinoSelectionFilter: {
         flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
         lambda: @local::LambdaAnalysis
-        neutrino: @local::NeutrinoAnalysis
         slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
