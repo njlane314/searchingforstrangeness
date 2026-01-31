@@ -1,5 +1,5 @@
-#ifndef COMMON_QUANTILE_H
-#define COMMON_QUANTILE_H
+#ifndef COMMON_STATISTICS_QUANTILE_H
+#define COMMON_STATISTICS_QUANTILE_H
 
 #include <algorithm>
 #include <cmath>
@@ -30,4 +30,4 @@ inline float quantile_linear(std::vector<float> v, double p) {
 
 } // namespace common
 
-#endif // COMMON_QUANTILE_H
+#endif // COMMON_STATISTICS_QUANTILE_H
