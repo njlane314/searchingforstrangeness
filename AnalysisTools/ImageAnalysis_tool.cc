@@ -84,9 +84,13 @@ private:
   std::vector<int32_t> _semantic_image_u;
   std::vector<int32_t> _semantic_image_v;
   std::vector<int32_t> _semantic_image_w;
-  std::vector<int> _slice_semantic_counts_u;
-  std::vector<int> _slice_semantic_counts_v;
-  std::vector<int> _slice_semantic_counts_w;
+  std::vector<int> _slice_semantic_active_pixels_u;
+  std::vector<int> _slice_semantic_active_pixels_v;
+  std::vector<int> _slice_semantic_active_pixels_w;
+  std::vector<std::string> _semantic_label_names;
+  int _active_pixels_u;
+  int _active_pixels_v;
+  int _active_pixels_w;
   bool _is_vtx_in_image_u;
   bool _is_vtx_in_image_v;
   bool _is_vtx_in_image_w;
@@ -106,8 +110,10 @@ private:
   std::vector<float> _inf_t_child_post_ms;
   std::vector<float> _inf_child_max_rss_mb;
 
-  static std::vector<int> countLabels(const std::vector<int32_t> &labels,
-                                      size_t nlabels);
+  static std::vector<int> countActiveSemanticLabels(
+      const std::vector<int32_t> &labels, const std::vector<float> &pixels,
+      size_t nlabels);
+  static int countActivePixels(const std::vector<float> &pixels);
 };
 
 ImageAnalysis::ImageAnalysis(const fhicl::ParameterSet &pset) {
@@ -149,9 +155,16 @@ void ImageAnalysis::setBranches(TTree *_tree) {
   _tree->Branch("semantic_image_u", &_semantic_image_u);
   _tree->Branch("semantic_image_v", &_semantic_image_v);
   _tree->Branch("semantic_image_w", &_semantic_image_w);
-  _tree->Branch("slice_semantic_counts_u", &_slice_semantic_counts_u);
-  _tree->Branch("slice_semantic_counts_v", &_slice_semantic_counts_v);
-  _tree->Branch("slice_semantic_counts_w", &_slice_semantic_counts_w);
+  _tree->Branch("slice_semantic_active_pixels_u",
+                &_slice_semantic_active_pixels_u);
+  _tree->Branch("slice_semantic_active_pixels_v",
+                &_slice_semantic_active_pixels_v);
+  _tree->Branch("slice_semantic_active_pixels_w",
+                &_slice_semantic_active_pixels_w);
+  _tree->Branch("semantic_label_names", &_semantic_label_names);
+  _tree->Branch("active_pixels_u", &_active_pixels_u, "active_pixels_u/I");
+  _tree->Branch("active_pixels_v", &_active_pixels_v, "active_pixels_v/I");
+  _tree->Branch("active_pixels_w", &_active_pixels_w, "active_pixels_w/I");
   _tree->Branch("is_vtx_in_image_u", &_is_vtx_in_image_u,
                 "is_vtx_in_image_u/O");
   _tree->Branch("is_vtx_in_image_v", &_is_vtx_in_image_v,
@@ -183,9 +196,16 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _semantic_image_u.clear();
   _semantic_image_v.clear();
   _semantic_image_w.clear();
-  _slice_semantic_counts_u.clear();
-  _slice_semantic_counts_v.clear();
-  _slice_semantic_counts_w.clear();
+  _slice_semantic_active_pixels_u.clear();
+  _slice_semantic_active_pixels_v.clear();
+  _slice_semantic_active_pixels_w.clear();
+  if (_semantic_label_names.empty()) {
+    _semantic_label_names =
+        image::SemanticClassifier::semantic_label_names;
+  }
+  _active_pixels_u = 0;
+  _active_pixels_v = 0;
+  _active_pixels_w = 0;
   _is_vtx_in_image_u = false;
   _is_vtx_in_image_v = false;
   _is_vtx_in_image_w = false;
@@ -204,15 +224,25 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _inf_child_max_rss_mb.clear();
 }
 
-std::vector<int> ImageAnalysis::countLabels(const std::vector<int32_t> &labels,
-                                            size_t nlabels) {
+std::vector<int> ImageAnalysis::countActiveSemanticLabels(
+    const std::vector<int32_t> &labels, const std::vector<float> &pixels,
+    size_t nlabels) {
   std::vector<int> counts(nlabels, 0);
-  for (int32_t v : labels) {
-    if (v >= 0 && static_cast<size_t>(v) < nlabels) {
-      ++counts[v];
+  const size_t nentries = std::min(labels.size(), pixels.size());
+  for (size_t idx = 0; idx < nentries; ++idx) {
+    int32_t label = labels[idx];
+    if (label >= 0 && static_cast<size_t>(label) < nlabels &&
+        pixels[idx] > 0.0f) {
+      ++counts[label];
     }
   }
   return counts;
+}
+
+int ImageAnalysis::countActivePixels(const std::vector<float> &pixels) {
+  return static_cast<int>(
+      std::count_if(pixels.begin(), pixels.end(),
+                    [](float value) { return value > 0.0f; }));
 }
 
 void ImageAnalysis::analyseSlice(
@@ -256,11 +286,18 @@ void ImageAnalysis::analyseSlice(
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
 
+  _active_pixels_u = countActivePixels(_detector_image_u);
+  _active_pixels_v = countActivePixels(_detector_image_v);
+  _active_pixels_w = countActivePixels(_detector_image_w);
+
   if (!is_data) {
     size_t nlabels = image::SemanticClassifier::semantic_label_names.size();
-    _slice_semantic_counts_u = countLabels(_semantic_image_u, nlabels);
-    _slice_semantic_counts_v = countLabels(_semantic_image_v, nlabels);
-    _slice_semantic_counts_w = countLabels(_semantic_image_w, nlabels);
+    _slice_semantic_active_pixels_u =
+        countActiveSemanticLabels(_semantic_image_u, _detector_image_u, nlabels);
+    _slice_semantic_active_pixels_v =
+        countActiveSemanticLabels(_semantic_image_v, _detector_image_v, nlabels);
+    _slice_semantic_active_pixels_w =
+        countActiveSemanticLabels(_semantic_image_w, _detector_image_w, nlabels);
   }
 
   if (!std::isnan(_reco_neutrino_vertex_x)) {
