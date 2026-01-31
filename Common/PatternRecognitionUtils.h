@@ -20,9 +20,6 @@ namespace common {
 
 struct PRMetrics {
     bool valid = false;
-    std::vector<int> nshared;
-    std::vector<int> nhits_O;
-    std::vector<int> nhits_T;
     std::vector<float> purity;
     std::vector<float> completeness;
 };
@@ -57,9 +54,6 @@ inline PRMetrics ComputePRMetrics(
     if (n_truth == 0)
         return out;
 
-    out.nshared.assign(n_truth, 0);
-    out.nhits_O.assign(n_truth, 0);
-    out.nhits_T.assign(n_truth, 0);
     out.purity.assign(n_truth, 0.f);
     out.completeness.assign(n_truth, 0.f);
 
@@ -86,8 +80,9 @@ inline PRMetrics ComputePRMetrics(
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
         hit_h, event, bkt_tag);
 
+    std::vector<int> nhits_T(n_truth, 0);
     for (size_t t = 0; t < n_truth; ++t) {
-        out.nhits_T[t] = static_cast<int>(
+        nhits_T[t] = static_cast<int>(
             CountTruthHitsInSlice(tids[t], inputHits, assocMCPart));
     }
 
@@ -166,15 +161,13 @@ inline PRMetrics ComputePRMetrics(
     auto fill_pair = [&](int p, size_t t) {
         if (p < 0)
             return;
-        out.nshared[t] = shared[p][t];
-        out.nhits_O[t] = n_hits_O[p];
-        out.purity[t] = (out.nhits_O[t] > 0)
-                            ? static_cast<float>(out.nshared[t]) /
-                                  out.nhits_O[t]
+        const int nshared = shared[p][t];
+        const int nhits_O = n_hits_O[p];
+        out.purity[t] = (nhits_O > 0)
+                            ? static_cast<float>(nshared) / nhits_O
                             : 0.f;
-        out.completeness[t] = (out.nhits_T[t] > 0)
-                                  ? static_cast<float>(out.nshared[t]) /
-                                        out.nhits_T[t]
+        out.completeness[t] = (nhits_T[t] > 0)
+                                  ? static_cast<float>(nshared) / nhits_T[t]
                                   : 0.f;
     };
 

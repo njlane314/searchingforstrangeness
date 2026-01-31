@@ -90,15 +90,6 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     bool _lam_ppi_above_thresh;
 
     bool _pr_valid_assignment;
-    int _pr_mu_nshared;
-    int _pr_p_nshared;
-    int _pr_pi_nshared;
-    int _pr_mu_nhits_O;
-    int _pr_p_nhits_O;
-    int _pr_pi_nhits_O;
-    int _pr_mu_nhits_T;
-    int _pr_p_nhits_T;
-    int _pr_pi_nhits_T;
     float _pr_mu_purity;
     float _pr_mu_completeness;
     float _pr_p_purity;
@@ -195,15 +186,6 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
 
     t->Branch("pr_valid_assignment", &_pr_valid_assignment,
               "pr_valid_assignment/O");
-    t->Branch("pr_mu_nshared", &_pr_mu_nshared, "pr_mu_nshared/I");
-    t->Branch("pr_p_nshared", &_pr_p_nshared, "pr_p_nshared/I");
-    t->Branch("pr_pi_nshared", &_pr_pi_nshared, "pr_pi_nshared/I");
-    t->Branch("pr_mu_nhits_O", &_pr_mu_nhits_O, "pr_mu_nhits_O/I");
-    t->Branch("pr_p_nhits_O", &_pr_p_nhits_O, "pr_p_nhits_O/I");
-    t->Branch("pr_pi_nhits_O", &_pr_pi_nhits_O, "pr_pi_nhits_O/I");
-    t->Branch("pr_mu_nhits_T", &_pr_mu_nhits_T, "pr_mu_nhits_T/I");
-    t->Branch("pr_p_nhits_T", &_pr_p_nhits_T, "pr_p_nhits_T/I");
-    t->Branch("pr_pi_nhits_T", &_pr_pi_nhits_T, "pr_pi_nhits_T/I");
     t->Branch("pr_mu_purity", &_pr_mu_purity, "pr_mu_purity/F");
     t->Branch("pr_mu_completeness", &_pr_mu_completeness,
               "pr_mu_completeness/F");
@@ -254,15 +236,6 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _lam_ppi_above_thresh = false;
 
     _pr_valid_assignment = false;
-    _pr_mu_nshared = 0;
-    _pr_p_nshared = 0;
-    _pr_pi_nshared = 0;
-    _pr_mu_nhits_O = 0;
-    _pr_p_nhits_O = 0;
-    _pr_pi_nhits_O = 0;
-    _pr_mu_nhits_T = 0;
-    _pr_p_nhits_T = 0;
-    _pr_pi_nhits_T = 0;
     _pr_mu_purity = nan<float>();
     _pr_mu_completeness = nan<float>();
     _pr_p_purity = nan<float>();
@@ -531,15 +504,6 @@ void LambdaAnalysis_tool::analyseSlice(
         return;
 
     _pr_valid_assignment = metrics.valid;
-    _pr_mu_nshared = metrics.nshared[0];
-    _pr_p_nshared = metrics.nshared[1];
-    _pr_pi_nshared = metrics.nshared[2];
-    _pr_mu_nhits_O = metrics.nhits_O[0];
-    _pr_p_nhits_O = metrics.nhits_O[1];
-    _pr_pi_nhits_O = metrics.nhits_O[2];
-    _pr_mu_nhits_T = metrics.nhits_T[0];
-    _pr_p_nhits_T = metrics.nhits_T[1];
-    _pr_pi_nhits_T = metrics.nhits_T[2];
     _pr_mu_purity = metrics.purity[0];
     _pr_p_purity = metrics.purity[1];
     _pr_pi_purity = metrics.purity[2];
