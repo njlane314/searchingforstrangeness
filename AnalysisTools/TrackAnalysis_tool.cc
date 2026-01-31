@@ -6,7 +6,7 @@
 #include "Common/GeometryUtils.h"
 #include "Common/ProxyTypes.h"
 #include "Common/SpaceChargeCorrections.h"
-#include "Common/Quantile.h"
+#include "Common/StatisticsQuantile.h"
 
 #include "TVector3.h"
 
