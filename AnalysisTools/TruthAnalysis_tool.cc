@@ -67,6 +67,9 @@ private:
     int _interaction_mode;
     int _interaction_type;
     float _neutrino_energy;
+    float _neutrino_vertex[3];
+    float _neutrino_direction[3];
+    bool _is_nu_mu_cc;
     float _neutrino_theta;
     float _neutrino_pt;
     int _target_nucleus_pdg;
@@ -188,6 +191,12 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("int_mode",            &_interaction_mode,      "int_mode/I");
     _tree->Branch("int_type",            &_interaction_type,      "int_type/I");
     _tree->Branch("nu_E",                &_neutrino_energy,       "nu_E/F");
+    _tree->Branch("ccnc",                &_interaction_ccnc,      "ccnc/I");
+    _tree->Branch("interaction_mode",    &_interaction_mode,      "interaction_mode/I");
+    _tree->Branch("interaction_type",    &_interaction_type,      "interaction_type/I");
+    _tree->Branch("nu_v",                _neutrino_vertex,        "nu_v[3]/F");
+    _tree->Branch("nu_dir",              _neutrino_direction,     "nu_dir[3]/F");
+    _tree->Branch("is_nu_mu_cc",         &_is_nu_mu_cc,           "is_nu_mu_cc/O");
     _tree->Branch("nu_theta",            &_neutrino_theta,        "nu_theta/F");
     _tree->Branch("nu_pt",               &_neutrino_pt,           "nu_pt/F");
     _tree->Branch("tgt_pdg",             &_target_nucleus_pdg,    "tgt_pdg/I");
@@ -308,6 +317,13 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _interaction_mode = -1;
     _interaction_type = -1;
     _neutrino_energy = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex[0] = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex[1] = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_vertex[2] = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_direction[0] = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_direction[1] = std::numeric_limits<float>::quiet_NaN();
+    _neutrino_direction[2] = std::numeric_limits<float>::quiet_NaN();
+    _is_nu_mu_cc = false;
     _neutrino_theta = std::numeric_limits<float>::quiet_NaN();
     _neutrino_pt = std::numeric_limits<float>::quiet_NaN();
     _target_nucleus_pdg = 0;
@@ -522,6 +538,9 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _neutrino_vertex_x = nu.Vx();
         _neutrino_vertex_y = nu.Vy();
         _neutrino_vertex_z = nu.Vz();
+        _neutrino_vertex[0] = _neutrino_vertex_x;
+        _neutrino_vertex[1] = _neutrino_vertex_y;
+        _neutrino_vertex[2] = _neutrino_vertex_z;
         _true_neutrino_momentum_x = nu.Px();
         _true_neutrino_momentum_y = nu.Py();
         _true_neutrino_momentum_z = nu.Pz();
@@ -541,9 +560,16 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _neutrino_momentum_x = nu.Px();
         _neutrino_momentum_y = nu.Py();
         _neutrino_momentum_z = nu.Pz();
+        const double pnu = std::sqrt(nu.Px() * nu.Px() + nu.Py() * nu.Py() + nu.Pz() * nu.Pz());
+        if (pnu > 0.0) {
+            _neutrino_direction[0] = nu.Px() / pnu;
+            _neutrino_direction[1] = nu.Py() / pnu;
+            _neutrino_direction[2] = nu.Pz() / pnu;
+        }
         double vertex[3] = {_neutrino_vertex_x, _neutrino_vertex_y, _neutrino_vertex_z};
         _is_vertex_in_fiducial = common::isFiducial(vertex, fFidvolXstart, fFidvolYstart, fFidvolZstart,
                                                     fFidvolXend, fFidvolYend, fFidvolZend);
+        _is_nu_mu_cc = (std::abs(_neutrino_pdg) == 14) && (_interaction_ccnc == 0);
     }
 
     TLorentzVector total_momentum;
