@@ -68,17 +68,19 @@ sources=(
   "prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2"
   "prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2"
 
-  # Strangeness + detvars
+  # Strangeness (nominal)
   "prod_strange_resample_fhc_run1_fhc_reco2_reco2"
+
+  # Strangeness detvars (ordered to match beam detvars)
   "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2"
-  "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2"
   "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2"
+  "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2"
+  "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2"
+  "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2"
   "detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2"
   "detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2"
   "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2"
   "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2"
 
   # Dirt
   "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0"
@@ -92,6 +94,10 @@ goodruns_name() {
   local source="$1"
 
   declare -A short_names=(
+    ["prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0"]="nl_run1_fhc_beam_sample0_goodruns"
+    ["prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1"]="nl_run1_fhc_beam_sample1_goodruns"
+    ["prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2"]="nl_run1_fhc_beam_sample2_goodruns"
+    ["prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3"]="nl_run1_fhc_beam_sample3_goodruns"
     ["prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2"]="nl_run1_fhc_detvar_cv_goodruns"
     ["prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2"]="nl_run1_fhc_detvar_ly_supp75_att8m_goodruns"
     ["prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2"]="nl_run1_fhc_detvar_ly_rayleigh_goodruns"
@@ -112,6 +118,9 @@ goodruns_name() {
     ["Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2"]="nl_run1_fhc_strange_wiremodthetayz_goodruns"
     ["detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2"]="nl_run1_fhc_strange_sce_goodruns"
     ["detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2"]="nl_run1_fhc_strange_recomb2_goodruns"
+    ["prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0"]="nl_run1_fhc_dirt_sample0_goodruns"
+    ["prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1"]="nl_run1_fhc_dirt_sample1_goodruns"
+    ["prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2"]="nl_run1_fhc_ext_goodruns"
   )
 
   if [[ -n "${short_names[${source}]:-}" ]]; then
