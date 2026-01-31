@@ -1,0 +1,94 @@
+#include "seedservice_microboone.fcl"
+#include "services_microboone.fcl"
+#include "selectionconfig.fcl"
+
+process_name: FullChainNuSelection
+
+services: {
+  TFileService: { fileName: "fullchain_nuselection_hist.root" }
+  TimeTracker: {}
+  MemoryTracker: {}
+  RandomNumberGenerator: {}
+
+  Geometry: @local::microboone_geo
+  DetectorPropertiesService: @local::microboone_detproperties
+  ParticleInventoryService: @local::standard_particleinventoryservice
+  LArProperties: @local::microboone_properties
+  DetectorClocksService: @local::microboone_detectorclocks
+
+  @table::microboone_services_reco
+  message: @local::standard_info
+
+  NuRandomService: @local::microboone_seedservice
+}
+
+services.DetectorClocksService.InheritClockConfig: false
+services.DetectorClocksService.TriggerOffsetTPC: -0.400e3
+
+services.SpaceCharge.EnableCorrSCE: true
+services.SpaceCharge.EnableSimEfieldSCE: true
+services.SpaceCharge.EnableSimSpatialSCE: true
+
+source: {
+  module_type: RootInput
+  maxEvents: -1
+}
+
+physics: {
+  producers: {
+    imageprod: {
+      module_type: "ImageProducer"
+      PFPproducer: @local::standard_producers.PFPproducer
+      SLCproducer: @local::standard_producers.SLCproducer
+      HITproducer: @local::standard_producers.HITproducer
+      WIREproducer: @local::standard_producers.WIREproducer
+      MCPproducer: @local::standard_producers.MCPproducer
+      BKTproducer: @local::standard_producers.BKTproducer
+      SPproducer: @local::standard_producers.SPproducer
+      BadChannelFile: "assets/badchannels.txt"
+    }
+
+    inferenceprod: {
+      module_type: "InferenceProducer"
+      PlanesTag: "imageprod:NuSlice"
+      ScratchDir: ""
+      AssetsBaseDir: "assets"
+      DefaultWrapper: "scripts/inference_wrapper.sh"
+      Models: [
+        {
+          Label: "mink_binary"
+          Arch: "binary:device=cpu,seed=12345,thr=0.0"
+          Weights: "random://weights"
+        }
+      ]
+    }
+  }
+
+  filters: {
+    nuselection: {
+      @table::NeutrinoSelectionFilter
+    }
+  }
+
+  path1: [ imageprod, inferenceprod, nuselection ]
+  trigger_paths: [ path1 ]
+
+  stream1: [ out1 ]
+  end_paths: [ stream1 ]
+}
+
+physics.filters.nuselection.IsNuMI: true
+physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
+physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true
+
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.OpFilterProcName: ""
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_%tc_fullchain_nuselection.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}

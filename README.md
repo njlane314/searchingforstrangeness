@@ -402,6 +402,12 @@ To run the neutrino selection on data, enable the data flag:
 lar -c run_neutrinoselection.fcl -a is_data:=true -s <input_file> -T <output_file>
 ```
 
+To run image production, inference, and neutrino selection in one step for MC:
+
+```bash
+lar -c job/run_fullchain.fcl -s <input_file> -T <output_file>
+```
+
 `lar -c eventdump.fcl -s <your.root> | grep recob::Wire`**  
   Dumps event information from a `*.root` file and searches for `recob::Wire` objects.
 
