@@ -1,8 +1,4 @@
 <lcgdict>
-  <include file="Products/ImageProducts.h"/>
-  <include file="Products/InferencePerf.h"/>
-  <include file="Products/InferencePred.h"/>
-
   <class name="image::ImageProduct"/>
   <class name="art::Wrapper<image::ImageProduct>"/>
   <class name="std::vector<image::ImageProduct>"/>
