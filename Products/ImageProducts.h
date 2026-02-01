@@ -18,6 +18,8 @@ class ImageProduct {
         float origin_y{0.f}; ///< World y-coordinate of the image origin.
         float pixel_w{0.f}; ///< Pixel width in world units.
         float pixel_h{0.f}; ///< Pixel height in world units.
+        int32_t vertex_row{-1}; ///< Row index of the reco neutrino vertex in this plane (-1 if unavailable).
+        int32_t vertex_col{-1}; ///< Column index of the reco neutrino vertex in this plane (-1 if unavailable).
         std::vector<float> adc; ///< Flattened ADC values in row-major order.
         std::vector<int32_t> semantic; ///< Flattened semantic labels aligned with adc.
 };

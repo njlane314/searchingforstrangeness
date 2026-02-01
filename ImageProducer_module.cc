@@ -82,7 +82,7 @@ class ImageProducer : public art::EDProducer {
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
     std::optional<TVector3> findNeutrinoVertex(const art::Event &event) const;
     TVector3 computeImageCenter(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
-                                bool &center_defaulted) const;
+                                std::optional<TVector3> const &vertex, bool &center_defaulted) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -216,6 +216,7 @@ std::optional<TVector3> ImageProducer::findNeutrinoVertex(const art::Event &even
 
 TVector3 ImageProducer::computeImageCenter(const art::Event &event,
                                            const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
+                                           std::optional<TVector3> const &vertex,
                                            bool &center_defaulted) const {
     std::map<art::Ptr<recob::SpacePoint>, double> sp_charge;
 
@@ -254,7 +255,12 @@ TVector3 ImageProducer::computeImageCenter(const art::Event &event,
     }
 
     TVector3 center_world(0., 0., 0.);
-    TVector3 center_reference = *findNeutrinoVertex(event);
+    TVector3 center_reference(0., 0., 0.);
+    if (vertex) {
+        center_reference = *vertex;
+    } else {
+        center_defaulted = true;
+    }
 
     double Rc = 0.5 * std::min(fImgH * fDriftStep, fImgW * fPitchW);
     if (Rc > 0.0 && std::isfinite(Rc) && !spacepoints.empty()) {
@@ -301,8 +307,9 @@ void ImageProducer::produce(art::Event &event) {
         return;
     }
 
+    auto vertex = findNeutrinoVertex(event);
     bool center_defaulted = false;
-    TVector3 center_world = computeImageCenter(event, neutrino_hits, center_defaulted);
+    TVector3 center_world = computeImageCenter(event, neutrino_hits, vertex, center_defaulted);
 
     std::cout << "[ImageProducer] center_world = (" << center_world.X() << ", " << center_world.Y() << ", "
               << center_world.Z() << ") - " << (center_defaulted ? "NO VERTEX (FALLBACK)" : "VERTEX-SEEDED")
@@ -355,8 +362,35 @@ void ImageProducer::produce(art::Event &event) {
         }
     }
 
-    auto pack_plane = [](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem,
-                         uint32_t hit_count) {
+    auto vertex_pixel = [&](ImageProperties const &p) -> std::pair<int32_t, int32_t> {
+        if (!vertex)
+            return {-1, -1};
+        common::PandoraView pandora_view;
+        switch (p.view()) {
+        case geo::kU:
+            pandora_view = common::TPC_VIEW_U;
+            break;
+        case geo::kV:
+            pandora_view = common::TPC_VIEW_V;
+            break;
+        case geo::kW:
+        case geo::kY:
+            pandora_view = common::TPC_VIEW_W;
+            break;
+        default:
+            return {-1, -1};
+        }
+
+        auto proj = common::ProjectToWireView(vertex->X(), vertex->Y(), vertex->Z(), pandora_view);
+        auto col = p.col(proj.Z());
+        auto row = p.row(proj.X());
+        if (!col || !row)
+            return {-1, -1};
+        return {static_cast<int32_t>(*row), static_cast<int32_t>(*col)};
+    };
+
+    auto pack_plane = [&](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem,
+                          uint32_t hit_count) {
         ImageProduct out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
@@ -366,6 +400,9 @@ void ImageProducer::produce(art::Event &event) {
         out.origin_y = static_cast<float>(p.origin_y());
         out.pixel_w = static_cast<float>(p.pixel_w());
         out.pixel_h = static_cast<float>(p.pixel_h());
+        auto [vertex_row, vertex_col] = vertex_pixel(p);
+        out.vertex_row = vertex_row;
+        out.vertex_col = vertex_col;
         out.adc = det.data();
         if (include_sem) {
             auto tmp = sem.data();
