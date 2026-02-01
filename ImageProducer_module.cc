@@ -79,6 +79,7 @@ class ImageProducer : public art::EDProducer {
     double fPitchW{0.0};
 
     void loadBadChannels(const std::string &filename);
+    std::vector<art::Ptr<recob::Hit>> collectEventHits(const art::Event &event) const;
     std::vector<art::Ptr<recob::Hit>> collectNeutrinoSliceHits(const art::Event &event) const;
     std::optional<TVector3> findNeutrinoVertex(const art::Event &event) const;
     TVector3 computeImageCenter(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
@@ -140,6 +141,19 @@ void ImageProducer::loadBadChannels(const std::string &filename) {
             fBadChannels.insert(first);
         }
     }
+}
+
+std::vector<art::Ptr<recob::Hit>> ImageProducer::collectEventHits(const art::Event &event) const {
+    auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
+
+    std::vector<art::Ptr<recob::Hit>> hits;
+    hits.reserve(hit_handle->size());
+
+    for (std::size_t i = 0; i < hit_handle->size(); ++i) {
+        hits.emplace_back(hit_handle, i);
+    }
+
+    return hits;
 }
 
 std::vector<art::Ptr<recob::Hit>> ImageProducer::collectNeutrinoSliceHits(const art::Event &event) const {
@@ -275,6 +289,7 @@ void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer") << "Starting image production for event " << event.id();
 
     auto neutrino_hits = collectNeutrinoSliceHits(event);
+    auto event_hits = collectEventHits(event);
 
     if (!fBadChannels.empty()) {
         auto remove_bad_channels = [&](std::vector<art::Ptr<recob::Hit>> &hits) {
@@ -287,6 +302,7 @@ void ImageProducer::produce(art::Event &event) {
                        hits.end());
         };
         remove_bad_channels(neutrino_hits);
+        remove_bad_channels(event_hits);
     }
 
     if (neutrino_hits.empty()) {
@@ -329,7 +345,7 @@ void ImageProducer::produce(art::Event &event) {
 
     image::ImageProduction builder(*fGeo, opts);
 
-    builder.build(event, neutrino_hits, props, det_slice, sem_slice, fDetp);
+    builder.build(event, event_hits, props, det_slice, sem_slice, fDetp);
 
     mf::LogDebug("ImageProducer") << "Built images: det=" << det_slice.size() << ", sem=" << sem_slice.size();
 
@@ -339,7 +355,7 @@ void ImageProducer::produce(art::Event &event) {
     }
 
     std::array<uint32_t, 3> hit_counts{0, 0, 0};
-    for (auto const &hit : neutrino_hits) {
+    for (auto const &hit : event_hits) {
         switch (hit->View()) {
         case geo::kU:
             ++hit_counts[0];
