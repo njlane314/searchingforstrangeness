@@ -97,7 +97,7 @@ class ImageProduction {
     }
 
   private:
-    static constexpr float kAdcThreshold = 1.0f;
+    static constexpr float kAdcThreshold = 0.0f;
 
     struct BuildContext {
         const std::vector<ImageProperties> &properties;
