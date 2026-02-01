@@ -27,9 +27,6 @@
 #include <string>
 #include <vector>
 
-namespace {
-} // namespace
-
 namespace analysis {
 
 class LambdaAnalysis_tool : public AnalysisToolBase {
