@@ -119,6 +119,10 @@ private:
     int _event_total_hits;
     int _slice_pdg;
     int _slice_num_hits;
+    int _slice_num_clusters;
+    int _slice_num_clusters_U;
+    int _slice_num_clusters_V;
+    int _slice_num_clusters_Y;
     int _slice_id;
     float _topological_score;
 
@@ -340,6 +344,10 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
     _hits_outfv = 0;
     size_t pfpidx = 0;
     _num_pfps = 0;
+    _slice_num_clusters = 0;
+    _slice_num_clusters_U = 0;
+    _slice_num_clusters_V = 0;
+    _slice_num_clusters_Y = 0;
     for (auto pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             _slice_pdg = pfp->PdgCode();
@@ -432,6 +440,16 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
         _pfp_max_subhit_fraction_Y.push_back(0);
         for (auto ass_clus : clus_pxy_v) {
             const auto &clus = clus_proxy[ass_clus.key()];
+            _slice_num_clusters += 1;
+            if (clus->Plane().Plane == 0) {
+                _slice_num_clusters_U += 1;
+            }
+            else if (clus->Plane().Plane == 1) {
+                _slice_num_clusters_V += 1;
+            }
+            else if (clus->Plane().Plane == 2) {
+                _slice_num_clusters_Y += 1;
+            }
             auto clus_hit_v = clus.get<recob::Hit>();
             auto num_hits = clus_hit_v.size();
             std::vector<art::Ptr<recob::Hit>> cluster_hits_v;
@@ -638,6 +656,10 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("event_total_hits", &_event_total_hits, "event_total_hits/I");
     _tree->Branch("slice_pdg", &_slice_pdg, "slice_pdg/I");
     _tree->Branch("slice_num_hits", &_slice_num_hits, "slice_num_hits/I");
+    _tree->Branch("slice_num_clusters", &_slice_num_clusters, "slice_num_clusters/I");
+    _tree->Branch("slice_num_clusters_U", &_slice_num_clusters_U, "slice_num_clusters_U/I");
+    _tree->Branch("slice_num_clusters_V", &_slice_num_clusters_V, "slice_num_clusters_V/I");
+    _tree->Branch("slice_num_clusters_Y", &_slice_num_clusters_Y, "slice_num_clusters_Y/I");
     _tree->Branch("num_pfps", &_num_pfps, "num_pfps/I");
     _tree->Branch("num_tracks", &_num_tracks, "num_tracks/I");
     _tree->Branch("num_showers", &_num_showers, "num_showers/I");
@@ -728,6 +750,10 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _topological_score = std::numeric_limits<float>::quiet_NaN();
     _slice_topological_scores.clear();
     _slice_num_hits = -1;
+    _slice_num_clusters = 0;
+    _slice_num_clusters_U = 0;
+    _slice_num_clusters_V = 0;
+    _slice_num_clusters_Y = 0;
     _pfp_pdg_codes.clear();
     _pfp_num_hits.clear();
     _pfp_num_plane_hits_U.clear();
