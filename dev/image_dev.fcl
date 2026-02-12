@@ -21,7 +21,7 @@ physics.producers.inferenceprod: {
     {
       Label: "mink_binary"
       Arch: "binary:device=cpu,seed=12345,thr=0.0"
-      Weights: "random://weights"
+      Weights: "models/checkpoint_step0010000.pt"
     }
   ]
 }
