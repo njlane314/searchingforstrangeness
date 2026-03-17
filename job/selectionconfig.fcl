@@ -85,18 +85,6 @@ ImageAnalysis: {
     InferencePerfTag: "inferenceprod"
 }
 
-SliceAnalysis: {
-    tool_type: "SliceAnalysis"
-    CLSproducer: @local::standard_producers.CLSproducer
-    SLCproducer: @local::standard_producers.SLCproducer
-    MCTproducer: @local::standard_producers.MCTproducer
-    MCPproducer: @local::standard_producers.MCPproducer
-    HITproducer: @local::standard_producers.HITproducer
-    BKTproducer: @local::standard_producers.BKTproducer
-    OrigHITproducer: "gaushit::OverlayStage1a"
-    OrigBKTproducer: "gaushitTruthMatch::OverlayRecoStage1b"
-}
-
 TrackAnalysis: {
     tool_type: "TrackAnalysis"
     TRKproducer: @local::standard_producers.TRKproducer
@@ -160,7 +148,6 @@ NeutrinoSelectionFilter: {
         weight: @local::EventWeightAnalysis
         image: @local::ImageAnalysis
         lambda: @local::LambdaAnalysis
-        slice: @local::SliceAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
     }
