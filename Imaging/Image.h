@@ -102,9 +102,7 @@ public:
     void clear(T value = T(0)) {
         std::fill(pixels_.begin(), pixels_.end(), value);
     }
-    std::vector<T> data() const {
-        return pixels_;
-    }
+    const std::vector<T>& data() const noexcept { return pixels_; }
 
     geo::View_t view() const { return prop_.view(); }
     size_t height() const { return prop_.height(); }
