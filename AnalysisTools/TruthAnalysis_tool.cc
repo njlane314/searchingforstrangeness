@@ -110,23 +110,6 @@ private:
     double _bnb_baseline;
     float _bnb_off_axis_angle;
     bool _is_vertex_in_fiducial;
-    int _count_mu_minus;
-    int _count_mu_plus;
-    int _count_e_minus;
-    int _count_e_plus;
-    int _count_pi_zero;
-    int _count_pi_plus;
-    int _count_pi_minus;
-    int _count_kaon_plus;
-    int _count_kaon_minus;
-    int _count_kaon_zero;
-    int _count_proton;
-    int _count_neutron;
-    int _count_gamma;
-    int _count_lambda;
-    int _count_sigma_plus;
-    int _count_sigma_zero;
-    int _count_sigma_minus;
     std::vector<int> _mc_particle_pdg;
     std::vector<int> _mc_particle_trackid;
     std::vector<float> _mc_particle_energy;
@@ -251,23 +234,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("nu_vtx_in_fv",        &_is_vertex_in_fiducial, "nu_vtx_in_fv/O");
 
 
-    _tree->Branch("n_mu_minus",          &_count_mu_minus,   "n_mu_minus/I");
-    _tree->Branch("n_mu_plus",           &_count_mu_plus,    "n_mu_plus/I");
-    _tree->Branch("n_e_minus",           &_count_e_minus,    "n_e_minus/I");
-    _tree->Branch("n_e_plus",            &_count_e_plus,     "n_e_plus/I");
-    _tree->Branch("n_pi0",               &_count_pi_zero,    "n_pi0/I");
-    _tree->Branch("n_pi_plus",           &_count_pi_plus,    "n_pi_plus/I");
-    _tree->Branch("n_pi_minus",          &_count_pi_minus,   "n_pi_minus/I");
-    _tree->Branch("n_K_plus",            &_count_kaon_plus,  "n_K_plus/I");
-    _tree->Branch("n_K_minus",           &_count_kaon_minus, "n_K_minus/I");
-    _tree->Branch("n_K0",                &_count_kaon_zero,  "n_K0/I");
-    _tree->Branch("n_p",                 &_count_proton,     "n_p/I");
-    _tree->Branch("n_n",                 &_count_neutron,    "n_n/I");
-    _tree->Branch("n_gamma",             &_count_gamma,      "n_gamma/I");
-    _tree->Branch("n_lambda",            &_count_lambda,     "n_lambda/I");
-    _tree->Branch("n_sigma_plus",        &_count_sigma_plus, "n_sigma_plus/I");
-    _tree->Branch("n_sigma0",            &_count_sigma_zero, "n_sigma0/I");
-    _tree->Branch("n_sigma_minus",       &_count_sigma_minus,"n_sigma_minus/I");
 
 
     _tree->Branch("prim_pdg",            "std::vector<int>",               &_mc_particle_pdg);
@@ -364,23 +330,6 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
     _bnb_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
     _is_vertex_in_fiducial = false;
-    _count_mu_minus = 0;
-    _count_mu_plus = 0;
-    _count_e_minus = 0;
-    _count_e_plus = 0;
-    _count_pi_zero = 0;
-    _count_pi_plus = 0;
-    _count_pi_minus = 0;
-    _count_kaon_plus = 0;
-    _count_kaon_minus = 0;
-    _count_kaon_zero = 0;
-    _count_proton = 0;
-    _count_neutron = 0;
-    _count_gamma = 0;
-    _count_lambda = 0;
-    _count_sigma_plus = 0;
-    _count_sigma_zero = 0;
-    _count_sigma_minus = 0;
     _mc_particle_pdg.clear();
     _mc_particle_trackid.clear();
     _mc_particle_energy.clear();
@@ -593,36 +542,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         mcParticleMap[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
     }
 
-
-    for (int i = 0; i < mct.NParticles(); ++i) {
-        const simb::MCParticle& particle = mct.GetParticle(i);
-        if (!(particle.StatusCode() == 1 && particle.Process() == "primary")) continue;
-        const int pdg = particle.PdgCode();
-        switch (pdg) {
-            case 13:   ++_count_mu_minus;   break;
-            case -13:  ++_count_mu_plus;    break;
-            case 11:   ++_count_e_minus;    break;
-            case -11:  ++_count_e_plus;     break;
-            case 22:   ++_count_gamma;      break;
-            case 111:  ++_count_pi_zero;    break;
-            case 211:  ++_count_pi_plus;    break;
-            case -211: ++_count_pi_minus;   break;
-            case 321:  ++_count_kaon_plus;  break;
-            case -321: ++_count_kaon_minus; break;
-            case 2212: ++_count_proton;     break;
-            case 2112: ++_count_neutron;    break;
-            case 3222: ++_count_sigma_plus; break;
-            case 3212: ++_count_sigma_zero; break;
-            case 3112: ++_count_sigma_minus;break;
-            default:
-                if (pdg == 130 || pdg == 310 || pdg == 311) {
-                    ++_count_kaon_zero;
-                } else if (std::abs(pdg) == 3122) {
-                    ++_count_lambda;
-                }
-                break;
-        }
-    }
 
     for (size_t p = 0; p < mcp_h->size(); p++) {
         auto const& mcp = mcp_h->at(p);
