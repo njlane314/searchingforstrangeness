@@ -71,13 +71,6 @@ EventWeightAnalysis: {
     eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
-FlashAnalysis: {
-    tool_type: "FlashAnalysis"
-    PFPproducer: @local::standard_producers.PFPproducer
-    T0producer: @local::standard_producers.T0producer
-    OpFlashProducer: "simpleFlashBeam"
-}
-
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
     PFPproducer: @local::standard_producers.PFPproducer
@@ -165,7 +158,6 @@ NeutrinoSelectionFilter: {
     AnalysisTools: {
         default: @local::DefaultAnalysis
         weight: @local::EventWeightAnalysis
-        flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
         lambda: @local::LambdaAnalysis
         slice: @local::SliceAnalysis
