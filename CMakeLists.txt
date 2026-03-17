@@ -45,7 +45,6 @@ art_make( MODULE_LIBRARIES larcorealg_Geometry
                            nutools_RandomUtils_NuRandomService_service
                            ubreco_SelectionTool_OpT0FinderBase
                            ubreco_SelectionTool_OpT0FinderAlgorithms
-                           ubreco_BlipRecoAlg
                            larreco_RecoAlg
                            ${ART_FRAMEWORK_CORE}
                            ${ART_FRAMEWORK_PRINCIPAL}
