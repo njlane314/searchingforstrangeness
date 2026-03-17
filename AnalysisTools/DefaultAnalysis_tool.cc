@@ -782,7 +782,6 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
 
 DEFINE_ART_CLASS_TOOL(DefaultAnalysis)
 
-
 }
 
 #endif
