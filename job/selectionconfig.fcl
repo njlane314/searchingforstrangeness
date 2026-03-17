@@ -47,15 +47,6 @@ LambdaAnalysis: {
     BKTproducer: @local::standard_producers.BKTproducer
 }
 
-EnergyAnalysis: {
-    tool_type: "EnergyAnalysis"
-    TRKproducer: @local::standard_producers.TRKproducer
-    CALproducer: @local::standard_producers.CALproducer
-    CLSproducer: @local::standard_producers.CLSproducer
-    TrkShrScore: 0.5
-    ShrEnergyBias: 0.8
-    ADCtoMeVMIP: 0.002876
-}
 
 EventWeightAnalysis: {
     tool_type: "EventWeightAnalysis"
@@ -173,7 +164,6 @@ NeutrinoSelectionFilter: {
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
         default: @local::DefaultAnalysis
-        energy: @local::EnergyAnalysis
         weight: @local::EventWeightAnalysis
         flash: @local::FlashAnalysis
         image: @local::ImageAnalysis
