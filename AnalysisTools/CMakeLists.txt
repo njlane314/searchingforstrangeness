@@ -46,7 +46,6 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
 			             larevt_CalibrationDBI_IOVData
                          lardataobj_RawData
                          ubobj_Trigger
-                         ubreco_BlipRecoAlg
                          ${LIBTORCH_LIBRARIES}
                          ${ROOT_GEOM}
                          stdc++fs
