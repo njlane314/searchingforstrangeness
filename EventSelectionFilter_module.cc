@@ -99,8 +99,6 @@ private:
     double _ext_equiv_pot_sr  = -1.0;
 
     void BuildPFPMap(const common::ProxyPfpColl_t &pfp_pxy_col);
-    template <typename T>
-    void printPFParticleMetadata(const common::ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList);
     void AddDaughters(const common::ProxyPfpElem_t &pfp_pxy, const common::ProxyPfpColl_t &pfp_pxy_col, std::vector<common::ProxyPfpElem_t> &slice_v);
     void ResetTTree();
 };
@@ -190,26 +188,6 @@ bool EventSelectionFilter::filter(art::Event &e) {
     _sub = e.subRun();
     _run = e.run();
 
-    bool pass_beam_gate = false;
-    bool pass_ext_gate  = false;
-    bool op_ok = true;
-    if (_count_with_opfilter) {
-        try {
-            art::Handle<uboone::UbooneOpticalFilter> opH;
-            art::InputTag opTag("opfiltercommon", "", _opfilter_proc);
-            e.getByLabel(opTag, opH);
-            if (opH.isValid()) {
-                const float pe_beam = opH->PE_Beam();
-                const float pe_veto = opH->PE_Veto();
-                op_ok = (pe_beam >= _op_pe_beam_min) && (pe_veto <= _op_pe_veto_max);
-            }
-        } catch (...) {
-            op_ok = true;
-        }
-    }
-    if (pass_beam_gate && op_ok) ++_n_beam_gates_sr;
-    if (pass_ext_gate  && op_ok) ++_n_ext_gates_sr;
-
     common::ProxyPfpColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(e, fPFPproducer,
         proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
         proxy::withAssociated<recob::Cluster>(fCLSproducer),
@@ -262,24 +240,6 @@ void EventSelectionFilter::BuildPFPMap(const common::ProxyPfpColl_t &pfp_pxy_col
     for (const auto &pfp_pxy : pfp_pxy_col) {
         _pfpmap[pfp_pxy->Self()] = p;
         p++;
-    }
-}
-
-template <typename T>
-void EventSelectionFilter::printPFParticleMetadata(const common::ProxyPfpElem_t &pfp_pxy, const T &pfParticleMetadataList) {
-    if (pfParticleMetadataList.size() != 0) {
-        for (unsigned int j = 0; j < pfParticleMetadataList.size(); ++j) {
-            const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(pfParticleMetadataList.at(j));
-            auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
-            if (!pfParticlePropertiesMap.empty()) {
-                if (_verbose)
-                    std::cout << " Found PFParticle " << pfp_pxy->Self() << " with: " << std::endl;
-                for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it) {
-                    if (_verbose)
-                        std::cout << "  - " << it->first << " = " << it->second << std::endl;
-                }
-            }
-        }
     }
 }
 
