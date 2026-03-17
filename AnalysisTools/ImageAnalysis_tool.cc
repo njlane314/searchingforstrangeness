@@ -78,12 +78,15 @@ private:
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
-  std::vector<float> _detector_image_u;
-  std::vector<float> _detector_image_v;
-  std::vector<float> _detector_image_w;
-  std::vector<int32_t> _semantic_image_u;
-  std::vector<int32_t> _semantic_image_v;
-  std::vector<int32_t> _semantic_image_w;
+  std::vector<uint32_t> _detector_image_u_index;
+  std::vector<float> _detector_image_u_adc;
+  std::vector<uint32_t> _detector_image_v_index;
+  std::vector<float> _detector_image_v_adc;
+  std::vector<uint32_t> _detector_image_w_index;
+  std::vector<float> _detector_image_w_adc;
+  std::vector<uint8_t> _semantic_image_u;
+  std::vector<uint8_t> _semantic_image_v;
+  std::vector<uint8_t> _semantic_image_w;
   std::vector<int> _slice_semantic_active_pixels_u;
   std::vector<int> _slice_semantic_active_pixels_v;
   std::vector<int> _slice_semantic_active_pixels_w;
@@ -111,8 +114,7 @@ private:
   std::vector<float> _inf_child_max_rss_mb;
 
   static std::vector<int> countActiveSemanticLabels(
-      const std::vector<int32_t> &labels, const std::vector<float> &pixels,
-      size_t nlabels);
+      const std::vector<uint8_t> &labels, size_t nlabels);
   static int countActivePixels(const std::vector<float> &pixels);
 };
 
@@ -149,12 +151,15 @@ void ImageAnalysis::setBranches(TTree *_tree) {
                 "reco_neutrino_vertex_y/F");
   _tree->Branch("reco_neutrino_vertex_z", &_reco_neutrino_vertex_z,
                 "reco_neutrino_vertex_z/F");
-  _tree->Branch("detector_image_u", &_detector_image_u);
-  _tree->Branch("detector_image_v", &_detector_image_v);
-  _tree->Branch("detector_image_w", &_detector_image_w);
-  _tree->Branch("semantic_image_u", &_semantic_image_u);
-  _tree->Branch("semantic_image_v", &_semantic_image_v);
-  _tree->Branch("semantic_image_w", &_semantic_image_w);
+  _tree->Branch("detector_image_u_index", &_detector_image_u_index);
+  _tree->Branch("detector_image_u_adc", &_detector_image_u_adc);
+  _tree->Branch("detector_image_v_index", &_detector_image_v_index);
+  _tree->Branch("detector_image_v_adc", &_detector_image_v_adc);
+  _tree->Branch("detector_image_w_index", &_detector_image_w_index);
+  _tree->Branch("detector_image_w_adc", &_detector_image_w_adc);
+  _tree->Branch("semantic_image_u_label", &_semantic_image_u);
+  _tree->Branch("semantic_image_v_label", &_semantic_image_v);
+  _tree->Branch("semantic_image_w_label", &_semantic_image_w);
   _tree->Branch("slice_semantic_active_pixels_u",
                 &_slice_semantic_active_pixels_u);
   _tree->Branch("slice_semantic_active_pixels_v",
@@ -190,9 +195,12 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _reco_neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
   _reco_neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
   _reco_neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
-  _detector_image_u.clear();
-  _detector_image_v.clear();
-  _detector_image_w.clear();
+  _detector_image_u_index.clear();
+  _detector_image_u_adc.clear();
+  _detector_image_v_index.clear();
+  _detector_image_v_adc.clear();
+  _detector_image_w_index.clear();
+  _detector_image_w_adc.clear();
   _semantic_image_u.clear();
   _semantic_image_v.clear();
   _semantic_image_w.clear();
@@ -226,15 +234,12 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
 }
 
 std::vector<int> ImageAnalysis::countActiveSemanticLabels(
-    const std::vector<int32_t> &labels, const std::vector<float> &pixels,
-    size_t nlabels) {
+    const std::vector<uint8_t> &labels, size_t nlabels) {
   std::vector<int> counts(nlabels, 0);
-  const size_t nentries = std::min(labels.size(), pixels.size());
-  for (size_t idx = 0; idx < nentries; ++idx) {
-    int32_t label = labels[idx];
-    if (label >= 0 && static_cast<size_t>(label) < nlabels &&
-        pixels[idx] > 0.0f) {
-      ++counts[label];
+  for (uint8_t label : labels) {
+    auto const idx = static_cast<std::size_t>(label);
+    if (idx < nlabels) {
+      ++counts[idx];
     }
   }
   return counts;
@@ -265,40 +270,48 @@ void ImageAnalysis::analyseSlice(
   auto sliceH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesSliceTag);
 
   auto assignPlane = [&](const image::ImageProduct &img, bool slice) {
-    std::vector<float> *det_slice = nullptr;
-    std::vector<int32_t> *sem_slice = nullptr;
+    std::vector<uint32_t> *det_index = nullptr;
+    std::vector<float> *det_adc = nullptr;
+    std::vector<uint8_t> *sem_label = nullptr;
     if (img.view == static_cast<int>(geo::kU)) {
-      det_slice = &_detector_image_u;
-      sem_slice = &_semantic_image_u;
+      det_index = &_detector_image_u_index;
+      det_adc = &_detector_image_u_adc;
+      sem_label = &_semantic_image_u;
     } else if (img.view == static_cast<int>(geo::kV)) {
-      det_slice = &_detector_image_v;
-      sem_slice = &_semantic_image_v;
+      det_index = &_detector_image_v_index;
+      det_adc = &_detector_image_v_adc;
+      sem_label = &_semantic_image_v;
     } else if (img.view == static_cast<int>(geo::kW)) {
-      det_slice = &_detector_image_w;
-      sem_slice = &_semantic_image_w;
+      det_index = &_detector_image_w_index;
+      det_adc = &_detector_image_w_adc;
+      sem_label = &_semantic_image_w;
     } else {
       return;
     }
     if (slice) {
-      if (det_slice) *det_slice = img.adc;
-      if (sem_slice) sem_slice->assign(img.semantic.begin(), img.semantic.end());
+      if (det_index)
+        *det_index = img.index;
+      if (det_adc)
+        *det_adc = img.adc;
+      if (sem_label)
+        *sem_label = img.semantic;
     }
   };
 
   for (const auto &pi : *sliceH) assignPlane(pi, true);
 
-  _active_pixels_u = countActivePixels(_detector_image_u);
-  _active_pixels_v = countActivePixels(_detector_image_v);
-  _active_pixels_w = countActivePixels(_detector_image_w);
+  _active_pixels_u = countActivePixels(_detector_image_u_adc);
+  _active_pixels_v = countActivePixels(_detector_image_v_adc);
+  _active_pixels_w = countActivePixels(_detector_image_w_adc);
 
   if (!is_data) {
     size_t nlabels = image::SemanticClassifier::semantic_label_names.size();
     _slice_semantic_active_pixels_u =
-        countActiveSemanticLabels(_semantic_image_u, _detector_image_u, nlabels);
+        countActiveSemanticLabels(_semantic_image_u, nlabels);
     _slice_semantic_active_pixels_v =
-        countActiveSemanticLabels(_semantic_image_v, _detector_image_v, nlabels);
+        countActiveSemanticLabels(_semantic_image_v, nlabels);
     _slice_semantic_active_pixels_w =
-        countActiveSemanticLabels(_semantic_image_w, _detector_image_w, nlabels);
+        countActiveSemanticLabels(_semantic_image_w, nlabels);
   }
 
   if (!std::isnan(_reco_neutrino_vertex_x)) {

@@ -419,10 +419,27 @@ void ImageProducer::produce(art::Event &event) {
         auto [vertex_row, vertex_col] = vertex_pixel(p);
         out.vertex_row = vertex_row;
         out.vertex_col = vertex_col;
-        out.adc = det.data();
-        if (include_sem) {
-            auto tmp = sem.data();
-            out.semantic.assign(tmp.begin(), tmp.end());
+        auto const &det_pixels = det.data();
+        auto const &sem_pixels = sem.data();
+
+        auto const n_active = static_cast<std::size_t>(
+            std::count_if(det_pixels.begin(), det_pixels.end(),
+                          [](float a) { return a > 0.f; }));
+
+        out.index.reserve(n_active);
+        out.adc.reserve(n_active);
+        if (include_sem)
+            out.semantic.reserve(n_active);
+
+        for (std::size_t idx = 0; idx < det_pixels.size(); ++idx) {
+            float const a = det_pixels[idx];
+            if (a <= 0.f)
+                continue;
+
+            out.index.push_back(static_cast<uint32_t>(idx));
+            out.adc.push_back(a);
+            if (include_sem)
+                out.semantic.push_back(static_cast<uint8_t>(sem_pixels[idx]));
         }
         return out;
     };

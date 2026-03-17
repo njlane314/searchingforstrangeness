@@ -2,6 +2,7 @@
 #define IMAGEPRODUCTION_H
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <optional>
 #include <vector>
@@ -159,6 +160,25 @@ class ImageProduction {
         return semantic_label_vector[idx];
     }
 
+    static void mergeSemanticPixel(Image<int> &image,
+                                   size_t row, size_t col,
+                                   image::SemanticClassifier::SemanticLabel label) {
+        int const empty =
+            static_cast<int>(image::SemanticClassifier::SemanticLabel::Empty);
+        int const ambiguous =
+            static_cast<int>(image::SemanticClassifier::SemanticLabel::Ambiguous);
+        int const next = static_cast<int>(label);
+        int const current = image.get(row, col);
+
+        if (current == empty) {
+            image.set(row, col, next, false);
+            return;
+        }
+        if (current != next && current != ambiguous) {
+            image.set(row, col, ambiguous, false);
+        }
+    }
+
     struct WirePrep {
         geo::PlaneID planeID;
         std::size_t view_idx;
@@ -232,6 +252,28 @@ class ImageProduction {
         if (!col)
             return;
 
+        int min_tick = std::numeric_limits<int>::max();
+        int max_tick = std::numeric_limits<int>::min();
+        for (auto const &ph : w.hits_filtered) {
+            if (!ph)
+                continue;
+            min_tick = std::min(min_tick, ph->StartTick());
+            max_tick = std::max(max_tick, ph->EndTick());
+        }
+        if (min_tick >= max_tick)
+            return;
+
+        auto const nticks = static_cast<std::size_t>(max_tick - min_tick);
+        std::vector<unsigned char> tick_active(nticks, 0);
+
+        int const empty_label =
+            static_cast<int>(image::SemanticClassifier::SemanticLabel::Empty);
+        int const ambiguous_label =
+            static_cast<int>(image::SemanticClassifier::SemanticLabel::Ambiguous);
+        std::vector<int> tick_semantic;
+        if (ctx.has_mcps)
+            tick_semantic.assign(nticks, empty_label);
+
         for (auto const &ph : w.hits_filtered) {
             const recob::Hit &hit = *ph;
 
@@ -244,31 +286,53 @@ class ImageProduction {
                                           ctx.semantic_label_vector, ctx.has_mcps);
             }
 
-            const int tick_start = hit.StartTick();
-            const int tick_end = hit.EndTick();
+            int const tick_start = std::max(hit.StartTick(), min_tick);
+            int const tick_end = std::min(hit.EndTick(), max_tick);
+            if (tick_start >= tick_end)
+                continue;
 
-            for (auto const &rr : wire.SignalROI().get_ranges()) {
-                const int rbeg = rr.begin_index();
-                const auto &adcs = rr.data();
-                const int rend = rbeg + static_cast<int>(adcs.size());
-                const int s = std::max(tick_start, rbeg);
-                const int e = std::min(tick_end, rend);
-                if (s >= e)
+            for (int t = tick_start; t < tick_end; ++t) {
+                auto const ti = static_cast<std::size_t>(t - min_tick);
+                tick_active[ti] = 1;
+                if (ctx.has_mcps) {
+                    int &slot = tick_semantic[ti];
+                    int const next = static_cast<int>(sem);
+                    if (slot == empty_label)
+                        slot = next;
+                    else if (slot != next)
+                        slot = ambiguous_label;
+                }
+            }
+        }
+
+        for (auto const &rr : wire.SignalROI().get_ranges()) {
+            const int rbeg = rr.begin_index();
+            const auto &adcs = rr.data();
+            const int rend = rbeg + static_cast<int>(adcs.size());
+            const int s = std::max(rbeg, min_tick);
+            const int e = std::min(rend, max_tick);
+            if (s >= e)
+                continue;
+
+            for (int t = s; t < e; ++t) {
+                auto const ti = static_cast<std::size_t>(t - min_tick);
+                if (!tick_active[ti])
                     continue;
 
-                for (int t = s; t < e; ++t) {
-                    const float a = adcs[t - rbeg];
-                    if (a <= ctx.adc_image_threshold)
-                        continue;
+                const float a = adcs[t - rbeg];
+                if (a <= ctx.adc_image_threshold)
+                    continue;
 
-                    double const x = ctx.detprop->ConvertTicksToX(static_cast<double>(t), w.planeID);
-                    auto row = ctx.properties[w.view_idx].row(x);
-                    if (!row)
-                        continue;
+                double const x = ctx.detprop->ConvertTicksToX(static_cast<double>(t), w.planeID);
+                auto row = ctx.properties[w.view_idx].row(x);
+                if (!row)
+                    continue;
 
-                    ctx.detector_images[w.view_idx].set(*row, *col, a, true);
-                    if (ctx.has_mcps)
-                        ctx.semantic_images[w.view_idx].set(*row, *col, static_cast<int>(sem), false);
+                ctx.detector_images[w.view_idx].set(*row, *col, a, true);
+                if (ctx.has_mcps && tick_semantic[ti] != empty_label) {
+                    mergeSemanticPixel(
+                        ctx.semantic_images[w.view_idx], *row, *col,
+                        static_cast<image::SemanticClassifier::SemanticLabel>(tick_semantic[ti]));
                 }
             }
         }
