@@ -2,7 +2,6 @@
 #include "mcreco.fcl"
 #include "proximityclustering.fcl"
 #include "particleinventoryservice.fcl"
-#include "blipreco_configs.fcl"
 #include "producers.fcl"
 #include "fidvol.fcl"
 
@@ -12,11 +11,6 @@ microboone_calo_mcc9_data: {
     CaloDoLifeTimeCorrection: false
     CaloLifeTimeForm: 0
     CaloUseModBox: true
-}
-
-BlipAnalysis: {
-    tool_type: "BlipAnalysis"
-    BlipAlg: @local::microboone_blipalg
 }
 
 DefaultAnalysis: {
@@ -178,7 +172,6 @@ NeutrinoSelectionFilter: {
     @table::EventSelectionFilter
     SelectionTool: @local::NeutrinoSelection
     AnalysisTools: {
-        blip: @local::BlipAnalysis
         default: @local::DefaultAnalysis
         energy: @local::EnergyAnalysis
         weight: @local::EventWeightAnalysis
