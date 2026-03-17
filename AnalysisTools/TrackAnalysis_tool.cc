@@ -10,10 +10,12 @@
 
 #include "TVector3.h"
 
+#include <array>
 #include <cmath>
 #include <algorithm>
 #include <numeric>
 #include <limits>
+#include <utility>
 
 namespace analysis {
 
@@ -29,19 +31,35 @@ public:
 
 private:
     void fill_default();
-    float calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values);
-    float calculate_track_trunk_rr_qtrim(const std::vector<float>& dedx,
-                                         const std::vector<float>& rr,
-                                         float alpha=0.25f, float beta=0.75f,
-                                         unsigned skip_each_end=3,
-                                         double qlow=0.10, double qhigh=0.80,
-                                         unsigned min_hits_in_band=8);
+    bool compute_selected_median_iqr(std::vector<float> values,
+                                     float& median,
+                                     float& iqr,
+                                     unsigned min_hits);
 
-    bool compute_mip_core_stats(const std::vector<float>& dedx_values,
-                                float& T70,
-                                float& Q50,
-                                float& Q90,
+    bool compute_vertex_trunk_mip_stats(const std::vector<float>& dedx,
+                                        const std::vector<float>& rr,
+                                        bool vertex_at_track_start,
+                                        float& median,
+                                        float& iqr,
+                                        float d_lo = 5.0f,
+                                        float d_hi = 20.0f,
+                                        unsigned min_hits = 6);
+
+    bool compute_bulk_mip_stats(const std::vector<float>& dedx,
+                                const std::vector<float>& rr,
+                                float& median,
+                                float& iqr,
+                                float rr_lo = 0.20f,
+                                float rr_hi = 0.80f,
                                 unsigned min_hits = 8);
+
+    float compute_bragg_ratio(const std::vector<float>& dedx,
+                              const std::vector<float>& rr,
+                              float end_rr_frac = 0.10f,
+                              float bulk_rr_lo = 0.20f,
+                              float bulk_rr_hi = 0.80f,
+                              unsigned min_hits_end = 4,
+                              unsigned min_hits_bulk = 8);
     art::InputTag fTRKproducer;
     art::InputTag fCALproducer;
 
@@ -74,22 +92,24 @@ private:
     std::vector<float> _track_calo_energy_u;
     std::vector<float> _track_calo_energy_v;
     std::vector<float> _track_calo_energy_y;
-    std::vector<float> _track_trunk_dedx_u;
-    std::vector<float> _track_trunk_dedx_v;
-    std::vector<float> _track_trunk_dedx_y;
-    std::vector<float> _track_trunk_rr_dedx_u;
-    std::vector<float> _track_trunk_rr_dedx_v;
-    std::vector<float> _track_trunk_rr_dedx_y;
 
-    std::vector<float> _track_dedx_T70_u;
-    std::vector<float> _track_dedx_T70_v;
-    std::vector<float> _track_dedx_T70_y;
-    std::vector<float> _track_dedx_Q50_u;
-    std::vector<float> _track_dedx_Q50_v;
-    std::vector<float> _track_dedx_Q50_y;
-    std::vector<float> _track_dedx_Q90_u;
-    std::vector<float> _track_dedx_Q90_v;
-    std::vector<float> _track_dedx_Q90_y;
+    std::vector<float> _track_vertex_trunk_mip_median_u;
+    std::vector<float> _track_vertex_trunk_mip_median_v;
+    std::vector<float> _track_vertex_trunk_mip_median_y;
+    std::vector<float> _track_vertex_trunk_mip_iqr_u;
+    std::vector<float> _track_vertex_trunk_mip_iqr_v;
+    std::vector<float> _track_vertex_trunk_mip_iqr_y;
+
+    std::vector<float> _track_bulk_mip_median_u;
+    std::vector<float> _track_bulk_mip_median_v;
+    std::vector<float> _track_bulk_mip_median_y;
+    std::vector<float> _track_bulk_mip_iqr_u;
+    std::vector<float> _track_bulk_mip_iqr_v;
+    std::vector<float> _track_bulk_mip_iqr_y;
+
+    std::vector<float> _track_bragg_ratio_u;
+    std::vector<float> _track_bragg_ratio_v;
+    std::vector<float> _track_bragg_ratio_y;
 };
 
 TrackAnalysis::TrackAnalysis(const fhicl::ParameterSet& parameter_set) {
@@ -112,7 +132,8 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
     const auto& calorimetry_proxy = proxy::getCollection<std::vector<recob::Track>>(
         event, fTRKproducer, proxy::withAssociated<anab::Calorimetry>(fCALproducer));
 
-    TVector3 neutrino_vertex;
+    TVector3 neutrino_vertex(0.0, 0.0, 0.0);
+    bool have_neutrino_vertex = false;
     for (const auto& pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             double xyz[3] = {};
@@ -122,10 +143,13 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             } else {
                 vertices.at(0)->XYZ(xyz);
                 neutrino_vertex.SetXYZ(xyz[0], xyz[1], xyz[2]);
+                have_neutrino_vertex = true;
             }
             break;
         }
     }
+
+    const float nan = std::numeric_limits<float>::quiet_NaN();
 
     for (size_t pfp_index = 0; pfp_index < slice_pfp_vec.size(); ++pfp_index) {
         const auto& pfp = slice_pfp_vec[pfp_index];
@@ -164,14 +188,39 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             _track_phi.push_back(track->Phi());
             _track_length.push_back(common::GetSCECorrTrackLength(track));
 
-            TVector3 track_vertex(track->Start().X(), track->Start().Y(), track->Start().Z());
-            track_vertex -= neutrino_vertex;
-            _track_distance_to_vertex.push_back(track_vertex.Mag());
+            bool vertex_at_track_start = false;
+            if (have_neutrino_vertex) {
+                TVector3 start_to_vertex(track->Start().X(), track->Start().Y(), track->Start().Z());
+                start_to_vertex -= neutrino_vertex;
+                TVector3 end_to_vertex(track->End().X(), track->End().Y(), track->End().Z());
+                end_to_vertex -= neutrino_vertex;
+
+                const float d_start = start_to_vertex.Mag();
+                const float d_end = end_to_vertex.Mag();
+                vertex_at_track_start = (d_start <= d_end);
+                _track_distance_to_vertex.push_back(d_start);
+            } else {
+                _track_distance_to_vertex.push_back(nan);
+            }
+
+            std::array<float, 3> calo_energy;
+            std::array<float, 3> vertex_trunk_median;
+            std::array<float, 3> vertex_trunk_iqr;
+            std::array<float, 3> bulk_median;
+            std::array<float, 3> bulk_iqr;
+            std::array<float, 3> bragg_ratio;
+
+            calo_energy.fill(nan);
+            vertex_trunk_median.fill(nan);
+            vertex_trunk_iqr.fill(nan);
+            bulk_median.fill(nan);
+            bulk_iqr.fill(nan);
+            bragg_ratio.fill(nan);
 
             auto calorimetry_objects = calorimetry_proxy[track.key()].get<anab::Calorimetry>();
 
             for (const auto& calo : calorimetry_objects) {
-                int plane = calo->PlaneID().Plane;
+                const int plane = calo->PlaneID().Plane;
                 if (plane < 0 || plane > 2) continue;
 
                 const auto& dqdx_values = calo->dQdx();
@@ -179,52 +228,73 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
                 const auto& pitch_values = calo->TrkPitchVec();
                 const auto& xyz_values = calo->XYZ();
 
-                float calo_energy = 0.0f;
+                const size_t n_hits = std::min({
+                    dqdx_values.size(),
+                    residual_range.size(),
+                    pitch_values.size(),
+                    xyz_values.size()
+                });
+
+                if (n_hits == 0) continue;
+
+                float plane_calo_energy = 0.0f;
                 std::vector<float> dedx_values;
-                dedx_values.reserve(dqdx_values.size());
-                for (size_t i = 0; i < dqdx_values.size(); ++i) {
-                    float dedx = common::ModBoxCorrection(dqdx_values[i] * fADCtoE[plane],
-                                                         xyz_values[i].X(), xyz_values[i].Y(), xyz_values[i].Z());
+                dedx_values.reserve(n_hits);
+
+                std::vector<float> rr_values;
+                rr_values.reserve(n_hits);
+
+                for (size_t i = 0; i < n_hits; ++i) {
+                    const float dedx = common::ModBoxCorrection(dqdx_values[i] * fADCtoE[plane],
+                                                                xyz_values[i].X(), xyz_values[i].Y(), xyz_values[i].Z());
                     dedx_values.push_back(dedx);
-                    calo_energy += dedx * pitch_values[i];
+                    rr_values.push_back(residual_range[i]);
+
+                    if (std::isfinite(dedx) && std::isfinite(pitch_values[i])) {
+                        plane_calo_energy += dedx * pitch_values[i];
+                    }
                 }
 
-                float trunk_dedx = calculate_track_trunk_dedx_by_hits(dedx_values);
-                float trunk_rr_dedx = calculate_track_trunk_rr_qtrim(
-                    dedx_values, residual_range,
-                    0.25f, 0.75f, 3, 0.10, 0.80, 8);
+                calo_energy[plane] = plane_calo_energy;
 
-                float T70 = std::numeric_limits<float>::quiet_NaN();
-                float Q50 = std::numeric_limits<float>::quiet_NaN();
-                float Q90 = std::numeric_limits<float>::quiet_NaN();
-                bool ok_stats = compute_mip_core_stats(dedx_values, T70, Q50, Q90, 8);
-                if (!ok_stats) {
-                    T70 = Q50 = Q90 = std::numeric_limits<float>::quiet_NaN();
+                if (have_neutrino_vertex) {
+                    compute_vertex_trunk_mip_stats(dedx_values, rr_values,
+                                                   vertex_at_track_start,
+                                                   vertex_trunk_median[plane],
+                                                   vertex_trunk_iqr[plane],
+                                                   5.0f, 20.0f, 6);
                 }
 
-                if (plane == 0) {
-                    _track_calo_energy_u.push_back(calo_energy);
-                    _track_trunk_dedx_u.push_back(trunk_dedx);
-                    _track_trunk_rr_dedx_u.push_back(trunk_rr_dedx);
-                    _track_dedx_T70_u.push_back(T70);
-                    _track_dedx_Q50_u.push_back(Q50);
-                    _track_dedx_Q90_u.push_back(Q90);
-                } else if (plane == 1) {
-                    _track_calo_energy_v.push_back(calo_energy);
-                    _track_trunk_dedx_v.push_back(trunk_dedx);
-                    _track_trunk_rr_dedx_v.push_back(trunk_rr_dedx);
-                    _track_dedx_T70_v.push_back(T70);
-                    _track_dedx_Q50_v.push_back(Q50);
-                    _track_dedx_Q90_v.push_back(Q90);
-                } else if (plane == 2) {
-                    _track_calo_energy_y.push_back(calo_energy);
-                    _track_trunk_dedx_y.push_back(trunk_dedx);
-                    _track_trunk_rr_dedx_y.push_back(trunk_rr_dedx);
-                    _track_dedx_T70_y.push_back(T70);
-                    _track_dedx_Q50_y.push_back(Q50);
-                    _track_dedx_Q90_y.push_back(Q90);
-                }
+                compute_bulk_mip_stats(dedx_values, rr_values,
+                                       bulk_median[plane],
+                                       bulk_iqr[plane],
+                                       0.20f, 0.80f, 8);
+
+                bragg_ratio[plane] = compute_bragg_ratio(dedx_values, rr_values,
+                                                         0.10f, 0.20f, 0.80f, 4, 8);
             }
+
+            _track_calo_energy_u.push_back(calo_energy[0]);
+            _track_calo_energy_v.push_back(calo_energy[1]);
+            _track_calo_energy_y.push_back(calo_energy[2]);
+
+            _track_vertex_trunk_mip_median_u.push_back(vertex_trunk_median[0]);
+            _track_vertex_trunk_mip_median_v.push_back(vertex_trunk_median[1]);
+            _track_vertex_trunk_mip_median_y.push_back(vertex_trunk_median[2]);
+            _track_vertex_trunk_mip_iqr_u.push_back(vertex_trunk_iqr[0]);
+            _track_vertex_trunk_mip_iqr_v.push_back(vertex_trunk_iqr[1]);
+            _track_vertex_trunk_mip_iqr_y.push_back(vertex_trunk_iqr[2]);
+
+            _track_bulk_mip_median_u.push_back(bulk_median[0]);
+            _track_bulk_mip_median_v.push_back(bulk_median[1]);
+            _track_bulk_mip_median_y.push_back(bulk_median[2]);
+            _track_bulk_mip_iqr_u.push_back(bulk_iqr[0]);
+            _track_bulk_mip_iqr_v.push_back(bulk_iqr[1]);
+            _track_bulk_mip_iqr_y.push_back(bulk_iqr[2]);
+
+            _track_bragg_ratio_u.push_back(bragg_ratio[0]);
+            _track_bragg_ratio_v.push_back(bragg_ratio[1]);
+            _track_bragg_ratio_y.push_back(bragg_ratio[2]);
         } else {
             fill_default();
         }
@@ -232,45 +302,50 @@ void TrackAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
 }
 
 void TrackAnalysis::fill_default() {
-    _track_pfp_ids.push_back(std::numeric_limits<size_t>::max());
-    _track_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_end_x.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_end_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_end_z.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_end_x.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_end_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_sce_end_z.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_direction_x.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_direction_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_direction_z.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_distance_to_vertex.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_theta.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_phi.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_length.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_calo_energy_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_calo_energy_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_calo_energy_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_rr_dedx_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_rr_dedx_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_trunk_rr_dedx_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    const float nan = std::numeric_limits<float>::quiet_NaN();
 
-    _track_dedx_T70_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_T70_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_T70_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q50_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q50_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q50_y.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q90_u.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q90_v.push_back(std::numeric_limits<float>::quiet_NaN());
-    _track_dedx_Q90_y.push_back(std::numeric_limits<float>::quiet_NaN());
+    _track_pfp_ids.push_back(std::numeric_limits<size_t>::max());
+    _track_start_x.push_back(nan);
+    _track_start_y.push_back(nan);
+    _track_start_z.push_back(nan);
+    _track_sce_start_x.push_back(nan);
+    _track_sce_start_y.push_back(nan);
+    _track_sce_start_z.push_back(nan);
+    _track_end_x.push_back(nan);
+    _track_end_y.push_back(nan);
+    _track_end_z.push_back(nan);
+    _track_sce_end_x.push_back(nan);
+    _track_sce_end_y.push_back(nan);
+    _track_sce_end_z.push_back(nan);
+    _track_direction_x.push_back(nan);
+    _track_direction_y.push_back(nan);
+    _track_direction_z.push_back(nan);
+    _track_distance_to_vertex.push_back(nan);
+    _track_theta.push_back(nan);
+    _track_phi.push_back(nan);
+    _track_length.push_back(nan);
+
+    _track_calo_energy_u.push_back(nan);
+    _track_calo_energy_v.push_back(nan);
+    _track_calo_energy_y.push_back(nan);
+
+    _track_vertex_trunk_mip_median_u.push_back(nan);
+    _track_vertex_trunk_mip_median_v.push_back(nan);
+    _track_vertex_trunk_mip_median_y.push_back(nan);
+    _track_vertex_trunk_mip_iqr_u.push_back(nan);
+    _track_vertex_trunk_mip_iqr_v.push_back(nan);
+    _track_vertex_trunk_mip_iqr_y.push_back(nan);
+
+    _track_bulk_mip_median_u.push_back(nan);
+    _track_bulk_mip_median_v.push_back(nan);
+    _track_bulk_mip_median_y.push_back(nan);
+    _track_bulk_mip_iqr_u.push_back(nan);
+    _track_bulk_mip_iqr_v.push_back(nan);
+    _track_bulk_mip_iqr_y.push_back(nan);
+
+    _track_bragg_ratio_u.push_back(nan);
+    _track_bragg_ratio_v.push_back(nan);
+    _track_bragg_ratio_y.push_back(nan);
 }
 
 void TrackAnalysis::setBranches(TTree* tree) {
@@ -294,25 +369,28 @@ void TrackAnalysis::setBranches(TTree* tree) {
     tree->Branch("track_theta", "std::vector<float>", &_track_theta);
     tree->Branch("track_phi", "std::vector<float>", &_track_phi);
     tree->Branch("track_length", "std::vector<float>", &_track_length);
+
     tree->Branch("track_calo_energy_u", "std::vector<float>", &_track_calo_energy_u);
     tree->Branch("track_calo_energy_v", "std::vector<float>", &_track_calo_energy_v);
     tree->Branch("track_calo_energy_y", "std::vector<float>", &_track_calo_energy_y);
-    tree->Branch("track_trunk_dedx_u", "std::vector<float>", &_track_trunk_dedx_u);
-    tree->Branch("track_trunk_dedx_v", "std::vector<float>", &_track_trunk_dedx_v);
-    tree->Branch("track_trunk_dedx_y", "std::vector<float>", &_track_trunk_dedx_y);
-    tree->Branch("track_trunk_rr_dedx_u", "std::vector<float>", &_track_trunk_rr_dedx_u);
-    tree->Branch("track_trunk_rr_dedx_v", "std::vector<float>", &_track_trunk_rr_dedx_v);
-    tree->Branch("track_trunk_rr_dedx_y", "std::vector<float>", &_track_trunk_rr_dedx_y);
 
-    tree->Branch("track_dedx_T70_u", "std::vector<float>", &_track_dedx_T70_u);
-    tree->Branch("track_dedx_T70_v", "std::vector<float>", &_track_dedx_T70_v);
-    tree->Branch("track_dedx_T70_y", "std::vector<float>", &_track_dedx_T70_y);
-    tree->Branch("track_dedx_Q50_u", "std::vector<float>", &_track_dedx_Q50_u);
-    tree->Branch("track_dedx_Q50_v", "std::vector<float>", &_track_dedx_Q50_v);
-    tree->Branch("track_dedx_Q50_y", "std::vector<float>", &_track_dedx_Q50_y);
-    tree->Branch("track_dedx_Q90_u", "std::vector<float>", &_track_dedx_Q90_u);
-    tree->Branch("track_dedx_Q90_v", "std::vector<float>", &_track_dedx_Q90_v);
-    tree->Branch("track_dedx_Q90_y", "std::vector<float>", &_track_dedx_Q90_y);
+    tree->Branch("track_vertex_trunk_mip_median_u", "std::vector<float>", &_track_vertex_trunk_mip_median_u);
+    tree->Branch("track_vertex_trunk_mip_median_v", "std::vector<float>", &_track_vertex_trunk_mip_median_v);
+    tree->Branch("track_vertex_trunk_mip_median_y", "std::vector<float>", &_track_vertex_trunk_mip_median_y);
+    tree->Branch("track_vertex_trunk_mip_iqr_u", "std::vector<float>", &_track_vertex_trunk_mip_iqr_u);
+    tree->Branch("track_vertex_trunk_mip_iqr_v", "std::vector<float>", &_track_vertex_trunk_mip_iqr_v);
+    tree->Branch("track_vertex_trunk_mip_iqr_y", "std::vector<float>", &_track_vertex_trunk_mip_iqr_y);
+
+    tree->Branch("track_bulk_mip_median_u", "std::vector<float>", &_track_bulk_mip_median_u);
+    tree->Branch("track_bulk_mip_median_v", "std::vector<float>", &_track_bulk_mip_median_v);
+    tree->Branch("track_bulk_mip_median_y", "std::vector<float>", &_track_bulk_mip_median_y);
+    tree->Branch("track_bulk_mip_iqr_u", "std::vector<float>", &_track_bulk_mip_iqr_u);
+    tree->Branch("track_bulk_mip_iqr_v", "std::vector<float>", &_track_bulk_mip_iqr_v);
+    tree->Branch("track_bulk_mip_iqr_y", "std::vector<float>", &_track_bulk_mip_iqr_y);
+
+    tree->Branch("track_bragg_ratio_u", "std::vector<float>", &_track_bragg_ratio_u);
+    tree->Branch("track_bragg_ratio_v", "std::vector<float>", &_track_bragg_ratio_v);
+    tree->Branch("track_bragg_ratio_y", "std::vector<float>", &_track_bragg_ratio_y);
 }
 
 void TrackAnalysis::resetTTree(TTree* tree) {
@@ -336,165 +414,198 @@ void TrackAnalysis::resetTTree(TTree* tree) {
     _track_theta.clear();
     _track_phi.clear();
     _track_length.clear();
+
     _track_calo_energy_u.clear();
     _track_calo_energy_v.clear();
     _track_calo_energy_y.clear();
-    _track_trunk_dedx_u.clear();
-    _track_trunk_dedx_v.clear();
-    _track_trunk_dedx_y.clear();
-    _track_trunk_rr_dedx_u.clear();
-    _track_trunk_rr_dedx_v.clear();
-    _track_trunk_rr_dedx_y.clear();
 
-    _track_dedx_T70_u.clear();
-    _track_dedx_T70_v.clear();
-    _track_dedx_T70_y.clear();
-    _track_dedx_Q50_u.clear();
-    _track_dedx_Q50_v.clear();
-    _track_dedx_Q50_y.clear();
-    _track_dedx_Q90_u.clear();
-    _track_dedx_Q90_v.clear();
-    _track_dedx_Q90_y.clear();
+    _track_vertex_trunk_mip_median_u.clear();
+    _track_vertex_trunk_mip_median_v.clear();
+    _track_vertex_trunk_mip_median_y.clear();
+    _track_vertex_trunk_mip_iqr_u.clear();
+    _track_vertex_trunk_mip_iqr_v.clear();
+    _track_vertex_trunk_mip_iqr_y.clear();
+
+    _track_bulk_mip_median_u.clear();
+    _track_bulk_mip_median_v.clear();
+    _track_bulk_mip_median_y.clear();
+    _track_bulk_mip_iqr_u.clear();
+    _track_bulk_mip_iqr_v.clear();
+    _track_bulk_mip_iqr_y.clear();
+
+    _track_bragg_ratio_u.clear();
+    _track_bragg_ratio_v.clear();
+    _track_bragg_ratio_y.clear();
 }
 
-float TrackAnalysis::calculate_track_trunk_dedx_by_hits(const std::vector<float>& dedx_values) {
-    size_t hit_count = dedx_values.size();
-    int first_hit_index = static_cast<int>(hit_count) - 4; 
-    int last_hit_index = static_cast<int>(hit_count - (hit_count / 3)) - 1;
+bool TrackAnalysis::compute_selected_median_iqr(std::vector<float> values,
+                                                float& median,
+                                                float& iqr,
+                                                unsigned min_hits) {
+    median = std::numeric_limits<float>::quiet_NaN();
+    iqr = std::numeric_limits<float>::quiet_NaN();
 
-    if (first_hit_index - last_hit_index < 5) {
+    if (values.size() < min_hits) {
+        return false;
+    }
+
+    std::sort(values.begin(), values.end());
+
+    const float q25 = common::quantile_linear(values, 0.25);
+    median = common::quantile_linear(values, 0.50);
+    const float q75 = common::quantile_linear(values, 0.75);
+    iqr = q75 - q25;
+
+    return std::isfinite(median) && std::isfinite(iqr);
+}
+
+bool TrackAnalysis::compute_vertex_trunk_mip_stats(const std::vector<float>& dedx,
+                                                   const std::vector<float>& rr,
+                                                   bool vertex_at_track_start,
+                                                   float& median,
+                                                   float& iqr,
+                                                   float d_lo,
+                                                   float d_hi,
+                                                   unsigned min_hits) {
+    median = std::numeric_limits<float>::quiet_NaN();
+    iqr = std::numeric_limits<float>::quiet_NaN();
+
+    if (dedx.size() != rr.size() || dedx.empty()) {
+        return false;
+    }
+
+    float rrmax = -1.0f;
+    for (float r : rr) {
+        if (std::isfinite(r)) {
+            rrmax = std::max(rrmax, r);
+        }
+    }
+    if (!(rrmax > 0.0f)) {
+        return false;
+    }
+
+    std::vector<float> values;
+    values.reserve(dedx.size());
+
+    for (size_t i = 0; i < dedx.size(); ++i) {
+        const float v = dedx[i];
+        const float r = rr[i];
+
+        if (!std::isfinite(v) || v <= 0.0f) continue;
+        if (!std::isfinite(r) || r < 0.0f) continue;
+
+        const float distance_from_vertex = vertex_at_track_start ? (rrmax - r) : r;
+        if (distance_from_vertex < d_lo || distance_from_vertex > d_hi) continue;
+
+        values.push_back(v);
+    }
+
+    return compute_selected_median_iqr(std::move(values), median, iqr, min_hits);
+}
+
+bool TrackAnalysis::compute_bulk_mip_stats(const std::vector<float>& dedx,
+                                           const std::vector<float>& rr,
+                                           float& median,
+                                           float& iqr,
+                                           float rr_lo,
+                                           float rr_hi,
+                                           unsigned min_hits) {
+    median = std::numeric_limits<float>::quiet_NaN();
+    iqr = std::numeric_limits<float>::quiet_NaN();
+
+    if (dedx.size() != rr.size() || dedx.empty()) {
+        return false;
+    }
+
+    float rrmax = -1.0f;
+    for (float r : rr) {
+        if (std::isfinite(r)) {
+            rrmax = std::max(rrmax, r);
+        }
+    }
+    if (!(rrmax > 0.0f)) {
+        return false;
+    }
+
+    std::vector<float> values;
+    values.reserve(dedx.size());
+
+    for (size_t i = 0; i < dedx.size(); ++i) {
+        const float v = dedx[i];
+        const float r = rr[i];
+
+        if (!std::isfinite(v) || v <= 0.0f) continue;
+        if (!std::isfinite(r) || r < 0.0f) continue;
+
+        const float u = r / rrmax;
+        if (u < rr_lo || u > rr_hi) continue;
+
+        values.push_back(v);
+    }
+
+    return compute_selected_median_iqr(std::move(values), median, iqr, min_hits);
+}
+
+float TrackAnalysis::compute_bragg_ratio(const std::vector<float>& dedx,
+                                         const std::vector<float>& rr,
+                                         float end_rr_frac,
+                                         float bulk_rr_lo,
+                                         float bulk_rr_hi,
+                                         unsigned min_hits_end,
+                                         unsigned min_hits_bulk) {
+    if (dedx.size() != rr.size() || dedx.empty()) {
         return std::numeric_limits<float>::quiet_NaN();
     }
 
-    std::vector<float> trunk_dedx_values;
-    trunk_dedx_values.reserve(first_hit_index - last_hit_index + 1);
-    for (int i = hit_count - 1; i >= 0 && i >= last_hit_index; --i) {
-        if (i > first_hit_index) continue;
-        trunk_dedx_values.push_back(dedx_values[i]);
+    float rrmax = -1.0f;
+    for (float r : rr) {
+        if (std::isfinite(r)) {
+            rrmax = std::max(rrmax, r);
+        }
+    }
+    if (!(rrmax > 0.0f)) {
+        return std::numeric_limits<float>::quiet_NaN();
     }
 
-    std::sort(trunk_dedx_values.begin(), trunk_dedx_values.end());
-    float median = (trunk_dedx_values.size() % 2 == 0) 
-        ? 0.5f * (trunk_dedx_values[trunk_dedx_values.size() / 2 - 1] + trunk_dedx_values[trunk_dedx_values.size() / 2])
-        : trunk_dedx_values[trunk_dedx_values.size() / 2];
+    std::vector<float> end_values;
+    std::vector<float> bulk_values;
+    end_values.reserve(dedx.size());
+    bulk_values.reserve(dedx.size());
 
-    double sum = std::accumulate(trunk_dedx_values.begin(), trunk_dedx_values.end(), 0.0);
-    double mean = sum / trunk_dedx_values.size();
-    double variance_accum = 0.0;
-    for (const auto& value : trunk_dedx_values) {
-        variance_accum += (value - mean) * (value - mean);
-    }
-    double stdev = std::sqrt(variance_accum / (trunk_dedx_values.size() - 1));
+    for (size_t i = 0; i < dedx.size(); ++i) {
+        const float v = dedx[i];
+        const float r = rr[i];
 
-    std::vector<float> trimmed_dedx_values;
-    trimmed_dedx_values.reserve(trunk_dedx_values.size());
-    for (const auto& value : trunk_dedx_values) {
-        if (value <= median + stdev) {
-            trimmed_dedx_values.push_back(value);
+        if (!std::isfinite(v) || v <= 0.0f) continue;
+        if (!std::isfinite(r) || r < 0.0f) continue;
+
+        const float u = r / rrmax;
+        if (u <= end_rr_frac) {
+            end_values.push_back(v);
+        }
+        if (u >= bulk_rr_lo && u <= bulk_rr_hi) {
+            bulk_values.push_back(v);
         }
     }
 
-    double trimmed_sum = std::accumulate(trimmed_dedx_values.begin(), trimmed_dedx_values.end(), 0.0);
-    return static_cast<float>(trimmed_sum / trimmed_dedx_values.size());
+    float end_median = std::numeric_limits<float>::quiet_NaN();
+    float end_iqr = std::numeric_limits<float>::quiet_NaN();
+    float bulk_median = std::numeric_limits<float>::quiet_NaN();
+    float bulk_iqr = std::numeric_limits<float>::quiet_NaN();
+
+    if (!compute_selected_median_iqr(std::move(end_values), end_median, end_iqr, min_hits_end)) {
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+    if (!compute_selected_median_iqr(std::move(bulk_values), bulk_median, bulk_iqr, min_hits_bulk)) {
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+    if (!(bulk_median > 0.0f)) {
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+
+    return end_median / bulk_median;
 }
 
-float TrackAnalysis::calculate_track_trunk_rr_qtrim(
-    const std::vector<float>& dedx,
-    const std::vector<float>& rr,
-    float alpha, float beta,
-    unsigned skip_each_end,
-    double qlow, double qhigh,
-    unsigned min_hits_in_band) {
-    if (dedx.size() != rr.size() || dedx.empty())
-        return std::numeric_limits<float>::lowest();
-
-    std::vector<size_t> idx(rr.size());
-    std::iota(idx.begin(), idx.end(), 0);
-    std::stable_sort(idx.begin(), idx.end(),
-        [&](size_t a, size_t b){ return rr[a] > rr[b]; });
-
-    float rrmax = *std::max_element(rr.begin(), rr.end());
-    if (!(rrmax > 0)) return std::numeric_limits<float>::lowest();
-    float lo_cut = alpha * rrmax;
-    float hi_cut = beta  * rrmax;
-
-    std::vector<float> vals;
-    vals.reserve(dedx.size());
-    for (size_t k = 0; k < idx.size(); ++k) {
-        if (k < skip_each_end) continue;
-        if (k >= idx.size() - skip_each_end) continue;
-        size_t i = idx[k];
-        float r = rr[i];
-        if (r < lo_cut || r > hi_cut) continue;
-        float v = dedx[i];
-        if (std::isfinite(v)) vals.push_back(v);
-    }
-
-    if (vals.size() < min_hits_in_band)
-        return std::numeric_limits<float>::lowest();
-
-    float q_lo = common::quantile_linear(vals, qlow);
-    float q_hi = common::quantile_linear(vals, qhigh);
-    if (!(q_lo <= q_hi)) return std::numeric_limits<float>::lowest();
-
-    double sum = 0.0; unsigned n = 0;
-    for (float v : vals) {
-        if (v < q_lo || v > q_hi) continue;
-        sum += v; ++n;
-    }
-    if (n == 0) return std::numeric_limits<float>::lowest();
-    return static_cast<float>(sum / n);
-}
-
-bool TrackAnalysis::compute_mip_core_stats(
-    const std::vector<float>& dedx_values,
-    float& T70,
-    float& Q50,
-    float& Q90,
-    unsigned min_hits)
-{
-    std::vector<float> vals;
-    vals.reserve(dedx_values.size());
-    for (float v : dedx_values) {
-        if (std::isfinite(v) && v > 0.0f)
-            vals.push_back(v);
-    }
-
-    if (vals.size() < min_hits) {
-        return false;
-    }
-
-    std::sort(vals.begin(), vals.end());
-    const size_t n = vals.size();
-    const double frac = 0.15;
-    size_t n_drop = static_cast<size_t>(frac * static_cast<double>(n));
-    if (2 * n_drop >= n) {
-        n_drop = 0;
-    }
-
-    const size_t lo = n_drop;
-    const size_t hi = n - n_drop;
-    if (lo >= hi) {
-        return false;
-    }
-
-    std::vector<float> core(vals.begin() + lo, vals.begin() + hi);
-    if (core.empty()) {
-        return false;
-    }
-
-    double sum = std::accumulate(core.begin(), core.end(), 0.0);
-    T70 = static_cast<float>(sum / static_cast<double>(core.size()));
-
-    Q50 = common::quantile_linear(core, 0.50);
-    Q90 = common::quantile_linear(core, 0.90);
-
-    if (!(T70 > 0.0f) || !(Q50 > 0.0f) || !(Q90 > 0.0f)) {
-        return false;
-    }
-
-    return true;
-}
 DEFINE_ART_CLASS_TOOL(TrackAnalysis)
 
 }
