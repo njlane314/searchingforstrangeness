@@ -75,35 +75,42 @@ private:
   art::InputTag fImagesSliceTag;
   art::InputTag fInferencePredTag;
   art::InputTag fInferencePerfTag;
+
   float _reco_neutrino_vertex_x;
   float _reco_neutrino_vertex_y;
   float _reco_neutrino_vertex_z;
+
   std::vector<uint32_t> _detector_image_u_index;
   std::vector<float> _detector_image_u_adc;
+
   std::vector<uint32_t> _detector_image_v_index;
   std::vector<float> _detector_image_v_adc;
+
   std::vector<uint32_t> _detector_image_w_index;
   std::vector<float> _detector_image_w_adc;
+
   std::vector<uint8_t> _semantic_image_u;
   std::vector<uint8_t> _semantic_image_v;
   std::vector<uint8_t> _semantic_image_w;
+
   std::vector<int> _slice_semantic_active_pixels_u;
   std::vector<int> _slice_semantic_active_pixels_v;
   std::vector<int> _slice_semantic_active_pixels_w;
+
   std::vector<std::string> _semantic_label_names;
+
   int _active_pixels_u;
   int _active_pixels_v;
   int _active_pixels_w;
+
   bool _is_vtx_in_image_u;
   bool _is_vtx_in_image_v;
   bool _is_vtx_in_image_w;
 
-  // Inference output: predictions
   std::vector<std::string> _inf_model;
   std::vector<int> _inf_n_scores;
   std::vector<float> _inf_scores;
 
-  // Inference output: performance metrics
   std::vector<float> _inf_t_write_req_ms;
   std::vector<float> _inf_t_exec_total_ms;
   std::vector<float> _inf_t_read_resp_ms;
@@ -145,12 +152,9 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
-  _tree->Branch("reco_neutrino_vertex_x", &_reco_neutrino_vertex_x,
-                "reco_neutrino_vertex_x/F");
-  _tree->Branch("reco_neutrino_vertex_y", &_reco_neutrino_vertex_y,
-                "reco_neutrino_vertex_y/F");
-  _tree->Branch("reco_neutrino_vertex_z", &_reco_neutrino_vertex_z,
-                "reco_neutrino_vertex_z/F");
+  _tree->Branch("reco_neutrino_vertex_x", &_reco_neutrino_vertex_x, "reco_neutrino_vertex_x/F");
+  _tree->Branch("reco_neutrino_vertex_y", &_reco_neutrino_vertex_y, "reco_neutrino_vertex_y/F");
+  _tree->Branch("reco_neutrino_vertex_z", &_reco_neutrino_vertex_z, "reco_neutrino_vertex_z/F");
   _tree->Branch("detector_image_u_index", &_detector_image_u_index);
   _tree->Branch("detector_image_u_adc", &_detector_image_u_adc);
   _tree->Branch("detector_image_v_index", &_detector_image_v_index);
@@ -160,22 +164,16 @@ void ImageAnalysis::setBranches(TTree *_tree) {
   _tree->Branch("semantic_image_u_label", &_semantic_image_u);
   _tree->Branch("semantic_image_v_label", &_semantic_image_v);
   _tree->Branch("semantic_image_w_label", &_semantic_image_w);
-  _tree->Branch("slice_semantic_active_pixels_u",
-                &_slice_semantic_active_pixels_u);
-  _tree->Branch("slice_semantic_active_pixels_v",
-                &_slice_semantic_active_pixels_v);
-  _tree->Branch("slice_semantic_active_pixels_w",
-                &_slice_semantic_active_pixels_w);
+  _tree->Branch("slice_semantic_active_pixels_u", &_slice_semantic_active_pixels_u);
+  _tree->Branch("slice_semantic_active_pixels_v", &_slice_semantic_active_pixels_v);
+  _tree->Branch("slice_semantic_active_pixels_w", &_slice_semantic_active_pixels_w);
   _tree->Branch("semantic_label_names", &_semantic_label_names);
   _tree->Branch("active_pixels_u", &_active_pixels_u, "active_pixels_u/I");
   _tree->Branch("active_pixels_v", &_active_pixels_v, "active_pixels_v/I");
   _tree->Branch("active_pixels_w", &_active_pixels_w, "active_pixels_w/I");
-  _tree->Branch("is_vtx_in_image_u", &_is_vtx_in_image_u,
-                "is_vtx_in_image_u/O");
-  _tree->Branch("is_vtx_in_image_v", &_is_vtx_in_image_v,
-                "is_vtx_in_image_v/O");
-  _tree->Branch("is_vtx_in_image_w", &_is_vtx_in_image_w,
-                "is_vtx_in_image_w/O");
+  _tree->Branch("is_vtx_in_image_u", &_is_vtx_in_image_u, "is_vtx_in_image_u/O");
+  _tree->Branch("is_vtx_in_image_v", &_is_vtx_in_image_v, "is_vtx_in_image_v/O");
+  _tree->Branch("is_vtx_in_image_w", &_is_vtx_in_image_w, "is_vtx_in_image_w/O");
 
   _tree->Branch("inf_model", &_inf_model);
   _tree->Branch("inf_n_scores", &_inf_n_scores);
@@ -195,26 +193,32 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
   _reco_neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
   _reco_neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
   _reco_neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
+  
   _detector_image_u_index.clear();
   _detector_image_u_adc.clear();
   _detector_image_v_index.clear();
   _detector_image_v_adc.clear();
   _detector_image_w_index.clear();
   _detector_image_w_adc.clear();
+  
   _semantic_image_u.clear();
   _semantic_image_v.clear();
   _semantic_image_w.clear();
+  
   _slice_semantic_active_pixels_u.clear();
   _slice_semantic_active_pixels_v.clear();
   _slice_semantic_active_pixels_w.clear();
+  
   if (_semantic_label_names.empty()) {
     _semantic_label_names.assign(
         image::SemanticClassifier::semantic_label_names.begin(),
         image::SemanticClassifier::semantic_label_names.end());
   }
+  
   _active_pixels_u = 0;
   _active_pixels_v = 0;
   _active_pixels_w = 0;
+  
   _is_vtx_in_image_u = false;
   _is_vtx_in_image_v = false;
   _is_vtx_in_image_w = false;
