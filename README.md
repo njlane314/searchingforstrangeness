@@ -106,51 +106,6 @@
    ```
    - There exist automated bash scripts in the cloned respository that handle this configuration and build.
 
-## Image centering
-
-For each view, detector and semantic images are centered on the charge-weighted
-centroid of hits associated with the slice. Given hits with wire coordinates
-
-$z_i$, drift coordinates $x_i$ and charges $q_i$, the algorithm keeps hits
-within a radial distance $R$ of the
-reconstructed neutrino interaction vertex $(z_v, x_v)$. Distances
-$d_i = \sqrt{(z_i - z_v)^2 + (x_i - x_v)^2}$ are
-compared to $R$, and the fraction of charge retained is
-
-$$
-r_{\text{keep}} = \frac{\sum_{d_i \le R} q_i}{\sum_i q_i}.
-$$
-
-The image centre is then
-
-$$
-(\bar{z},\bar{x}) = \left(
-    \frac{\sum_{d_i \le R} q_i z_i}{\sum_{d_i \le R} q_i},
-    \frac{\sum_{d_i \le R} q_i x_i}{
-  \sum_{d_i \le R} q_i}
-\right).
-$$
-
-  With 512\,px images at 3\,mm per pixel, this radius is fixed at
-  $R = 153.6\,\text{cm}$ so that all hits within that circle fit inside the
-square image.
-
-An image of width $W$ and height $H$ with wire and drift pixel sizes $\Delta z$
-and $\Delta x$ spans
-
-$$
-z \in [\bar{z} - \tfrac{W\Delta z}{2}, \bar{z} + \tfrac{W\Delta z}{2}),\qquad
-x \in [\bar{x} - \tfrac{H\Delta x}{2}, \bar{x} + \tfrac{H\Delta x}{2}),
-$$
-
-with column and row indices
-
-$$
-\text{col} = \left\lfloor \frac{z - (\bar{z} - \tfrac{W\Delta z}{2})}{
-  \Delta z} \right\rfloor,\qquad
-\text{row} = \left\lfloor \frac{x - (\bar{x} - \tfrac{H\Delta x}{2})}{
-  \Delta x} \right\rfloor.
-$$
 
 ## Processing Files
 
