@@ -30,7 +30,7 @@
 namespace analysis {
 
 class LambdaAnalysis_tool : public AnalysisToolBase {
-    public:
+  public:
     explicit LambdaAnalysis_tool(fhicl::ParameterSet const &p) {
         this->configure(p);
     }
@@ -44,7 +44,7 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
                       std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
                       bool is_data, bool is_selected) override;
 
-    private:
+  private:
     art::InputTag fMCTproducer;
     art::InputTag fMCPproducer;
     art::InputTag fCLSproducer;
@@ -55,33 +55,75 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     int _mu_truth_pdg;
     float _mu_p;
     float _mu_theta;
-    int _lam_trackid;
-    int _lam_pdg;
-    float _lam_E;
-    float _lam_mass;
-    float _lam_p[3];
-    float _lam_p_mag;
-    float _lam_v[3];
-    float _lam_end[3];
-    float _lam_ct;
-    float _lam_decay_sep;
 
-    int _p_trackid;
-    int _pi_trackid;
-    float _p_p;
-    float _pi_p;
-    float _ppi_opening_angle;
+    struct TruthSummary {
+        bool is_nc = false;
+        bool has_strange_fs = false;
+        bool has_nc_strangeness = false;
 
-    bool _pr_valid_assignment;
-    float _pr_mu_purity;
-    float _pr_mu_completeness;
-    float _pr_p_purity;
-    float _pr_p_completeness;
-    float _pr_pi_purity;
-    float _pr_pi_completeness;
-    int _mu_true_hits;
-    int _p_true_hits;
-    int _pi_true_hits;
+        bool has_fs_lambda0 = false;
+        bool has_fs_sigma0 = false;
+        bool has_g4_lambda0_to_ppi = false;
+
+        bool has_ks0 = false;
+        bool has_pi0 = false;
+
+        int n_fs_lambda0 = 0;
+        int n_fs_sigma0 = 0;
+        int n_g4_lambda0_to_ppi = 0;
+        int n_ks0 = 0;
+        int n_pi0 = 0;
+
+        std::vector<float> fs_lambda0_p;
+        std::vector<float> fs_sigma0_p;
+
+        void clear() { *this = TruthSummary{}; }
+    };
+
+    struct G4LambdaDecaySummary {
+        std::vector<int> trackid;
+        std::vector<int> pdg;
+        std::vector<float> E;
+        std::vector<float> mass;
+
+        std::vector<float> px;
+        std::vector<float> py;
+        std::vector<float> pz;
+        std::vector<float> p_mag;
+
+        std::vector<float> vx;
+        std::vector<float> vy;
+        std::vector<float> vz;
+
+        std::vector<float> endx;
+        std::vector<float> endy;
+        std::vector<float> endz;
+
+        std::vector<float> ct;
+        std::vector<float> decay_sep;
+
+        std::vector<int> p_trackid;
+        std::vector<int> pi_trackid;
+        std::vector<float> p_p;
+        std::vector<float> pi_p;
+        std::vector<float> ppi_opening_angle;
+
+        std::vector<int> pr_valid_assignment;
+        std::vector<float> pr_mu_purity;
+        std::vector<float> pr_mu_completeness;
+        std::vector<float> pr_p_purity;
+        std::vector<float> pr_p_completeness;
+        std::vector<float> pr_pi_purity;
+        std::vector<float> pr_pi_completeness;
+        std::vector<int> mu_true_hits;
+        std::vector<int> p_true_hits;
+        std::vector<int> pi_true_hits;
+
+        void clear() { *this = G4LambdaDecaySummary{}; }
+    };
+
+    TruthSummary _truth;
+    G4LambdaDecaySummary _g4_lambda;
 
     template <class T> static T nan() {
         return std::numeric_limits<T>::quiet_NaN();
@@ -92,6 +134,27 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     static float ThreeDistance(float x1, float y1, float z1, float x2, float y2,
                                float z2) {
         return Mag3(x1 - x2, y1 - y2, z1 - z2);
+    }
+    static bool IsGeneratorFinalState(const simb::MCParticle &p) {
+        return p.StatusCode() == 1;
+    }
+    static bool IsStrangeHadron(const int apdg) {
+        switch (apdg) {
+        case 130:  // K_L0
+        case 310:  // K_S0
+        case 311:  // K0 / K0bar
+        case 321:  // K+/-
+        case 3122: // Lambda0 / anti-Lambda0
+        case 3112: // Sigma-
+        case 3212: // Sigma0 / anti-Sigma0
+        case 3222: // Sigma+
+        case 3312: // Xi-
+        case 3322: // Xi0
+        case 3334: // Omega-
+            return true;
+        default:
+            return false;
+        }
     }
 
     struct DecayMatch {
@@ -107,6 +170,12 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     void
     FindTruthMuon(const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
                   const TVector3 &nu_dir);
+
+    void FillGeneratorTruthSummary(const simb::MCTruth &mct);
+    void FillG4LambdaDecaySummary(
+        const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
+        const std::map<int, art::Ptr<simb::MCParticle>> &mp,
+        const std::array<float, 3> &nu_v);
 };
 
 void LambdaAnalysis_tool::configure(const fhicl::ParameterSet &p) {
@@ -122,37 +191,70 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("mu_truth_pdg", &_mu_truth_pdg, "mu_truth_pdg/I");
     t->Branch("mu_p", &_mu_p, "mu_p/F");
     t->Branch("mu_theta", &_mu_theta, "mu_theta/F");
-    t->Branch("lam_trackid", &_lam_trackid, "lam_trackid/I");
-    t->Branch("lam_pdg", &_lam_pdg, "lam_pdg/I");
-    t->Branch("lam_E", &_lam_E, "lam_E/F");
-    t->Branch("lam_mass", &_lam_mass, "lam_mass/F");
-    t->Branch("lam_p", _lam_p, "lam_p[3]/F");
-    t->Branch("lam_p_mag", &_lam_p_mag, "lam_p_mag/F");
-    t->Branch("lam_v", _lam_v, "lam_v[3]/F");
-    t->Branch("lam_end", _lam_end, "lam_end[3]/F");
-    t->Branch("lam_ct", &_lam_ct, "lam_ct/F");
-    t->Branch("lam_decay_sep", &_lam_decay_sep, "lam_decay_sep/F");
 
-    t->Branch("p_trackid", &_p_trackid, "p_trackid/I");
-    t->Branch("pi_trackid", &_pi_trackid, "pi_trackid/I");
-    t->Branch("p_p", &_p_p, "p_p/F");
-    t->Branch("pi_p", &_pi_p, "pi_p/F");
-    t->Branch("ppi_opening_angle", &_ppi_opening_angle, "ppi_opening_angle/F");
+    t->Branch("truth_is_nc", &_truth.is_nc, "truth_is_nc/O");
+    t->Branch("truth_has_strange_fs", &_truth.has_strange_fs,
+              "truth_has_strange_fs/O");
+    t->Branch("truth_has_nc_strangeness", &_truth.has_nc_strangeness,
+              "truth_has_nc_strangeness/O");
+    t->Branch("truth_has_fs_lambda0", &_truth.has_fs_lambda0,
+              "truth_has_fs_lambda0/O");
+    t->Branch("truth_has_fs_sigma0", &_truth.has_fs_sigma0,
+              "truth_has_fs_sigma0/O");
+    t->Branch("truth_has_g4_lambda0_to_ppi", &_truth.has_g4_lambda0_to_ppi,
+              "truth_has_g4_lambda0_to_ppi/O");
+    t->Branch("truth_has_ks0", &_truth.has_ks0, "truth_has_ks0/O");
+    t->Branch("truth_has_pi0", &_truth.has_pi0, "truth_has_pi0/O");
 
-    t->Branch("pr_valid_assignment", &_pr_valid_assignment,
-              "pr_valid_assignment/O");
-    t->Branch("pr_mu_purity", &_pr_mu_purity, "pr_mu_purity/F");
-    t->Branch("pr_mu_completeness", &_pr_mu_completeness,
-              "pr_mu_completeness/F");
-    t->Branch("pr_p_purity", &_pr_p_purity, "pr_p_purity/F");
-    t->Branch("pr_p_completeness", &_pr_p_completeness,
-              "pr_p_completeness/F");
-    t->Branch("pr_pi_purity", &_pr_pi_purity, "pr_pi_purity/F");
-    t->Branch("pr_pi_completeness", &_pr_pi_completeness,
-              "pr_pi_completeness/F");
-    t->Branch("mu_true_hits", &_mu_true_hits, "mu_true_hits/I");
-    t->Branch("p_true_hits", &_p_true_hits, "p_true_hits/I");
-    t->Branch("pi_true_hits", &_pi_true_hits, "pi_true_hits/I");
+    t->Branch("truth_n_fs_lambda0", &_truth.n_fs_lambda0,
+              "truth_n_fs_lambda0/I");
+    t->Branch("truth_n_fs_sigma0", &_truth.n_fs_sigma0,
+              "truth_n_fs_sigma0/I");
+    t->Branch("truth_n_g4_lambda0_to_ppi", &_truth.n_g4_lambda0_to_ppi,
+              "truth_n_g4_lambda0_to_ppi/I");
+    t->Branch("truth_n_ks0", &_truth.n_ks0, "truth_n_ks0/I");
+    t->Branch("truth_n_pi0", &_truth.n_pi0, "truth_n_pi0/I");
+
+    t->Branch("truth_fs_lambda0_p", &_truth.fs_lambda0_p);
+    t->Branch("truth_fs_sigma0_p", &_truth.fs_sigma0_p);
+
+    t->Branch("g4_lambda_trackid", &_g4_lambda.trackid);
+    t->Branch("g4_lambda_pdg", &_g4_lambda.pdg);
+    t->Branch("g4_lambda_E", &_g4_lambda.E);
+    t->Branch("g4_lambda_mass", &_g4_lambda.mass);
+
+    t->Branch("g4_lambda_px", &_g4_lambda.px);
+    t->Branch("g4_lambda_py", &_g4_lambda.py);
+    t->Branch("g4_lambda_pz", &_g4_lambda.pz);
+    t->Branch("g4_lambda_p_mag", &_g4_lambda.p_mag);
+
+    t->Branch("g4_lambda_vx", &_g4_lambda.vx);
+    t->Branch("g4_lambda_vy", &_g4_lambda.vy);
+    t->Branch("g4_lambda_vz", &_g4_lambda.vz);
+
+    t->Branch("g4_lambda_endx", &_g4_lambda.endx);
+    t->Branch("g4_lambda_endy", &_g4_lambda.endy);
+    t->Branch("g4_lambda_endz", &_g4_lambda.endz);
+
+    t->Branch("g4_lambda_ct", &_g4_lambda.ct);
+    t->Branch("g4_lambda_decay_sep", &_g4_lambda.decay_sep);
+
+    t->Branch("g4_lambda_p_trackid", &_g4_lambda.p_trackid);
+    t->Branch("g4_lambda_pi_trackid", &_g4_lambda.pi_trackid);
+    t->Branch("g4_lambda_p_p", &_g4_lambda.p_p);
+    t->Branch("g4_lambda_pi_p", &_g4_lambda.pi_p);
+    t->Branch("g4_lambda_ppi_opening_angle", &_g4_lambda.ppi_opening_angle);
+
+    t->Branch("g4_lambda_pr_valid_assignment", &_g4_lambda.pr_valid_assignment);
+    t->Branch("g4_lambda_pr_mu_purity", &_g4_lambda.pr_mu_purity);
+    t->Branch("g4_lambda_pr_mu_completeness", &_g4_lambda.pr_mu_completeness);
+    t->Branch("g4_lambda_pr_p_purity", &_g4_lambda.pr_p_purity);
+    t->Branch("g4_lambda_pr_p_completeness", &_g4_lambda.pr_p_completeness);
+    t->Branch("g4_lambda_pr_pi_purity", &_g4_lambda.pr_pi_purity);
+    t->Branch("g4_lambda_pr_pi_completeness", &_g4_lambda.pr_pi_completeness);
+    t->Branch("g4_lambda_mu_true_hits", &_g4_lambda.mu_true_hits);
+    t->Branch("g4_lambda_p_true_hits", &_g4_lambda.p_true_hits);
+    t->Branch("g4_lambda_pi_true_hits", &_g4_lambda.pi_true_hits);
 }
 
 void LambdaAnalysis_tool::resetTTree(TTree *) {
@@ -160,34 +262,9 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
     _mu_theta = nan<float>();
-    _lam_trackid = -1;
-    _lam_pdg = 0;
-    _lam_E = nan<float>();
-    _lam_mass = nan<float>();
-    _lam_p[0] = _lam_p[1] = _lam_p[2] = nan<float>();
-    _lam_p_mag = nan<float>();
-    _lam_v[0] = _lam_v[1] = _lam_v[2] = nan<float>();
-    _lam_end[0] = _lam_end[1] = _lam_end[2] = nan<float>();
-    _lam_ct = nan<float>();
-    _lam_decay_sep = nan<float>();
 
-
-    _p_trackid = -1;
-    _pi_trackid = -1;
-    _p_p = nan<float>();
-    _pi_p = nan<float>();
-    _ppi_opening_angle = nan<float>();
-
-    _pr_valid_assignment = false;
-    _pr_mu_purity = nan<float>();
-    _pr_mu_completeness = nan<float>();
-    _pr_p_purity = nan<float>();
-    _pr_p_completeness = nan<float>();
-    _pr_pi_purity = nan<float>();
-    _pr_pi_completeness = nan<float>();
-    _mu_true_hits = -1;
-    _p_true_hits = -1;
-    _pi_true_hits = -1;
+    _truth.clear();
+    _g4_lambda.clear();
 }
 
 LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
@@ -258,6 +335,130 @@ void LambdaAnalysis_tool::FindTruthMuon(
     }
 }
 
+void LambdaAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
+    _truth.is_nc =
+        mct.NeutrinoSet() && (mct.GetNeutrino().CCNC() == simb::kNC);
+
+    for (int i = 0; i < mct.NParticles(); ++i) {
+        const auto &p = mct.GetParticle(i);
+        if (!IsGeneratorFinalState(p))
+            continue;
+
+        const int apdg = std::abs(p.PdgCode());
+        const float pmag = Mag3(p.Px(), p.Py(), p.Pz());
+
+        if (IsStrangeHadron(apdg))
+            _truth.has_strange_fs = true;
+
+        if (apdg == 3122) {
+            _truth.has_fs_lambda0 = true;
+            ++_truth.n_fs_lambda0;
+            _truth.fs_lambda0_p.push_back(pmag);
+        } else if (apdg == 3212) {
+            _truth.has_fs_sigma0 = true;
+            ++_truth.n_fs_sigma0;
+            _truth.fs_sigma0_p.push_back(pmag);
+        } else if (apdg == 310) {
+            _truth.has_ks0 = true;
+            ++_truth.n_ks0;
+        } else if (apdg == 111) {
+            _truth.has_pi0 = true;
+            ++_truth.n_pi0;
+        }
+    }
+
+    _truth.has_nc_strangeness = _truth.is_nc && _truth.has_strange_fs;
+}
+
+void LambdaAnalysis_tool::FillG4LambdaDecaySummary(
+    const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
+    const std::map<int, art::Ptr<simb::MCParticle>> &mp,
+    const std::array<float, 3> &nu_v) {
+
+    for (size_t i = 0; i < mcp_h->size(); ++i) {
+        const art::Ptr<simb::MCParticle> lam_ptr(mcp_h, i);
+        const auto &lam = *lam_ptr;
+        if (std::abs(lam.PdgCode()) != 3122)
+            continue;
+
+        const DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp);
+        if (!dm.ok)
+            continue;
+
+        const simb::MCParticle *p =
+            (mp.count(dm.p_trkid) ? mp.at(dm.p_trkid).get() : nullptr);
+        const simb::MCParticle *pi =
+            (mp.count(dm.pi_trkid) ? mp.at(dm.pi_trkid).get() : nullptr);
+
+        const float pp = p ? Mag3(p->Px(), p->Py(), p->Pz()) : nan<float>();
+        const float pip =
+            pi ? Mag3(pi->Px(), pi->Py(), pi->Pz()) : nan<float>();
+
+        float decay_sep = nan<float>();
+        if (std::isfinite(nu_v[0]) && std::isfinite(nu_v[1]) &&
+            std::isfinite(nu_v[2])) {
+            decay_sep = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
+                                      nu_v[0], nu_v[1], nu_v[2]);
+        }
+
+        float ct = nan<float>();
+        const float L = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
+                                      lam.Vx(), lam.Vy(), lam.Vz());
+        const float p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
+        if (p_mag > 0.f)
+            ct = L * lam.Mass() / p_mag;
+
+        float opening_angle = nan<float>();
+        if (p && pi) {
+            TVector3 vp(p->Px(), p->Py(), p->Pz());
+            TVector3 vpi(pi->Px(), pi->Py(), pi->Pz());
+            if (vp.Mag() > 0.f && vpi.Mag() > 0.f)
+                opening_angle = vp.Angle(vpi);
+        }
+
+        _truth.has_g4_lambda0_to_ppi = true;
+        ++_truth.n_g4_lambda0_to_ppi;
+
+        _g4_lambda.trackid.push_back(lam.TrackId());
+        _g4_lambda.pdg.push_back(lam.PdgCode());
+        _g4_lambda.E.push_back(lam.E());
+        _g4_lambda.mass.push_back(lam.Mass());
+
+        _g4_lambda.px.push_back(lam.Px());
+        _g4_lambda.py.push_back(lam.Py());
+        _g4_lambda.pz.push_back(lam.Pz());
+        _g4_lambda.p_mag.push_back(p_mag);
+
+        _g4_lambda.vx.push_back(lam.Vx());
+        _g4_lambda.vy.push_back(lam.Vy());
+        _g4_lambda.vz.push_back(lam.Vz());
+
+        _g4_lambda.endx.push_back(lam.EndX());
+        _g4_lambda.endy.push_back(lam.EndY());
+        _g4_lambda.endz.push_back(lam.EndZ());
+
+        _g4_lambda.ct.push_back(ct);
+        _g4_lambda.decay_sep.push_back(decay_sep);
+
+        _g4_lambda.p_trackid.push_back(dm.p_trkid);
+        _g4_lambda.pi_trackid.push_back(dm.pi_trkid);
+        _g4_lambda.p_p.push_back(pp);
+        _g4_lambda.pi_p.push_back(pip);
+        _g4_lambda.ppi_opening_angle.push_back(opening_angle);
+
+        _g4_lambda.pr_valid_assignment.push_back(0);
+        _g4_lambda.pr_mu_purity.push_back(nan<float>());
+        _g4_lambda.pr_mu_completeness.push_back(nan<float>());
+        _g4_lambda.pr_p_purity.push_back(nan<float>());
+        _g4_lambda.pr_p_completeness.push_back(nan<float>());
+        _g4_lambda.pr_pi_purity.push_back(nan<float>());
+        _g4_lambda.pr_pi_completeness.push_back(nan<float>());
+        _g4_lambda.mu_true_hits.push_back(-1);
+        _g4_lambda.p_true_hits.push_back(-1);
+        _g4_lambda.pi_true_hits.push_back(-1);
+    }
+}
+
 void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     this->resetTTree(nullptr);
     if (is_data)
@@ -291,82 +492,8 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         mp[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
 
     FindTruthMuon(mcp_h, nu_dir);
-
-    bool have_sel = false;
-    float best_sep = -1.f;
-    float best_E = -std::numeric_limits<float>::max();
-
-    for (size_t i = 0; i < mcp_h->size(); ++i) {
-        const art::Ptr<simb::MCParticle> lam_ptr(mcp_h, i);
-        const auto &lam = *lam_ptr;
-        if (std::abs(lam.PdgCode()) != 3122)
-            continue;
-        const DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp);
-        if (!dm.ok)
-            continue;
-
-        const simb::MCParticle *p =
-            (mp.count(dm.p_trkid) ? mp.at(dm.p_trkid).get() : nullptr);
-        const simb::MCParticle *pi =
-            (mp.count(dm.pi_trkid) ? mp.at(dm.pi_trkid).get() : nullptr);
-        const float pp = p ? Mag3(p->Px(), p->Py(), p->Pz()) : nan<float>();
-        const float pip =
-            pi ? Mag3(pi->Px(), pi->Py(), pi->Pz()) : nan<float>();
-
-        float decay_sep = nan<float>();
-        if (std::isfinite(nu_v[0]) && std::isfinite(nu_v[1]) &&
-            std::isfinite(nu_v[2])) {
-            decay_sep = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
-                                      nu_v[0], nu_v[1], nu_v[2]);
-        }
-        const float sep_rank = std::isfinite(decay_sep) ? decay_sep : -1.f;
-        const float E = lam.E();
-
-        const bool better =
-            (!have_sel) || (sep_rank > best_sep) ||
-            (sep_rank == best_sep && E > best_E);
-
-        if (!better)
-            continue;
-
-        have_sel = true;
-        best_sep = sep_rank;
-        best_E = E;
-
-        _lam_trackid = lam.TrackId();
-        _lam_pdg = lam.PdgCode();
-        _lam_E = lam.E();
-        _lam_mass = lam.Mass();
-        _lam_p[0] = lam.Px();
-        _lam_p[1] = lam.Py();
-        _lam_p[2] = lam.Pz();
-        _lam_p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
-        _lam_v[0] = lam.Vx();
-        _lam_v[1] = lam.Vy();
-        _lam_v[2] = lam.Vz();
-        _lam_end[0] = lam.EndX();
-        _lam_end[1] = lam.EndY();
-        _lam_end[2] = lam.EndZ();
-        _lam_decay_sep = decay_sep;
-
-        const float L = ThreeDistance(lam.EndX(), lam.EndY(), lam.EndZ(),
-                                      lam.Vx(), lam.Vy(), lam.Vz());
-        const float p_mag = Mag3(lam.Px(), lam.Py(), lam.Pz());
-        _lam_ct = (p_mag > 0.f) ? (L * lam.Mass() / p_mag) : nan<float>();
-
-        _p_trackid = dm.p_trkid;
-        _pi_trackid = dm.pi_trkid;
-        _p_p = pp;
-        _pi_p = pip;
-
-        _ppi_opening_angle = nan<float>();
-        if (p && pi) {
-            TVector3 vp(p->Px(), p->Py(), p->Pz());
-            TVector3 vpi(pi->Px(), pi->Py(), pi->Pz());
-            if (vp.Mag() > 0.f && vpi.Mag() > 0.f)
-                _ppi_opening_angle = vp.Angle(vpi);
-        }
-    }
+    FillGeneratorTruthSummary(mct);
+    FillG4LambdaDecaySummary(mcp_h, mp, nu_v);
 }
 
 void LambdaAnalysis_tool::analyseSlice(
@@ -374,17 +501,7 @@ void LambdaAnalysis_tool::analyseSlice(
     bool is_data, bool) {
     if (is_data)
         return;
-
-    _pr_valid_assignment = false;
-
-    _pr_mu_purity = nan<float>();
-    _pr_mu_completeness = nan<float>();
-    _pr_p_purity = nan<float>();
-    _pr_p_completeness = nan<float>();
-    _pr_pi_purity = nan<float>();
-    _pr_pi_completeness = nan<float>();
-
-    if (_mu_truth_trackid < 0 || _p_trackid < 0 || _pi_trackid < 0)
+    if (_g4_lambda.trackid.empty())
         return;
 
     auto const &cluster_h =
@@ -408,27 +525,46 @@ void LambdaAnalysis_tool::analyseSlice(
         art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(
         hit_h, event, fBKTproducer);
 
-    _mu_true_hits = static_cast<int>(common::CountTruthHitsInSlice(
-        _mu_truth_trackid, inputHits, assocMCPart));
-    _p_true_hits = static_cast<int>(
-        common::CountTruthHitsInSlice(_p_trackid, inputHits, assocMCPart));
-    _pi_true_hits = static_cast<int>(
-        common::CountTruthHitsInSlice(_pi_trackid, inputHits, assocMCPart));
+    int mu_true_hits = -1;
+    if (_mu_truth_trackid >= 0) {
+        mu_true_hits = static_cast<int>(common::CountTruthHitsInSlice(
+            _mu_truth_trackid, inputHits, assocMCPart));
+    }
 
-    const std::vector<int> tids = {_mu_truth_trackid, _p_trackid, _pi_trackid};
-    const auto metrics = common::ComputePRMetrics(
-        event, fCLSproducer, fHITproducer, fBKTproducer, slice_pfp_vec, tids);
-    if (!metrics.valid)
-        return;
+    for (size_t i = 0; i < _g4_lambda.trackid.size(); ++i) {
+        const int p_tid = _g4_lambda.p_trackid[i];
+        const int pi_tid = _g4_lambda.pi_trackid[i];
 
-    _pr_valid_assignment = metrics.valid;
-    _pr_mu_purity = metrics.purity[0];
-    _pr_p_purity = metrics.purity[1];
-    _pr_pi_purity = metrics.purity[2];
-    _pr_mu_completeness = metrics.completeness[0];
-    _pr_p_completeness = metrics.completeness[1];
-    _pr_pi_completeness = metrics.completeness[2];
+        _g4_lambda.mu_true_hits[i] = mu_true_hits;
+        if (p_tid >= 0) {
+            _g4_lambda.p_true_hits[i] = static_cast<int>(
+                common::CountTruthHitsInSlice(p_tid, inputHits, assocMCPart));
+        }
+        if (pi_tid >= 0) {
+            _g4_lambda.pi_true_hits[i] = static_cast<int>(
+                common::CountTruthHitsInSlice(pi_tid, inputHits, assocMCPart));
+        }
 
+        if (_mu_truth_trackid < 0 || p_tid < 0 || pi_tid < 0)
+            continue;
+
+        const std::vector<int> tids = {_mu_truth_trackid, p_tid, pi_tid};
+        const auto metrics = common::ComputePRMetrics(
+            event, fCLSproducer, fHITproducer, fBKTproducer, slice_pfp_vec,
+            tids);
+        if (!metrics.valid)
+            continue;
+        if (metrics.purity.size() < 3 || metrics.completeness.size() < 3)
+            continue;
+
+        _g4_lambda.pr_valid_assignment[i] = 1;
+        _g4_lambda.pr_mu_purity[i] = metrics.purity[0];
+        _g4_lambda.pr_mu_completeness[i] = metrics.completeness[0];
+        _g4_lambda.pr_p_purity[i] = metrics.purity[1];
+        _g4_lambda.pr_p_completeness[i] = metrics.completeness[1];
+        _g4_lambda.pr_pi_purity[i] = metrics.purity[2];
+        _g4_lambda.pr_pi_completeness[i] = metrics.completeness[2];
+    }
 }
 
 DEFINE_ART_CLASS_TOOL(LambdaAnalysis_tool)
