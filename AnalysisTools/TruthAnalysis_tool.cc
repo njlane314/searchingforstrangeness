@@ -185,7 +185,7 @@ void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
 }
 
 void TruthAnalysis::setBranches(TTree* _tree) {
-    // ---- Interaction & neutrino summary ----
+
     _tree->Branch("nu_pdg",              &_neutrino_pdg,          "nu_pdg/I");
     _tree->Branch("int_ccnc",            &_interaction_ccnc,      "int_ccnc/I");
     _tree->Branch("int_mode",            &_interaction_mode,      "int_mode/I");
@@ -207,7 +207,7 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("inelasticity_y",      &_kinematic_Y,           "inelasticity_y/F");
     _tree->Branch("Q2",                  &_kinematic_Q_squared,   "Q2/F");
 
-    // ---- Neutrino 4-mom + vertex ----
+
     _tree->Branch("nu_px",               &_neutrino_momentum_x,   "nu_px/F");
     _tree->Branch("nu_py",               &_neutrino_momentum_y,   "nu_py/F");
     _tree->Branch("nu_pz",               &_neutrino_momentum_z,   "nu_pz/F");
@@ -226,12 +226,12 @@ void TruthAnalysis::setBranches(TTree* _tree) {
 
     _tree->Branch("lep_E",               &_lepton_energy,         "lep_E/F");
 
-    // (kept) duplicate of nu_p{xyz} for backward compat, renamed clearly
+
     _tree->Branch("nu_true_px",          &_true_neutrino_momentum_x, "nu_true_px/F");
     _tree->Branch("nu_true_py",          &_true_neutrino_momentum_y, "nu_true_py/F");
     _tree->Branch("nu_true_pz",          &_true_neutrino_momentum_z, "nu_true_pz/F");
 
-    // ---- Flux / beam geometry ----
+
     _tree->Branch("flux_path_len",       &_flux_path_length,      "flux_path_len/F");
     _tree->Branch("flux_parent_pdg",     &_flux_parent_pdg,       "flux_parent_pdg/I");
     _tree->Branch("flux_hadron_pdg",     &_flux_hadron_pdg,       "flux_hadron_pdg/I");
@@ -250,7 +250,7 @@ void TruthAnalysis::setBranches(TTree* _tree) {
 
     _tree->Branch("nu_vtx_in_fv",        &_is_vertex_in_fiducial, "nu_vtx_in_fv/O");
 
-    // ---- Final-state counts (threshold-free) ----
+
     _tree->Branch("n_mu_minus",          &_count_mu_minus,   "n_mu_minus/I");
     _tree->Branch("n_mu_plus",           &_count_mu_plus,    "n_mu_plus/I");
     _tree->Branch("n_e_minus",           &_count_e_minus,    "n_e_minus/I");
@@ -269,7 +269,7 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("n_sigma0",            &_count_sigma_zero, "n_sigma0/I");
     _tree->Branch("n_sigma_minus",       &_count_sigma_minus,"n_sigma_minus/I");
 
-    // ---- Primary particles ----
+
     _tree->Branch("prim_pdg",            "std::vector<int>",               &_mc_particle_pdg);
     _tree->Branch("prim_track_id",       "std::vector<int>",               &_mc_particle_trackid);
     _tree->Branch("prim_E",              "std::vector<float>",             &_mc_particle_energy);
@@ -287,11 +287,11 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("prim_end_z",          "std::vector<float>",             &_mc_end_vertex_z);
     _tree->Branch("prim_final_state",    "std::vector<std::string>",       &_mc_particle_final_state);
 
-    // Backtracking metrics
+
     _tree->Branch("prim_bt_completeness","std::vector<float>",             &_mc_completeness);
     _tree->Branch("prim_bt_purity",      "std::vector<float>",             &_mc_purity);
 
-    // ---- Direct daughters ----
+
     _tree->Branch("prim_dau_pdg",        "std::vector<std::vector<int>>",  &_mc_daughter_pdg);
     _tree->Branch("prim_dau_E",          "std::vector<std::vector<float>>",&_mc_daughter_energy);
     _tree->Branch("prim_dau_process_flat","std::vector<std::string>",      &_mc_daughter_process_flat);
@@ -303,7 +303,7 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("prim_dau_vy",         "std::vector<std::vector<float>>",&_mc_daughter_vtx_y);
     _tree->Branch("prim_dau_vz",         "std::vector<std::vector<float>>",&_mc_daughter_vtx_z);
 
-    // ---- Event-level vector sums ----
+
     _tree->Branch("sum_pt_true",         &_true_transverse_momentum,        "sum_pt_true/F");
     _tree->Branch("sum_pt_vis",          &_true_visible_transverse_momentum,"sum_pt_vis/F");
     _tree->Branch("sum_p_true",          &_true_total_momentum,             "sum_p_true/F");
@@ -460,7 +460,7 @@ void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::Pr
             for (const auto& mcp : particle_vec) {
                 if (std::find(bt.tids.begin(), bt.tids.end(), mcp->TrackId()) != bt.tids.end()) {
                     n_shared++;
-                    break; 
+                    break;
                 }
             }
         }
@@ -496,7 +496,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     auto const& mcflux_h = event.getValidHandle<std::vector<simb::MCFlux>>(fMCFproducer);
     if (mcflux_h.isValid() && !mcflux_h->empty()) {
         auto flux = mcflux_h->at(0);
-        
+
         _flux_parent_pdg = flux.fptype;
         _flux_hadron_pdg = flux.ftptype;
         _flux_decay_mode = flux.fndecay;
@@ -507,7 +507,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _flux_decay_mom_y = flux.fpdpy;
         _flux_decay_mom_z = flux.fpdpz;
         _flux_path_length = flux.fdk2gen + flux.fgen2vtx;
-        
+
         TVector3 decay_position(flux.fvx, flux.fvy, flux.fvz);
 
         TVector3 numi_target_to_detector_beam(5502, 7259, 67270);
@@ -593,7 +593,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         mcParticleMap[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
     }
 
-    // Simple, threshold-free counting of final-state primary particles by PDG.
+
     for (int i = 0; i < mct.NParticles(); ++i) {
         const simb::MCParticle& particle = mct.GetParticle(i);
         if (!(particle.StatusCode() == 1 && particle.Process() == "primary")) continue;
@@ -618,7 +618,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 if (pdg == 130 || pdg == 310 || pdg == 311) {
                     ++_count_kaon_zero;
                 } else if (std::abs(pdg) == 3122) {
-                    ++_count_lambda; // count Λ and anti-Λ
+                    ++_count_lambda;
                 }
                 break;
         }
@@ -627,10 +627,10 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     for (size_t p = 0; p < mcp_h->size(); p++) {
         auto const& mcp = mcp_h->at(p);
         if (!(mcp.Process() == "primary" && mcp.StatusCode() == 1)) continue;
-        
+
         const art::Ptr<simb::MCParticle> mcp_ptr(mcp_h, p);
         int trackid = mcp.TrackId();
-        
+
         _mc_particle_trackid.push_back(trackid);
         _mc_particle_energy.push_back(mcp.E());
         _mc_particle_pdg.push_back(mcp.PdgCode());
@@ -639,7 +639,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         auto n_inelastic = 0u;
         art::Ptr<simb::MCParticle> final_scattered_particle;
         common::GetNScatters(mcp_h, mcp_ptr, final_scattered_particle, n_elastic, n_inelastic);
-        
+
         _mc_elastic_scatters.push_back(n_elastic);
         _mc_inelastic_scatters.push_back(n_inelastic);
         _mc_momentum_x.push_back(mcp.Px());
@@ -684,7 +684,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         std::vector<std::string> daughter_processes;
         std::vector<float> daughter_moms_x, daughter_moms_y, daughter_moms_z;
         std::vector<float> daughter_vtxs_x, daughter_vtxs_y, daughter_vtxs_z;
-        
+
         _mc_daughter_process_idx.push_back(_mc_daughter_process_flat.size());
         for (int i = 0; i < mcp.NumberDaughters(); ++i) {
             if (mcParticleMap.count(mcp.Daughter(i))) {
@@ -710,7 +710,7 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _mc_daughter_vtx_y.push_back(daughter_vtxs_y);
         _mc_daughter_vtx_z.push_back(daughter_vtxs_z);
 
-        // NOTE: recursive all-chain collection removed.
+
     }
 }
 
