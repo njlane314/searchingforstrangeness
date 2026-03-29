@@ -136,10 +136,16 @@ private:
     std::vector<float> _da_plane_primary_vtx_wire_cm;
     std::vector<float> _da_plane_primary_vtx_drift_cm;
 
-    // dead-channel replay mask (per-plane wire intervals in cm)
+    // dead-region replay overlay: one drawable rectangle per masked wire band
     std::vector<int> _da_dead_plane_uid;
+    std::vector<int> _da_dead_slice_index;
+    std::vector<int> _da_dead_cryo;
+    std::vector<int> _da_dead_tpc;
+    std::vector<int> _da_dead_plane;
     std::vector<float> _da_dead_wire_min_cm;
     std::vector<float> _da_dead_wire_max_cm;
+    std::vector<float> _da_dead_drift_min_cm;
+    std::vector<float> _da_dead_drift_max_cm;
 
     // hit branches (raw replay inputs + nominal local geometry / labels)
     std::vector<int> _da_hit_plane_uid;
@@ -498,8 +504,14 @@ void GraphAnalysis::write_plane_replay(const int plane_uid,
 
     for (const auto& interval : input.geometry.dead_wire_intervals) {
         _da_dead_plane_uid.push_back(plane_uid);
+        _da_dead_slice_index.push_back(input.slice_index);
+        _da_dead_cryo.push_back(input.cryo);
+        _da_dead_tpc.push_back(input.tpc);
+        _da_dead_plane.push_back(input.plane);
         _da_dead_wire_min_cm.push_back(interval.first);
         _da_dead_wire_max_cm.push_back(interval.second);
+        _da_dead_drift_min_cm.push_back(input.geometry.drift_min);
+        _da_dead_drift_max_cm.push_back(input.geometry.drift_max);
     }
 }
 
@@ -748,8 +760,14 @@ void GraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_plane_primary_vtx_drift_cm", "std::vector<float>", &_da_plane_primary_vtx_drift_cm);
 
     tree->Branch("da_dead_plane_uid", "std::vector<int>", &_da_dead_plane_uid);
+    tree->Branch("da_dead_slice_index", "std::vector<int>", &_da_dead_slice_index);
+    tree->Branch("da_dead_cryo", "std::vector<int>", &_da_dead_cryo);
+    tree->Branch("da_dead_tpc", "std::vector<int>", &_da_dead_tpc);
+    tree->Branch("da_dead_plane", "std::vector<int>", &_da_dead_plane);
     tree->Branch("da_dead_wire_min_cm", "std::vector<float>", &_da_dead_wire_min_cm);
     tree->Branch("da_dead_wire_max_cm", "std::vector<float>", &_da_dead_wire_max_cm);
+    tree->Branch("da_dead_drift_min_cm", "std::vector<float>", &_da_dead_drift_min_cm);
+    tree->Branch("da_dead_drift_max_cm", "std::vector<float>", &_da_dead_drift_max_cm);
 
     tree->Branch("da_hit_plane_uid", "std::vector<int>", &_da_hit_plane_uid);
     tree->Branch("da_hit_slice_index", "std::vector<int>", &_da_hit_slice_index);
@@ -842,8 +860,14 @@ void GraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_plane_primary_vtx_drift_cm.clear();
 
     _da_dead_plane_uid.clear();
+    _da_dead_slice_index.clear();
+    _da_dead_cryo.clear();
+    _da_dead_tpc.clear();
+    _da_dead_plane.clear();
     _da_dead_wire_min_cm.clear();
     _da_dead_wire_max_cm.clear();
+    _da_dead_drift_min_cm.clear();
+    _da_dead_drift_max_cm.clear();
 
     _da_hit_plane_uid.clear();
     _da_hit_slice_index.clear();
