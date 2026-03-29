@@ -8,6 +8,7 @@
 #include "TTree.h"
 
 #include "art/Framework/Principal/Event.h"
+#include "canvas/Persistency/Common/FindManyP.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Utilities/InputTag.h"
@@ -76,6 +77,7 @@ private:
                               const cg::Result& result);
 
     art::InputTag fHITproducer;
+    art::InputTag fCLSproducer;
     bool fOnlySelectedSlices = true;
 
     cg::Params fNominalParams;
@@ -184,6 +186,7 @@ ComponentGraphAnalysis::ComponentGraphAnalysis(const fhicl::ParameterSet& parame
 
 void ComponentGraphAnalysis::read_config(const fhicl::ParameterSet& p) {
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
+    fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fOnlySelectedSlices = p.get<bool>("OnlySelectedSlices", true);
 
     fNominalParams.save_all_component_graph_edges =
@@ -291,7 +294,7 @@ cg::PlaneGeometry ComponentGraphAnalysis::make_plane_geometry(
 }
 
 void ComponentGraphAnalysis::collect_slice_hits(
-    const art::Event& /*event*/,
+    const art::Event& event,
     const int slice_index,
     std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
     const detinfo::DetectorProperties* det_prop,
@@ -300,37 +303,43 @@ void ComponentGraphAnalysis::collect_slice_hits(
 
     std::unordered_set<std::size_t> used_hit_keys;
 
+    auto const& cluster_handle = event.getValidHandle<std::vector<recob::Cluster>>(fCLSproducer);
+    art::FindManyP<recob::Hit> cluster_hits(cluster_handle, event, fCLSproducer);
+
     for (const auto& pfp : slice_pfp_vec) {
-        auto hits = pfp.get<recob::Hit>();
-        for (const auto& hit : hits) {
-            if (!hit) continue;
-            if (!used_hit_keys.insert(hit.key()).second) continue;
+        const auto clusters = pfp.get<recob::Cluster>();
+        for (const auto& cluster : clusters) {
+            if (!cluster) continue;
+            const auto& hits = cluster_hits.at(cluster.key());
+            for (const auto& hit : hits) {
+                if (!hit) continue;
+                if (!used_hit_keys.insert(hit.key()).second) continue;
 
-            const auto& wire_id = hit->WireID();
-            const auto plane_id = wire_id.planeID();
+                const auto& wire_id = hit->WireID();
+                const auto plane_id = wire_id.planeID();
 
-            cg::HitInput node;
-            node.hit_key = hit.key();
-            node.slice_index = slice_index;
-            node.cryo = static_cast<int>(wire_id.Cryostat);
-            node.tpc = static_cast<int>(wire_id.TPC);
-            node.plane = static_cast<int>(wire_id.Plane);
-            node.wire = static_cast<int>(wire_id.Wire);
-            node.tick = hit->PeakTime();
-            node.charge = hit->Integral();
-            node.peakamp = hit->PeakAmplitude();
-            node.rms = hit->RMS();
+                cg::HitInput node;
+                node.hit_key = hit.key();
+                node.slice_index = slice_index;
+                node.cryo = static_cast<int>(wire_id.Cryostat);
+                node.tpc = static_cast<int>(wire_id.TPC);
+                node.plane = static_cast<int>(wire_id.Plane);
+                node.wire = static_cast<int>(wire_id.Wire);
+                node.tick = hit->PeakTime();
+                node.charge = hit->Integral();
+                node.peakamp = hit->PeakAmplitude();
+                node.rms = hit->RMS();
 
-            const float wire_pitch = static_cast<float>(geom->WirePitch(plane_id));
-            node.wire_cm = static_cast<float>(wire_id.Wire) * wire_pitch;
-            node.drift_cm = static_cast<float>(
-                det_prop->ConvertTicksToX(hit->PeakTime(),
-                                         plane_id.Plane,
-                                         plane_id.TPC,
-                                         plane_id.Cryostat)
-            );
+                const float wire_pitch = static_cast<float>(geom->WirePitch(plane_id));
+                node.wire_cm = static_cast<float>(wire_id.Wire) * wire_pitch;
+                node.drift_cm = static_cast<float>(
+                    det_prop->ConvertTicksToX(hit->PeakTime(),
+                                              plane_id.Plane,
+                                              plane_id.TPC,
+                                              plane_id.Cryostat));
 
-            hits_by_plane[PlaneKey {node.cryo, node.tpc, node.plane}].push_back(node);
+                hits_by_plane[PlaneKey {node.cryo, node.tpc, node.plane}].push_back(node);
+            }
         }
     }
 }
