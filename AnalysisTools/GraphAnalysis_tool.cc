@@ -529,6 +529,8 @@ bool GraphAnalysis::find_slice_primary_vertex(
         const auto vertices = pfp_proxy.get<recob::Vertex>();
         if (vertices.size() == 0u) continue;
 
+        if (!vertices.at(0)->isValid()) continue;
+
         out.pos = vertices.at(0)->position();
         out.valid = true;
         return true;
