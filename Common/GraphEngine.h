@@ -89,6 +89,7 @@ struct PlaneGeometry {
     float wire_max = 0.0f;
     float drift_min = 0.0f;
     float drift_max = 0.0f;
+    std::vector<std::pair<float, float>> dead_wire_intervals;
 };
 
 struct DerivedScales {
@@ -106,6 +107,7 @@ struct DerivedScales {
     float wire_max = 0.0f;
     float drift_min = 0.0f;
     float drift_max = 0.0f;
+    std::vector<std::pair<float, float>> dead_wire_intervals;
 };
 
 struct HitInput {
@@ -753,6 +755,7 @@ inline DerivedScales GraphEngine::make_scales(const PlaneGeometry& geometry) con
     out.wire_max = geometry.wire_max;
     out.drift_min = geometry.drift_min;
     out.drift_max = geometry.drift_max;
+    out.dead_wire_intervals = geometry.dead_wire_intervals;
     return out;
 }
 
@@ -1329,7 +1332,63 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
         return;
     }
 
-    visibility = clamp_value((vis_hi - vis_lo) / interior_len, 0.0f, 1.0f);
+    std::vector<std::pair<float, float>> dead_intervals;
+    dead_intervals.reserve(scales.dead_wire_intervals.size());
+
+    const float dx = b.x - a.x;
+    if (std::fabs(dx) < kEps) {
+        for (const auto& dead : scales.dead_wire_intervals) {
+            if (a.x >= dead.first && a.x <= dead.second) {
+                dead_intervals.emplace_back(vis_lo, vis_hi);
+                break;
+            }
+        }
+    } else {
+        for (const auto& dead : scales.dead_wire_intervals) {
+            float t0 = (dead.first - a.x) / dx;
+            float t1 = (dead.second - a.x) / dx;
+            if (t1 < t0) std::swap(t0, t1);
+            if (t1 <= vis_lo || t0 >= vis_hi) continue;
+            dead_intervals.emplace_back(std::max(t0, vis_lo), std::min(t1, vis_hi));
+        }
+    }
+
+    std::vector<std::pair<float, float>> live_intervals;
+    live_intervals.reserve(dead_intervals.size() + 1u);
+
+    if (dead_intervals.empty()) {
+        live_intervals.emplace_back(vis_lo, vis_hi);
+    } else {
+        for (auto& interval : dead_intervals) {
+            interval.first = clamp_value(interval.first, vis_lo, vis_hi);
+            interval.second = clamp_value(interval.second, vis_lo, vis_hi);
+            if (interval.second < interval.first) std::swap(interval.first, interval.second);
+        }
+
+        std::sort(dead_intervals.begin(), dead_intervals.end(),
+                  [](const std::pair<float, float>& lhs, const std::pair<float, float>& rhs) {
+                      if (lhs.first != rhs.first) return lhs.first < rhs.first;
+                      return lhs.second < rhs.second;
+                  });
+
+        float cursor = vis_lo;
+        for (const auto& interval : dead_intervals) {
+            if (interval.second <= cursor) continue;
+            if (interval.first > cursor) {
+                live_intervals.emplace_back(cursor, std::min(interval.first, vis_hi));
+            }
+            cursor = std::max(cursor, interval.second);
+            if (cursor >= vis_hi) break;
+        }
+        if (cursor < vis_hi) live_intervals.emplace_back(cursor, vis_hi);
+    }
+
+    float live_visible_len = 0.0f;
+    for (const auto& interval : live_intervals) {
+        live_visible_len += std::max(0.0f, interval.second - interval.first);
+    }
+
+    visibility = clamp_value(live_visible_len / interior_len, 0.0f, 1.0f);
 
     const float xmin = std::min(a.x, b.x) - scales.tube_radius;
     const float xmax = std::max(a.x, b.x) + scales.tube_radius;
@@ -1338,6 +1397,14 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
 
     const auto candidates = grid.queryAABB(xmin, xmax, ymin, ymax);
     std::vector<std::pair<float, float>> intervals;
+
+    if (!(live_visible_len > 0.0f)) {
+        // Entire in-bounds corridor is masked by dead channels:
+        // unobservable, but not positively obstructed.
+        emptiness = 1.0f;
+        return;
+    }
+
     intervals.reserve(candidates.size());
 
     for (const int idx : candidates) {
@@ -1351,13 +1418,14 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
         const float dt = std::sqrt(std::max(scales.tube_radius * scales.tube_radius - d_perp * d_perp, 0.0f)) / L;
         const float t0 = t_center - dt;
         const float t1 = t_center + dt;
-        if (t1 <= vis_lo || t0 >= vis_hi) continue;
-
-        intervals.emplace_back(std::max(t0, vis_lo), std::min(t1, vis_hi));
+        for (const auto& live : live_intervals) {
+            if (t1 <= live.first || t0 >= live.second) continue;
+            intervals.emplace_back(std::max(t0, live.first), std::min(t1, live.second));
+        }
     }
 
     const float covered = merged_interval_length(intervals, vis_lo, vis_hi);
-    emptiness = clamp_value(1.0f - covered / std::max(vis_hi - vis_lo, kEps), 0.0f, 1.0f);
+    emptiness = clamp_value(1.0f - covered / std::max(live_visible_len, kEps), 0.0f, 1.0f);
 }
 
 inline GraphEngine::ParentCandidate GraphEngine::best_parent_candidate(
