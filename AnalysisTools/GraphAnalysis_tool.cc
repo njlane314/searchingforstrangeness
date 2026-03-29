@@ -30,10 +30,10 @@
 
 namespace analysis {
 
-class ComponentGraphAnalysis : public AnalysisToolBase {
+class GraphAnalysis : public AnalysisToolBase {
 public:
-    explicit ComponentGraphAnalysis(const fhicl::ParameterSet& parameter_set);
-    ~ComponentGraphAnalysis() override = default;
+    explicit GraphAnalysis(const fhicl::ParameterSet& parameter_set);
+    ~GraphAnalysis() override = default;
 
     void configure(const fhicl::ParameterSet& parameter_set) override;
     void analyseEvent(const art::Event& event, bool is_data) override;
@@ -179,12 +179,12 @@ private:
     std::vector<float> _da_edge_score;
 };
 
-ComponentGraphAnalysis::ComponentGraphAnalysis(const fhicl::ParameterSet& parameter_set)
+GraphAnalysis::GraphAnalysis(const fhicl::ParameterSet& parameter_set)
     : fEngine(cg::Params {}) {
     this->read_config(parameter_set);
 }
 
-void ComponentGraphAnalysis::read_config(const fhicl::ParameterSet& p) {
+void GraphAnalysis::read_config(const fhicl::ParameterSet& p) {
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fOnlySelectedSlices = p.get<bool>("OnlySelectedSlices", true);
@@ -250,11 +250,11 @@ void ComponentGraphAnalysis::read_config(const fhicl::ParameterSet& p) {
     fEngine.set_params(fNominalParams);
 }
 
-void ComponentGraphAnalysis::configure(const fhicl::ParameterSet& parameter_set) {
+void GraphAnalysis::configure(const fhicl::ParameterSet& parameter_set) {
     this->read_config(parameter_set);
 }
 
-void ComponentGraphAnalysis::analyseEvent(const art::Event& event, bool /*is_data*/) {
+void GraphAnalysis::analyseEvent(const art::Event& event, bool /*is_data*/) {
     _evt = event.event();
     _sbr = event.subRun();
     _run = event.run();
@@ -263,7 +263,7 @@ void ComponentGraphAnalysis::analyseEvent(const art::Event& event, bool /*is_dat
     _da_next_component_id = 0;
 }
 
-cg::PlaneGeometry ComponentGraphAnalysis::make_plane_geometry(
+cg::PlaneGeometry GraphAnalysis::make_plane_geometry(
     const geo::PlaneID& plane_id,
     const detinfo::DetectorProperties* det_prop,
     const geo::GeometryCore* geom) const {
@@ -293,7 +293,7 @@ cg::PlaneGeometry ComponentGraphAnalysis::make_plane_geometry(
     return out;
 }
 
-void ComponentGraphAnalysis::collect_slice_hits(
+void GraphAnalysis::collect_slice_hits(
     const art::Event& event,
     const int slice_index,
     std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
@@ -343,7 +343,7 @@ void ComponentGraphAnalysis::collect_slice_hits(
     }
 }
 
-void ComponentGraphAnalysis::write_plane_replay(const int plane_uid,
+void GraphAnalysis::write_plane_replay(const int plane_uid,
                                                   const cg::PlaneInput& input) {
     _da_plane_uid.push_back(plane_uid);
     _da_plane_slice_index.push_back(input.slice_index);
@@ -358,7 +358,7 @@ void ComponentGraphAnalysis::write_plane_replay(const int plane_uid,
     _da_plane_drift_max_cm.push_back(input.geometry.drift_max);
 }
 
-void ComponentGraphAnalysis::write_nominal_output(const int plane_uid,
+void GraphAnalysis::write_nominal_output(const int plane_uid,
                                                     const cg::Result& result) {
     std::vector<int> global_comp_id(result.components.size(), -1);
     for (const auto& comp : result.components) {
@@ -470,7 +470,7 @@ void ComponentGraphAnalysis::write_nominal_output(const int plane_uid,
     }
 }
 
-void ComponentGraphAnalysis::analyseSlice(const art::Event& event,
+void GraphAnalysis::analyseSlice(const art::Event& event,
                                             std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
                                             bool /*is_data*/,
                                             bool is_selected) {
@@ -512,7 +512,7 @@ void ComponentGraphAnalysis::analyseSlice(const art::Event& event,
     ++_da_slice_counter;
 }
 
-void ComponentGraphAnalysis::setBranches(TTree* tree) {
+void GraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_plane_uid", "std::vector<int>", &_da_plane_uid);
     tree->Branch("da_plane_slice_index", "std::vector<int>", &_da_plane_slice_index);
     tree->Branch("da_plane_cryo", "std::vector<int>", &_da_plane_cryo);
@@ -598,7 +598,7 @@ void ComponentGraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_edge_score", "std::vector<float>", &_da_edge_score);
 }
 
-void ComponentGraphAnalysis::resetTTree(TTree* /*tree*/) {
+void GraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_plane_uid.clear();
     _da_plane_slice_index.clear();
     _da_plane_cryo.clear();
@@ -688,7 +688,7 @@ void ComponentGraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_next_component_id = 0;
 }
 
-DEFINE_ART_CLASS_TOOL(ComponentGraphAnalysis)
+DEFINE_ART_CLASS_TOOL(GraphAnalysis)
 
 } // namespace analysis
 
