@@ -561,12 +561,12 @@ void GraphAnalysis::write_nominal_output(const int plane_uid,
         global_comp_id[comp.id] = _da_next_component_id++;
     }
 
-    std::map<int, int> global_activity_id;
+    std::vector<int> global_activity_id(global_comp_id.size(), -1);
     for (const auto& comp : result.components) {
         if (comp.activity_id < 0 || comp.activity_id >= static_cast<int>(global_comp_id.size())) continue;
         const int rep_global = global_comp_id[comp.activity_id];
         if (rep_global < 0) continue;
-        global_activity_id.emplace(comp.activity_id, rep_global);
+        global_activity_id[comp.activity_id] = rep_global;
     }
 
     auto resolve_global_comp = [&](const int local_id) -> int {
@@ -575,8 +575,8 @@ void GraphAnalysis::write_nominal_output(const int plane_uid,
     };
 
     auto resolve_global_activity = [&](const int local_activity_id) -> int {
-        const auto it = global_activity_id.find(local_activity_id);
-        return (it == global_activity_id.end()) ? -1 : it->second;
+        if (local_activity_id < 0 || local_activity_id >= static_cast<int>(global_activity_id.size())) return -1;
+        return global_activity_id[local_activity_id];
     };
 
     for (const auto& hit : result.hits) {
