@@ -3,7 +3,7 @@
 
 #include "AnalysisToolBase.h"
 #include "Common/ProxyTypes.h"
-#include "GraphEngine.h"
+#include "Common/GraphEngine.h"
 
 #include "TTree.h"
 
