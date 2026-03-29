@@ -25,11 +25,6 @@ inline float qnanf() {
     return std::numeric_limits<float>::quiet_NaN();
 }
 
-template <typename T>
-inline T clamp_value(const T& x, const T& lo, const T& hi) {
-    return std::max(lo, std::min(x, hi));
-}
-
 enum Label : int {
     kPrompt = 0,
     kDetached = 1,
@@ -204,6 +199,12 @@ public:
     Result run(const PlaneInput& input) const;
 
 private:
+    struct Pca2 {
+        Vec2 dir {1.0f, 0.0f};
+        float lambda_max = 0.0f;
+        float lambda_min = 0.0f;
+    };
+
     struct LocalGeom {
         Vec2 dir {1.0f, 0.0f};
         float anis = 0.0f;
@@ -382,7 +383,7 @@ private:
         const float nb = norm(b);
         if (na < kEps || nb < kEps) return 0.5f * kPi;
         const float c = std::fabs(dot(a, b) / (na * nb));
-        return std::acos(clamp_value(c, -1.0f, 1.0f));
+        return std::acos(std::clamp(c, -1.0f, 1.0f));
     }
 
     static float point_to_bbox_distance(const Vec2& p,
@@ -429,8 +430,13 @@ private:
                          float a10,
                          float a11,
                          float b0,
-                         float b1,
-                         Vec2& x);
+                          float b1,
+                          Vec2& x);
+
+    template <class IndexContainer, class WeightFn>
+    Pca2 weighted_principal_axis(const std::vector<HitNode>& hits,
+                                 const IndexContainer& indices,
+                                 WeightFn&& weight_fn) const;
 
     DerivedScales make_scales(const PlaneGeometry& geometry) const;
 
@@ -655,8 +661,8 @@ inline float GraphEngine::merged_interval_length(std::vector<std::pair<float, fl
     if (!(hi > lo) || intervals.empty()) return 0.0f;
 
     for (auto& interval : intervals) {
-        interval.first = clamp_value(interval.first, lo, hi);
-        interval.second = clamp_value(interval.second, lo, hi);
+        interval.first = std::clamp(interval.first, lo, hi);
+        interval.second = std::clamp(interval.second, lo, hi);
         if (interval.second < interval.first) std::swap(interval.first, interval.second);
     }
 
@@ -682,7 +688,7 @@ inline float GraphEngine::merged_interval_length(std::vector<std::pair<float, fl
     }
 
     covered += std::max(0.0f, cur_hi - cur_lo);
-    return clamp_value(covered, 0.0f, std::max(0.0f, hi - lo));
+    return std::clamp(covered, 0.0f, std::max(0.0f, hi - lo));
 }
 
 inline bool GraphEngine::clip_segment_to_box(const Vec2& a,
@@ -735,6 +741,50 @@ inline bool GraphEngine::solve2x2(float a00,
     return true;
 }
 
+template <class IndexContainer, class WeightFn>
+inline GraphEngine::Pca2 GraphEngine::weighted_principal_axis(
+    const std::vector<HitNode>& hits,
+    const IndexContainer& indices,
+    WeightFn&& weight_fn) const {
+    Pca2 out;
+    Vec2 mean {0.0f, 0.0f};
+    float wsum = 0.0f;
+    for (const int idx : indices) {
+        const float w = weight_fn(idx);
+        mean = add(mean, scale(hits[idx].pos, w));
+        wsum += w;
+    }
+
+    if (wsum <= kEps) return out;
+    mean = scale(mean, 1.0f / wsum);
+
+    float cxx = 0.0f;
+    float cxy = 0.0f;
+    float cyy = 0.0f;
+    for (const int idx : indices) {
+        const float w = weight_fn(idx);
+        const Vec2 d = subtract(hits[idx].pos, mean);
+        cxx += w * d.x * d.x;
+        cxy += w * d.x * d.y;
+        cyy += w * d.y * d.y;
+    }
+    cxx /= wsum;
+    cxy /= wsum;
+    cyy /= wsum;
+
+    const float trace = cxx + cyy;
+    const float disc = std::sqrt(std::max((cxx - cyy) * (cxx - cyy) + 4.0f * cxy * cxy, 0.0f));
+    out.lambda_max = 0.5f * (trace + disc);
+    out.lambda_min = 0.5f * (trace - disc);
+
+    Vec2 dir;
+    if (std::fabs(cxy) > 1.0e-8f) dir = Vec2 {out.lambda_max - cyy, cxy};
+    else dir = (cxx >= cyy) ? Vec2 {1.0f, 0.0f} : Vec2 {0.0f, 1.0f};
+
+    out.dir = normalize(dir);
+    return out;
+}
+
 inline DerivedScales GraphEngine::make_scales(const PlaneGeometry& geometry) const {
     DerivedScales out;
     out.s = std::max(geometry.wire_pitch, geometry.drift_cm_per_tick);
@@ -770,13 +820,17 @@ inline GraphEngine::LocalGeom GraphEngine::compute_local_geom_for_hit(
     auto neighbors = grid.queryRadius(hits[i].pos, scales.geom_radius);
     neighbors.erase(std::remove(neighbors.begin(), neighbors.end(), i), neighbors.end());
 
-    std::sort(neighbors.begin(), neighbors.end(),
-              [&](const int a, const int b) {
-                  return norm2(subtract(hits[a].pos, hits[i].pos)) <
-                         norm2(subtract(hits[b].pos, hits[i].pos));
-              });
-
-    if (neighbors.size() > fParams.max_geom_neighbors) neighbors.resize(fParams.max_geom_neighbors);
+    if (neighbors.size() > fParams.max_geom_neighbors) {
+        const auto kth = neighbors.begin() + static_cast<std::ptrdiff_t>(fParams.max_geom_neighbors);
+        std::nth_element(neighbors.begin(),
+                         kth,
+                         neighbors.end(),
+                         [&](const int a, const int b) {
+                             return norm2(subtract(hits[a].pos, hits[i].pos)) <
+                                    norm2(subtract(hits[b].pos, hits[i].pos));
+                         });
+        neighbors.erase(kth, neighbors.end());
+    }
 
     if (neighbors.empty()) return out;
 
@@ -787,47 +841,22 @@ inline GraphEngine::LocalGeom GraphEngine::compute_local_geom_for_hit(
         return out;
     }
 
-    float wsum = 0.0f;
-    Vec2 mean {0.0f, 0.0f};
-    for (const int j : neighbors) {
-        const float d = std::max(norm(subtract(hits[j].pos, hits[i].pos)), 0.25f * scales.s);
-        const float w = (std::max(hits[j].charge, 0.0f) + 1.0f) / d;
-        mean = add(mean, scale(hits[j].pos, w));
-        wsum += w;
-    }
-    if (wsum < kEps) return out;
-    mean = scale(mean, 1.0f / wsum);
+    const auto pca = this->weighted_principal_axis(
+        hits,
+        neighbors,
+        [&](const int idx) {
+            const float d = std::max(norm(subtract(hits[idx].pos, hits[i].pos)), 0.25f * scales.s);
+            return (std::max(hits[idx].charge, 0.0f) + 1.0f) / d;
+        });
 
-    float cxx = 0.0f;
-    float cxy = 0.0f;
-    float cyy = 0.0f;
-    for (const int j : neighbors) {
-        const float d = std::max(norm(subtract(hits[j].pos, hits[i].pos)), 0.25f * scales.s);
-        const float w = (std::max(hits[j].charge, 0.0f) + 1.0f) / d;
-        const Vec2 x = subtract(hits[j].pos, mean);
-        cxx += w * x.x * x.x;
-        cxy += w * x.x * x.y;
-        cyy += w * x.y * x.y;
-    }
-    cxx /= wsum;
-    cxy /= wsum;
-    cyy /= wsum;
-
-    const float trace = cxx + cyy;
-    const float disc = std::sqrt(std::max((cxx - cyy) * (cxx - cyy) + 4.0f * cxy * cxy, 0.0f));
-    const float l1 = 0.5f * (trace + disc);
-    const float l2 = 0.5f * (trace - disc);
-
-    Vec2 dir;
-    if (std::fabs(cxy) > 1.0e-8f) {
-        dir = Vec2 {l1 - cyy, cxy};
-    } else {
-        dir = (cxx >= cyy) ? Vec2 {1.0f, 0.0f} : Vec2 {0.0f, 1.0f};
-    }
-
-    out.dir = normalize(dir);
-    out.anis = (l1 + l2 > kEps) ? clamp_value((l1 - l2) / (l1 + l2 + kEps), 0.0f, 1.0f) : 0.0f;
-    out.scale = std::max(std::sqrt(std::max(l1, 0.0f)), 0.5f * scales.s);
+    out.dir = pca.dir;
+    out.anis = (pca.lambda_max + pca.lambda_min > kEps)
+                   ? std::clamp((pca.lambda_max - pca.lambda_min)
+                                    / (pca.lambda_max + pca.lambda_min + kEps),
+                                0.0f,
+                                1.0f)
+                   : 0.0f;
+    out.scale = std::max(std::sqrt(std::max(pca.lambda_max, 0.0f)), 0.5f * scales.s);
 
     return out;
 }
@@ -851,7 +880,7 @@ inline float GraphEngine::sample_support_fraction(const Vec2& a,
     const float L = norm(ab);
     if (L < kEps) return 1.0f;
 
-    const float inner_lo = clamp_value(fParams.capsule_interior_frac, 0.0f, 0.49f);
+    const float inner_lo = std::clamp(fParams.capsule_interior_frac, 0.0f, 0.49f);
     const float inner_hi = 1.0f - inner_lo;
     if (!(inner_hi > inner_lo)) return 1.0f;
 
@@ -880,7 +909,7 @@ inline float GraphEngine::sample_support_fraction(const Vec2& a,
     }
 
     const float covered = merged_interval_length(intervals, inner_lo, inner_hi);
-    return clamp_value(covered / std::max(inner_hi - inner_lo, kEps), 0.0f, 1.0f);
+    return std::clamp(covered / std::max(inner_hi - inner_lo, kEps), 0.0f, 1.0f);
 }
 
 inline std::vector<GraphEngine::CandidateEdge>
@@ -902,13 +931,16 @@ GraphEngine::build_candidate_edges(const std::vector<HitNode>& hits,
             ordered.emplace_back(d, j);
         }
 
-        std::sort(ordered.begin(), ordered.end(),
-                  [](const std::pair<float, int>& a, const std::pair<float, int>& b) {
-                      return a.first < b.first;
-                  });
-
         if (ordered.size() > fParams.max_candidate_neighbors) {
-            ordered.resize(fParams.max_candidate_neighbors);
+            const auto kth =
+                ordered.begin() + static_cast<std::ptrdiff_t>(fParams.max_candidate_neighbors);
+            std::nth_element(ordered.begin(),
+                             kth,
+                             ordered.end(),
+                             [](const std::pair<float, int>& a, const std::pair<float, int>& b) {
+                                 return a.first < b.first;
+                             });
+            ordered.erase(kth, ordered.end());
         }
 
         for (const auto& dj : ordered) {
@@ -1009,38 +1041,11 @@ inline Vec2 GraphEngine::component_axis(const ComponentSummary& comp,
                                             const std::vector<HitNode>& hits) const {
     if (comp.hit_indices.size() < 2u) return Vec2 {1.0f, 0.0f};
 
-    Vec2 mean {0.0f, 0.0f};
-    float qsum = 0.0f;
-    for (const int idx : comp.hit_indices) {
-        const float w = std::max(hits[idx].charge, 0.0f) + 1.0f;
-        mean = add(mean, scale(hits[idx].pos, w));
-        qsum += w;
-    }
-    mean = scale(mean, 1.0f / std::max(qsum, kEps));
-
-    float cxx = 0.0f;
-    float cxy = 0.0f;
-    float cyy = 0.0f;
-    for (const int idx : comp.hit_indices) {
-        const float w = std::max(hits[idx].charge, 0.0f) + 1.0f;
-        const Vec2 x = subtract(hits[idx].pos, mean);
-        cxx += w * x.x * x.x;
-        cxy += w * x.x * x.y;
-        cyy += w * x.y * x.y;
-    }
-    cxx /= std::max(qsum, kEps);
-    cxy /= std::max(qsum, kEps);
-    cyy /= std::max(qsum, kEps);
-
-    const float trace = cxx + cyy;
-    const float disc = std::sqrt(std::max((cxx - cyy) * (cxx - cyy) + 4.0f * cxy * cxy, 0.0f));
-    const float l1 = 0.5f * (trace + disc);
-
-    Vec2 dir;
-    if (std::fabs(cxy) > 1.0e-8f) dir = Vec2 {l1 - cyy, cxy};
-    else dir = (cxx >= cyy) ? Vec2 {1.0f, 0.0f} : Vec2 {0.0f, 1.0f};
-
-    return normalize(dir);
+    const auto pca = this->weighted_principal_axis(
+        hits,
+        comp.hit_indices,
+        [&](const int idx) { return std::max(hits[idx].charge, 0.0f) + 1.0f; });
+    return pca.dir;
 }
 
 inline Vec2 GraphEngine::local_axis_at_hit(int hit_idx,
@@ -1057,50 +1062,28 @@ inline Vec2 GraphEngine::local_axis_at_hit(int hit_idx,
         }
     }
 
-    std::sort(near_hits.begin(), near_hits.end(),
-              [&](const int a, const int b) {
-                  return norm2(subtract(hits[a].pos, hits[hit_idx].pos)) <
-                         norm2(subtract(hits[b].pos, hits[hit_idx].pos));
-              });
-
-    if (near_hits.size() > fParams.max_geom_neighbors) near_hits.resize(fParams.max_geom_neighbors);
+    if (near_hits.size() > fParams.max_geom_neighbors) {
+        const auto kth = near_hits.begin() + static_cast<std::ptrdiff_t>(fParams.max_geom_neighbors);
+        std::nth_element(near_hits.begin(),
+                         kth,
+                         near_hits.end(),
+                         [&](const int a, const int b) {
+                             return norm2(subtract(hits[a].pos, hits[hit_idx].pos)) <
+                                    norm2(subtract(hits[b].pos, hits[hit_idx].pos));
+                         });
+        near_hits.erase(kth, near_hits.end());
+    }
 
     if (near_hits.size() < 2u) return this->component_axis(comp, hits);
 
-    Vec2 mean {0.0f, 0.0f};
-    float wsum = 0.0f;
-    for (const int idx : near_hits) {
-        const float d = std::max(norm(subtract(hits[idx].pos, hits[hit_idx].pos)), 0.25f * scales.s);
-        const float w = (std::max(hits[idx].charge, 0.0f) + 1.0f) / d;
-        mean = add(mean, scale(hits[idx].pos, w));
-        wsum += w;
-    }
-    mean = scale(mean, 1.0f / std::max(wsum, kEps));
-
-    float cxx = 0.0f;
-    float cxy = 0.0f;
-    float cyy = 0.0f;
-    for (const int idx : near_hits) {
-        const float d = std::max(norm(subtract(hits[idx].pos, hits[hit_idx].pos)), 0.25f * scales.s);
-        const float w = (std::max(hits[idx].charge, 0.0f) + 1.0f) / d;
-        const Vec2 x = subtract(hits[idx].pos, mean);
-        cxx += w * x.x * x.x;
-        cxy += w * x.x * x.y;
-        cyy += w * x.y * x.y;
-    }
-    cxx /= std::max(wsum, kEps);
-    cxy /= std::max(wsum, kEps);
-    cyy /= std::max(wsum, kEps);
-
-    const float trace = cxx + cyy;
-    const float disc = std::sqrt(std::max((cxx - cyy) * (cxx - cyy) + 4.0f * cxy * cxy, 0.0f));
-    const float l1 = 0.5f * (trace + disc);
-
-    Vec2 dir;
-    if (std::fabs(cxy) > 1.0e-8f) dir = Vec2 {l1 - cyy, cxy};
-    else dir = (cxx >= cyy) ? Vec2 {1.0f, 0.0f} : Vec2 {0.0f, 1.0f};
-
-    return normalize(dir);
+    const auto pca = this->weighted_principal_axis(
+        hits,
+        near_hits,
+        [&](const int idx) {
+            const float d = std::max(norm(subtract(hits[idx].pos, hits[hit_idx].pos)), 0.25f * scales.s);
+            return (std::max(hits[idx].charge, 0.0f) + 1.0f) / d;
+        });
+    return pca.dir;
 }
 
 inline float GraphEngine::start_asymmetry(int center_hit_idx,
@@ -1303,7 +1286,7 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
         return;
     }
 
-    const float inner_lo = clamp_value(fParams.corridor_end_exclude_frac, 0.0f, 0.49f);
+    const float inner_lo = std::clamp(fParams.corridor_end_exclude_frac, 0.0f, 0.49f);
     const float inner_hi = 1.0f - inner_lo;
     if (!(inner_hi > inner_lo)) return;
 
@@ -1329,7 +1312,7 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
         return;
     }
 
-    visibility = clamp_value((vis_hi - vis_lo) / interior_len, 0.0f, 1.0f);
+    visibility = std::clamp((vis_hi - vis_lo) / interior_len, 0.0f, 1.0f);
 
     const float xmin = std::min(a.x, b.x) - scales.tube_radius;
     const float xmax = std::max(a.x, b.x) + scales.tube_radius;
@@ -1357,7 +1340,7 @@ inline void GraphEngine::corridor_metrics(const Vec2& a,
     }
 
     const float covered = merged_interval_length(intervals, vis_lo, vis_hi);
-    emptiness = clamp_value(1.0f - covered / std::max(vis_hi - vis_lo, kEps), 0.0f, 1.0f);
+    emptiness = std::clamp(1.0f - covered / std::max(vis_hi - vis_lo, kEps), 0.0f, 1.0f);
 }
 
 inline GraphEngine::ParentCandidate GraphEngine::best_parent_candidate(
