@@ -15,7 +15,6 @@
 
 #include "larcore/CoreUtils/ServiceUtil.h"
 #include "larcore/Geometry/Geometry.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
 #include "lardataobj/RecoBase/Hit.h"
 
@@ -60,13 +59,13 @@ private:
     void read_config(const fhicl::ParameterSet& parameter_set);
 
     cg::PlaneGeometry make_plane_geometry(const geo::PlaneID& plane_id,
-                                          const detinfo::DetectorPropertiesData& det_prop,
+                                          const detinfo::DetectorProperties* det_prop,
                                           const geo::GeometryCore* geom) const;
 
     void collect_slice_hits(const art::Event& event,
                             int slice_index,
                             std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
-                            const detinfo::DetectorPropertiesData& det_prop,
+                            const detinfo::DetectorProperties* det_prop,
                             const geo::GeometryCore* geom,
                             std::map<PlaneKey, std::vector<cg::HitInput>>& hits_by_plane) const;
 
@@ -263,14 +262,14 @@ void ComponentGraphAnalysis::analyseEvent(const art::Event& event, bool /*is_dat
 
 cg::PlaneGeometry ComponentGraphAnalysis::make_plane_geometry(
     const geo::PlaneID& plane_id,
-    const detinfo::DetectorPropertiesData& det_prop,
+    const detinfo::DetectorProperties* det_prop,
     const geo::GeometryCore* geom) const {
 
     cg::PlaneGeometry out;
     out.wire_pitch = static_cast<float>(geom->WirePitch(plane_id));
 
-    const double x0 = det_prop.ConvertTicksToX(0.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
-    const double x1 = det_prop.ConvertTicksToX(1.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
+    const double x0 = det_prop->ConvertTicksToX(0.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
+    const double x1 = det_prop->ConvertTicksToX(1.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
     out.drift_cm_per_tick = static_cast<float>(std::fabs(x1 - x0));
 
     const auto& tpc_geo = geom->TPC(plane_id.asTPCID());
@@ -279,9 +278,9 @@ cg::PlaneGeometry ComponentGraphAnalysis::make_plane_geometry(
     out.wire_min = -0.5f * out.wire_pitch;
     out.wire_max = static_cast<float>((plane_geo.Nwires() - 0.5) * out.wire_pitch);
 
-    const unsigned nticks = det_prop.NumberTimeSamples();
-    const double xd0 = det_prop.ConvertTicksToX(0.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
-    const double xd1 = det_prop.ConvertTicksToX(static_cast<double>(nticks - 1u),
+    const unsigned nticks = det_prop->NumberTimeSamples();
+    const double xd0 = det_prop->ConvertTicksToX(0.0, plane_id.Plane, plane_id.TPC, plane_id.Cryostat);
+    const double xd1 = det_prop->ConvertTicksToX(static_cast<double>(nticks - 1u),
                                                 plane_id.Plane,
                                                 plane_id.TPC,
                                                 plane_id.Cryostat);
@@ -295,7 +294,7 @@ void ComponentGraphAnalysis::collect_slice_hits(
     const art::Event& /*event*/,
     const int slice_index,
     std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
-    const detinfo::DetectorPropertiesData& det_prop,
+    const detinfo::DetectorProperties* det_prop,
     const geo::GeometryCore* geom,
     std::map<PlaneKey, std::vector<cg::HitInput>>& hits_by_plane) const {
 
@@ -325,7 +324,7 @@ void ComponentGraphAnalysis::collect_slice_hits(
             const float wire_pitch = static_cast<float>(geom->WirePitch(plane_id));
             node.wire_cm = static_cast<float>(wire_id.Wire) * wire_pitch;
             node.drift_cm = static_cast<float>(
-                det_prop.ConvertTicksToX(hit->PeakTime(),
+                det_prop->ConvertTicksToX(hit->PeakTime(),
                                          plane_id.Plane,
                                          plane_id.TPC,
                                          plane_id.Cryostat)
@@ -472,10 +471,7 @@ void ComponentGraphAnalysis::analyseSlice(const art::Event& event,
         return;
     }
 
-    auto const clock_data =
-        art::ServiceHandle<detinfo::DetectorClocksService const>()->DataFor(event);
-    auto const det_prop =
-        art::ServiceHandle<detinfo::DetectorPropertiesService const>()->DataFor(event, clock_data);
+    auto const* det_prop = lar::providerFrom<detinfo::DetectorPropertiesService>();
     auto const* geom = lar::providerFrom<geo::Geometry>();
 
     std::map<PlaneKey, std::vector<cg::HitInput>> hits_by_plane;
