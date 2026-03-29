@@ -529,10 +529,7 @@ bool GraphAnalysis::find_slice_primary_vertex(
         const auto vertices = pfp_proxy.get<recob::Vertex>();
         if (vertices.size() == 0u) continue;
 
-        const auto& vertex = vertices.at(0);
-        if (!vertex || !vertex->isValid()) continue;
-
-        out.pos = vertex->position();
+        out.pos = vertices.at(0)->position();
         out.valid = true;
         return true;
     }
