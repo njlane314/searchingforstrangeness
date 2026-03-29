@@ -17,7 +17,9 @@
 #include "larcore/CoreUtils/ServiceUtil.h"
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Vertex.h"
 
 #include <algorithm>
 #include <cmath>
@@ -45,6 +47,11 @@ public:
     void resetTTree(TTree* tree) override;
 
 private:
+    struct SlicePV {
+        bool valid = false;
+        recob::Vertex::Point_t pos;
+    };
+
     struct PlaneKey {
         int cryo = 0;
         int tpc = 0;
@@ -74,7 +81,19 @@ private:
                             const cg::PlaneInput& input);
 
     void write_nominal_output(int plane_uid,
-                              const cg::Result& result);
+                              const cg::Result& result,
+                              bool have_plane_pv,
+                              float pv_wire_cm,
+                              float pv_drift_cm);
+
+    bool find_slice_primary_vertex(std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
+                                   SlicePV& out) const;
+
+    bool project_pv_to_plane(recob::Vertex::Point_t const& pos,
+                             geo::PlaneID const& plane_id,
+                             geo::GeometryCore const* geom,
+                             float& wire_cm,
+                             float& drift_cm) const;
 
     art::InputTag fHITproducer;
     art::InputTag fCLSproducer;
@@ -102,6 +121,9 @@ private:
     std::vector<float> _da_plane_wire_max_cm;
     std::vector<float> _da_plane_drift_min_cm;
     std::vector<float> _da_plane_drift_max_cm;
+    std::vector<int> _da_plane_has_primary_vtx;
+    std::vector<float> _da_plane_primary_vtx_wire_cm;
+    std::vector<float> _da_plane_primary_vtx_drift_cm;
 
     // hit branches (raw replay inputs + nominal local geometry / labels)
     std::vector<int> _da_hit_plane_uid;
@@ -159,6 +181,7 @@ private:
     std::vector<float> _da_comp_activity_vtx_wire_cm;
     std::vector<float> _da_comp_activity_vtx_drift_cm;
     std::vector<float> _da_comp_activity_vtx_residual;
+    std::vector<float> _da_comp_pv_to_activity_dist2d_cm;
 
     // edge branches (nominal interpretation)
     std::vector<int> _da_edge_plane_uid;
@@ -358,8 +381,58 @@ void GraphAnalysis::write_plane_replay(const int plane_uid,
     _da_plane_drift_max_cm.push_back(input.geometry.drift_max);
 }
 
+bool GraphAnalysis::find_slice_primary_vertex(
+    std::vector<common::ProxyPfpElem_t>& slice_pfp_vec,
+    SlicePV& out) const {
+
+    for (const auto& pfp_proxy : slice_pfp_vec) {
+        const auto pfps = pfp_proxy.get<recob::PFParticle>();
+        if (pfps.empty() || !pfps.front()) continue;
+
+        const auto& pfp = pfps.front();
+        const int apdg = std::abs(pfp->PdgCode());
+
+        if (!pfp->IsPrimary()) continue;
+        if (apdg != 12 && apdg != 14 && apdg != 16) continue;
+
+        const auto vertices = pfp_proxy.get<recob::Vertex>();
+        if (vertices.empty() || !vertices.front() || !vertices.front()->isValid()) continue;
+
+        out.pos = vertices.front()->position();
+        out.valid = true;
+        return true;
+    }
+
+    return false;
+}
+
+bool GraphAnalysis::project_pv_to_plane(recob::Vertex::Point_t const& pos,
+                                        geo::PlaneID const& plane_id,
+                                        geo::GeometryCore const* geom,
+                                        float& wire_cm,
+                                        float& drift_cm) const {
+    wire_cm = std::numeric_limits<float>::quiet_NaN();
+    drift_cm = std::numeric_limits<float>::quiet_NaN();
+
+    try {
+        const auto tpc_id = geom->FindTPCAtPosition(pos);
+        if (tpc_id.Cryostat != plane_id.Cryostat || tpc_id.TPC != plane_id.TPC) return false;
+    }
+    catch (...) {
+        return false;
+    }
+
+    const double w = geom->WireCoordinate(pos, plane_id);
+    wire_cm = static_cast<float>(w * geom->WirePitch(plane_id));
+    drift_cm = static_cast<float>(pos.X());
+    return true;
+}
+
 void GraphAnalysis::write_nominal_output(const int plane_uid,
-                                                    const cg::Result& result) {
+                                                    const cg::Result& result,
+                                                    const bool have_plane_pv,
+                                                    const float pv_wire_cm,
+                                                    const float pv_drift_cm) {
     std::vector<int> global_comp_id(result.components.size(), -1);
     for (const auto& comp : result.components) {
         if (comp.id < 0 || comp.id >= static_cast<int>(global_comp_id.size())) continue;
@@ -410,6 +483,14 @@ void GraphAnalysis::write_nominal_output(const int plane_uid,
     }
 
     for (const auto& comp : result.components) {
+        float pv_to_activity = std::numeric_limits<float>::quiet_NaN();
+        const bool is_activity_representative = (comp.id == comp.activity_id);
+        if (have_plane_pv && comp.label == cg::kDetached && is_activity_representative) {
+            const float dw = comp.activity_vertex.x - pv_wire_cm;
+            const float dx = comp.activity_vertex.y - pv_drift_cm;
+            pv_to_activity = std::hypot(dw, dx);
+        }
+
         float start_wire = -1.0f;
         float start_tick = -1.0f;
         if (comp.start_hit >= 0 && comp.start_hit < static_cast<int>(result.hits.size())) {
@@ -448,6 +529,7 @@ void GraphAnalysis::write_nominal_output(const int plane_uid,
         _da_comp_activity_vtx_wire_cm.push_back(comp.activity_vertex.x);
         _da_comp_activity_vtx_drift_cm.push_back(comp.activity_vertex.y);
         _da_comp_activity_vtx_residual.push_back(comp.activity_residual);
+        _da_comp_pv_to_activity_dist2d_cm.push_back(pv_to_activity);
     }
 
     for (const auto& edge : result.edges) {
@@ -481,6 +563,8 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
 
     auto const* det_prop = lar::providerFrom<detinfo::DetectorPropertiesService>();
     auto const* geom = lar::providerFrom<geo::Geometry>();
+    SlicePV slice_pv;
+    this->find_slice_primary_vertex(slice_pfp_vec, slice_pv);
 
     std::map<PlaneKey, std::vector<cg::HitInput>> hits_by_plane;
     this->collect_slice_hits(event, _da_slice_counter, slice_pfp_vec, det_prop, geom, hits_by_plane);
@@ -503,10 +587,19 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
         input.hits = plane_hits;
 
         const int plane_uid = _da_next_plane_uid++;
+        float pv_wire_cm = std::numeric_limits<float>::quiet_NaN();
+        float pv_drift_cm = std::numeric_limits<float>::quiet_NaN();
+        const bool have_plane_pv =
+            slice_pv.valid && this->project_pv_to_plane(slice_pv.pos, plane_id, geom, pv_wire_cm, pv_drift_cm);
+
+        _da_plane_has_primary_vtx.push_back(have_plane_pv ? 1 : 0);
+        _da_plane_primary_vtx_wire_cm.push_back(pv_wire_cm);
+        _da_plane_primary_vtx_drift_cm.push_back(pv_drift_cm);
+
         this->write_plane_replay(plane_uid, input);
 
         const cg::Result nominal = fEngine.run(input);
-        this->write_nominal_output(plane_uid, nominal);
+        this->write_nominal_output(plane_uid, nominal, have_plane_pv, pv_wire_cm, pv_drift_cm);
     }
 
     ++_da_slice_counter;
@@ -524,6 +617,9 @@ void GraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_plane_wire_max_cm", "std::vector<float>", &_da_plane_wire_max_cm);
     tree->Branch("da_plane_drift_min_cm", "std::vector<float>", &_da_plane_drift_min_cm);
     tree->Branch("da_plane_drift_max_cm", "std::vector<float>", &_da_plane_drift_max_cm);
+    tree->Branch("da_plane_has_primary_vtx", "std::vector<int>", &_da_plane_has_primary_vtx);
+    tree->Branch("da_plane_primary_vtx_wire_cm", "std::vector<float>", &_da_plane_primary_vtx_wire_cm);
+    tree->Branch("da_plane_primary_vtx_drift_cm", "std::vector<float>", &_da_plane_primary_vtx_drift_cm);
 
     tree->Branch("da_hit_plane_uid", "std::vector<int>", &_da_hit_plane_uid);
     tree->Branch("da_hit_slice_index", "std::vector<int>", &_da_hit_slice_index);
@@ -579,6 +675,7 @@ void GraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_comp_activity_vtx_wire_cm", "std::vector<float>", &_da_comp_activity_vtx_wire_cm);
     tree->Branch("da_comp_activity_vtx_drift_cm", "std::vector<float>", &_da_comp_activity_vtx_drift_cm);
     tree->Branch("da_comp_activity_vtx_residual", "std::vector<float>", &_da_comp_activity_vtx_residual);
+    tree->Branch("da_comp_pv_to_activity_dist2d_cm", "std::vector<float>", &_da_comp_pv_to_activity_dist2d_cm);
 
     tree->Branch("da_edge_plane_uid", "std::vector<int>", &_da_edge_plane_uid);
     tree->Branch("da_edge_slice_index", "std::vector<int>", &_da_edge_slice_index);
@@ -610,6 +707,9 @@ void GraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_plane_wire_max_cm.clear();
     _da_plane_drift_min_cm.clear();
     _da_plane_drift_max_cm.clear();
+    _da_plane_has_primary_vtx.clear();
+    _da_plane_primary_vtx_wire_cm.clear();
+    _da_plane_primary_vtx_drift_cm.clear();
 
     _da_hit_plane_uid.clear();
     _da_hit_slice_index.clear();
@@ -665,6 +765,7 @@ void GraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_comp_activity_vtx_wire_cm.clear();
     _da_comp_activity_vtx_drift_cm.clear();
     _da_comp_activity_vtx_residual.clear();
+    _da_comp_pv_to_activity_dist2d_cm.clear();
 
     _da_edge_plane_uid.clear();
     _da_edge_slice_index.clear();
