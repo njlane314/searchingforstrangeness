@@ -509,7 +509,7 @@ bool GraphAnalysis::find_slice_primary_vertex(
 
     for (const auto& pfp_proxy : slice_pfp_vec) {
         const auto pfps = pfp_proxy.get<recob::PFParticle>();
-        if (pfps.empty() || !pfps.front()) continue;
+        if (pfps.size() == 0u || !pfps.front()) continue;
 
         const auto& pfp = pfps.front();
         const int apdg = std::abs(pfp->PdgCode());
@@ -518,7 +518,7 @@ bool GraphAnalysis::find_slice_primary_vertex(
         if (apdg != 12 && apdg != 14 && apdg != 16) continue;
 
         const auto vertices = pfp_proxy.get<recob::Vertex>();
-        if (vertices.empty() || !vertices.front() || !vertices.front()->isValid()) continue;
+        if (vertices.size() == 0u || !vertices.front() || !vertices.front()->isValid()) continue;
 
         out.pos = vertices.front()->position();
         out.valid = true;
