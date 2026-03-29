@@ -9,6 +9,7 @@
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Utilities/Exception.h"
 #include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "canvas/Persistency/Common/Ptr.h"
 #include "canvas/Utilities/InputTag.h"
@@ -24,8 +25,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <limits>
 #include <map>
+#include <set>
+#include <sstream>
+#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -64,6 +69,8 @@ private:
         }
     };
 
+    void load_bad_channels(const std::string& filename);
+    void build_bad_wire_ranges(const geo::GeometryCore* geom);
     void read_config(const fhicl::ParameterSet& parameter_set);
 
     cg::PlaneGeometry make_plane_geometry(const geo::PlaneID& plane_id,
@@ -98,6 +105,10 @@ private:
     art::InputTag fHITproducer;
     art::InputTag fCLSproducer;
     bool fOnlySelectedSlices = true;
+    std::string fBadChannelFile;
+    std::set<unsigned int> fBadChannels;
+    std::map<PlaneKey, std::vector<std::pair<int, int>>> fBadWireRanges;
+    bool fBadWireRangesBuilt = false;
 
     cg::Params fNominalParams;
     cg::GraphEngine fEngine;
@@ -124,6 +135,11 @@ private:
     std::vector<int> _da_plane_has_primary_vtx;
     std::vector<float> _da_plane_primary_vtx_wire_cm;
     std::vector<float> _da_plane_primary_vtx_drift_cm;
+
+    // dead-channel replay mask (per-plane wire intervals in cm)
+    std::vector<int> _da_dead_plane_uid;
+    std::vector<float> _da_dead_wire_min_cm;
+    std::vector<float> _da_dead_wire_max_cm;
 
     // hit branches (raw replay inputs + nominal local geometry / labels)
     std::vector<int> _da_hit_plane_uid;
@@ -207,10 +223,92 @@ GraphAnalysis::GraphAnalysis(const fhicl::ParameterSet& parameter_set)
     this->read_config(parameter_set);
 }
 
+void GraphAnalysis::load_bad_channels(const std::string& filename) {
+    fBadChannels.clear();
+
+    std::ifstream in(filename);
+    if (!in.is_open()) {
+        throw art::Exception(art::errors::Configuration)
+            << "Cannot open bad channel file: " << filename;
+    }
+
+    std::string line;
+    while (std::getline(in, line)) {
+        const auto comment_pos = line.find('#');
+        if (comment_pos != std::string::npos) {
+            line.erase(comment_pos);
+        }
+
+        std::stringstream ss(line);
+        unsigned first = 0u;
+        unsigned second = 0u;
+        if (!(ss >> first)) continue;
+
+        if (ss >> second) {
+            if (second < first) std::swap(first, second);
+            for (unsigned ch = first; ch <= second; ++ch) {
+                fBadChannels.insert(ch);
+            }
+        } else {
+            fBadChannels.insert(first);
+        }
+    }
+}
+
+void GraphAnalysis::build_bad_wire_ranges(const geo::GeometryCore* geom) {
+    fBadWireRanges.clear();
+
+    if (!geom || fBadChannels.empty()) {
+        fBadWireRangesBuilt = true;
+        return;
+    }
+
+    std::map<PlaneKey, std::vector<int>> bad_wires_by_plane;
+    for (const unsigned int channel : fBadChannels) {
+        if (channel >= static_cast<unsigned int>(geom->Nchannels())) continue;
+
+        const auto wire_ids = geom->ChannelToWire(channel);
+        for (const auto& wire_id : wire_ids) {
+            bad_wires_by_plane[PlaneKey {static_cast<int>(wire_id.Cryostat),
+                                         static_cast<int>(wire_id.TPC),
+                                         static_cast<int>(wire_id.Plane)}]
+                .push_back(static_cast<int>(wire_id.Wire));
+        }
+    }
+
+    for (auto& item : bad_wires_by_plane) {
+        auto& wires = item.second;
+        if (wires.empty()) continue;
+
+        std::sort(wires.begin(), wires.end());
+        wires.erase(std::unique(wires.begin(), wires.end()), wires.end());
+
+        int first = wires.front();
+        int last = wires.front();
+        auto& ranges = fBadWireRanges[item.first];
+        for (std::size_t i = 1u; i < wires.size(); ++i) {
+            if (wires[i] <= last + 1) {
+                last = wires[i];
+                continue;
+            }
+            ranges.emplace_back(first, last);
+            first = last = wires[i];
+        }
+        ranges.emplace_back(first, last);
+    }
+
+    fBadWireRangesBuilt = true;
+}
+
 void GraphAnalysis::read_config(const fhicl::ParameterSet& p) {
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fOnlySelectedSlices = p.get<bool>("OnlySelectedSlices", true);
+    fBadChannelFile = p.get<std::string>("BadChannelFile", "");
+    fBadChannels.clear();
+    fBadWireRanges.clear();
+    fBadWireRangesBuilt = false;
+    if (!fBadChannelFile.empty()) this->load_bad_channels(fBadChannelFile);
 
     fNominalParams.save_all_component_graph_edges =
         p.get<bool>("SaveAllComponentGraphEdges", false);
@@ -313,6 +411,24 @@ cg::PlaneGeometry GraphAnalysis::make_plane_geometry(
 
     out.drift_min = static_cast<float>(std::min(xd0, xd1));
     out.drift_max = static_cast<float>(std::max(xd0, xd1));
+
+    const PlaneKey key {static_cast<int>(plane_id.Cryostat),
+                        static_cast<int>(plane_id.TPC),
+                        static_cast<int>(plane_id.Plane)};
+    const auto range_iter = fBadWireRanges.find(key);
+    if (range_iter != fBadWireRanges.end()) {
+        out.dead_wire_intervals.reserve(range_iter->second.size());
+        for (const auto& range : range_iter->second) {
+            const float dead_min = std::max((static_cast<float>(range.first) - 0.5f) * out.wire_pitch,
+                                            out.wire_min);
+            const float dead_max = std::min((static_cast<float>(range.second) + 0.5f) * out.wire_pitch,
+                                            out.wire_max);
+            if (dead_max > dead_min) {
+                out.dead_wire_intervals.emplace_back(dead_min, dead_max);
+            }
+        }
+    }
+
     return out;
 }
 
@@ -379,6 +495,12 @@ void GraphAnalysis::write_plane_replay(const int plane_uid,
     _da_plane_wire_max_cm.push_back(input.geometry.wire_max);
     _da_plane_drift_min_cm.push_back(input.geometry.drift_min);
     _da_plane_drift_max_cm.push_back(input.geometry.drift_max);
+
+    for (const auto& interval : input.geometry.dead_wire_intervals) {
+        _da_dead_plane_uid.push_back(plane_uid);
+        _da_dead_wire_min_cm.push_back(interval.first);
+        _da_dead_wire_max_cm.push_back(interval.second);
+    }
 }
 
 bool GraphAnalysis::find_slice_primary_vertex(
@@ -566,6 +688,10 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
     SlicePV slice_pv;
     this->find_slice_primary_vertex(slice_pfp_vec, slice_pv);
 
+    if (!fBadChannelFile.empty() && !fBadWireRangesBuilt) {
+        this->build_bad_wire_ranges(geom);
+    }
+
     std::map<PlaneKey, std::vector<cg::HitInput>> hits_by_plane;
     this->collect_slice_hits(event, _da_slice_counter, slice_pfp_vec, det_prop, geom, hits_by_plane);
 
@@ -620,6 +746,10 @@ void GraphAnalysis::setBranches(TTree* tree) {
     tree->Branch("da_plane_has_primary_vtx", "std::vector<int>", &_da_plane_has_primary_vtx);
     tree->Branch("da_plane_primary_vtx_wire_cm", "std::vector<float>", &_da_plane_primary_vtx_wire_cm);
     tree->Branch("da_plane_primary_vtx_drift_cm", "std::vector<float>", &_da_plane_primary_vtx_drift_cm);
+
+    tree->Branch("da_dead_plane_uid", "std::vector<int>", &_da_dead_plane_uid);
+    tree->Branch("da_dead_wire_min_cm", "std::vector<float>", &_da_dead_wire_min_cm);
+    tree->Branch("da_dead_wire_max_cm", "std::vector<float>", &_da_dead_wire_max_cm);
 
     tree->Branch("da_hit_plane_uid", "std::vector<int>", &_da_hit_plane_uid);
     tree->Branch("da_hit_slice_index", "std::vector<int>", &_da_hit_slice_index);
@@ -710,6 +840,10 @@ void GraphAnalysis::resetTTree(TTree* /*tree*/) {
     _da_plane_has_primary_vtx.clear();
     _da_plane_primary_vtx_wire_cm.clear();
     _da_plane_primary_vtx_drift_cm.clear();
+
+    _da_dead_plane_uid.clear();
+    _da_dead_wire_min_cm.clear();
+    _da_dead_wire_max_cm.clear();
 
     _da_hit_plane_uid.clear();
     _da_hit_slice_index.clear();
