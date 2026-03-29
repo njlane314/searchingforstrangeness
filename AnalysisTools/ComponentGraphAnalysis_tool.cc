@@ -309,7 +309,6 @@ void ComponentGraphAnalysis::collect_slice_hits(
     for (const auto& pfp : slice_pfp_vec) {
         const auto clusters = pfp.get<recob::Cluster>();
         for (const auto& cluster : clusters) {
-            if (!cluster) continue;
             const auto& hits = cluster_hits.at(cluster.key());
             for (const auto& hit : hits) {
                 if (!hit) continue;
