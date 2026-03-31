@@ -115,16 +115,6 @@ TruthAnalysis: {
     CLSproducer: @local::standard_producers.CLSproducer
 }
 
-GraphAnalysis: {
-    tool_type: "GraphAnalysis"
-    CLSproducer: @local::standard_producers.CLSproducer
-    HITproducer: @local::standard_producers.HITproducer
-    OnlySelectedSlices: true
-    BadChannelFile: "assets/badchannels.txt"
-    SaveAllComponentGraphEdges: false
-    MergeDetachedActivities: true
-}
-
 EventSelectionFilter: {
     module_type: "EventSelectionFilter"
     PFPproducer: @local::standard_producers.PFPproducer

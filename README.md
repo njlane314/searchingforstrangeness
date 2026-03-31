@@ -106,26 +106,6 @@
    ```
    - There exist automated bash scripts in the cloned respository that handle this configuration and build.
 
-## Debugging GraphAnalysis
-
-Use the dedicated debug FHiCL to run only the graph-analysis tool and keep all slices:
-
-```bash
-lar -c dev/run_graphanalysis.fcl -s <input.root>
-```
-
-This writes `graphanalysis_dev.root` through `TFileService`. To inspect the
-graph output quickly, run:
-
-```bash
-root -l -q 'scripts/print_graph_summary.C("graphanalysis_dev.root", 10)'
-```
-
-The macro prints per-entry counts for planes, dead-wire masks, hits,
-components, edges, and prompt/detached/unresolved labels, and warns if any
-plane or component references are inconsistent.
-
-
 ## Processing Files
 
 ## Configuration System
