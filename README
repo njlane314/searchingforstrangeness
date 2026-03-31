@@ -61,7 +61,6 @@ Repository layout
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
   * runtime/            model checkpoints, detector data, and inference helpers
-  * assets/             compatibility symlink to runtime/
   * reference/          LLM-friendly plain-text reference copies of batch tools
 
 
@@ -100,8 +99,7 @@ work:
   * .build.sh
   * .tar.sh
 
-Several checked-in FHiCL files use relative paths under runtime/.  The legacy
-assets/ alias still points at the same bundle.  In normal
+Several checked-in FHiCL files use relative paths under runtime/.  In normal
 use, run jobs from the repository top directory so those paths resolve
 correctly.
 

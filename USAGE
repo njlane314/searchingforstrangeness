@@ -135,8 +135,7 @@ Usage notes:
 
 The inference jobs expect the checked-in runtime bundle under runtime/,
 including runtime/models/mink_binary/checkpoint_step0010000.pt and the wrapper
-script reached through the RuntimeBaseDir setting.  The legacy AssetsBaseDir
-name and assets/ alias still work, but runtime/ is now the preferred layout.
+script reached through the RuntimeBaseDir setting.
 
 When you want to run the same network architecture with multiple checkpoints,
 put the shared settings in ModelDefaults and vary only the per-model labels and

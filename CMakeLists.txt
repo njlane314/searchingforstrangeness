@@ -83,4 +83,3 @@ install_fhicl()
 install_source()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/runtime/ DESTINATION runtime)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/runtime/ DESTINATION assets)

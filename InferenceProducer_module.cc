@@ -129,8 +129,7 @@ InferenceProducer::makeConfig(fhicl::ParameterSet const &p,
     cfg.checkpoint =
         get_first_present<std::string>(p, {"Checkpoint"}, cfg.checkpoint);
     cfg.wrapper = get_first_present<std::string>(p, {"Wrapper"}, cfg.wrapper);
-    cfg.runtime =
-        get_first_present<std::string>(p, {"Runtime", "Assets"}, cfg.runtime);
+    cfg.runtime = get_first_present<std::string>(p, {"Runtime"}, cfg.runtime);
 
     if (!has_weights && (has_weights_dir || has_checkpoint))
         cfg.weights.clear();
@@ -154,11 +153,9 @@ std::string InferenceProducer::resolveWeightsPath(
 InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
     : planes_tag_{p.get<std::string>("PlanesTag")},
       scratch_dir_{p.get<std::string>("ScratchDir", "")},
-      runtime_base_dir_{get_first_present<std::string>(
-          p, {"RuntimeBaseDir", "AssetsBaseDir"}, "")},
-      default_wrapper_{get_first_present<std::string>(
-          p, {"DefaultInferenceWrapper", "DefaultWrapper"},
-          "scripts/inference_wrapper.sh")} {
+      runtime_base_dir_{p.get<std::string>("RuntimeBaseDir", "")},
+      default_wrapper_{p.get<std::string>("DefaultInferenceWrapper",
+                                          "scripts/inference_wrapper.sh")} {
     produces<image::InferenceMetrics>();
     produces<image::InferencePredictions>();
 
