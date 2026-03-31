@@ -7,7 +7,7 @@ services.NuRandomService: @local::microboone_seedservice
 
 physics.producers.inferenceprod: {
   module_type: "InferenceProducer"
-  PlanesTag: "imageprod:NuSlice"
+  PlanesTag: "imageprod:CroppedWindow"
   ScratchDir: ""
   AssetsBaseDir: "assets"
   DefaultWrapper: "scripts/inference_wrapper.sh"

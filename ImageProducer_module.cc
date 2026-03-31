@@ -47,6 +47,48 @@ using image::Image;
 using image::ImageProperties;
 using image::SparsePlaneImage;
 
+namespace {
+
+common::PandoraView pandoraViewFor(geo::View_t view) {
+    switch (view) {
+    case geo::kU:
+        return common::TPC_VIEW_U;
+    case geo::kV:
+        return common::TPC_VIEW_V;
+    case geo::kW:
+    case geo::kY:
+        return common::TPC_VIEW_W;
+    default:
+        throw cet::exception("ImageProducer") << "Unsupported geo::View_t: " << static_cast<int>(view);
+    }
+}
+
+ImageProperties makeImagePropertiesFromBounds(double min_wire_coord, double max_wire_coord, double min_drift,
+                                              double max_drift, double pixel_w, double pixel_h, geo::View_t view) {
+    if (!(std::isfinite(min_wire_coord) && std::isfinite(max_wire_coord) && std::isfinite(min_drift) &&
+          std::isfinite(max_drift))) {
+        throw cet::exception("ImageProducer") << "Cannot build image properties from non-finite bounds.";
+    }
+    if (!(pixel_w > 0.0) || !(pixel_h > 0.0)) {
+        throw cet::exception("ImageProducer") << "Cannot build image properties with non-positive pixel size.";
+    }
+    if (max_wire_coord < min_wire_coord || max_drift < min_drift) {
+        throw cet::exception("ImageProducer") << "Cannot build image properties from inverted bounds.";
+    }
+
+    auto const width = std::max<std::size_t>(
+        1, static_cast<std::size_t>(std::ceil((max_wire_coord - min_wire_coord) / pixel_w)) + 1);
+    auto const height = std::max<std::size_t>(
+        1, static_cast<std::size_t>(std::ceil((max_drift - min_drift) / pixel_h)) + 1);
+
+    double const center_wire_coord = min_wire_coord + 0.5 * static_cast<double>(width) * pixel_w;
+    double const center_drift = min_drift + 0.5 * static_cast<double>(height) * pixel_h;
+
+    return ImageProperties(center_wire_coord, center_drift, width, height, pixel_h, pixel_w, view);
+}
+
+} // namespace
+
 class ImageProducer : public art::EDProducer {
   public:
     explicit ImageProducer(fhicl::ParameterSet const &pset);
@@ -77,6 +119,7 @@ class ImageProducer : public art::EDProducer {
     double fPitchU{0.0};
     double fPitchV{0.0};
     double fPitchW{0.0};
+    std::vector<ImageProperties> fFullWindowProps;
 
     void loadBadChannels(const std::string &filename);
     std::vector<art::Ptr<recob::Hit>> collectEventHits(const art::Event &event) const;
@@ -84,6 +127,7 @@ class ImageProducer : public art::EDProducer {
     std::optional<TVector3> findNeutrinoVertex(const art::Event &event) const;
     TVector3 computeImageCenter(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
                                 std::optional<TVector3> const &vertex, bool &center_defaulted) const;
+    std::vector<ImageProperties> computeFullWindowProperties() const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -114,10 +158,12 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
+    fFullWindowProps = computeFullWindowProperties();
 
     fSemantic = std::make_unique<image::SemanticClassifier>(fMCPproducer);
 
-    produces<std::vector<SparsePlaneImage>>("NuSlice");
+    produces<std::vector<SparsePlaneImage>>("CroppedWindow");
+    produces<std::vector<SparsePlaneImage>>("FullWindow");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -291,6 +337,38 @@ TVector3 ImageProducer::computeImageCenter(const art::Event &event,
     return center_world;
 }
 
+std::vector<ImageProperties> ImageProducer::computeFullWindowProperties() const {
+    auto const &tpc = fGeo->TPC();
+    auto const bounds = tpc.ActiveBoundingBox();
+    double const min_drift = bounds.MinX();
+    double const max_drift = bounds.MaxX();
+
+    auto make_view_properties = [&](unsigned int plane_idx, geo::View_t view, double pitch) {
+        auto const &plane = tpc.Plane(plane_idx);
+
+        double min_wire_coord = std::numeric_limits<double>::max();
+        double max_wire_coord = std::numeric_limits<double>::lowest();
+        auto const pandora_view = pandoraViewFor(view);
+
+        for (std::size_t wire_idx = 0; wire_idx < plane.Nwires(); ++wire_idx) {
+            TVector3 const center = plane.Wire(static_cast<unsigned int>(wire_idx)).GetCenter();
+            TVector3 const proj = common::ProjectToWireView(center.X(), center.Y(), center.Z(), pandora_view);
+            min_wire_coord = std::min(min_wire_coord, static_cast<double>(proj.Z()));
+            max_wire_coord = std::max(max_wire_coord, static_cast<double>(proj.Z()));
+        }
+
+        return makeImagePropertiesFromBounds(min_wire_coord, max_wire_coord, min_drift, max_drift, pitch, fDriftStep,
+                                             view);
+    };
+
+    std::vector<ImageProperties> props;
+    props.reserve(3);
+    props.emplace_back(make_view_properties(0U, geo::kU, fPitchU));
+    props.emplace_back(make_view_properties(1U, geo::kV, fPitchV));
+    props.emplace_back(make_view_properties(2U, geo::kW, fPitchW));
+    return props;
+}
+
 void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer") << "Starting image production for event " << event.id();
 
@@ -311,38 +389,8 @@ void ImageProducer::produce(art::Event &event) {
         remove_bad_channels(event_hits);
     }
 
-    if (neutrino_hits.empty()) {
-        mf::LogDebug("ImageProducer") << "No neutrino slice hits found; producing empty NuSlice for event "
-                                      << event.id();
-
-        auto out_slice = std::make_unique<std::vector<SparsePlaneImage>>();
-        event.put(std::move(out_slice), "NuSlice");
-
-        mf::LogInfo("ImageProducer") << "Stored 0 NuSlice SparsePlaneImages for event " << event.id()
-                                     << " (no neutrino slice)";
-        return;
-    }
-
-    auto vertex = findNeutrinoVertex(event);
-    bool center_defaulted = false;
-    TVector3 center_world = computeImageCenter(event, neutrino_hits, vertex, center_defaulted);
-
-    std::cout << "[ImageProducer] center_world = (" << center_world.X() << ", " << center_world.Y() << ", "
-              << center_world.Z() << ") - " << (center_defaulted ? "NO VERTEX (FALLBACK)" : "VERTEX-SEEDED")
-              << std::endl;
-
-    TVector3 cU = common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
-    TVector3 cV = common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_V);
-    TVector3 cW = common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_W);
-
-    std::vector<ImageProperties> props;
-    props.emplace_back(cU.Z(), cU.X(), fImgW, fImgH, fDriftStep, fPitchU, geo::kU);
-    props.emplace_back(cV.Z(), cV.X(), fImgW, fImgH, fDriftStep, fPitchV, geo::kV);
-    props.emplace_back(cW.Z(), cW.X(), fImgW, fImgH, fDriftStep, fPitchW, geo::kW);
-
-    std::vector<Image<float>> det_slice;
-    std::vector<Image<int>> sem_slice;
-    std::vector<Image<uint8_t>> slice_mask;
+    auto out_slice = std::make_unique<std::vector<SparsePlaneImage>>();
+    auto out_full = std::make_unique<std::vector<SparsePlaneImage>>();
 
     image::PixelImageOptions opts;
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
@@ -352,15 +400,6 @@ void ImageProducer::produce(art::Event &event) {
                                   << (fIsData ? "DISABLED" : "ENABLED");
 
     image::ImageProduction builder(*fGeo, opts);
-
-    builder.build(event, event_hits, neutrino_hits, props, det_slice, sem_slice, slice_mask, fDetp);
-
-    mf::LogDebug("ImageProducer") << "Built images: det=" << det_slice.size() << ", sem=" << sem_slice.size();
-
-    for (std::size_t i = 0; i < props.size(); ++i) {
-        mf::LogDebug("ImageProducer") << "View " << static_cast<int>(props[i].view()) << " size " << props[i].width()
-                                      << "x" << props[i].height();
-    }
 
     std::array<uint32_t, 3> hit_counts{0, 0, 0};
     for (auto const &hit : event_hits) {
@@ -379,24 +418,12 @@ void ImageProducer::produce(art::Event &event) {
         }
     }
 
+    auto vertex = findNeutrinoVertex(event);
+
     auto vertex_pixel = [&](ImageProperties const &p) -> std::pair<int32_t, int32_t> {
         if (!vertex)
             return {-1, -1};
-        common::PandoraView pandora_view;
-        switch (p.view()) {
-        case geo::kU:
-            pandora_view = common::TPC_VIEW_U;
-            break;
-        case geo::kV:
-            pandora_view = common::TPC_VIEW_V;
-            break;
-        case geo::kW:
-        case geo::kY:
-            pandora_view = common::TPC_VIEW_W;
-            break;
-        default:
-            return {-1, -1};
-        }
+        auto const pandora_view = pandoraViewFor(p.view());
 
         auto proj = common::ProjectToWireView(vertex->X(), vertex->Y(), vertex->Z(), pandora_view);
         auto col = p.col(proj.Z());
@@ -453,17 +480,78 @@ void ImageProducer::produce(art::Event &event) {
         return out;
     };
 
-    auto out_slice = std::make_unique<std::vector<SparsePlaneImage>>();
-    out_slice->reserve(3);
-    for (std::size_t i = 0; i < 3 && i < det_slice.size(); ++i) {
-        out_slice->emplace_back(
-            pack_plane(det_slice[i], sem_slice[i], slice_mask[i], props[i], !fIsData, hit_counts[i]));
+    auto append_planes = [&](std::vector<SparsePlaneImage> &out, std::vector<Image<float>> const &det_images,
+                             std::vector<Image<int>> const &sem_images, std::vector<Image<uint8_t>> const &slice_images,
+                             std::vector<ImageProperties> const &properties) {
+        out.reserve(3);
+        for (std::size_t i = 0; i < 3 && i < det_images.size(); ++i) {
+            out.emplace_back(pack_plane(det_images[i], sem_images[i], slice_images[i], properties[i], !fIsData,
+                                        hit_counts[i]));
+        }
+    };
+
+    if (neutrino_hits.empty()) {
+        mf::LogDebug("ImageProducer") << "No neutrino slice hits found; CroppedWindow will be empty for event "
+                                      << event.id();
+    } else {
+        bool center_defaulted = false;
+        TVector3 center_world = computeImageCenter(event, neutrino_hits, vertex, center_defaulted);
+
+        std::cout << "[ImageProducer] center_world = (" << center_world.X() << ", " << center_world.Y() << ", "
+                  << center_world.Z() << ") - " << (center_defaulted ? "NO VERTEX (FALLBACK)" : "VERTEX-SEEDED")
+                  << std::endl;
+
+        TVector3 cU =
+            common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_U);
+        TVector3 cV =
+            common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_V);
+        TVector3 cW =
+            common::ProjectToWireView(center_world.X(), center_world.Y(), center_world.Z(), common::TPC_VIEW_W);
+
+        std::vector<ImageProperties> slice_props;
+        slice_props.emplace_back(cU.Z(), cU.X(), fImgW, fImgH, fDriftStep, fPitchU, geo::kU);
+        slice_props.emplace_back(cV.Z(), cV.X(), fImgW, fImgH, fDriftStep, fPitchV, geo::kV);
+        slice_props.emplace_back(cW.Z(), cW.X(), fImgW, fImgH, fDriftStep, fPitchW, geo::kW);
+
+        std::vector<Image<float>> det_slice;
+        std::vector<Image<int>> sem_slice;
+        std::vector<Image<uint8_t>> slice_mask;
+        builder.build(event, event_hits, neutrino_hits, slice_props, det_slice, sem_slice, slice_mask, fDetp);
+
+        mf::LogDebug("ImageProducer") << "Built CroppedWindow images: det=" << det_slice.size()
+                                      << ", sem=" << sem_slice.size();
+
+        for (std::size_t i = 0; i < slice_props.size(); ++i) {
+            mf::LogDebug("ImageProducer") << "CroppedWindow view " << static_cast<int>(slice_props[i].view()) << " size "
+                                          << slice_props[i].width() << "x" << slice_props[i].height();
+        }
+
+        append_planes(*out_slice, det_slice, sem_slice, slice_mask, slice_props);
     }
 
-    auto const n_slice = out_slice->size();
-    event.put(std::move(out_slice), "NuSlice");
+    std::vector<Image<float>> det_full;
+    std::vector<Image<int>> sem_full;
+    std::vector<Image<uint8_t>> full_slice_mask;
+    builder.build(event, event_hits, neutrino_hits, fFullWindowProps, det_full, sem_full, full_slice_mask, fDetp);
 
-    mf::LogInfo("ImageProducer") << "Stored " << n_slice << " NuSlice SparsePlaneImages for event " << event.id();
+    mf::LogDebug("ImageProducer") << "Built FullWindow images: det=" << det_full.size()
+                                  << ", sem=" << sem_full.size();
+
+    for (std::size_t i = 0; i < fFullWindowProps.size(); ++i) {
+        mf::LogDebug("ImageProducer") << "FullWindow view " << static_cast<int>(fFullWindowProps[i].view())
+                                      << " size " << fFullWindowProps[i].width() << "x"
+                                      << fFullWindowProps[i].height();
+    }
+
+    append_planes(*out_full, det_full, sem_full, full_slice_mask, fFullWindowProps);
+
+    auto const n_slice = out_slice->size();
+    auto const n_full = out_full->size();
+    event.put(std::move(out_slice), "CroppedWindow");
+    event.put(std::move(out_full), "FullWindow");
+
+    mf::LogInfo("ImageProducer") << "Stored " << n_slice << " CroppedWindow and " << n_full
+                                 << " FullWindow SparsePlaneImages for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)

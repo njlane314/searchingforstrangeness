@@ -83,7 +83,8 @@ ImageAnalysis: {
     WIREproducer: @local::standard_producers.WIREproducer
     MCPproducer: @local::standard_producers.MCPproducer
     SLCproducer: @local::standard_producers.SLCproducer
-    ImagesSliceTag: "imageprod:NuSlice"
+    ImagesCroppedTag: "imageprod:CroppedWindow"
+    ImagesFullTag: "imageprod:FullWindow"
     InferencePredTag: "inferenceprod"
     InferencePerfTag: "inferenceprod"
 }

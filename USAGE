@@ -53,12 +53,13 @@ job/run_nuselection_data.fcl
      nu_selection_data.root.
 
 job/run_imageprod.fcl
-     Produces image::SparsePlaneImage objects for the selected slice and writes
-     the event file %ifb_%tc_imageprod.root.  The checked-in TFileService
-     output is imageprod_hist.root.
+     Produces image::SparsePlaneImage objects for the selected slice and a
+     full-detector companion collection, then writes the event file
+     %ifb_%tc_imageprod.root.  The checked-in TFileService output is
+     imageprod_hist.root.
 
 job/run_inferenceprod.fcl
-     Runs model inference on existing imageprod:NuSlice products and writes
+     Runs model inference on existing imageprod:CroppedWindow products and writes
      the event file %ifb_%tc_inference.root.  The checked-in TFileService
      output is inferenceprod_hist.root.
 
@@ -111,7 +112,7 @@ Usage notes:
   * Use run_imageprod.fcl when you want persisted image products in the art
     event output.
   * Use run_inferenceprod.fcl only on input files that already contain the
-    imageprod:NuSlice products expected by the InferenceProducer.
+    imageprod:CroppedWindow products expected by the InferenceProducer.
   * Use run_fullchain.fcl when starting from reconstructed input and you want
     the image, inference, and selection stages in one step.
 
@@ -173,6 +174,9 @@ The checked-in branch and product layout is summarized here.  In particular:
   * EventSelectionFilter trees live in nu_selection.root,
     nu_selection_data.root, fullchain_nuselection_hist.root,
     imaging_dev.root, and imaging_dev_cosmic.root.
+  * ImageProducer writes the neutrino-centered sparse planes to
+    imageprod:CroppedWindow and the detector-wide sparse planes to
+    imageprod:FullWindow.
   * The image-only and inference-only histogram files are mainly framework
     side outputs; the repo-defined payload for those workflows is in the art
     event file.
