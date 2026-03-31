@@ -7,6 +7,7 @@ services.TFileService.fileName: "graphanalysis_dev.root"
 GraphAnalysisDebug: {
   @table::GraphAnalysis
   OnlySelectedSlices: false
+  Verbose: true
   SaveAllComponentGraphEdges: true
 }
 

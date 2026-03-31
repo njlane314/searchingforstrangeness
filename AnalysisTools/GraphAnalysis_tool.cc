@@ -26,6 +26,7 @@
 #include <cmath>
 #include <cstddef>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <set>
@@ -105,6 +106,7 @@ private:
     art::InputTag fHITproducer;
     art::InputTag fCLSproducer;
     bool fOnlySelectedSlices = true;
+    bool fVerbose = false;
     std::string fBadChannelFile;
     std::set<unsigned int> fBadChannels;
     std::map<PlaneKey, std::vector<std::pair<int, int>>> fBadWireRanges;
@@ -310,6 +312,7 @@ void GraphAnalysis::read_config(const fhicl::ParameterSet& p) {
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fOnlySelectedSlices = p.get<bool>("OnlySelectedSlices", true);
+    fVerbose = p.get<bool>("Verbose", false);
     fBadChannelFile = p.get<std::string>("BadChannelFile", "");
     fBadChannels.clear();
     fBadWireRanges.clear();
@@ -388,6 +391,11 @@ void GraphAnalysis::analyseEvent(const art::Event& event, bool /*is_data*/) {
     _da_slice_counter = 0;
     _da_next_plane_uid = 0;
     _da_next_component_id = 0;
+
+    if (fVerbose) {
+        std::cout << "[GraphAnalysis] event run/sub/evt="
+                  << _run << "/" << _sbr << "/" << _evt << std::endl;
+    }
 }
 
 cg::PlaneGeometry GraphAnalysis::make_plane_geometry(
@@ -690,6 +698,11 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
                                             bool /*is_data*/,
                                             bool is_selected) {
     if (fOnlySelectedSlices && !is_selected) {
+        if (fVerbose) {
+            std::cout << "[GraphAnalysis] slice=" << _da_slice_counter
+                      << " selected=0 skipped_by_config=1"
+                      << " pfps=" << slice_pfp_vec.size() << std::endl;
+        }
         ++_da_slice_counter;
         return;
     }
@@ -705,6 +718,19 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
 
     std::map<PlaneKey, std::vector<cg::HitInput>> hits_by_plane;
     this->collect_slice_hits(event, _da_slice_counter, slice_pfp_vec, det_prop, geom, hits_by_plane);
+
+    if (fVerbose) {
+        std::size_t total_hits = 0u;
+        for (const auto& item : hits_by_plane) total_hits += item.second.size();
+
+        std::cout << "[GraphAnalysis] slice=" << _da_slice_counter
+                  << " selected=" << (is_selected ? 1 : 0)
+                  << " pfps=" << slice_pfp_vec.size()
+                  << " planes=" << hits_by_plane.size()
+                  << " hits=" << total_hits
+                  << " slice_pv=" << (slice_pv.valid ? 1 : 0)
+                  << std::endl;
+    }
 
     for (auto& plane_hits_pair : hits_by_plane) {
         auto& plane_hits = plane_hits_pair.second;
@@ -737,6 +763,31 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
 
         const cg::Result nominal = fEngine.run(input);
         this->write_nominal_output(plane_uid, nominal, have_plane_pv, pv_wire_cm, pv_drift_cm);
+
+        if (fVerbose) {
+            int n_prompt = 0;
+            int n_detached = 0;
+            int n_unresolved = 0;
+            for (const auto& comp : nominal.components) {
+                if (comp.label == cg::kPrompt) ++n_prompt;
+                else if (comp.label == cg::kDetached) ++n_detached;
+                else if (comp.label == cg::kUnresolved) ++n_unresolved;
+            }
+
+            std::cout << "[GraphAnalysis] plane_uid=" << plane_uid
+                      << " slice=" << _da_slice_counter
+                      << " cryo/tpc/plane="
+                      << input.cryo << "/" << input.tpc << "/" << input.plane
+                      << " hits=" << input.hits.size()
+                      << " dead_bands=" << input.geometry.dead_wire_intervals.size()
+                      << " plane_pv=" << (have_plane_pv ? 1 : 0)
+                      << " comps=" << nominal.components.size()
+                      << " edges=" << nominal.edges.size()
+                      << " prompt=" << n_prompt
+                      << " detached=" << n_detached
+                      << " unresolved=" << n_unresolved
+                      << std::endl;
+        }
     }
 
     ++_da_slice_counter;
