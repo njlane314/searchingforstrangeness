@@ -9,8 +9,8 @@
 #include <vector>
 
 #include "Support/PandoraUtilities.h"
-#include "Imaging/Image.h"
-#include "Imaging/SemanticClassifier.h"
+#include "ImagePipeline/Image.h"
+#include "ImagePipeline/SemanticClassifier.h"
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/FindManyP.h"

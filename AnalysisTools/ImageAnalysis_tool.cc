@@ -34,7 +34,7 @@
 #include "Products/SparsePlaneImage.h"
 #include "Support/PandoraUtilities.h"
 #include "Support/ProxyTypes.h"
-#include "Imaging/SemanticClassifier.h"
+#include "ImagePipeline/SemanticClassifier.h"
 
 #include <TDirectoryFile.h>
 #include <TFile.h>

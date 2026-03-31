@@ -19,10 +19,10 @@
 #include "lardataobj/RecoBase/Wire.h"
 
 #include "Support/PandoraUtilities.h"
-#include "Imaging/Image.h"
-#include "Imaging/ImageCentering.h"
-#include "Imaging/ImageProduction.h"
-#include "Imaging/SemanticClassifier.h"
+#include "ImagePipeline/Image.h"
+#include "ImagePipeline/ImageCentering.h"
+#include "ImagePipeline/ImageProduction.h"
+#include "ImagePipeline/SemanticClassifier.h"
 #include "Products/SparsePlaneImage.h"
 
 #include <TVector3.h>

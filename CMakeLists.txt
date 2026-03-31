@@ -16,7 +16,7 @@ add_subdirectory(Support)
 add_subdirectory(Products)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
-add_subdirectory(Imaging)
+add_subdirectory(ImagePipeline)
 add_subdirectory(dev)
 add_subdirectory(job)
 

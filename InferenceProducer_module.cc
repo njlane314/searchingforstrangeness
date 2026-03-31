@@ -7,7 +7,7 @@
 
 #include "cetlib_except/exception.h"
 
-#include "Imaging/InferenceProduction.h"
+#include "ImagePipeline/InferenceProduction.h"
 #include "Products/SparsePlaneImage.h"
 #include "Products/InferenceMetrics.h"
 #include "Products/InferencePredictions.h"
