@@ -29,11 +29,11 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "AnalysisToolBase.h"
-#include "Products/InferencePerf.h"
-#include "Products/InferencePred.h"
-#include "Products/ImageProducts.h"
-#include "Common/PandoraUtilities.h"
-#include "Common/ProxyTypes.h"
+#include "Products/InferenceMetrics.h"
+#include "Products/InferencePredictions.h"
+#include "Products/SparsePlaneImage.h"
+#include "Support/PandoraUtilities.h"
+#include "Support/ProxyTypes.h"
 #include "Imaging/SemanticClassifier.h"
 
 #include <TDirectoryFile.h>
@@ -71,7 +71,6 @@ private:
     art::InputTag fHITproducer;
     art::InputTag fWIREproducer;
     art::InputTag fMCPproducer;
-    art::InputTag fBKTproducer;
     art::InputTag fImagesSliceTag;
     art::InputTag fInferencePredTag;
     art::InputTag fInferencePerfTag;
@@ -118,19 +117,12 @@ void ImageAnalysis::configure(const fhicl::ParameterSet &p) {
     fHITproducer = p.get<art::InputTag>("HITproducer");
     fWIREproducer = p.get<art::InputTag>("WIREproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
-    fBKTproducer = p.get<art::InputTag>("BKTproducer");
-
     fImagesSliceTag =
-            p.get<art::InputTag>("ImagesSliceTag",
-                                                        art::InputTag{"imageprod", "NuSlice"});
-
-    if (p.has_key("InferencePredTag")) {
-        fInferencePredTag = p.get<art::InputTag>("InferencePredTag");
-    }
-
-    if (p.has_key("InferencePerfTag")) {
-        fInferencePerfTag = p.get<art::InputTag>("InferencePerfTag");
-    }
+        p.get<art::InputTag>("ImagesSliceTag", art::InputTag{"imageprod", "NuSlice"});
+    fInferencePredTag =
+        p.get<art::InputTag>("InferencePredTag", art::InputTag{});
+    fInferencePerfTag =
+        p.get<art::InputTag>("InferencePerfTag", art::InputTag{});
 }
 
 void ImageAnalysis::setBranches(TTree *_tree) {
@@ -218,11 +210,11 @@ void ImageAnalysis::analyseSlice(
         }
     }
 
-    auto sliceH = event.getValidHandle<std::vector<image::ImageProduct>>(fImagesSliceTag);
+    auto sliceH = event.getValidHandle<std::vector<image::SparsePlaneImage>>(fImagesSliceTag);
 
-    const image::ImageProduct *U = nullptr;
-    const image::ImageProduct *V = nullptr;
-    const image::ImageProduct *W = nullptr;
+    const image::SparsePlaneImage *U = nullptr;
+    const image::SparsePlaneImage *V = nullptr;
+    const image::SparsePlaneImage *W = nullptr;
     for (const auto &img : *sliceH) {
         if (img.view == static_cast<int>(geo::kU)) U = &img;
         if (img.view == static_cast<int>(geo::kV)) V = &img;
@@ -253,7 +245,7 @@ void ImageAnalysis::analyseSlice(
                 vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_V);
         TVector3 vtx_proj_w = common::ProjectToWireView(
                 vtx_pos_3d.X(), vtx_pos_3d.Y(), vtx_pos_3d.Z(), common::TPC_VIEW_W);
-        auto in_img = [](const image::ImageProduct &im, double drift, double wire) {
+        auto in_img = [](const image::SparsePlaneImage &im, double drift, double wire) {
             bool in_row = (drift >= im.origin_y) &&
                                         (drift < im.origin_y + im.pixel_h * static_cast<double>(im.height));
             bool in_col = (wire >= im.origin_x) &&
@@ -266,7 +258,7 @@ void ImageAnalysis::analyseSlice(
     }
 
     if (!fInferencePredTag.label().empty()) {
-        art::Handle<image::InferencePredProduct> predH;
+        art::Handle<image::InferencePredictions> predH;
         event.getByLabel(fInferencePredTag, predH);
         if (predH.isValid()) {
             for (auto const &mp : predH->per_model) {
@@ -276,13 +268,13 @@ void ImageAnalysis::analyseSlice(
             }
         } else {
             mf::LogWarning("ImageAnalysis")
-                    << "InferencePredProduct with tag \"" << fInferencePredTag.encode()
+                    << "InferencePredictions with tag \"" << fInferencePredTag.encode()
                     << "\" not found or invalid.";
         }
     }
 
     if (!fInferencePerfTag.label().empty()) {
-        art::Handle<image::InferencePerfProduct> perfH;
+        art::Handle<image::InferenceMetrics> perfH;
         event.getByLabel(fInferencePerfTag, perfH);
         if (perfH.isValid()) {
             for (auto const &mp : perfH->per_model) {
@@ -292,7 +284,7 @@ void ImageAnalysis::analyseSlice(
             }
         } else {
             mf::LogWarning("ImageAnalysis")
-                    << "InferencePerfProduct with tag \"" << fInferencePerfTag.encode()
+                    << "InferenceMetrics with tag \"" << fInferencePerfTag.encode()
                     << "\" not found or invalid.";
         }
     }

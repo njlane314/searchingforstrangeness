@@ -18,12 +18,12 @@
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Wire.h"
 
-#include "Common/PandoraUtilities.h"
+#include "Support/PandoraUtilities.h"
 #include "Imaging/Image.h"
 #include "Imaging/ImageCentering.h"
 #include "Imaging/ImageProduction.h"
 #include "Imaging/SemanticClassifier.h"
-#include "Products/ImageProducts.h"
+#include "Products/SparsePlaneImage.h"
 
 #include <TVector3.h>
 #include <cetlib_except/exception.h>
@@ -44,8 +44,8 @@
 #include <vector>
 
 using image::Image;
-using image::ImageProduct;
 using image::ImageProperties;
+using image::SparsePlaneImage;
 
 class ImageProducer : public art::EDProducer {
   public:
@@ -117,7 +117,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
 
     fSemantic = std::make_unique<image::SemanticClassifier>(fMCPproducer);
 
-    produces<std::vector<ImageProduct>>("NuSlice");
+    produces<std::vector<SparsePlaneImage>>("NuSlice");
 }
 
 void ImageProducer::loadBadChannels(const std::string &filename) {
@@ -315,10 +315,10 @@ void ImageProducer::produce(art::Event &event) {
         mf::LogDebug("ImageProducer") << "No neutrino slice hits found; producing empty NuSlice for event "
                                       << event.id();
 
-        auto out_slice = std::make_unique<std::vector<ImageProduct>>();
+        auto out_slice = std::make_unique<std::vector<SparsePlaneImage>>();
         event.put(std::move(out_slice), "NuSlice");
 
-        mf::LogInfo("ImageProducer") << "Stored 0 NuSlice ImageProducts for event " << event.id()
+        mf::LogInfo("ImageProducer") << "Stored 0 NuSlice SparsePlaneImages for event " << event.id()
                                      << " (no neutrino slice)";
         return;
     }
@@ -408,7 +408,7 @@ void ImageProducer::produce(art::Event &event) {
 
     auto pack_plane = [&](Image<float> const &det, Image<int> const &sem, Image<uint8_t> const &slice,
                           ImageProperties const &p, bool include_sem, uint32_t hit_count) {
-        ImageProduct out;
+        SparsePlaneImage out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
         out.height = static_cast<uint32_t>(p.height());
@@ -453,7 +453,7 @@ void ImageProducer::produce(art::Event &event) {
         return out;
     };
 
-    auto out_slice = std::make_unique<std::vector<ImageProduct>>();
+    auto out_slice = std::make_unique<std::vector<SparsePlaneImage>>();
     out_slice->reserve(3);
     for (std::size_t i = 0; i < 3 && i < det_slice.size(); ++i) {
         out_slice->emplace_back(
@@ -463,7 +463,7 @@ void ImageProducer::produce(art::Event &event) {
     auto const n_slice = out_slice->size();
     event.put(std::move(out_slice), "NuSlice");
 
-    mf::LogInfo("ImageProducer") << "Stored " << n_slice << " NuSlice ImageProducts for event " << event.id();
+    mf::LogInfo("ImageProducer") << "Stored " << n_slice << " NuSlice SparsePlaneImages for event " << event.id();
 }
 
 DEFINE_ART_MODULE(ImageProducer)

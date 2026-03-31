@@ -8,9 +8,9 @@
 #include "cetlib_except/exception.h"
 
 #include "Imaging/InferenceProduction.h"
-#include "Products/ImageProducts.h"
-#include "Products/InferencePerf.h"
-#include "Products/InferencePred.h"
+#include "Products/SparsePlaneImage.h"
+#include "Products/InferenceMetrics.h"
+#include "Products/InferencePredictions.h"
 
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 
@@ -62,8 +62,8 @@ std::string resolve_scratch_dir(const std::string &configured) {
     return scratch;
 }
 
-const image::ImageProduct *find_view(std::vector<image::ImageProduct> const &planes,
-                                     geo::View_t view) {
+const image::SparsePlaneImage *find_view(
+    std::vector<image::SparsePlaneImage> const &planes, geo::View_t view) {
     for (auto const &plane : planes) {
         if (plane.view == static_cast<int>(view))
             return &plane;
@@ -114,8 +114,8 @@ InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
       assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
       default_wrapper_{p.get<std::string>("DefaultWrapper",
                                           "scripts/inference_wrapper.sh")} {
-    produces<image::InferencePerfProduct>();
-    produces<image::InferencePredProduct>();
+    produces<image::InferenceMetrics>();
+    produces<image::InferencePredictions>();
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
     models_.reserve(modelSets.size());
@@ -125,10 +125,10 @@ InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
 }
 
 void InferenceProducer::produce(art::Event &e) {
-    auto perfProduct = std::make_unique<image::InferencePerfProduct>();
-    auto predProduct = std::make_unique<image::InferencePredProduct>();
+    auto perfProduct = std::make_unique<image::InferenceMetrics>();
+    auto predProduct = std::make_unique<image::InferencePredictions>();
 
-    auto planes = e.getValidHandle<std::vector<image::ImageProduct>>(planes_tag_);
+    auto planes = e.getValidHandle<std::vector<image::SparsePlaneImage>>(planes_tag_);
     if (planes->size() < 3) {
         mf::LogDebug("InferenceProduction")
             << "Need at least three planes (U,V,W), got " << planes->size()
@@ -147,7 +147,7 @@ void InferenceProducer::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    auto check_plane = [](image::ImageProduct const *p, char label) {
+    auto check_plane = [](image::SparsePlaneImage const *p, char label) {
         if (p->feature_dim == 0) {
             throw cet::exception("InferenceProduction")
                 << "Plane " << label << " has invalid feature_dim=0";
@@ -197,13 +197,13 @@ void InferenceProducer::produce(art::Event &e) {
             << "W=" << W->width << "x" << W->height;
     }
 
-    std::vector<image::ImageProduct> detector_images;
+    std::vector<image::SparsePlaneImage> detector_images;
     detector_images.reserve(3);
     detector_images.emplace_back(*U);
     detector_images.emplace_back(*V);
     detector_images.emplace_back(*W);
 
-    auto is_empty = [](image::ImageProduct const &p) {
+    auto is_empty = [](image::SparsePlaneImage const &p) {
         return p.coords.empty();
     };
 
@@ -240,23 +240,16 @@ void InferenceProducer::produce(art::Event &e) {
             detector_images, absoluteScratch, cfg.arch, weights, wrapper,
             assets);
 
-        image::ModelPerf perf;
+        image::ModelMetrics perf;
         perf.model = label_or_arch;
-        perf.t_write_req_ms = static_cast<float>(result.perf.t_write_req_ms);
         perf.t_exec_total_ms = static_cast<float>(result.perf.t_exec_total_ms);
-        perf.t_read_resp_ms = static_cast<float>(result.perf.t_read_resp_ms);
-        perf.t_child_total_ms =
-            static_cast<float>(result.perf.t_child_total_ms);
-        perf.t_child_setup_ms =
-            static_cast<float>(result.perf.t_child_setup_ms);
         perf.t_child_infer_ms =
             static_cast<float>(result.perf.t_child_infer_ms);
-        perf.t_child_post_ms = static_cast<float>(result.perf.t_child_post_ms);
         perf.child_max_rss_mb =
             static_cast<float>(result.perf.child_max_rss_mb);
         perfProduct->per_model.push_back(std::move(perf));
 
-        image::ModelPred pred;
+        image::ModelPrediction pred;
         pred.model = label_or_arch;
         pred.scores = std::move(result.cls);
         predProduct->per_model.push_back(std::move(pred));

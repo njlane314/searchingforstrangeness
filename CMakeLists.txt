@@ -12,7 +12,7 @@ include_directories(${LARDATA_INC})
 find_ups_product(lardataalg)
 include_directories(${LARDATAALG_INC})
 
-add_subdirectory(Common)
+add_subdirectory(Support)
 add_subdirectory(Products)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)

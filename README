@@ -49,7 +49,7 @@ Repository layout
 
   * AnalysisTools/      analysis tool implementations
   * SelectionTools/     event-selection tool implementations
-  * Common/             shared utilities and helper classes
+  * Support/            shared utilities and helper classes
   * Imaging/            image-production and inference support
   * Products/           art product definitions
   * job/                standard production FHiCL files

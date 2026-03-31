@@ -17,11 +17,11 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "AnalysisToolBase.h"
-#include "Common/BacktrackingUtilities.h"
-#include "Common/GeometryUtils.h"
-#include "Common/ParticleScattering.h"
-#include "Common/SpaceChargeCorrections.h"
-#include "Common/TruthContainment.h"
+#include "Support/BacktrackingUtilities.h"
+#include "Support/GeometryUtils.h"
+#include "Support/ParticleScattering.h"
+#include "Support/SpaceChargeCorrections.h"
+#include "Support/TruthContainment.h"
 
 #include "TLorentzVector.h"
 #include "TTree.h"
@@ -67,7 +67,6 @@ private:
     int _interaction_mode;
     int _interaction_type;
     float _neutrino_energy;
-    float _neutrino_vertex[3];
     float _neutrino_direction[3];
     bool _is_nu_mu_cc;
     float _neutrino_theta;
@@ -84,17 +83,11 @@ private:
     float _neutrino_vertex_x;
     float _neutrino_vertex_y;
     float _neutrino_vertex_z;
-    float _neutrino_vertex_wire_u;
-    float _neutrino_vertex_wire_v;
-    float _neutrino_vertex_wire_w;
     float _neutrino_vertex_time;
     float _neutrino_sce_vertex_x;
     float _neutrino_sce_vertex_y;
     float _neutrino_sce_vertex_z;
     float _lepton_energy;
-    float _true_neutrino_momentum_x;
-    float _true_neutrino_momentum_y;
-    float _true_neutrino_momentum_z;
     float _flux_path_length;
     int _flux_parent_pdg;
     int _flux_hadron_pdg;
@@ -139,10 +132,7 @@ private:
     std::vector<std::vector<float>> _mc_daughter_vtx_y;
     std::vector<std::vector<float>> _mc_daughter_vtx_z;
     float _true_transverse_momentum;
-    float _true_visible_transverse_momentum;
     float _true_total_momentum;
-    float _true_visible_total_momentum;
-    float _true_visible_energy;
 };
 
 TruthAnalysis::TruthAnalysis(fhicl::ParameterSet const& p) {
@@ -174,7 +164,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("int_mode",            &_interaction_mode,      "int_mode/I");
     _tree->Branch("int_type",            &_interaction_type,      "int_type/I");
     _tree->Branch("nu_E",                &_neutrino_energy,       "nu_E/F");
-    _tree->Branch("nu_v",                _neutrino_vertex,        "nu_v[3]/F");
     _tree->Branch("nu_dir",              _neutrino_direction,     "nu_dir[3]/F");
     _tree->Branch("is_nu_mu_cc",         &_is_nu_mu_cc,           "is_nu_mu_cc/O");
     _tree->Branch("nu_theta",            &_neutrino_theta,        "nu_theta/F");
@@ -195,9 +184,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("nu_vtx_x",            &_neutrino_vertex_x,     "nu_vtx_x/F");
     _tree->Branch("nu_vtx_y",            &_neutrino_vertex_y,     "nu_vtx_y/F");
     _tree->Branch("nu_vtx_z",            &_neutrino_vertex_z,     "nu_vtx_z/F");
-    _tree->Branch("nu_vtx_wire_u",       &_neutrino_vertex_wire_u,"nu_vtx_wire_u/F");
-    _tree->Branch("nu_vtx_wire_v",       &_neutrino_vertex_wire_v,"nu_vtx_wire_v/F");
-    _tree->Branch("nu_vtx_wire_w",       &_neutrino_vertex_wire_w,"nu_vtx_wire_w/F");
     _tree->Branch("nu_vtx_t",            &_neutrino_vertex_time,  "nu_vtx_t/F");
 
     _tree->Branch("nu_vtx_sce_x",        &_neutrino_sce_vertex_x, "nu_vtx_sce_x/F");
@@ -205,11 +191,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("nu_vtx_sce_z",        &_neutrino_sce_vertex_z, "nu_vtx_sce_z/F");
 
     _tree->Branch("lep_E",               &_lepton_energy,         "lep_E/F");
-
-
-    _tree->Branch("nu_true_px",          &_true_neutrino_momentum_x, "nu_true_px/F");
-    _tree->Branch("nu_true_py",          &_true_neutrino_momentum_y, "nu_true_py/F");
-    _tree->Branch("nu_true_pz",          &_true_neutrino_momentum_z, "nu_true_pz/F");
 
 
     _tree->Branch("flux_path_len",       &_flux_path_length,      "flux_path_len/F");
@@ -268,10 +249,7 @@ void TruthAnalysis::setBranches(TTree* _tree) {
 
 
     _tree->Branch("sum_pt_true",         &_true_transverse_momentum,        "sum_pt_true/F");
-    _tree->Branch("sum_pt_vis",          &_true_visible_transverse_momentum,"sum_pt_vis/F");
     _tree->Branch("sum_p_true",          &_true_total_momentum,             "sum_p_true/F");
-    _tree->Branch("sum_p_vis",           &_true_visible_total_momentum,     "sum_p_vis/F");
-    _tree->Branch("sum_E_vis",           &_true_visible_energy,             "sum_E_vis/F");
 }
 
 void TruthAnalysis::resetTTree(TTree* tree) {
@@ -280,9 +258,6 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _interaction_mode = -1;
     _interaction_type = -1;
     _neutrino_energy = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex[0] = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex[1] = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex[2] = std::numeric_limits<float>::quiet_NaN();
     _neutrino_direction[0] = std::numeric_limits<float>::quiet_NaN();
     _neutrino_direction[1] = std::numeric_limits<float>::quiet_NaN();
     _neutrino_direction[2] = std::numeric_limits<float>::quiet_NaN();
@@ -301,17 +276,11 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _neutrino_vertex_x = std::numeric_limits<float>::quiet_NaN();
     _neutrino_vertex_y = std::numeric_limits<float>::quiet_NaN();
     _neutrino_vertex_z = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex_wire_u = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex_wire_v = std::numeric_limits<float>::quiet_NaN();
-    _neutrino_vertex_wire_w = std::numeric_limits<float>::quiet_NaN();
     _neutrino_vertex_time = std::numeric_limits<float>::quiet_NaN();
     _neutrino_sce_vertex_x = std::numeric_limits<float>::quiet_NaN();
     _neutrino_sce_vertex_y = std::numeric_limits<float>::quiet_NaN();
     _neutrino_sce_vertex_z = std::numeric_limits<float>::quiet_NaN();
     _lepton_energy = std::numeric_limits<float>::quiet_NaN();
-    _true_neutrino_momentum_x = std::numeric_limits<float>::quiet_NaN();
-    _true_neutrino_momentum_y = std::numeric_limits<float>::quiet_NaN();
-    _true_neutrino_momentum_z = std::numeric_limits<float>::quiet_NaN();
     _flux_path_length = std::numeric_limits<float>::quiet_NaN();
     _flux_parent_pdg = 0;
     _flux_hadron_pdg = 0;
@@ -356,10 +325,7 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _mc_daughter_vtx_y.clear();
     _mc_daughter_vtx_z.clear();
     _true_transverse_momentum = 0;
-    _true_visible_transverse_momentum = 0;
     _true_total_momentum = 0;
-    _true_visible_total_momentum = 0;
-    _true_visible_energy = 0;
 }
 
 void TruthAnalysis::analyseSlice(const art::Event& event, std::vector<common::ProxyPfpElem_t>& slice_pfp_vec, bool is_data, bool is_selected) {
@@ -484,12 +450,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         _neutrino_vertex_x = nu.Vx();
         _neutrino_vertex_y = nu.Vy();
         _neutrino_vertex_z = nu.Vz();
-        _neutrino_vertex[0] = _neutrino_vertex_x;
-        _neutrino_vertex[1] = _neutrino_vertex_y;
-        _neutrino_vertex[2] = _neutrino_vertex_z;
-        _true_neutrino_momentum_x = nu.Px();
-        _true_neutrino_momentum_y = nu.Py();
-        _true_neutrino_momentum_z = nu.Pz();
         float neutrino_vertex_sce[3];
         common::True2RecoMappingXYZ(_neutrino_vertex_time, _neutrino_vertex_x, _neutrino_vertex_y, _neutrino_vertex_z, neutrino_vertex_sce);
         _neutrino_sce_vertex_x = neutrino_vertex_sce[0];
@@ -519,19 +479,14 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     }
 
     TLorentzVector total_momentum;
-    TLorentzVector total_visible_momentum;
     size_t n_particles = mct.NParticles();
     for (size_t i = 0; i < n_particles; i++) {
         auto const& particle = mct.GetParticle(i);
         if (!(particle.StatusCode() == 1 && particle.Process() == "primary")) continue;
         total_momentum += particle.Momentum(0);
-        total_visible_momentum += particle.Momentum(0);
     }
     _true_transverse_momentum = total_momentum.Perp();
-    _true_visible_transverse_momentum = total_visible_momentum.Perp();
     _true_total_momentum = total_momentum.Mag();
-    _true_visible_total_momentum = total_visible_momentum.Mag();
-    _true_visible_energy = total_visible_momentum.E();
 
     auto const& mcp_h = event.getValidHandle<std::vector<simb::MCParticle>>(fMCPproducer);
     std::map<int, art::Ptr<simb::MCParticle>> mcParticleMap;
@@ -597,7 +552,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
 
         std::vector<int> daughter_pdgs;
         std::vector<float> daughter_energies;
-        std::vector<std::string> daughter_processes;
         std::vector<float> daughter_moms_x, daughter_moms_y, daughter_moms_z;
         std::vector<float> daughter_vtxs_x, daughter_vtxs_y, daughter_vtxs_z;
 
@@ -607,7 +561,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 const auto& daughter = *(mcParticleMap.at(mcp.Daughter(i)));
                 daughter_pdgs.push_back(daughter.PdgCode());
                 daughter_energies.push_back(daughter.E());
-                daughter_processes.push_back(daughter.Process());
                 _mc_daughter_process_flat.push_back(daughter.Process());
                 daughter_moms_x.push_back(daughter.Px());
                 daughter_moms_y.push_back(daughter.Py());

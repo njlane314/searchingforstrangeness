@@ -13,9 +13,9 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "AnalysisToolBase.h"
-#include "Common/BacktrackingUtilities.h"
-#include "Common/PatternRecognitionUtils.h"
-#include "Common/TruthContainment.h"
+#include "Support/BacktrackingUtilities.h"
+#include "Support/PatternRecognitionUtils.h"
+#include "Support/TruthContainment.h"
 
 #include "TTree.h"
 #include "TVector3.h"

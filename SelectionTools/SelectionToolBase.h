@@ -8,7 +8,7 @@
 #include "art/Utilities/make_tool.h"
 #include "fhiclcpp/ParameterSet.h"
 
-#include "Common/ProxyTypes.h"
+#include "Support/ProxyTypes.h"
 
 #include "TTree.h"
 #include <limits>

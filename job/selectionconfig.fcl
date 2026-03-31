@@ -22,7 +22,6 @@ DefaultAnalysis: {
     HITproducer: @local::standard_producers.HITproducer
     SLCproducer: @local::standard_producers.SLCproducer
     MCPproducer: @local::standard_producers.MCPproducer
-    CRTproducer: @local::standard_producers.CRTproducer
 
     fidvolXstart: @local::FidVol.Xstart
     fidvolXend:   @local::FidVol.Xend
@@ -83,7 +82,6 @@ ImageAnalysis: {
     HITproducer: @local::standard_producers.HITproducer
     WIREproducer: @local::standard_producers.WIREproducer
     MCPproducer: @local::standard_producers.MCPproducer
-    BKTproducer: @local::standard_producers.BKTproducer
     SLCproducer: @local::standard_producers.SLCproducer
     ImagesSliceTag: "imageprod:NuSlice"
     InferencePredTag: "inferenceprod"

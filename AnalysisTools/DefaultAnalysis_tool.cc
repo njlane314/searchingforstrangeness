@@ -10,19 +10,18 @@
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 #include "nusimdata/SimulationBase/MCTruth.h"
-#include "ubobj/CRT/CRTHit.hh"
 #include "ubobj/Optical/UbooneOpticalFilter.h"
 #include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 
 #include "AnalysisToolBase.h"
-#include "Common/GeometryUtils.h"
-#include "Common/HitProximityClustering.h"
-#include "Common/PFParticleDescendants.h"
-#include "Common/PandoraUtilities.h"
-#include "Common/ParticleScattering.h"
-#include "Common/SpaceChargeCorrections.h"
-#include "Common/TrackShowerScore.h"
-#include "Common/TruthContainment.h"
+#include "Support/GeometryUtils.h"
+#include "Support/HitProximityClustering.h"
+#include "Support/PFParticleDescendants.h"
+#include "Support/PandoraUtilities.h"
+#include "Support/ParticleScattering.h"
+#include "Support/SpaceChargeCorrections.h"
+#include "Support/TrackShowerScore.h"
+#include "Support/TruthContainment.h"
 
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
@@ -46,7 +45,6 @@ public:
 
 private:
     art::InputTag fPFPproducer; 
-    art::InputTag fCRTproducer;
     art::InputTag fCLSproducer;
     art::InputTag fMCTproducer;
     art::InputTag fMCPproducer;
@@ -83,9 +81,6 @@ private:
     float _optical_filter_pe_veto;
 
     int _num_slices;
-
-    int _crt_veto;
-    float _crt_hit_pe;
 
     std::vector<int> _pfp_slice_indices;
     int _selection_pass;
@@ -132,7 +127,6 @@ private:
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fPFPproducer = p.get<art::InputTag>("PFPproducer", "pandora");
-    fCRTproducer = p.get<art::InputTag>("CRTproducer", "pandora");
     fCLSproducer = p.get<art::InputTag>("CLSproducer", "pandora");
     fMCTproducer = p.get<art::InputTag>("MCTproducer", "generator");
     fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
@@ -230,15 +224,6 @@ void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
             else {
                 _software_trigger = 0;
             }
-        }
-    }
-
-    if (fCRTproducer != "") {
-        art::Handle<art::Assns<crt::CRTHit, recob::OpFlash, void>> crtveto_h;
-        event.getByLabel(fCRTproducer, crtveto_h);
-        _crt_veto = crtveto_h->size();
-        if (_crt_veto == 1) {
-            _crt_hit_pe = crtveto_h->at(0).first->peshit;
         }
     }
 
@@ -544,8 +529,6 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _reco_neutrino_vertex_sce_y = std::numeric_limits<float>::quiet_NaN();
     _reco_neutrino_vertex_sce_z = std::numeric_limits<float>::quiet_NaN();
     _num_slices = 0;
-    _crt_veto = 0;
-    _crt_hit_pe = 0;
     _num_pfps = 0;
     _num_tracks = 0;
     _num_showers = 0;

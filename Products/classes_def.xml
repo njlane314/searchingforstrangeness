@@ -1,19 +1,19 @@
 <lcgdict>
-  <class name="image::ImageProduct"/>
-  <class name="art::Wrapper<image::ImageProduct>"/>
-  <class name="std::vector<image::ImageProduct>"/>
-  <class name="art::Wrapper<std::vector<image::ImageProduct>>"/>
+  <class name="image::SparsePlaneImage"/>
+  <class name="art::Wrapper<image::SparsePlaneImage>"/>
+  <class name="std::vector<image::SparsePlaneImage>"/>
+  <class name="art::Wrapper<std::vector<image::SparsePlaneImage>>"/>
 
-  <class name="image::ModelPerf"/>
-  <class name="std::vector<image::ModelPerf>"/>
-  <class name="art::Wrapper<std::vector<image::ModelPerf>>"/>
-  <class name="image::InferencePerfProduct"/>
-  <class name="art::Wrapper<image::InferencePerfProduct>"/>
+  <class name="image::ModelMetrics"/>
+  <class name="std::vector<image::ModelMetrics>"/>
+  <class name="art::Wrapper<std::vector<image::ModelMetrics>>"/>
+  <class name="image::InferenceMetrics"/>
+  <class name="art::Wrapper<image::InferenceMetrics>"/>
 
-  <class name="image::ModelPred"/>
-  <class name="std::vector<image::ModelPred>"/>
-  <class name="art::Wrapper<std::vector<image::ModelPred>>"/>
-  <class name="image::InferencePredProduct"/>
-  <class name="art::Wrapper<image::InferencePredProduct>"/>
+  <class name="image::ModelPrediction"/>
+  <class name="std::vector<image::ModelPrediction>"/>
+  <class name="art::Wrapper<std::vector<image::ModelPrediction>>"/>
+  <class name="image::InferencePredictions"/>
+  <class name="art::Wrapper<image::InferencePredictions>"/>
 
 </lcgdict>

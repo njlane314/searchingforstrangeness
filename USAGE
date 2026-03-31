@@ -53,7 +53,7 @@ job/run_nuselection_data.fcl
      nu_selection_data.root.
 
 job/run_imageprod.fcl
-     Produces image::ImageProduct objects for the selected slice and writes
+     Produces image::SparsePlaneImage objects for the selected slice and writes
      the event file %ifb_%tc_imageprod.root.  The checked-in TFileService
      output is imageprod_hist.root.
 
@@ -162,7 +162,7 @@ The package writes two kinds of ROOT output.
 art event files
      These are written by jobs such as run_imageprod.fcl, run_inferenceprod.fcl,
      run_fullchain.fcl, and the extra-GENIE weight job.  They contain event
-     products such as image::ImageProduct and inference products.
+     products such as image::SparsePlaneImage and inference products.
 
 TFileService analysis files
      These are files such as nu_selection.root, nu_selection_data.root, and

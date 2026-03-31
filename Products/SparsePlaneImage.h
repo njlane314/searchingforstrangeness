@@ -1,5 +1,5 @@
-#ifndef DATAPRODUCTS_IMAGE_PRODUCTS_H
-#define DATAPRODUCTS_IMAGE_PRODUCTS_H
+#ifndef ANALYSIS_SPARSE_PLANE_IMAGE_H
+#define ANALYSIS_SPARSE_PLANE_IMAGE_H
 
 #include <cstdint>
 #include <vector>
@@ -8,7 +8,7 @@
 
 namespace image {
 
-class ImageProduct {
+class SparsePlaneImage {
     public:
         int view{static_cast<int>(geo::kUnknown)}; ///< Readout plane/view identifier.
         uint32_t width{0}; ///< Image width in pixels.
@@ -28,4 +28,4 @@ class ImageProduct {
 
 } // namespace image
 
-#endif // DATAPRODUCTS_IMAGE_PRODUCTS_H
+#endif // ANALYSIS_SPARSE_PLANE_IMAGE_H

@@ -1,7 +1,7 @@
 #ifndef INFERENCEPRODUCTION_H
 #define INFERENCEPRODUCTION_H
 
-#include "Products/ImageProducts.h"
+#include "Products/SparsePlaneImage.h"
 
 #include <chrono>
 #include <cerrno>
@@ -48,7 +48,7 @@ public:
         Perf perf;
     };
 
-    static Result runInference(const std::vector<ImageProduct> &detector_images,
+    static Result runInference(const std::vector<SparsePlaneImage> &detector_images,
                                const std::string &absolute_scratch_dir,
                                const std::string &arch,
                                const std::string &weights_file,
@@ -146,7 +146,7 @@ namespace _binary_io {
     static_assert(sizeof(ResultHeader) == 24, "Unexpected ResultHeader size");
 
     inline void write_sparse_plane(std::ofstream &ofs,
-                                   const ImageProduct &plane) {
+                                   const SparsePlaneImage &plane) {
         if (plane.feature_dim == 0) {
             throw std::runtime_error("Sparse plane feature_dim must be non-zero.");
         }
@@ -171,9 +171,9 @@ namespace _binary_io {
     }
 
     inline void write_sparse_request(const std::string &path,
-                                     const ImageProduct &u,
-                                     const ImageProduct &v,
-                                     const ImageProduct &w) {
+                                     const SparsePlaneImage &u,
+                                     const SparsePlaneImage &v,
+                                     const SparsePlaneImage &w) {
         if (u.width != v.width || u.width != w.width ||
             u.height != v.height || u.height != w.height) {
             throw std::runtime_error("Sparse inference request requires matching plane dimensions.");
@@ -197,7 +197,7 @@ namespace _binary_io {
 }
 
 inline InferenceProduction::Result InferenceProduction::runInference(
-    const std::vector<ImageProduct> &detector_images,
+    const std::vector<SparsePlaneImage> &detector_images,
     const std::string &absolute_scratch_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,

@@ -8,7 +8,7 @@
 #include "lardataobj/RecoBase/Cluster.h"
 #include "lardataobj/RecoBase/Hit.h"
 
-#include "Common/BacktrackingUtilities.h"
+#include "Support/BacktrackingUtilities.h"
 
 #include <array>
 #include <algorithm>

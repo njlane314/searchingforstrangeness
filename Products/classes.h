@@ -2,22 +2,21 @@
 
 #include "canvas/Persistency/Common/Wrapper.h"
 
-#include "Products/ImageProducts.h"
-#include "Products/InferencePerf.h"
-#include "Products/InferencePred.h"
+#include "Products/SparsePlaneImage.h"
+#include "Products/InferenceMetrics.h"
+#include "Products/InferencePredictions.h"
 
-// Image products
-template class std::vector<image::ImageProduct>;
-template class art::Wrapper<image::ImageProduct>;
-template class art::Wrapper<std::vector<image::ImageProduct>>;
+// Sparse plane image products
+template class std::vector<image::SparsePlaneImage>;
+template class art::Wrapper<image::SparsePlaneImage>;
+template class art::Wrapper<std::vector<image::SparsePlaneImage>>;
 
-// Inference performance products
-template class std::vector<image::ModelPerf>;
-template class art::Wrapper<std::vector<image::ModelPerf>>;
-template class art::Wrapper<image::InferencePerfProduct>;
+// Inference metrics products
+template class std::vector<image::ModelMetrics>;
+template class art::Wrapper<std::vector<image::ModelMetrics>>;
+template class art::Wrapper<image::InferenceMetrics>;
 
 // Inference prediction products
-template class std::vector<image::ModelPred>;
-template class art::Wrapper<std::vector<image::ModelPred>>;
-template class art::Wrapper<image::InferencePredProduct>;
-
+template class std::vector<image::ModelPrediction>;
+template class art::Wrapper<std::vector<image::ModelPrediction>>;
+template class art::Wrapper<image::InferencePredictions>;
