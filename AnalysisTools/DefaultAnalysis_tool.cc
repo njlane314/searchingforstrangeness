@@ -2,14 +2,8 @@
 #define DEFAULT_ANALYSIS_CXX
 
 #include "canvas/Persistency/Common/TriggerResults.h"
-#include "larcore/Geometry/Geometry.h"
 #include "lardataobj/RawData/TriggerData.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Shower.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "larsim/EventWeight/Base/MCEventWeight.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
 #include "ubobj/Optical/UbooneOpticalFilter.h"
 #include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 
@@ -21,10 +15,6 @@
 #include "Support/ParticleScattering.h"
 #include "Support/SpaceChargeCorrections.h"
 #include "Support/TrackShowerScore.h"
-#include "Support/TruthContainment.h"
-
-#include "TDatabasePDG.h"
-#include "TParticlePDG.h"
 
 #include <algorithm>
 #include <cmath>
@@ -55,13 +45,6 @@ private:
     float fTrkShrScore;
     std::string NuMIOpFilterProd;
     std::string NuMISWTrigProd;
-
-    float fFidvolXstart;
-    float fFidvolXend;
-    float fFidvolYstart;
-    float fFidvolYend;
-    float fFidvolZstart;
-    float fFidvolZend;
 
     bool fMakeNuMINtuple;
     float _reco_neutrino_vertex_x;
@@ -121,8 +104,6 @@ private:
     unsigned int _total_hits_U;
     unsigned int _total_hits_V;
     unsigned int _total_hits_Y;
-    unsigned int _hits_outfv;
-    float _contained_fraction;
 };
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
@@ -136,13 +117,6 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
 
     fTrkShrScore = p.get<float>("TrkShrScore", 0.5);
     
-    fFidvolXstart = p.get<double>("fidvolXstart", 10);
-    fFidvolXend = p.get<double>("fidvolXend", 10);
-    fFidvolYstart = p.get<double>("fidvolYstart", 15);
-    fFidvolYend = p.get<double>("fidvolYend", 15);
-    fFidvolZstart = p.get<double>("fidvolZstart", 10);
-    fFidvolZend = p.get<double>("fidvolZend", 50);
-
     fMakeNuMINtuple = p.get<bool>("makeNuMINtuple", true);
     NuMIOpFilterProd = p.get<std::string>("NuMIOpFiltProcName", "DataStage1Optical");
     NuMISWTrigProd = p.get<std::string>("NuMISWTriggerProcName", "DataOverlayOpticalNuMI");
@@ -243,8 +217,6 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
     larpandora.CollectPFParticles(event, "pandora", pfparticles);
     larpandora.BuildPFParticleMap(pfparticles, particleMap);
 
-    unsigned int contained_hits = 0;
-    _hits_outfv = 0;
     size_t pfpidx = 0;
     _num_pfps = 0;
     _slice_num_clusters = 0;
@@ -400,39 +372,6 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
         }
         _pfp_num_hits.push_back(hit_v.size());
 
-        bool is_contained = true;
-        if ((track_shower_score >= 0) && (track_shower_score >= fTrkShrScore)) {
-            auto tracks = pfp.get<recob::Track>();
-            if (tracks.size() > 0) {
-                double start[3] = {tracks[0]->Start().X(), tracks[0]->Start().Y(), tracks[0]->Start().Z()};
-                double end[3] = {tracks[0]->End().X(), tracks[0]->End().Y(), tracks[0]->End().Z()};
-                if (!common::isFiducial(start, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend) ||
-                    !common::isFiducial(end, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend)) {
-                    is_contained = false;
-                }
-            }
-        }
-        else if ((track_shower_score >= 0) && (track_shower_score < fTrkShrScore)) {
-            auto showers = pfp.get<recob::Shower>();
-            if (showers.size() > 0) {
-                double vtx[3] = {showers[0]->ShowerStart().X(), showers[0]->ShowerStart().Y(), showers[0]->ShowerStart().Z()};
-                if (!common::isFiducial(vtx, fFidvolXstart, fFidvolYstart, fFidvolZstart, fFidvolXend, fFidvolYend, fFidvolZend)) {
-                    is_contained = false;
-                }
-            }
-        }
-
-        if (is_contained) {
-            contained_hits += hit_v.size();
-        }
-        else {
-            _hits_outfv += hit_v.size();
-        }
-
-    }
-
-    if (contained_hits + _hits_outfv > 0) {
-        _contained_fraction = static_cast<float>(contained_hits) / (contained_hits + _hits_outfv);
     }
 
     if (_slice_num_hits > 0) {
@@ -501,7 +440,6 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("total_hits_U", &_total_hits_U, "total_hits_U/i");
     _tree->Branch("total_hits_V", &_total_hits_V, "total_hits_V/i");
     _tree->Branch("total_hits_Y", &_total_hits_Y, "total_hits_Y/i");
-    _tree->Branch("contained_fraction", &_contained_fraction, "contained_fraction/F");
     _tree->Branch("slice_id", &_slice_id, "slice_id/i");
     _tree->Branch("topological_score", &_topological_score, "topological_score/F");
     _tree->Branch("slice_cluster_fraction", &_slice_cluster_fraction, "slice_cluster_fraction/F");
@@ -566,8 +504,6 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _total_hits_U = 0;
     _total_hits_V = 0;
     _total_hits_Y = 0;
-    _hits_outfv = 0;
-    _contained_fraction = 0;
 }
 
 DEFINE_ART_CLASS_TOOL(DefaultAnalysis)

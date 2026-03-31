@@ -15,7 +15,6 @@
 #include "AnalysisToolBase.h"
 #include "Support/BacktrackingUtilities.h"
 #include "Support/PatternRecognitionUtils.h"
-#include "Support/TruthContainment.h"
 
 #include "TTree.h"
 #include "TVector3.h"
@@ -52,12 +51,6 @@ class SignalAnalysis_tool : public AnalysisToolBase {
     art::InputTag fCLSproducer;
     art::InputTag fHITproducer;
     art::InputTag fBKTproducer;
-    double fFidvolXstart;
-    double fFidvolXend;
-    double fFidvolYstart;
-    double fFidvolYend;
-    double fFidvolZstart;
-    double fFidvolZend;
 
     int _mu_truth_trackid;
     int _mu_truth_pdg;
@@ -147,11 +140,6 @@ class SignalAnalysis_tool : public AnalysisToolBase {
         std::vector<int> has_ppi_decay;
         std::vector<int> p_trackid;
         std::vector<int> pi_trackid;
-        std::vector<int> start_in_fv;
-        std::vector<int> decay_in_fv;
-        std::vector<int> p_end_in_fv;
-        std::vector<int> pi_end_in_fv;
-        std::vector<int> ppi_contained_in_fv;
 
         std::vector<float> E;
         std::vector<float> mass;
@@ -247,7 +235,6 @@ class SignalAnalysis_tool : public AnalysisToolBase {
     LambdaLineage
     GetLambdaLineage(const art::Ptr<simb::MCParticle> &lam,
                      const std::map<int, art::Ptr<simb::MCParticle>> &mp) const;
-    bool IsInFiducial(const float x, const float y, const float z) const;
 
     void
     FindTruthMuon(const simb::MCTruth &mct,
@@ -267,12 +254,6 @@ void SignalAnalysis_tool::configure(const fhicl::ParameterSet &p) {
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
-    fFidvolXstart = p.get<double>("fidvolXstart", 10.0);
-    fFidvolXend = p.get<double>("fidvolXend", 10.0);
-    fFidvolYstart = p.get<double>("fidvolYstart", 15.0);
-    fFidvolYend = p.get<double>("fidvolYend", 15.0);
-    fFidvolZstart = p.get<double>("fidvolZstart", 10.0);
-    fFidvolZend = p.get<double>("fidvolZend", 50.0);
 }
 
 void SignalAnalysis_tool::setBranches(TTree *t) {
@@ -367,12 +348,6 @@ void SignalAnalysis_tool::setBranches(TTree *t) {
     t->Branch("g4_all_lambda_has_ppi_decay", &_g4_all_lambda.has_ppi_decay);
     t->Branch("g4_all_lambda_p_trackid", &_g4_all_lambda.p_trackid);
     t->Branch("g4_all_lambda_pi_trackid", &_g4_all_lambda.pi_trackid);
-    t->Branch("g4_all_lambda_start_in_fv", &_g4_all_lambda.start_in_fv);
-    t->Branch("g4_all_lambda_decay_in_fv", &_g4_all_lambda.decay_in_fv);
-    t->Branch("g4_all_lambda_p_end_in_fv", &_g4_all_lambda.p_end_in_fv);
-    t->Branch("g4_all_lambda_pi_end_in_fv", &_g4_all_lambda.pi_end_in_fv);
-    t->Branch("g4_all_lambda_ppi_contained_in_fv",
-              &_g4_all_lambda.ppi_contained_in_fv);
     t->Branch("g4_all_lambda_E", &_g4_all_lambda.E);
     t->Branch("g4_all_lambda_mass", &_g4_all_lambda.mass);
     t->Branch("g4_all_lambda_px", &_g4_all_lambda.px);
@@ -479,13 +454,6 @@ SignalAnalysis_tool::LambdaLineage SignalAnalysis_tool::GetLambdaLineage(
     }
 
     return out;
-}
-
-bool SignalAnalysis_tool::IsInFiducial(const float x, const float y,
-                                       const float z) const {
-    const double point[3] = {x, y, z};
-    return common::isFiducial(point, fFidvolXstart, fFidvolYstart, fFidvolZstart,
-                              fFidvolXend, fFidvolYend, fFidvolZend);
 }
 
 void SignalAnalysis_tool::FindTruthMuon(
@@ -630,17 +598,6 @@ void SignalAnalysis_tool::FillG4LambdaDecaySummary(
                 opening_angle = vp.Angle(vpi);
         }
 
-        const int start_in_fv = Flag(IsInFiducial(lam.Vx(), lam.Vy(), lam.Vz()));
-        const int decay_in_fv = Flag(IsInFiducial(lam.EndX(), lam.EndY(), lam.EndZ()));
-        const int p_end_in_fv =
-            p ? Flag(IsInFiducial(p->EndX(), p->EndY(), p->EndZ())) : -1;
-        const int pi_end_in_fv =
-            pi ? Flag(IsInFiducial(pi->EndX(), pi->EndY(), pi->EndZ())) : -1;
-        const int ppi_contained_in_fv =
-            (p_end_in_fv < 0 || pi_end_in_fv < 0)
-                ? -1
-                : Flag(p_end_in_fv == 1 && pi_end_in_fv == 1);
-
         _truth.has_g4_lambda0 = true;
         ++_truth.n_g4_lambda0;
         if (lineage.has_sigma0_ancestor == 1) {
@@ -664,11 +621,6 @@ void SignalAnalysis_tool::FillG4LambdaDecaySummary(
         _g4_all_lambda.has_ppi_decay.push_back(Flag(dm.ok));
         _g4_all_lambda.p_trackid.push_back(dm.p_trkid);
         _g4_all_lambda.pi_trackid.push_back(dm.pi_trkid);
-        _g4_all_lambda.start_in_fv.push_back(start_in_fv);
-        _g4_all_lambda.decay_in_fv.push_back(decay_in_fv);
-        _g4_all_lambda.p_end_in_fv.push_back(p_end_in_fv);
-        _g4_all_lambda.pi_end_in_fv.push_back(pi_end_in_fv);
-        _g4_all_lambda.ppi_contained_in_fv.push_back(ppi_contained_in_fv);
 
         _g4_all_lambda.E.push_back(lam.E());
         _g4_all_lambda.mass.push_back(lam.Mass());

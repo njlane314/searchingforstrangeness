@@ -3,7 +3,6 @@
 #include "proximityclustering.fcl"
 #include "particleinventoryservice.fcl"
 #include "producers.fcl"
-#include "fidvol.fcl"
 
 microboone_calo_mcc9_data: {
     CalAreaConstants: [ 4.31e-3, 4.02e-3, 4.10e-3 ]
@@ -23,13 +22,6 @@ DefaultAnalysis: {
     SLCproducer: @local::standard_producers.SLCproducer
     MCPproducer: @local::standard_producers.MCPproducer
 
-    fidvolXstart: @local::FidVol.Xstart
-    fidvolXend:   @local::FidVol.Xend
-    fidvolYstart: @local::FidVol.Ystart
-    fidvolYend:   @local::FidVol.Yend
-    fidvolZstart: @local::FidVol.Zstart
-    fidvolZend:   @local::FidVol.Zend
-
     makeNuMINtuple: true
 
     NuMISWTriggerProcName: "DataOverlayOptical"
@@ -43,12 +35,6 @@ SignalAnalysis: {
     HITproducer: @local::standard_producers.HITproducer
     BKTproducer: @local::standard_producers.BKTproducer
 
-    fidvolXstart: @local::FidVol.Xstart
-    fidvolXend:   @local::FidVol.Xend
-    fidvolYstart: @local::FidVol.Ystart
-    fidvolYend:   @local::FidVol.Yend
-    fidvolZstart: @local::FidVol.Zstart
-    fidvolZend:   @local::FidVol.Zend
 }
 
 

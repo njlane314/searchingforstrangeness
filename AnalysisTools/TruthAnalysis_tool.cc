@@ -21,7 +21,6 @@
 #include "Support/GeometryUtils.h"
 #include "Support/ParticleScattering.h"
 #include "Support/SpaceChargeCorrections.h"
-#include "Support/TruthContainment.h"
 
 #include "TLorentzVector.h"
 #include "TTree.h"
@@ -54,13 +53,6 @@ private:
     art::InputTag fBKTproducer;
     art::InputTag fMCRproducer;
     art::InputTag fCLSproducer;
-
-    float fFidvolXstart;
-    float fFidvolXend;
-    float fFidvolYstart;
-    float fFidvolYend;
-    float fFidvolZstart;
-    float fFidvolZend;
 
     int _neutrino_pdg;
     int _interaction_ccnc;
@@ -102,7 +94,6 @@ private:
     float _numi_off_axis_angle;
     double _bnb_baseline;
     float _bnb_off_axis_angle;
-    bool _is_vertex_in_fiducial;
     std::vector<int> _mc_particle_pdg;
     std::vector<int> _mc_particle_trackid;
     std::vector<float> _mc_particle_energy;
@@ -147,13 +138,6 @@ void TruthAnalysis::configure(fhicl::ParameterSet const& p) {
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
     fMCRproducer = p.get<art::InputTag>("MCRproducer");
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
-
-    fFidvolXstart = p.get<double>("fidvolXstart", 10);
-    fFidvolXend = p.get<double>("fidvolXend", 10);
-    fFidvolYstart = p.get<double>("fidvolYstart", 15);
-    fFidvolYend = p.get<double>("fidvolYend", 15);
-    fFidvolZstart = p.get<double>("fidvolZstart", 10);
-    fFidvolZend = p.get<double>("fidvolZend", 50);
 
 }
 
@@ -208,11 +192,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("numi_offaxis_deg",    &_numi_off_axis_angle,   "numi_offaxis_deg/F");
     _tree->Branch("bnb_L",               &_bnb_baseline,          "bnb_L/D");
     _tree->Branch("bnb_offaxis_deg",     &_bnb_off_axis_angle,    "bnb_offaxis_deg/F");
-
-    _tree->Branch("nu_vtx_in_fv",        &_is_vertex_in_fiducial, "nu_vtx_in_fv/O");
-
-
-
 
     _tree->Branch("prim_pdg",            "std::vector<int>",               &_mc_particle_pdg);
     _tree->Branch("prim_track_id",       "std::vector<int>",               &_mc_particle_trackid);
@@ -295,7 +274,6 @@ void TruthAnalysis::resetTTree(TTree* tree) {
     _numi_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
     _bnb_baseline = std::numeric_limits<double>::quiet_NaN();
     _bnb_off_axis_angle = std::numeric_limits<float>::quiet_NaN();
-    _is_vertex_in_fiducial = false;
     _mc_particle_pdg.clear();
     _mc_particle_trackid.clear();
     _mc_particle_energy.clear();
@@ -472,9 +450,6 @@ void TruthAnalysis::analyseEvent(const art::Event& event, bool is_data) {
             _neutrino_direction[1] = nu.Py() / pnu;
             _neutrino_direction[2] = nu.Pz() / pnu;
         }
-        double vertex[3] = {_neutrino_vertex_x, _neutrino_vertex_y, _neutrino_vertex_z};
-        _is_vertex_in_fiducial = common::isFiducial(vertex, fFidvolXstart, fFidvolYstart, fFidvolZstart,
-                                                    fFidvolXend, fFidvolYend, fFidvolZend);
         _is_nu_mu_cc = (std::abs(_neutrino_pdg) == 14) && (_interaction_ccnc == 0);
     }
 
