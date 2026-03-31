@@ -1,0 +1,135 @@
+Installation Instructions
+=========================
+
+Copyright (C) searchingforstrangeness contributors.
+
+This file describes how to set up and build the
+searchingforstrangeness package inside a MicroBooNE ubana development area.
+It is not a standalone autotools package.  Installation here means preparing
+the source tree and building it in the expected MRB/LArSoft environment.  For
+an overview of the repository, see README.  For running jobs after the build,
+see USAGE.
+
+
+Prerequisites
+-------------
+
+You need:
+
+  * access to the MicroBooNE software container;
+  * access to CVMFS and the standard MicroBooNE products;
+  * an MRB development area;
+  * a checkout of ubana;
+  * the usual MicroBooNE command-line tools such as mrb and lar.
+
+
+1. Enter the MicroBooNE container
+---------------------------------
+
+Run:
+
+     apptainer shell \
+            -B /cvmfs \
+            -B /exp/uboone \
+            -B /pnfs/uboone \
+            -B /run/user \
+            -B /etc/hosts \
+            -B /etc/localtime \
+            -s /bin/bash \
+            --env UPS_OVERRIDE='-H Linux64bit+3.10-2.17' \
+            /cvmfs/uboone.opensciencegrid.org/containers/uboone-devel-sl7
+
+Then source the standard products:
+
+     source /cvmfs/uboone.opensciencegrid.org/products/setup_uboone_mcc9.sh
+
+
+2. Create an MRB development area
+---------------------------------
+
+For example:
+
+     cd /exp/uboone/app/users/$USER/production/
+     mkdir strangeness
+     cd strangeness
+     mrb newDev -q e17:prof
+     source /exp/uboone/app/users/$USER/production/strangeness/localProducts_*/setup
+
+
+3. Fetch ubana
+--------------
+
+Run:
+
+     mrb g ubana
+     cd srcs/ubana
+     git checkout tags/v08_00_00_82
+
+
+4. Adjust ubana compiler flags if needed
+----------------------------------------
+
+If the build environment requires warnings-as-errors to be disabled, edit:
+
+     srcs/ubana/CMakeLists.txt
+
+and remove or disable the WERROR setting while keeping the extra warning
+suppression flags needed by the LibTorch-dependent code path.
+
+
+5. Clone searchingforstrangeness
+--------------------------------
+
+Run:
+
+     cd srcs/ubana/ubana
+     git clone https://github.com/njlane314/searchingforstrangeness.git
+     cd searchingforstrangeness
+     source .setup.sh
+
+
+6. Add this package to the ubana build
+--------------------------------------
+
+From the ubana source directory, append this package to the parent
+`CMakeLists.txt`:
+
+     cd ../../
+     echo "add_subdirectory(searchingforstrangeness)" >> CMakeLists.txt
+
+
+7. Build
+--------
+
+From the MRB top directory:
+
+     cd $MRB_TOP
+     mrbsetenv
+     mrb i -j4
+
+
+8. Optional helper-script workflow
+----------------------------------
+
+If your checkout includes the local helper scripts, the setup is often done by:
+
+     cd srcs/ubana/ubana/searchingforstrangeness
+     ./.container.sh
+     source .setup.sh
+     ./.build.sh
+
+
+Installed files
+---------------
+
+The build system installs headers, sources, FHiCL files, and assets into the
+MRB/LArSoft product area by way of the package `CMakeLists.txt` files.  The
+package is intended to be used from that development environment, not through a
+separate `make install` step in a generic system prefix.
+
+
+After installation
+------------------
+
+Once the package is built, use USAGE for the checked-in runtime workflows and
+scripts/README.md for dataset-handling notes.

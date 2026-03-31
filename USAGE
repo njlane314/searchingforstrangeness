@@ -1,0 +1,256 @@
+Using searchingforstrangeness
+=============================
+
+Copyright (C) searchingforstrangeness contributors.
+
+This file describes normal use of the package after it has been checked out and
+built inside a MicroBooNE ubana development area.  For installation and build
+instructions, see INSTALL.  For the structure of the generated ROOT files, see
+OUTPUTS.  For a repository overview, see README.  For dataset naming and
+SAM-definition notes, see scripts/README.md.
+
+
+Conventions
+-----------
+
+The examples below assume:
+
+  * you are running from the top of this repository;
+  * the package has already been built in a working MRB area;
+  * the MicroBooNE software environment is active;
+  * your input files are art ROOT files from the expected reconstruction chain.
+
+Several checked-in FHiCL files use relative paths such as "assets" and
+"scripts/inference_wrapper.sh".  Running from the repository top directory is
+the simplest way to make those paths resolve as expected.
+
+
+1. Prepare the runtime environment
+----------------------------------
+
+Complete the setup and build steps in INSTALL first.
+
+For interactive work from this checkout, the usual sequence is:
+
+     ./.container.sh
+     source .setup.sh
+
+If your shell is already in the correct MicroBooNE/MRB environment, sourcing
+.setup.sh from the repository top directory is usually enough.  That helper
+also sets up sam_web_client for the SAM-based workflows described below.
+
+
+2. Choose a checked-in job configuration
+----------------------------------------
+
+The standard entry points are under job/.
+
+job/run_nuselection.fcl
+     Runs the neutrino-selection filter on MC-style input and writes the
+     analysis TTree file nu_selection.root.
+
+job/run_nuselection_data.fcl
+     Runs the data/EXT version of the selection and writes
+     nu_selection_data.root.
+
+job/run_imageprod.fcl
+     Produces image::ImageProduct objects for the selected slice and writes
+     the event file %ifb_%tc_imageprod.root.  The checked-in TFileService
+     output is imageprod_hist.root.
+
+job/run_inferenceprod.fcl
+     Runs model inference on existing imageprod:NuSlice products and writes
+     the event file %ifb_%tc_inference.root.  The checked-in TFileService
+     output is inferenceprod_hist.root.
+
+job/run_fullchain.fcl
+     Runs image production, inference, and neutrino selection in one process.
+     It writes %ifb_%tc_fullchain_nuselection.root and
+     fullchain_nuselection_hist.root.
+
+The development entry points are under dev/.
+
+dev/image_dev.fcl
+     Development chain for imaging, inference, and selection with event-weight
+     analysis enabled.
+
+dev/image_dev_cosmic.fcl
+     Development chain for cosmic/data-style imaging and selection studies.
+
+dev/run_numisystematicweights_rhc.fcl
+     Parameter fragment for RHC systematic-weight studies.  This is not a
+     standalone top-level job.
+
+dev/run_numisystematicweights_rhc_extragenie1.fcl
+     Standalone extra-GENIE RHC event-weight job writing
+     %ifb_extragenie1_rhc.root.
+
+
+3. Run local jobs
+-----------------
+
+The most common command form is:
+
+     lar -c <fhicl_file> -s <input.root>
+
+Examples:
+
+     lar -c job/run_nuselection.fcl -s reco_input.root
+
+     lar -c job/run_nuselection_data.fcl -s data_input.root
+
+     lar -c job/run_imageprod.fcl -s reco_input.root
+
+     lar -c job/run_inferenceprod.fcl -s imageprod_output.root
+
+     lar -c job/run_fullchain.fcl -s reco_input.root
+
+Usage notes:
+
+  * Use run_nuselection.fcl when you want flat analysis trees from MC-like
+    input.
+  * Use run_nuselection_data.fcl for data or EXT workflows.
+  * Use run_imageprod.fcl when you want persisted image products in the art
+    event output.
+  * Use run_inferenceprod.fcl only on input files that already contain the
+    imageprod:NuSlice products expected by the InferenceProducer.
+  * Use run_fullchain.fcl when starting from reconstructed input and you want
+    the image, inference, and selection stages in one step.
+
+The inference jobs expect the checked-in model assets under assets/, including
+assets/models/checkpoint_step0010000.pt and the wrapper script reached through
+the AssetsBaseDir setting.
+
+
+4. Run over SAM definitions
+---------------------------
+
+For quick local tests, a common pattern is to resolve a few files from a SAM
+definition and loop over them:
+
+     files=$(samweb list-files defname:<sam_definition> | head -n 3)
+
+     counter=1
+     for file in $files; do
+         filedir=$(samweb locate-file "$file" | grep -o '/pnfs/.*' | head -n 1)
+         lar -c job/run_fullchain.fcl -s "${filedir}/${file}"
+         mv fullchain_nuselection_hist.root "fullchain_${counter}.root"
+         counter=$((counter + 1))
+     done
+
+     hadd -f combined_fullchain.root fullchain_*.root
+
+If you need to prepare or inspect SAM definitions, use the helper scripts in
+scripts/ and the top-level describe-definitions.sh helper:
+
+     ./scripts/apply_goodruns.sh <source_def> <goodruns_def>
+
+     ./scripts/apply_goodruns_run1_fhc.sh
+
+     ./scripts/split_detvar_stride.sh <source_def> <training_def> <plotting_def>
+
+     ./describe-definitions.sh
+
+The canonical Run 1 FHC naming used by these scripts is documented in
+scripts/README.md.
+
+
+5. Understand the outputs
+-------------------------
+
+The package writes two kinds of ROOT output.
+
+art event files
+     These are written by jobs such as run_imageprod.fcl, run_inferenceprod.fcl,
+     run_fullchain.fcl, and the extra-GENIE weight job.  They contain event
+     products such as image::ImageProduct and inference products.
+
+TFileService analysis files
+     These are files such as nu_selection.root, nu_selection_data.root, and
+     fullchain_nuselection_hist.root.  They contain TTrees and analysis
+     branches intended for downstream plotting and ntuple-style analysis.
+
+Read OUTPUTS for the checked-in branch and product layout.  In particular:
+
+  * EventSelectionFilter trees live in nu_selection.root,
+    nu_selection_data.root, fullchain_nuselection_hist.root,
+    imaging_dev.root, and imaging_dev_cosmic.root.
+  * The image-only and inference-only histogram files are mainly framework
+    side outputs; the repo-defined payload for those workflows is in the art
+    event file.
+
+
+6. Submit grid jobs
+-------------------
+
+The repository includes xml/numi_fhc_run1.xml for a production-style grid
+workflow.  Before submitting, review the XML entities near the top of the file.
+It hard-codes values such as:
+
+  * the release tag;
+  * the user name;
+  * tarball and output PNFS locations;
+  * the input SAM definitions.
+
+Create or refresh the tarball with:
+
+     ./.tar.sh
+
+Then submit a stage, for example:
+
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --submit
+
+Checked-in stage names include:
+
+  * beam_s0
+  * beam_s1
+  * beam_s2
+  * beam_s3
+  * dirt_s0
+  * dirt_s1
+  * strangeness_run1_fhc
+  * ext_p0
+  * ext_p1
+  * ext_p2
+
+To clean and resubmit a stage:
+
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --clean
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --submit
+
+
+7. Common adjustments
+---------------------
+
+The checked-in job files are meant to be copied or overridden for your local
+campaign.  Common edits include:
+
+  * switching between MC and data by choosing the right top-level FHiCL file;
+  * changing TFileService output names;
+  * changing the inference model or wrapper path;
+  * adjusting XML entities to point at your own PNFS areas and SAM inputs.
+
+For development work, put ad hoc configurations under dev/ rather than editing
+the production files in job/ without a reason.
+
+
+8. If something fails early
+---------------------------
+
+Check the following first:
+
+  * If lar cannot find included FHiCL files or products, your MRB setup is not
+    complete.  Re-run source .setup.sh or the equivalent manual setup.
+  * If samweb is missing, set up sam_web_client or use the helper setup script.
+  * If an inference job fails immediately, confirm that you are running from
+    the repository top directory and that assets/models/checkpoint_step0010000.pt
+    is present.
+  * If a grid stage points to the wrong storage area, edit the entities in
+    xml/numi_fhc_run1.xml before submitting.
+
+
+End
+---
+
+This file is intentionally operational.  See INSTALL for setup/build, README
+for the repository overview, and OUTPUTS for the generated ROOT content.

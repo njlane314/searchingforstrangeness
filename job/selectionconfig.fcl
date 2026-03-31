@@ -90,20 +90,6 @@ ImageAnalysis: {
     InferencePerfTag: "inferenceprod"
 }
 
-TrackAnalysis: {
-    tool_type: "TrackAnalysis"
-    TRKproducer: @local::standard_producers.TRKproducer
-    CALproducer: @local::standard_producers.CALproducer
-    PIDproducer: @local::standard_producers.PIDproducer
-    HITproducer: @local::standard_producers.HITproducer
-    CLSproducer: @local::standard_producers.CLSproducer
-    BKTproducer: @local::standard_producers.BKTproducer
-
-    MCSfit: @local::microboone_reco_data_producers.pandoraMCSMu.fitter
-    ADCtoE: @local::microboone_reco_data_producers.shrreco3d.ADCtoE
-    recalibrateHits: true
-}
-
 TruthAnalysis: {
     tool_type: "TruthAnalysis"
     MCTproducer: @local::standard_producers.MCTproducer
@@ -153,7 +139,6 @@ NeutrinoSelectionFilter: {
         weight: @local::EventWeightAnalysis
         image: @local::ImageAnalysis
         signal: @local::SignalAnalysis
-        track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
     }
 }

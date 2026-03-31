@@ -1,0 +1,107 @@
+searchingforstrangeness
+=======================
+
+This repository contains the MicroBooNE strangeness-analysis code used inside a
+ubana development area.  It provides event-selection modules, analysis tools,
+imaging and inference producers, FHiCL job configuration, and helper scripts
+for local and grid processing.
+
+
+Documentation map
+-----------------
+
+The top-level documents are intentionally split by purpose.
+
+README
+     This file.  It is a short overview of the repository, where the main
+     entry points live, and which document to read next.
+
+INSTALL
+     Setup and build instructions for a ubana/MRB development area.
+
+USAGE
+     How to run the checked-in jobs, use the helper scripts, and submit the
+     shipped grid workflow.
+
+OUTPUTS
+     Description of the checked-in ROOT outputs and tree contents.
+
+scripts/README.md
+     Dataset naming, SAM-definition helpers, and sample-management notes.
+
+
+Requirements
+------------
+
+The package assumes a working MicroBooNE/LArSoft environment with:
+
+  * access to the MicroBooNE container and CVMFS products;
+  * an MRB development area;
+  * a checkout of ubana;
+  * standard tools such as mrb, lar, samweb, hadd, and project.py.
+
+This is not a standalone generic package with a portable configure-and-install
+workflow.  It is meant to be built and used from the expected ubana context.
+
+
+Repository layout
+-----------------
+
+  * AnalysisTools/      analysis tool implementations
+  * SelectionTools/     event-selection tool implementations
+  * Common/             shared utilities and helper classes
+  * Imaging/            image-production and inference support
+  * Products/           art product definitions
+  * job/                standard production FHiCL files
+  * dev/                development and debugging FHiCL files
+  * scripts/            helper scripts and operational notes
+  * xml/                grid job XML configurations
+  * assets/             model assets, bad-channel data, and runtime helpers
+
+
+Checked-in entry points
+-----------------------
+
+The main top-level job configurations are:
+
+  * job/run_nuselection.fcl
+  * job/run_nuselection_data.fcl
+  * job/run_imageprod.fcl
+  * job/run_inferenceprod.fcl
+  * job/run_fullchain.fcl
+
+The main development configurations are:
+
+  * dev/image_dev.fcl
+  * dev/image_dev_cosmic.fcl
+  * dev/run_numisystematicweights_rhc_extragenie1.fcl
+
+The repository root also contains helper scripts commonly used during local
+work:
+
+  * .container.sh
+  * .setup.sh
+  * .build.sh
+  * .tar.sh
+
+Several checked-in FHiCL files use relative paths under assets/.  In normal
+use, run jobs from the repository top directory so those paths resolve
+correctly.
+
+
+Suggested reading order
+-----------------------
+
+1. Read INSTALL to set up the development area and build the package.
+2. Read USAGE to run local jobs or grid workflows.
+3. Read OUTPUTS when you need the checked-in ROOT schema.
+4. Read scripts/README.md when working with sample definitions or dataset
+   bookkeeping.
+
+
+End
+---
+
+The repository is documented as a working analysis package rather than as a
+generic software distribution.  The operational details live in INSTALL and
+USAGE; this file is only the front page.
