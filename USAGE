@@ -76,13 +76,12 @@ dev/image_dev.fcl
 dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
-dev/run_numisystematicweights_rhc.fcl
-     Parameter fragment for RHC systematic-weight studies.  This is not a
-     standalone top-level job.
-
 dev/run_numisystematicweights_rhc_extragenie1.fcl
      Standalone extra-GENIE RHC event-weight job writing
      %ifb_extragenie1_rhc.root.
+
+dev/numi_fhc_run1_dev.xml
+     Grid job template for the dev imaging and inference chain.
 
 
 3. Run local jobs

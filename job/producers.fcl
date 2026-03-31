@@ -16,11 +16,6 @@ standard_producers: {
   MCFproducer: "generator"
   BKTproducer: "gaushitTruthMatch"
   MCRproducer: "mcreco"
-  CALproducer: "pandoracali"
-  PIDproducer: "pandoracalipid"
-  FLSproducer: "flashmatch"
-  T0producer: "flashmatch"
-  CRTproducer: "crtveto"
 }
 
 END_PROLOG

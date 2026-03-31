@@ -1,7 +1,6 @@
 #include "microboone_eventweight_service.fcl"
-#include "seedservice_microboone.fcl"
 #include "eventweight_microboone_sep24.fcl"
-#include "run_neutrinoselection.fcl"
+#include "run_nuselection.fcl"
 
 process_name: ImagingDev
 

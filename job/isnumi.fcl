@@ -1,3 +1,0 @@
-physics.filters.nuselection.IsNuMI: true
-physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
-physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true

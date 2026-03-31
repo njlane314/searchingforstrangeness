@@ -1,6 +1,4 @@
-#include "seedservice_microboone.fcl"
-#include "run_neutrinoselection.fcl"
-#include "isdata.fcl"
+#include "run_nuselection_data.fcl"
 
 process_name: ImagingDevCosmic
 
