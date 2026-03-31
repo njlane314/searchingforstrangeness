@@ -113,7 +113,7 @@ Default/reco branches
 - `optical_filter_pe_beam`, `optical_filter_pe_veto`
 - `reco_neutrino_vertex_x`, `reco_neutrino_vertex_y`, `reco_neutrino_vertex_z`
 - `reco_neutrino_vertex_sce_x`, `reco_neutrino_vertex_sce_y`, `reco_neutrino_vertex_sce_z`
-- `num_slices`, `crt_veto`, `crt_hit_pe`
+- `num_slices`
 - `selection_pass`
 - `software_trigger`
 - `software_trigger_pre`, `software_trigger_post`

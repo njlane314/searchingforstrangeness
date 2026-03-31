@@ -102,11 +102,6 @@ CONDITIONAL
 Reason: keep if downstream consumers use SCE-corrected coordinates explicitly.
 
 CONDITIONAL
-- `crt_veto`
-- `crt_hit_pe`
-Reason: keep if CRT studies or cosmic rejection bookkeeping matter.
-
-CONDITIONAL
 - `software_trigger`
 - `software_trigger_pre`
 - `software_trigger_post`

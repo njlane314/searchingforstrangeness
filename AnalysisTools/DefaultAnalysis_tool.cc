@@ -475,8 +475,6 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("reco_neutrino_vertex_sce_y", &_reco_neutrino_vertex_sce_y, "reco_neutrino_vertex_sce_y/F");
     _tree->Branch("reco_neutrino_vertex_sce_z", &_reco_neutrino_vertex_sce_z, "reco_neutrino_vertex_sce_z/F");
     _tree->Branch("num_slices", &_num_slices, "num_slices/I");
-    _tree->Branch("crt_veto", &_crt_veto, "crt_veto/I");
-    _tree->Branch("crt_hit_pe", &_crt_hit_pe, "crt_hit_pe/F");
     _tree->Branch("pfp_slice_indices", "std::vector<int>", &_pfp_slice_indices);
     _tree->Branch("selection_pass", &_selection_pass, "selection_pass/I");
     _tree->Branch("software_trigger", &_software_trigger, "software_trigger/I");

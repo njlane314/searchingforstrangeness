@@ -82,7 +82,6 @@ class SignalAnalysis_tool : public AnalysisToolBase {
 
         int n_fs_lambda0 = 0;
         int n_fs_sigma0 = 0;
-        int n_strange_fs = 0;
         int n_g4_lambda0 = 0;
         int n_g4_lambda0_to_ppi = 0;
         int n_g4_lambda0_from_sigma0 = 0;
@@ -305,9 +304,6 @@ void SignalAnalysis_tool::setBranches(TTree *t) {
               "truth_n_fs_lambda0/I");
     t->Branch("truth_n_fs_sigma0", &_truth.n_fs_sigma0,
               "truth_n_fs_sigma0/I");
-    t->Branch("truth_n_strange_fs", &_truth.n_strange_fs,
-              "truth_n_strange_fs/I");
-    t->Branch("count_strange", &_truth.n_strange_fs, "count_strange/I");
     t->Branch("truth_n_g4_lambda0", &_truth.n_g4_lambda0, "truth_n_g4_lambda0/I");
     t->Branch("truth_n_g4_lambda0_to_ppi", &_truth.n_g4_lambda0_to_ppi,
               "truth_n_g4_lambda0_to_ppi/I");
@@ -567,7 +563,6 @@ void SignalAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
 
         if (IsStrangeHadron(apdg)) {
             _truth.has_strange_fs = true;
-            ++_truth.n_strange_fs;
         }
 
         if (apdg == 3122) {
