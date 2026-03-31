@@ -20,8 +20,6 @@ DefaultAnalysis: {
     MCTproducer: @local::standard_producers.MCTproducer
     MCFproducer: @local::standard_producers.MCFproducer
     HITproducer: @local::standard_producers.HITproducer
-    BKTproducer: @local::standard_producers.BKTproducer
-    MCRproducer: @local::standard_producers.MCRproducer
     SLCproducer: @local::standard_producers.SLCproducer
     MCPproducer: @local::standard_producers.MCPproducer
     CRTproducer: @local::standard_producers.CRTproducer
@@ -51,7 +49,7 @@ LambdaAnalysis: {
 EventWeightAnalysis: {
     tool_type: "EventWeightAnalysis"
     createDedicatedTree: false
-    createMapBranch: true
+    createMapBranch: false
     createFluxBranch: true
     createGenieBranch: true
     createReintBranch: true

@@ -1,0 +1,455 @@
+OUTPUT VARIABLE RETENTION AUDIT
+
+Status meanings
+- KEEP: broadly useful and low-risk to retain.
+- CONDITIONAL: keep only if you actively use it downstream.
+- DROP: strong candidate to remove.
+- FIX: keep the concept, but change the schema because the current form is redundant or ambiguous.
+
+TOP PRIORITY PRUNE/FIX CANDIDATES
+
+KEEP
+- No remaining top-priority image payload duplicates in the event TTree.
+Reason: the per-pixel detector and semantic image branches were removed in favor of compact summaries only.
+
+ART EVENT PRODUCT FIELDS
+
+`image::ImageProduct`
+
+KEEP
+- `view`
+- `width`
+- `height`
+- `hit_count`
+- `origin_x`
+- `origin_y`
+- `pixel_w`
+- `pixel_h`
+- `vertex_row`
+- `vertex_col`
+Reason: these are compact metadata needed to interpret the image payload.
+
+CONDITIONAL
+- `index`
+- `adc`
+- `semantic`
+- `in_nu_slice`
+Reason: essential if you want the sparse image itself; removable only if you no longer need to persist detector images in the art event file.
+
+`image::InferencePredProduct`
+
+KEEP
+- `model`
+- `scores`
+Reason: this is the actual inference output.
+
+`image::InferencePerfProduct`
+
+CONDITIONAL
+- `t_exec_total_ms`
+- `t_child_infer_ms`
+- `child_max_rss_mb`
+Reason: useful for profiling, not for physics content.
+
+KEEP
+- `model`
+Reason: needed to map timing rows to the model instance.
+
+EVENT TREE: CORE EVENT BRANCHES
+
+KEEP
+- `has_slice`
+- `run`
+- `sub`
+- `evt`
+- `is_data`
+- `is_fake_data`
+- `is_numi`
+Reason: core event identity and sample labeling.
+
+EVENT TREE: DEFAULT / RECO BRANCHES
+
+KEEP
+- `optical_filter_pe_beam`
+- `optical_filter_pe_veto`
+- `reco_neutrino_vertex_x`
+- `reco_neutrino_vertex_y`
+- `reco_neutrino_vertex_z`
+- `num_slices`
+- `selection_pass`
+- `event_total_hits`
+- `slice_pdg`
+- `slice_num_hits`
+- `slice_num_clusters`
+- `slice_num_clusters_U`
+- `slice_num_clusters_V`
+- `slice_num_clusters_Y`
+- `num_pfps`
+- `num_tracks`
+- `num_showers`
+- `total_hits_U`
+- `total_hits_V`
+- `total_hits_Y`
+- `contained_fraction`
+- `slice_id`
+- `topological_score`
+Reason: compact, high-value event and slice summaries.
+
+CONDITIONAL
+- `reco_neutrino_vertex_sce_x`
+- `reco_neutrino_vertex_sce_y`
+- `reco_neutrino_vertex_sce_z`
+Reason: keep if downstream consumers use SCE-corrected coordinates explicitly.
+
+CONDITIONAL
+- `crt_veto`
+- `crt_hit_pe`
+Reason: keep if CRT studies or cosmic rejection bookkeeping matter.
+
+CONDITIONAL
+- `software_trigger`
+- `software_trigger_pre`
+- `software_trigger_post`
+- `software_trigger_pre_ext`
+- `software_trigger_post_ext`
+Reason: useful for NuMI trigger debugging and data-quality logic, otherwise easy to prune.
+
+CONDITIONAL
+- `slice_cluster_fraction`
+Reason: derived summary; keep if actually used in cuts or validation.
+
+CONDITIONAL
+- `pfp_slice_indices`
+- `pfp_generations`
+- `pfp_track_daughters`
+- `pfp_shower_daughters`
+- `pfp_num_descendents`
+- `pfp_vertex_x`
+- `pfp_vertex_y`
+- `pfp_vertex_z`
+- `track_shower_scores`
+- `pfp_pdg_codes`
+- `pfp_num_hits`
+- `pfp_num_plane_hits_U`
+- `pfp_num_plane_hits_V`
+- `pfp_num_plane_hits_Y`
+- `pfp_num_subclusters_U`
+- `pfp_num_subclusters_V`
+- `pfp_num_subclusters_Y`
+- `pfp_max_subhit_fraction_U`
+- `pfp_max_subhit_fraction_V`
+- `pfp_max_subhit_fraction_Y`
+Reason: detailed per-PFP debugging and feature-inspection block. Keep only if you inspect PFParticle-level content downstream.
+
+EVENT TREE: EVENT WEIGHTS
+
+KEEP
+- `weightSpline`
+- `weightTune`
+- `weightSplineTimesTune`
+- `ppfx_cv`
+Reason: compact, commonly consumed summary weights.
+
+CONDITIONAL
+- `weightsFlux`
+- `weightsGenie`
+- `weightsReint`
+- `weightsPPFX`
+- `weightsGenieUp`
+- `weightsGenieDn`
+Reason: useful for systematic universes, but large. Keep if you reweight or propagate systematics downstream.
+
+CONDITIONAL
+- `knobRPAup`
+- `knobRPAdn`
+- `knobCCMECup`
+- `knobCCMECdn`
+- `knobAxFFCCQEup`
+- `knobAxFFCCQEdn`
+- `knobVecFFCCQEup`
+- `knobVecFFCCQEdn`
+- `knobDecayAngMECup`
+- `knobDecayAngMECdn`
+- `knobThetaDelta2Npiup`
+- `knobThetaDelta2Npidn`
+- `knobThetaDelta2NRadup`
+- `knobThetaDelta2NRaddn`
+- `knobNormCCCOHup`
+- `knobNormCCCOHdn`
+- `knobNormNCCOHup`
+- `knobNormNCCOHdn`
+- `knobxsr_scc_Fv3up`
+- `knobxsr_scc_Fv3dn`
+- `knobxsr_scc_Fa3up`
+- `knobxsr_scc_Fa3dn`
+- `RootinoFix`
+Reason: individual systematic knobs are useful only if you explicitly use knob-wise systematics.
+
+Decision rule
+- If you want a compact production ntuple, keep the four summary scalars and drop the large systematic-universe vectors.
+- If you want downstream systematic propagation, keep the compressed vectors.
+
+EVENT TREE: IMAGE ANALYSIS
+
+KEEP
+- `active_pixels_u`
+- `active_pixels_v`
+- `active_pixels_w`
+- `is_vtx_in_image_u`
+- `is_vtx_in_image_v`
+- `is_vtx_in_image_w`
+- `inf_model`
+- `inf_n_scores`
+- `inf_scores`
+Reason: compact image and inference summaries with clear downstream value.
+
+CONDITIONAL
+- `inf_t_exec_total_ms`
+- `inf_t_child_infer_ms`
+- `inf_child_max_rss_mb`
+Reason: profiling only.
+
+CONDITIONAL
+- `slice_semantic_active_pixels_u`
+- `slice_semantic_active_pixels_v`
+- `slice_semantic_active_pixels_w`
+- `semantic_label_names`
+Reason: useful summary if you care about semantic composition; otherwise optional.
+
+DROP
+- `detector_image_u_feature_dim`
+- `detector_image_u_coords`
+- `detector_image_u_features`
+- `detector_image_v_feature_dim`
+- `detector_image_v_coords`
+- `detector_image_v_features`
+- `detector_image_w_feature_dim`
+- `detector_image_w_coords`
+- `detector_image_w_features`
+- `semantic_image_u_label`
+- `semantic_image_v_label`
+- `semantic_image_w_label`
+Reason: these per-pixel payloads were removed from the event TTree. Keep the full sparse image only in the art event products.
+
+EVENT TREE: LAMBDA ANALYSIS
+
+CONDITIONAL
+- `mu_truth_trackid`
+- `mu_truth_pdg`
+- `mu_p`
+- `mu_theta`
+- `truth_is_nc`
+- `truth_has_strange_fs`
+- `truth_has_nc_strangeness`
+- `truth_has_fs_lambda0`
+- `truth_has_fs_sigma0`
+- `truth_has_g4_lambda0_to_ppi`
+- `truth_has_ks0`
+- `truth_has_pi0`
+- `truth_n_fs_lambda0`
+- `truth_n_fs_sigma0`
+- `truth_n_g4_lambda0_to_ppi`
+- `truth_n_ks0`
+- `truth_n_pi0`
+- `truth_fs_lambda0_p`
+- `truth_fs_sigma0_p`
+- `g4_lambda_trackid`
+- `g4_lambda_pdg`
+- `g4_lambda_E`
+- `g4_lambda_mass`
+- `g4_lambda_px`
+- `g4_lambda_py`
+- `g4_lambda_pz`
+- `g4_lambda_p_mag`
+- `g4_lambda_vx`
+- `g4_lambda_vy`
+- `g4_lambda_vz`
+- `g4_lambda_endx`
+- `g4_lambda_endy`
+- `g4_lambda_endz`
+- `g4_lambda_ct`
+- `g4_lambda_decay_sep`
+- `g4_lambda_p_trackid`
+- `g4_lambda_pi_trackid`
+- `g4_lambda_p_p`
+- `g4_lambda_pi_p`
+- `g4_lambda_ppi_opening_angle`
+- `g4_lambda_pr_valid_assignment`
+- `g4_lambda_pr_mu_purity`
+- `g4_lambda_pr_mu_completeness`
+- `g4_lambda_pr_p_purity`
+- `g4_lambda_pr_p_completeness`
+- `g4_lambda_pr_pi_purity`
+- `g4_lambda_pr_pi_completeness`
+- `g4_lambda_mu_true_hits`
+- `g4_lambda_p_true_hits`
+- `g4_lambda_pi_true_hits`
+Reason: keep only if you are actively doing Lambda or strange-particle studies. Otherwise this whole block is removable.
+
+EVENT TREE: TRACK ANALYSIS
+
+CONDITIONAL
+- `track_pfp_ids`
+- `track_start_x`
+- `track_start_y`
+- `track_start_z`
+- `track_sce_start_x`
+- `track_sce_start_y`
+- `track_sce_start_z`
+- `track_end_x`
+- `track_end_y`
+- `track_end_z`
+- `track_sce_end_x`
+- `track_sce_end_y`
+- `track_sce_end_z`
+- `track_direction_x`
+- `track_direction_y`
+- `track_direction_z`
+- `track_distance_to_vertex`
+- `track_theta`
+- `track_phi`
+- `track_length`
+- `track_calo_energy_u`
+- `track_calo_energy_v`
+- `track_calo_energy_y`
+- `track_vertex_trunk_mip_median_u`
+- `track_vertex_trunk_mip_median_v`
+- `track_vertex_trunk_mip_median_y`
+- `track_vertex_trunk_mip_iqr_u`
+- `track_vertex_trunk_mip_iqr_v`
+- `track_vertex_trunk_mip_iqr_y`
+- `track_bulk_mip_median_u`
+- `track_bulk_mip_median_v`
+- `track_bulk_mip_median_y`
+- `track_bulk_mip_iqr_u`
+- `track_bulk_mip_iqr_v`
+- `track_bulk_mip_iqr_y`
+- `track_bragg_ratio_u`
+- `track_bragg_ratio_v`
+- `track_bragg_ratio_y`
+Reason: detailed track/PID block. Keep only if track-level performance or particle-ID studies are still part of the analysis.
+
+EVENT TREE: TRUTH ANALYSIS
+
+KEEP
+- `nu_pdg`
+- `int_ccnc`
+- `int_mode`
+- `int_type`
+- `nu_E`
+- `nu_theta`
+- `nu_pt`
+- `tgt_pdg`
+- `struck_nucleon_pdg`
+- `kin_W`
+- `bjorken_x`
+- `inelasticity_y`
+- `Q2`
+- `nu_px`
+- `nu_py`
+- `nu_pz`
+- `nu_vtx_x`
+- `nu_vtx_y`
+- `nu_vtx_z`
+- `nu_vtx_wire_u`
+- `nu_vtx_wire_v`
+- `nu_vtx_wire_w`
+- `nu_vtx_t`
+- `nu_vtx_sce_x`
+- `nu_vtx_sce_y`
+- `nu_vtx_sce_z`
+- `lep_E`
+- `nu_true_px`
+- `nu_true_py`
+- `nu_true_pz`
+- `is_nu_mu_cc`
+- `nu_vtx_in_fv`
+- `sum_pt_true`
+- `sum_pt_vis`
+- `sum_p_true`
+- `sum_p_vis`
+- `sum_E_vis`
+Reason: compact high-level truth block with direct physics value.
+
+CONDITIONAL
+- `nu_v`
+- `nu_dir`
+Reason: useful but somewhat redundant with explicit component branches.
+
+CONDITIONAL
+- `flux_path_len`
+- `flux_parent_pdg`
+- `flux_hadron_pdg`
+- `flux_decay_mode`
+- `flux_decay_vtx_x`
+- `flux_decay_vtx_y`
+- `flux_decay_vtx_z`
+- `flux_decay_px`
+- `flux_decay_py`
+- `flux_decay_pz`
+- `numi_L`
+- `numi_offaxis_deg`
+- `bnb_L`
+- `bnb_offaxis_deg`
+Reason: keep only if you still do flux or off-axis studies.
+
+CONDITIONAL
+- `prim_pdg`
+- `prim_track_id`
+- `prim_E`
+- `prim_n_scat_elastic`
+- `prim_n_scat_inelastic`
+- `prim_px`
+- `prim_py`
+- `prim_pz`
+- `prim_p_end`
+- `prim_vx`
+- `prim_vy`
+- `prim_vz`
+- `prim_end_x`
+- `prim_end_y`
+- `prim_end_z`
+- `prim_final_state`
+- `prim_bt_completeness`
+- `prim_bt_purity`
+- `prim_dau_pdg`
+- `prim_dau_E`
+- `prim_dau_process_flat`
+- `prim_dau_process_idx`
+- `prim_dau_px`
+- `prim_dau_py`
+- `prim_dau_pz`
+- `prim_dau_vx`
+- `prim_dau_vy`
+- `prim_dau_vz`
+Reason: full primary-particle and daughter-particle truth record. Very valuable for dedicated truth studies, otherwise heavy.
+
+SUBRUN TREE
+
+KEEP
+- `run`
+- `subRun`
+- `pot`
+
+CONDITIONAL
+- `n_beam_gates`
+- `n_ext_gates`
+- `pot_per_gate`
+- `ext_equiv_pot`
+Reason: keep if normalizing EXT to beam exposure or tracking gate-level bookkeeping.
+
+RECOMMENDED MINIMAL SCHEMA
+
+If the goal is a much smaller, analysis-focused output, keep this baseline:
+- Event identity: `run`, `sub`, `evt`, `is_data`, `is_fake_data`, `is_numi`
+- Selection summary: `has_slice`, `selection_pass`, `num_slices`
+- Compact reco: `reco_neutrino_vertex_x/y/z`, `slice_num_hits`, `slice_num_clusters`, `num_pfps`, `num_tracks`, `num_showers`, `topological_score`, `contained_fraction`
+- Compact weights: `weightSpline`, `weightTune`, `weightSplineTimesTune`, `ppfx_cv`
+- Compact inference: `inf_model`, `inf_n_scores`, `inf_scores`, `active_pixels_u/v/w`, `is_vtx_in_image_u/v/w`
+- Compact truth: high-level truth block only if MC studies still matter
+- Subrun: `run`, `subRun`, `pot`
+
+RECOMMENDED NEXT CODE CHANGES
+
+1. Decide whether per-pixel image payloads stay in the TTree or only in the art event products.
+2. If Lambda or detailed track truth studies are no longer active, remove those whole tool blocks from `selectionconfig.fcl`.

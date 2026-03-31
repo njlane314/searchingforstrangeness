@@ -29,11 +29,6 @@ public:
     void resetTTree(TTree* _tree) override;
 
 private:
-    TTree *_weightstree;
-    int _run;
-    int _subRun;
-    int _evt;
-
     float _weightSpline;
     float _weightTune;
     float _weightSplineTimesTune;
@@ -72,14 +67,11 @@ private:
     std::vector<unsigned short> _vecWeightsPPFX;
     std::vector<double> _vecWeightsPPFXD;
 
-    std::map<std::string, std::vector<double>> _mapWeight;
     std::vector<double> _vecWeightsGenie_vec;
     std::vector<int> _vecWeightsGenie_nam;
     std::vector<unsigned short> _vecWeightsGenieUp;
     std::vector<unsigned short> _vecWeightsGenieDn;
 
-    bool _createDedicatedTree;
-    bool _createMapBranch;
     bool _createFluxBranch;
     bool _createGenieBranch;
     bool _createReintBranch;
@@ -102,8 +94,6 @@ private:
 };
 
 EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
-    _createDedicatedTree = p.get<bool>("createDedicatedTree");
-    _createMapBranch = p.get<bool>("createMapBranch");
     _createFluxBranch = p.get<bool>("createFluxBranch");
     _createGenieBranch = p.get<bool>("createGenieBranch");
     _createReintBranch = p.get<bool>("createReintBranch");
@@ -123,22 +113,11 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _event_weight_process_name_03 = p.get<std::string>("eventWeightProcessName03", "EventWeightSep24ExtraGENIE3");
     _event_weight_process_name_04 = p.get<std::string>("eventWeightProcessName04", "EventWeightSep24ExtraGENIE4");
     _event_weight_process_name_05 = p.get<std::string>("eventWeightProcessName05", "EventWeightSep24ExtraGENIE5");
-
-    if(_createDedicatedTree) {
-        art::ServiceHandle<art::TFileService> tfs;
-        _weightstree = tfs->make<TTree>("EventWeights", "EventWeights TTree");
-    } else {
-        _weightstree = nullptr;
-    }
 }
 
 void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
 
 void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
-    _run = event.run();
-    _subRun = event.subRun();
-    _evt = event.event();
-
     _vecWeightsGenie  = std::vector<unsigned short>(_genieAllUniverses,1);
     _vecWeightsGenieD = std::vector<double>(_genieAllUniverses,1.0);
     _vecWeightFluxD.clear();
@@ -342,18 +321,14 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                     keyname.find("nucleonqexsec") != std::string::npos ||
                     keyname.find("nucleoninexsec") != std::string::npos))
                     {
-                        if (_SaveAllFlux) 
-                            _mapWeight.insert(*it);
-                        else {
-                            if(isFirstVectorFlux){
-                                _vecWeightFluxD = it->second;
-                                isFirstVectorFlux = false;
-                            }
-                            else{
-                                if ( (it->second).size() == _vecWeightFluxD.size() ) {
-                                    for(unsigned int i = 0; i < it->second.size(); ++i) 
-                                        _vecWeightFluxD[i] *= it->second[i];
-                                }
+                        if(isFirstVectorFlux){
+                            _vecWeightFluxD = it->second;
+                            isFirstVectorFlux = false;
+                        }
+                        else{
+                            if ( (it->second).size() == _vecWeightFluxD.size() ) {
+                                for(unsigned int i = 0; i < it->second.size(); ++i) 
+                                    _vecWeightFluxD[i] *= it->second[i];
                             }
                         }
                     }
@@ -385,22 +360,11 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                         !(keyname.find("RootinoFix_UBGenie") != std::string::npos) &&
                         !(keyname.find("ppfx_oldrw_cv_UBOLDPPFXCV") != std::string::npos && _makeNuMItuple && _useReweightedFlux) &&
                         !(keyname.find("ppfx_cv_UBPPFXCV") != std::string::npos && _makeNuMItuple && !_useReweightedFlux)
-                        ) {
-                            _mapWeight.insert(*it);
-                        }
+                        ) {}
                 }
             }
         }
     }
-    if (!_SaveAllFlux && !_makeNuMItuple) {
-        _mapWeight.insert( std::pair<std::string,std::vector<double> >("flux_all",_vecWeightFluxD) );
-    }
-    _mapWeight.insert( std::pair<std::string,std::vector<double> >("All_UBGenie",_vecWeightsGenieD) );
-    _mapWeight.insert( std::pair<std::string,std::vector<double> >("reint_all",_vecWeightsReintD) );
-    if(_makeNuMItuple){
-            _mapWeight.insert( std::pair<std::string,std::vector<double> >("ppfx_all",_vecWeightsPPFXD) );
-    }
-
 
     _vecWeightFlux.assign(_vecWeightFluxD.size(), 1);
     for (size_t i=0; i < _vecWeightFluxD.size(); i++) {
@@ -440,22 +404,12 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         }
     }
 
-    if(_createDedicatedTree && _weightstree)
-        _weightstree->Fill();
 }
 
 void EventWeightAnalysis::analyseSlice(const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec, bool is_data, bool is_selected) {}
 
 void EventWeightAnalysis::setBranches(TTree *_tree){
     if(!_tree) return;
-
-    if(_createDedicatedTree && _weightstree){
-        _weightstree->Branch("weights", "std::map<std::string, std::vector<double>>", &_mapWeight);
-        _weightstree->Branch("run",&_run,"run/I");
-        _weightstree->Branch("subRun",&_subRun,"subRun/I");
-        _weightstree->Branch("evt",&_evt,"evt/I");
-    }
-    if(_createMapBranch) _tree->Branch("weights", "std::map<std::string, std::vector<double>>", &_mapWeight);
 
     if(_createSplineBranch) _tree->Branch("weightSpline",&_weightSpline,"weightSpline/F");
     if(_createTuneBranch) _tree->Branch("weightTune",&_weightTune,"weightTune/F");
@@ -498,8 +452,6 @@ void EventWeightAnalysis::setBranches(TTree *_tree){
 }
 
 void EventWeightAnalysis::resetTTree(TTree *_tree){
-    _mapWeight.clear();
-
     _weightSpline = -1.f;
     _weightTune = -1.f;
     _weightSplineTimesTune = -1.f;
@@ -527,10 +479,6 @@ void EventWeightAnalysis::resetTTree(TTree *_tree){
     _vecWeightsGenie_nam.clear();
     _vecWeightsGenieUp.clear();
     _vecWeightsGenieDn.clear();
-
-    _run = -1;
-    _subRun = -1;
-    _evt = -1;
 }
 
 DEFINE_ART_CLASS_TOOL(EventWeightAnalysis)

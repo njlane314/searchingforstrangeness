@@ -74,7 +74,7 @@ private:
     int _run;
     int _sub;
     int _evt;
-    int _selected;
+    bool _has_slice;
 
     TTree *_subrun_tree;
     int _run_sr;
@@ -138,7 +138,7 @@ EventSelectionFilter::EventSelectionFilter(fhicl::ParameterSet const &p)
     art::ServiceHandle<art::TFileService> tfs;
 
     _tree = tfs->make<TTree>("EventSelectionFilter", "Neutrino Selection TTree");
-    _tree->Branch("selected", &_selected, "selected/I");
+    _tree->Branch("has_slice", &_has_slice, "has_slice/O");
     _tree->Branch("run", &_run, "run/I");
     _tree->Branch("sub", &_sub, "sub/I");
     _tree->Branch("evt", &_evt, "evt/I");
@@ -217,7 +217,7 @@ bool EventSelectionFilter::filter(art::Event &e) {
             bool selected = _selectionTool->selectEvent(e, neutrino_slice);
             if (selected) {
                 keepEvent = true;
-                _selected++;
+                _has_slice = true;
             }
 
             for (size_t i = 0; i < _analysisToolsVec.size(); i++) {
@@ -259,7 +259,7 @@ void EventSelectionFilter::AddDaughters(const common::ProxyPfpElem_t &pfp_pxy, c
 }
 
 void EventSelectionFilter::ResetTTree() {
-    _selected = 0;
+    _has_slice = false;
     _run = -1;
     _sub = -1;
     _evt = -1;

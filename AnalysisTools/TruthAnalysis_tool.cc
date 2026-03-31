@@ -174,9 +174,6 @@ void TruthAnalysis::setBranches(TTree* _tree) {
     _tree->Branch("int_mode",            &_interaction_mode,      "int_mode/I");
     _tree->Branch("int_type",            &_interaction_type,      "int_type/I");
     _tree->Branch("nu_E",                &_neutrino_energy,       "nu_E/F");
-    _tree->Branch("ccnc",                &_interaction_ccnc,      "ccnc/I");
-    _tree->Branch("interaction_mode",    &_interaction_mode,      "interaction_mode/I");
-    _tree->Branch("interaction_type",    &_interaction_type,      "interaction_type/I");
     _tree->Branch("nu_v",                _neutrino_vertex,        "nu_v[3]/F");
     _tree->Branch("nu_dir",              _neutrino_direction,     "nu_dir[3]/F");
     _tree->Branch("is_nu_mu_cc",         &_is_nu_mu_cc,           "is_nu_mu_cc/O");

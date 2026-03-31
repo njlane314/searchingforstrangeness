@@ -15,7 +15,6 @@
 #include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 
 #include "AnalysisToolBase.h"
-#include "Common/BacktrackingUtilities.h"
 #include "Common/GeometryUtils.h"
 #include "Common/HitProximityClustering.h"
 #include "Common/PFParticleDescendants.h"
@@ -52,9 +51,7 @@ private:
     art::InputTag fMCTproducer;
     art::InputTag fMCPproducer;
     art::InputTag fMCFproducer;
-    art::InputTag fBKTproducer;
     art::InputTag fHITproducer;
-    art::InputTag fMCRproducer;
     art::InputTag fSLCproducer;
 
     float fTrkShrScore;
@@ -69,7 +66,6 @@ private:
     float fFidvolZend;
 
     bool fMakeNuMINtuple;
-    std::vector<float> _slice_topological_scores;
     float _reco_neutrino_vertex_x;
     float _reco_neutrino_vertex_y;
     float _reco_neutrino_vertex_z;
@@ -92,29 +88,6 @@ private:
     float _crt_hit_pe;
 
     std::vector<int> _pfp_slice_indices;
-    std::vector<int> _backtracked_pdg_codes;
-    std::vector<float> _backtracked_energies;
-    std::vector<int> _backtracked_track_ids;
-    std::vector<float> _backtracked_purities;
-    std::vector<float> _backtracked_completenesses;
-    std::vector<float> _backtracked_overlay_purities;
-    std::vector<float> _backtracked_momentum_x;
-    std::vector<float> _backtracked_momentum_y;
-    std::vector<float> _backtracked_momentum_z;
-    std::vector<float> _backtracked_start_x;
-    std::vector<float> _backtracked_start_y;
-    std::vector<float> _backtracked_start_z;
-    std::vector<float> _backtracked_start_time;
-    std::vector<float> _backtracked_start_wire_U;
-    std::vector<float> _backtracked_start_wire_V;
-    std::vector<float> _backtracked_start_wire_Y;
-    std::vector<float> _backtracked_sce_start_x;
-    std::vector<float> _backtracked_sce_start_y;
-    std::vector<float> _backtracked_sce_start_z;
-    std::vector<float> _backtracked_sce_start_wire_U;
-    std::vector<float> _backtracked_sce_start_wire_V;
-    std::vector<float> _backtracked_sce_start_wire_Y;
-
     int _selection_pass;
     int _event_total_hits;
     int _slice_pdg;
@@ -164,9 +137,7 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fMCTproducer = p.get<art::InputTag>("MCTproducer", "generator");
     fMCPproducer = p.get<art::InputTag>("MCPproducer", "largeant");
     fMCFproducer = p.get<art::InputTag>("MCFproducer", "generator");
-    fBKTproducer = p.get<art::InputTag>("BKTproducer", "gaushitTruthMatch");
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
-    fMCRproducer = p.get<art::InputTag>("MCRproducer", "mcreco");
     fSLCproducer = p.get<art::InputTag>("SLCproducer", "pandora");
 
     fTrkShrScore = p.get<float>("TrkShrScore", 0.5);
@@ -187,49 +158,6 @@ void DefaultAnalysis::configure(fhicl::ParameterSet const &p) {
 }
 
 void DefaultAnalysis::analyseEvent(const art::Event &event, bool is_data) {
-    common::ProxySliceColl_t const &pfp_proxy = proxy::getCollection<std::vector<recob::PFParticle>>(event, fPFPproducer,
-        proxy::withAssociated<larpandoraobj::PFParticleMetadata>(fPFPproducer),
-        proxy::withAssociated<recob::Slice>(fSLCproducer));
-    int pfp_slice_id;
-    int temp_pfp_slice_id;
-    int max_slice_id = 0;
-    for (const common::ProxySliceElem_t &pfp : pfp_proxy) {
-        auto temp_slice_pxy_v = pfp.get<recob::Slice>();
-        if (temp_slice_pxy_v.size() != 0) {
-            temp_pfp_slice_id = temp_slice_pxy_v.at(0)->ID();
-            if (temp_pfp_slice_id > max_slice_id) {
-                max_slice_id = temp_pfp_slice_id;
-            }
-        }
-    }
-
-    std::vector<float> temp_slice_topo_score_v(max_slice_id + 1);
-    fill(temp_slice_topo_score_v.begin(), temp_slice_topo_score_v.end(), std::numeric_limits<float>::quiet_NaN());
-    for (const common::ProxySliceElem_t &pfp : pfp_proxy) {
-        auto metadata_pxy_v = pfp.get<larpandoraobj::PFParticleMetadata>();
-        auto slice_pxy_v = pfp.get<recob::Slice>();
-        if (slice_pxy_v.size() != 0) {
-            pfp_slice_id = slice_pxy_v.at(0)->ID();
-            if (metadata_pxy_v.size() != 0) {
-                for (unsigned int j = 0; j < metadata_pxy_v.size(); ++j) {
-                    const art::Ptr<larpandoraobj::PFParticleMetadata> &pfParticleMetadata(metadata_pxy_v.at(j));
-                    auto pfParticlePropertiesMap = pfParticleMetadata->GetPropertiesMap();
-                    if (!pfParticlePropertiesMap.empty() && std::isnan(temp_slice_topo_score_v.at(pfp_slice_id))) {
-                        auto it = pfParticlePropertiesMap.begin();
-                        while (it != pfParticlePropertiesMap.end()) {
-                            if (it->first == "NuScore") {
-                                temp_slice_topo_score_v.at(pfp_slice_id) = pfParticlePropertiesMap.at(it->first);
-                            }
-                            it++;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    _slice_topological_scores = temp_slice_topo_score_v;
-
     if (!is_data && (!fMakeNuMINtuple)) {
         art::Handle<uboone::UbooneOpticalFilter> CommonOpticalFilter_h;
         art::InputTag fCommonOppFiltTag("opfiltercommon");
@@ -329,16 +257,6 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
     lar_pandora::PFParticleMap particleMap;
     larpandora.CollectPFParticles(event, "pandora", pfparticles);
     larpandora.BuildPFParticleMap(pfparticles, particleMap);
-
-    std::vector<common::BtPart> btparts_v;
-    std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> assocMCPart;
-    if (!is_data) {
-        const std::vector<sim::MCShower> &inputMCShower = *(event.getValidHandle<std::vector<sim::MCShower>>(fMCRproducer));
-        const std::vector<sim::MCTrack> &inputMCTrack = *(event.getValidHandle<std::vector<sim::MCTrack>>(fMCRproducer));
-        art::ValidHandle<std::vector<recob::Hit>> inputHits = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
-        assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>>(new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(inputHits, event, fBKTproducer));
-        btparts_v = common::initBacktrackingParticleVec(inputMCShower, inputMCTrack, *inputHits, assocMCPart);
-    }
 
     unsigned int contained_hits = 0;
     _hits_outfv = 0;
@@ -526,69 +444,6 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
             _hits_outfv += hit_v.size();
         }
 
-        if (!is_data) {
-            if (clus_pxy_v.size() != 0) {
-                float purity = 0., completeness = 0., overlay_purity = 0.;
-                int ibt = common::getAssocBtPart(hit_v, assocMCPart, btparts_v, purity, completeness, overlay_purity);
-                if (ibt >= 0) {
-                    auto &mcp = btparts_v[ibt];
-                    auto PDG = mcp.pdg;
-                    _backtracked_energies.push_back(mcp.e);
-                    _backtracked_track_ids.push_back(mcp.tids.at(0));
-                    _backtracked_pdg_codes.push_back(PDG);
-                    _backtracked_purities.push_back(purity);
-                    _backtracked_completenesses.push_back(completeness);
-                    _backtracked_overlay_purities.push_back(overlay_purity);
-                    _backtracked_momentum_x.push_back(mcp.px);
-                    _backtracked_momentum_y.push_back(mcp.py);
-                    _backtracked_momentum_z.push_back(mcp.pz);
-                    _backtracked_start_x.push_back(mcp.start_x);
-                    _backtracked_start_y.push_back(mcp.start_y);
-                    _backtracked_start_z.push_back(mcp.start_z);
-                    _backtracked_start_time.push_back(mcp.start_t);
-                    _backtracked_start_wire_U.push_back(common::YZtoPlanecoordinate(mcp.start_y, mcp.start_z, 0));
-                    _backtracked_start_wire_V.push_back(common::YZtoPlanecoordinate(mcp.start_y, mcp.start_z, 1));
-                    _backtracked_start_wire_Y.push_back(common::YZtoPlanecoordinate(mcp.start_y, mcp.start_z, 2));
-                    float reco_st[3] = {mcp.start_x, mcp.start_y, mcp.start_z};
-                    if (PDG == 11 || PDG == 22) {
-                        reco_st[0] += common::x_offset(mcp.start_t);
-                    }
-                    else {
-                        common::True2RecoMappingXYZ(mcp.start_t, mcp.start_x, mcp.start_y, mcp.start_z, reco_st);
-                    }
-                    _backtracked_sce_start_x.push_back(reco_st[0]);
-                    _backtracked_sce_start_y.push_back(reco_st[1]);
-                    _backtracked_sce_start_z.push_back(reco_st[2]);
-                    _backtracked_sce_start_wire_U.push_back(common::YZtoPlanecoordinate(reco_st[1], reco_st[2], 0));
-                    _backtracked_sce_start_wire_V.push_back(common::YZtoPlanecoordinate(reco_st[1], reco_st[2], 1));
-                    _backtracked_sce_start_wire_Y.push_back(common::YZtoPlanecoordinate(reco_st[1], reco_st[2], 2));
-                }
-                else {
-                    _backtracked_energies.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_track_ids.push_back(-1);
-                    _backtracked_pdg_codes.push_back(0);
-                    _backtracked_purities.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_completenesses.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_overlay_purities.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_momentum_x.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_momentum_y.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_momentum_z.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_time.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_wire_U.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_wire_V.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_start_wire_Y.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_x.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_y.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_z.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_wire_U.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_wire_V.push_back(std::numeric_limits<float>::quiet_NaN());
-                    _backtracked_sce_start_wire_Y.push_back(std::numeric_limits<float>::quiet_NaN());
-                }
-            }
-        }
     }
 
     if (contained_hits + _hits_outfv > 0) {
@@ -623,28 +478,6 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("crt_veto", &_crt_veto, "crt_veto/I");
     _tree->Branch("crt_hit_pe", &_crt_hit_pe, "crt_hit_pe/F");
     _tree->Branch("pfp_slice_indices", "std::vector<int>", &_pfp_slice_indices);
-    _tree->Branch("backtracked_pdg_codes", "std::vector<int>", &_backtracked_pdg_codes);
-    _tree->Branch("backtracked_energies", "std::vector<float>", &_backtracked_energies);
-    _tree->Branch("backtracked_track_ids", "std::vector<int>", &_backtracked_track_ids);
-    _tree->Branch("backtracked_purities", "std::vector<float>", &_backtracked_purities);
-    _tree->Branch("backtracked_completenesses", "std::vector<float>", &_backtracked_completenesses);
-    _tree->Branch("backtracked_overlay_purities", "std::vector<float>", &_backtracked_overlay_purities);
-    _tree->Branch("backtracked_momentum_x", "std::vector<float>", &_backtracked_momentum_x);
-    _tree->Branch("backtracked_momentum_y", "std::vector<float>", &_backtracked_momentum_y);
-    _tree->Branch("backtracked_momentum_z", "std::vector<float>", &_backtracked_momentum_z);
-    _tree->Branch("backtracked_start_x", "std::vector<float>", &_backtracked_start_x);
-    _tree->Branch("backtracked_start_y", "std::vector<float>", &_backtracked_start_y);
-    _tree->Branch("backtracked_start_z", "std::vector<float>", &_backtracked_start_z);
-    _tree->Branch("backtracked_start_time", "std::vector<float>", &_backtracked_start_time);
-    _tree->Branch("backtracked_start_wire_U", "std::vector<float>", &_backtracked_start_wire_U);
-    _tree->Branch("backtracked_start_wire_V", "std::vector<float>", &_backtracked_start_wire_V);
-    _tree->Branch("backtracked_start_wire_Y", "std::vector<float>", &_backtracked_start_wire_Y);
-    _tree->Branch("backtracked_sce_start_x", "std::vector<float>", &_backtracked_sce_start_x);
-    _tree->Branch("backtracked_sce_start_y", "std::vector<float>", &_backtracked_sce_start_y);
-    _tree->Branch("backtracked_sce_start_z", "std::vector<float>", &_backtracked_sce_start_z);
-    _tree->Branch("backtracked_sce_start_wire_U", "std::vector<float>", &_backtracked_sce_start_wire_U);
-    _tree->Branch("backtracked_sce_start_wire_V", "std::vector<float>", &_backtracked_sce_start_wire_V);
-    _tree->Branch("backtracked_sce_start_wire_Y", "std::vector<float>", &_backtracked_sce_start_wire_Y);
     _tree->Branch("selection_pass", &_selection_pass, "selection_pass/I");
     _tree->Branch("software_trigger", &_software_trigger, "software_trigger/I");
     if (fMakeNuMINtuple) {
@@ -687,7 +520,6 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("total_hits_Y", &_total_hits_Y, "total_hits_Y/i");
     _tree->Branch("contained_fraction", &_contained_fraction, "contained_fraction/F");
     _tree->Branch("slice_id", &_slice_id, "slice_id/i");
-    _tree->Branch("slice_topological_scores", "std::vector<float>", &_slice_topological_scores);
     _tree->Branch("topological_score", &_topological_score, "topological_score/F");
     _tree->Branch("slice_cluster_fraction", &_slice_cluster_fraction, "slice_cluster_fraction/F");
 }
@@ -721,34 +553,11 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _num_showers = 0;
 
     _track_shower_scores.clear();
-    _backtracked_energies.clear();
-    _backtracked_track_ids.clear();
-    _backtracked_pdg_codes.clear();
-    _backtracked_purities.clear();
-    _backtracked_completenesses.clear();
-    _backtracked_overlay_purities.clear();
-    _backtracked_momentum_x.clear();
-    _backtracked_momentum_y.clear();
-    _backtracked_momentum_z.clear();
-    _backtracked_start_x.clear();
-    _backtracked_start_y.clear();
-    _backtracked_start_z.clear();
-    _backtracked_start_time.clear();
-    _backtracked_start_wire_U.clear();
-    _backtracked_start_wire_V.clear();
-    _backtracked_start_wire_Y.clear();
-    _backtracked_sce_start_x.clear();
-    _backtracked_sce_start_y.clear();
-    _backtracked_sce_start_z.clear();
-    _backtracked_sce_start_wire_U.clear();
-    _backtracked_sce_start_wire_V.clear();
-    _backtracked_sce_start_wire_Y.clear();
 
     _event_total_hits = -1;
     _slice_pdg = 0;
     _slice_id = -1;
     _topological_score = std::numeric_limits<float>::quiet_NaN();
-    _slice_topological_scores.clear();
     _slice_num_hits = -1;
     _slice_num_clusters = 0;
     _slice_num_clusters_U = 0;
