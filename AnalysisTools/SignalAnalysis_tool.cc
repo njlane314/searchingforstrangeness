@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_LAMBDAANALYSIS_TOOL_CXX
-#define ANALYSIS_LAMBDAANALYSIS_TOOL_CXX
+#ifndef ANALYSIS_SIGNALANALYSIS_TOOL_CXX
+#define ANALYSIS_SIGNALANALYSIS_TOOL_CXX
 
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
@@ -31,12 +31,12 @@
 
 namespace analysis {
 
-class LambdaAnalysis_tool : public AnalysisToolBase {
+class SignalAnalysis_tool : public AnalysisToolBase {
   public:
-    explicit LambdaAnalysis_tool(fhicl::ParameterSet const &p) {
+    explicit SignalAnalysis_tool(fhicl::ParameterSet const &p) {
         this->configure(p);
     }
-    ~LambdaAnalysis_tool() override = default;
+    ~SignalAnalysis_tool() override = default;
 
     void configure(const fhicl::ParameterSet &pset) override;
     void setBranches(TTree *tree) override;
@@ -82,6 +82,7 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
 
         int n_fs_lambda0 = 0;
         int n_fs_sigma0 = 0;
+        int n_strange_fs = 0;
         int n_g4_lambda0 = 0;
         int n_g4_lambda0_to_ppi = 0;
         int n_g4_lambda0_from_sigma0 = 0;
@@ -261,7 +262,7 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
         const std::array<float, 3> &nu_v);
 };
 
-void LambdaAnalysis_tool::configure(const fhicl::ParameterSet &p) {
+void SignalAnalysis_tool::configure(const fhicl::ParameterSet &p) {
     fMCTproducer = p.get<art::InputTag>("MCTproducer");
     fMCPproducer = p.get<art::InputTag>("MCPproducer");
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
@@ -275,7 +276,7 @@ void LambdaAnalysis_tool::configure(const fhicl::ParameterSet &p) {
     fFidvolZend = p.get<double>("fidvolZend", 50.0);
 }
 
-void LambdaAnalysis_tool::setBranches(TTree *t) {
+void SignalAnalysis_tool::setBranches(TTree *t) {
     t->Branch("mu_truth_trackid", &_mu_truth_trackid, "mu_truth_trackid/I");
     t->Branch("mu_truth_pdg", &_mu_truth_pdg, "mu_truth_pdg/I");
     t->Branch("mu_p", &_mu_p, "mu_p/F");
@@ -304,6 +305,9 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
               "truth_n_fs_lambda0/I");
     t->Branch("truth_n_fs_sigma0", &_truth.n_fs_sigma0,
               "truth_n_fs_sigma0/I");
+    t->Branch("truth_n_strange_fs", &_truth.n_strange_fs,
+              "truth_n_strange_fs/I");
+    t->Branch("count_strange", &_truth.n_strange_fs, "count_strange/I");
     t->Branch("truth_n_g4_lambda0", &_truth.n_g4_lambda0, "truth_n_g4_lambda0/I");
     t->Branch("truth_n_g4_lambda0_to_ppi", &_truth.n_g4_lambda0_to_ppi,
               "truth_n_g4_lambda0_to_ppi/I");
@@ -401,7 +405,7 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("g4_all_lambda_pi_endz", &_g4_all_lambda.pi_endz);
 }
 
-void LambdaAnalysis_tool::resetTTree(TTree *) {
+void SignalAnalysis_tool::resetTTree(TTree *) {
     _mu_truth_trackid = -1;
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
@@ -414,7 +418,7 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _g4_all_lambda.clear();
 }
 
-LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
+SignalAnalysis_tool::DecayMatch SignalAnalysis_tool::MatchLambdaToPPi(
     const art::Ptr<simb::MCParticle> &lam,
     const std::map<int, art::Ptr<simb::MCParticle>> &mp) const {
     DecayMatch ret;
@@ -447,7 +451,7 @@ LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
     return ret;
 }
 
-LambdaAnalysis_tool::LambdaLineage LambdaAnalysis_tool::GetLambdaLineage(
+SignalAnalysis_tool::LambdaLineage SignalAnalysis_tool::GetLambdaLineage(
     const art::Ptr<simb::MCParticle> &lam,
     const std::map<int, art::Ptr<simb::MCParticle>> &mp) const {
     LambdaLineage out;
@@ -481,14 +485,14 @@ LambdaAnalysis_tool::LambdaLineage LambdaAnalysis_tool::GetLambdaLineage(
     return out;
 }
 
-bool LambdaAnalysis_tool::IsInFiducial(const float x, const float y,
+bool SignalAnalysis_tool::IsInFiducial(const float x, const float y,
                                        const float z) const {
     const double point[3] = {x, y, z};
     return common::isFiducial(point, fFidvolXstart, fFidvolYstart, fFidvolZstart,
                               fFidvolXend, fFidvolYend, fFidvolZend);
 }
 
-void LambdaAnalysis_tool::FindTruthMuon(
+void SignalAnalysis_tool::FindTruthMuon(
     const simb::MCTruth &mct,
     const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
     const TVector3 &nu_dir) {
@@ -549,7 +553,7 @@ void LambdaAnalysis_tool::FindTruthMuon(
     _mu_truth_trackid = best_match->TrackId();
 }
 
-void LambdaAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
+void SignalAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
     _truth.is_nc =
         mct.NeutrinoSet() && (mct.GetNeutrino().CCNC() == simb::kNC);
 
@@ -561,8 +565,10 @@ void LambdaAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
         const int apdg = std::abs(p.PdgCode());
         const float pmag = Mag3(p.Px(), p.Py(), p.Pz());
 
-        if (IsStrangeHadron(apdg))
+        if (IsStrangeHadron(apdg)) {
             _truth.has_strange_fs = true;
+            ++_truth.n_strange_fs;
+        }
 
         if (apdg == 3122) {
             _truth.has_fs_lambda0 = true;
@@ -584,7 +590,7 @@ void LambdaAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
     _truth.has_nc_strangeness = _truth.is_nc && _truth.has_strange_fs;
 }
 
-void LambdaAnalysis_tool::FillG4LambdaDecaySummary(
+void SignalAnalysis_tool::FillG4LambdaDecaySummary(
     const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
     const std::map<int, art::Ptr<simb::MCParticle>> &mp,
     const std::array<float, 3> &nu_v) {
@@ -737,7 +743,7 @@ void LambdaAnalysis_tool::FillG4LambdaDecaySummary(
     }
 }
 
-void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
+void SignalAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     this->resetTTree(nullptr);
     if (is_data)
         return;
@@ -776,7 +782,7 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     FillG4LambdaDecaySummary(mcp_h, mp, nu_v);
 }
 
-void LambdaAnalysis_tool::analyseSlice(
+void SignalAnalysis_tool::analyseSlice(
     const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
     bool is_data, bool is_selected) {
     if (is_data)
@@ -880,7 +886,7 @@ void LambdaAnalysis_tool::analyseSlice(
     _g4_lambda.pi_true_hits = std::move(candidate_pi_true_hits);
 }
 
-DEFINE_ART_CLASS_TOOL(LambdaAnalysis_tool)
+DEFINE_ART_CLASS_TOOL(SignalAnalysis_tool)
 
 } // namespace analysis
 

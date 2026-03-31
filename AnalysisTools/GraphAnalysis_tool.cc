@@ -765,13 +765,63 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
         this->write_nominal_output(plane_uid, nominal, have_plane_pv, pv_wire_cm, pv_drift_cm);
 
         if (fVerbose) {
+            const int large_hit_cut =
+                std::max(20, static_cast<int>(fNominalParams.min_component_hits));
+
             int n_prompt = 0;
             int n_detached = 0;
             int n_unresolved = 0;
+
+            int n_prompt_large = 0;
+            int n_detached_large = 0;
+            int n_unresolved_large = 0;
+
+            int largest_prompt_hits = 0;
+            int largest_detached_comp_hits = 0;
+
+            std::map<int, int> detached_activity_hits;
+            std::map<int, int> detached_activity_ncomp;
+
             for (const auto& comp : nominal.components) {
-                if (comp.label == cg::kPrompt) ++n_prompt;
-                else if (comp.label == cg::kDetached) ++n_detached;
-                else if (comp.label == cg::kUnresolved) ++n_unresolved;
+                const int nh = static_cast<int>(comp.hit_indices.size());
+                const bool large = (nh >= large_hit_cut);
+
+                if (comp.label == cg::kPrompt) {
+                    ++n_prompt;
+                    if (large) ++n_prompt_large;
+                    largest_prompt_hits = std::max(largest_prompt_hits, nh);
+                }
+                else if (comp.label == cg::kDetached) {
+                    ++n_detached;
+                    if (large) ++n_detached_large;
+                    largest_detached_comp_hits =
+                        std::max(largest_detached_comp_hits, nh);
+
+                    detached_activity_hits[comp.activity_id] += nh;
+                    detached_activity_ncomp[comp.activity_id] += 1;
+                }
+                else {
+                    ++n_unresolved;
+                    if (large) ++n_unresolved_large;
+                }
+            }
+
+            const int n_detached_activities =
+                static_cast<int>(detached_activity_hits.size());
+            int n_detached_activities_large = 0;
+            int largest_detached_activity_hits = 0;
+            int largest_detached_activity_ncomp = 0;
+
+            for (const auto& kv : detached_activity_hits) {
+                largest_detached_activity_hits =
+                    std::max(largest_detached_activity_hits, kv.second);
+                largest_detached_activity_ncomp =
+                    std::max(largest_detached_activity_ncomp,
+                             detached_activity_ncomp[kv.first]);
+
+                if (kv.second >= large_hit_cut) {
+                    ++n_detached_activities_large;
+                }
             }
 
             std::cout << "[GraphAnalysis] plane_uid=" << plane_uid
@@ -783,9 +833,18 @@ void GraphAnalysis::analyseSlice(const art::Event& event,
                       << " plane_pv=" << (have_plane_pv ? 1 : 0)
                       << " comps=" << nominal.components.size()
                       << " edges=" << nominal.edges.size()
-                      << " prompt=" << n_prompt
-                      << " detached=" << n_detached
-                      << " unresolved=" << n_unresolved
+                      << " raw(prompt/detached/unresolved)="
+                      << n_prompt << "/" << n_detached << "/" << n_unresolved
+                      << " large>=" << large_hit_cut
+                      << "(prompt/detached/unresolved)="
+                      << n_prompt_large << "/" << n_detached_large << "/" << n_unresolved_large
+                      << " detActs(total/large)="
+                      << n_detached_activities << "/" << n_detached_activities_large
+                      << " maxHits(prompt/detComp/detAct)="
+                      << largest_prompt_hits << "/"
+                      << largest_detached_comp_hits << "/"
+                      << largest_detached_activity_hits
+                      << " maxDetActComps=" << largest_detached_activity_ncomp
                       << std::endl;
         }
     }

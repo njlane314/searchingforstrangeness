@@ -36,8 +36,8 @@ DefaultAnalysis: {
     NuMISWTriggerProcName: "DataOverlayOptical"
 }
 
-LambdaAnalysis: {
-    tool_type: "LambdaAnalysis"
+SignalAnalysis: {
+    tool_type: "SignalAnalysis"
     MCTproducer: @local::standard_producers.MCTproducer
     MCPproducer: @local::standard_producers.MCPproducer
     CLSproducer: @local::standard_producers.CLSproducer
@@ -162,7 +162,7 @@ NeutrinoSelectionFilter: {
         default: @local::DefaultAnalysis
         weight: @local::EventWeightAnalysis
         image: @local::ImageAnalysis
-        lambda: @local::LambdaAnalysis
+        signal: @local::SignalAnalysis
         track: @local::TrackAnalysis
         truth: @local::TruthAnalysis
     }
