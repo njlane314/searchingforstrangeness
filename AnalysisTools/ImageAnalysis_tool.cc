@@ -32,8 +32,8 @@
 #include "Products/InferenceMetrics.h"
 #include "Products/InferencePredictions.h"
 #include "Products/SparsePlaneImage.h"
-#include "Support/PandoraUtilities.h"
-#include "Support/ProxyTypes.h"
+#include "Helpers/PandoraUtilities.h"
+#include "Helpers/ProxyTypes.h"
 #include "ImagePipeline/SemanticClassifier.h"
 
 #include <TDirectoryFile.h>
@@ -106,6 +106,7 @@ private:
     bool _is_vtx_in_full_image_w;
 
     std::vector<std::string> _inf_model;
+    std::vector<int> _inf_score_begin;
     std::vector<int> _inf_n_scores;
     std::vector<float> _inf_scores;
 
@@ -162,6 +163,7 @@ void ImageAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("is_vtx_in_full_image_w", &_is_vtx_in_full_image_w, "is_vtx_in_full_image_w/O");
 
     _tree->Branch("inf_model", &_inf_model);
+    _tree->Branch("inf_score_begin", &_inf_score_begin);
     _tree->Branch("inf_n_scores", &_inf_n_scores);
     _tree->Branch("inf_scores", &_inf_scores);
 
@@ -203,6 +205,7 @@ void ImageAnalysis::resetTTree(TTree *_tree) {
     _is_vtx_in_full_image_w = false;
 
     _inf_model.clear();
+    _inf_score_begin.clear();
     _inf_n_scores.clear();
     _inf_scores.clear();
 
@@ -328,6 +331,7 @@ void ImageAnalysis::analyseSlice(
         if (predH.isValid()) {
             for (auto const &mp : predH->per_model) {
                 _inf_model.push_back(mp.model);
+                _inf_score_begin.push_back(static_cast<int>(_inf_scores.size()));
                 _inf_n_scores.push_back(static_cast<int>(mp.scores.size()));
                 _inf_scores.insert(_inf_scores.end(), mp.scores.begin(), mp.scores.end());
             }

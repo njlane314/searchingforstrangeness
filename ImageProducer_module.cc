@@ -18,7 +18,7 @@
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/Wire.h"
 
-#include "Support/PandoraUtilities.h"
+#include "Helpers/PandoraUtilities.h"
 #include "ImagePipeline/Image.h"
 #include "ImagePipeline/ImageCentering.h"
 #include "ImagePipeline/ImageProduction.h"

@@ -5,7 +5,7 @@
     <!ENTITY user "nlane">
     <!ENTITY name "numi_fhc_run1_dev">
 
-    <!ENTITY initsrc "assets/scripts/initsrc.sh">
+    <!ENTITY initsrc "runtime/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">

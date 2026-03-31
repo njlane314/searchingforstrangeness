@@ -53,7 +53,7 @@ public:
                                const std::string &arch,
                                const std::string &weights_file,
                                const std::string &inference_wrapper,
-                               const std::string &assets_base_dir);
+                               const std::string &runtime_base_dir);
 };
 
 inline std::string joinPath(std::string a, const std::string &b) {
@@ -201,7 +201,7 @@ inline InferenceProduction::Result InferenceProduction::runInference(
     const std::string &absolute_scratch_dir,
     const std::string &arch, const std::string &weights_file,
     const std::string &inference_wrapper,
-    const std::string &assets_base_dir) {
+    const std::string &runtime_base_dir) {
     using std::string;
 
     if (detector_images.size() < 3) {
@@ -229,20 +229,21 @@ inline InferenceProduction::Result InferenceProduction::runInference(
 
     string container = "/cvmfs/uboone.opensciencegrid.org/containers/lantern_v2_me_06_03_prod";
 
-    std::string assets_dir = assets_base_dir;
-    if (assets_dir.empty()) {
+    std::string runtime_dir = runtime_base_dir;
+    if (runtime_dir.empty()) {
         auto pos = inference_wrapper.rfind("/scripts/");
-        assets_dir = (pos == std::string::npos) ? std::string{} : inference_wrapper.substr(0, pos);
+        runtime_dir =
+            (pos == std::string::npos) ? std::string{} : inference_wrapper.substr(0, pos);
     }
 
-    std::string abs_assets_dir = makeAbsolutePath(assets_dir);
+    std::string abs_runtime_dir = makeAbsolutePath(runtime_dir);
     std::string abs_inference_wrapper = makeAbsolutePath(inference_wrapper);
     std::string abs_weights_file = makeAbsolutePath(weights_file);
 
     std::vector<std::string> binds;
     std::set<std::string> bind_seen;
     appendUniqueBind(binds, bind_seen, absolute_scratch_dir);
-    appendUniqueBind(binds, bind_seen, abs_assets_dir);
+    appendUniqueBind(binds, bind_seen, abs_runtime_dir);
     appendUniqueBind(binds, bind_seen, parentDir(abs_inference_wrapper));
     appendUniqueBind(binds, bind_seen, parentDir(abs_weights_file));
 

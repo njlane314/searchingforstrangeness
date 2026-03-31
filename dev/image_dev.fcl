@@ -14,13 +14,16 @@ physics.producers.inferenceprod: {
   module_type: "InferenceProducer"
   PlanesTag: "imageprod:CroppedWindow"
   ScratchDir: ""
-  AssetsBaseDir: "assets"
-  DefaultWrapper: "scripts/inference_wrapper.sh"
+  RuntimeBaseDir: "runtime"
+  DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
+  ModelDefaults: {
+    Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+    WeightsDir: "models/mink_binary"
+  }
   Models: [
     {
       Label: "mink_binary"
-      Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
-      Weights: "models/checkpoint_step0010000.pt"
+      Checkpoint: "checkpoint_step0010000.pt"
     }
   ]
 }

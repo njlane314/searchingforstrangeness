@@ -8,7 +8,7 @@
 #include <set>
 #include <vector>
 
-#include "Support/PandoraUtilities.h"
+#include "Helpers/PandoraUtilities.h"
 #include "ImagePipeline/Image.h"
 #include "ImagePipeline/SemanticClassifier.h"
 

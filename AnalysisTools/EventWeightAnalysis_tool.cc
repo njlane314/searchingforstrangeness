@@ -6,7 +6,7 @@
 #include "larsim/EventWeight/Base/MCEventWeight.h"
 
 #include "AnalysisToolBase.h"
-#include "Support/ProxyTypes.h"
+#include "Helpers/ProxyTypes.h"
 
 #include <algorithm>
 #include <cassert>

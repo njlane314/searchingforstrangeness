@@ -30,7 +30,7 @@
 #include "TVector3.h"
 
 #include "AnalysisTools/AnalysisToolBase.h"
-#include "Support/ProxyTypes.h"
+#include "Helpers/ProxyTypes.h"
 #include "SelectionTools/SelectionToolBase.h"
 
 #include <map>

@@ -53,14 +53,15 @@ Repository layout
 
   * AnalysisTools/      analysis tool implementations
   * SelectionTools/     event-selection tool implementations
-  * Support/            shared utilities and helper classes
+  * Helpers/            shared utilities and helper classes
   * ImagePipeline/      image-production and inference support
   * Products/           art product definitions
   * job/                standard production FHiCL files
   * dev/                development and debugging FHiCL files
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
-  * assets/             model assets, bad-channel data, and runtime helpers
+  * runtime/            model checkpoints, detector data, and inference helpers
+  * assets/             compatibility symlink to runtime/
   * reference/          LLM-friendly plain-text reference copies of batch tools
 
 
@@ -99,7 +100,8 @@ work:
   * .build.sh
   * .tar.sh
 
-Several checked-in FHiCL files use relative paths under assets/.  In normal
+Several checked-in FHiCL files use relative paths under runtime/.  The legacy
+assets/ alias still points at the same bundle.  In normal
 use, run jobs from the repository top directory so those paths resolve
 correctly.
 

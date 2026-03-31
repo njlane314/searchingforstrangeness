@@ -9,12 +9,12 @@
 #include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
 
 #include "AnalysisToolBase.h"
-#include "Support/GeometryUtils.h"
-#include "Support/HitProximityClustering.h"
-#include "Support/PFParticleDescendants.h"
-#include "Support/PandoraUtilities.h"
-#include "Support/SpaceChargeCorrections.h"
-#include "Support/TrackShowerScore.h"
+#include "Helpers/GeometryUtils.h"
+#include "Helpers/HitProximityClustering.h"
+#include "Helpers/PFParticleDescendants.h"
+#include "Helpers/PandoraUtilities.h"
+#include "Helpers/SpaceChargeCorrections.h"
+#include "Helpers/TrackShowerScore.h"
 
 #include <algorithm>
 #include <cmath>

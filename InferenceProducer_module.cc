@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdlib>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -62,6 +63,17 @@ std::string resolve_scratch_dir(const std::string &configured) {
     return scratch;
 }
 
+template <typename T>
+T get_first_present(fhicl::ParameterSet const &pset,
+                    std::initializer_list<const char *> keys,
+                    T fallback) {
+    for (auto const *key : keys) {
+        if (pset.has_key(key))
+            return pset.get<T>(key);
+    }
+    return fallback;
+}
+
 const image::SparsePlaneImage *find_view(
     std::vector<image::SparsePlaneImage> const &planes, geo::View_t view) {
     for (auto const &plane : planes) {
@@ -79,8 +91,10 @@ class InferenceProducer : public art::EDProducer {
         std::string label;
         std::string arch;
         std::string weights;
+        std::string weights_dir;
+        std::string checkpoint;
         std::string wrapper;
-        std::string assets;
+        std::string runtime;
     };
 
     explicit InferenceProducer(fhicl::ParameterSet const &p);
@@ -88,39 +102,85 @@ class InferenceProducer : public art::EDProducer {
     void produce(art::Event &e) override;
 
   private:
-    static ModelConfig makeConfig(fhicl::ParameterSet const &p);
+    static ModelConfig makeConfig(fhicl::ParameterSet const &p,
+                                  ModelConfig defaults = {});
+    static std::string resolveWeightsPath(const std::string &runtime_dir,
+                                          ModelConfig const &cfg);
 
     art::InputTag planes_tag_;
     std::string scratch_dir_;
-    std::string assets_base_dir_;
+    std::string runtime_base_dir_;
     std::string default_wrapper_;
     std::vector<ModelConfig> models_;
 };
 
 InferenceProducer::ModelConfig
-InferenceProducer::makeConfig(fhicl::ParameterSet const &p) {
-    ModelConfig cfg;
-    cfg.label = p.get<std::string>("Label", "");
-    cfg.arch = p.get<std::string>("Arch");
-    cfg.weights = p.get<std::string>("Weights", "");
-    cfg.wrapper = p.get<std::string>("Wrapper", "");
-    cfg.assets = p.get<std::string>("Assets", "");
+InferenceProducer::makeConfig(fhicl::ParameterSet const &p,
+                              ModelConfig defaults) {
+    ModelConfig cfg = std::move(defaults);
+    bool const has_weights = p.has_key("Weights");
+    bool const has_weights_dir = p.has_key("WeightsDir");
+    bool const has_checkpoint = p.has_key("Checkpoint");
+    cfg.label = get_first_present<std::string>(p, {"Label"}, cfg.label);
+    cfg.arch = get_first_present<std::string>(p, {"Arch"}, cfg.arch);
+    cfg.weights = get_first_present<std::string>(p, {"Weights"}, cfg.weights);
+    cfg.weights_dir =
+        get_first_present<std::string>(p, {"WeightsDir"}, cfg.weights_dir);
+    cfg.checkpoint =
+        get_first_present<std::string>(p, {"Checkpoint"}, cfg.checkpoint);
+    cfg.wrapper = get_first_present<std::string>(p, {"Wrapper"}, cfg.wrapper);
+    cfg.runtime =
+        get_first_present<std::string>(p, {"Runtime", "Assets"}, cfg.runtime);
+
+    if (!has_weights && (has_weights_dir || has_checkpoint))
+        cfg.weights.clear();
+
     return cfg;
+}
+
+std::string InferenceProducer::resolveWeightsPath(
+    const std::string &runtime_dir, ModelConfig const &cfg) {
+    if (!cfg.weights.empty())
+        return resolve_under(runtime_dir, cfg.weights);
+
+    if (!cfg.checkpoint.empty()) {
+        return resolve_under(runtime_dir,
+                             join_path(cfg.weights_dir, cfg.checkpoint));
+    }
+
+    return {};
 }
 
 InferenceProducer::InferenceProducer(fhicl::ParameterSet const &p)
     : planes_tag_{p.get<std::string>("PlanesTag")},
       scratch_dir_{p.get<std::string>("ScratchDir", "")},
-      assets_base_dir_{p.get<std::string>("AssetsBaseDir", "")},
-      default_wrapper_{p.get<std::string>("DefaultWrapper",
-                                          "scripts/inference_wrapper.sh")} {
+      runtime_base_dir_{get_first_present<std::string>(
+          p, {"RuntimeBaseDir", "AssetsBaseDir"}, "")},
+      default_wrapper_{get_first_present<std::string>(
+          p, {"DefaultInferenceWrapper", "DefaultWrapper"},
+          "scripts/inference_wrapper.sh")} {
     produces<image::InferenceMetrics>();
     produces<image::InferencePredictions>();
+
+    ModelConfig defaults;
+    defaults.wrapper = default_wrapper_;
+    defaults.runtime = runtime_base_dir_;
+    if (p.has_key("ModelDefaults"))
+        defaults = makeConfig(p.get<fhicl::ParameterSet>("ModelDefaults"), defaults);
 
     auto modelSets = p.get<std::vector<fhicl::ParameterSet>>("Models", {});
     models_.reserve(modelSets.size());
     for (auto const &modelPs : modelSets) {
-        models_.push_back(makeConfig(modelPs));
+        auto cfg = makeConfig(modelPs, defaults);
+        if (cfg.arch.empty()) {
+            throw cet::exception("InferenceProduction")
+                << "Each model requires Arch or ModelDefaults.Arch";
+        }
+        if (cfg.weights.empty() && cfg.checkpoint.empty()) {
+            throw cet::exception("InferenceProduction")
+                << "Each model requires Weights or Checkpoint";
+        }
+        models_.push_back(std::move(cfg));
     }
 }
 
@@ -222,11 +282,12 @@ void InferenceProducer::produce(art::Event &e) {
     std::string absoluteScratch = resolve_scratch_dir(scratch_dir_);
 
     for (auto const &cfg : models_) {
-        std::string assets = cfg.assets.empty() ? assets_base_dir_ : cfg.assets;
+        std::string runtime =
+            cfg.runtime.empty() ? runtime_base_dir_ : cfg.runtime;
         std::string wrapper =
             cfg.wrapper.empty() ? default_wrapper_ : cfg.wrapper;
-        wrapper = resolve_under(assets, wrapper);
-        std::string weights = resolve_under(assets, cfg.weights);
+        wrapper = resolve_under(runtime, wrapper);
+        std::string weights = resolveWeightsPath(runtime, cfg);
 
         auto label_or_arch = cfg.label.empty() ? cfg.arch : cfg.label;
         std::string log_model = cfg.arch;
@@ -238,7 +299,7 @@ void InferenceProducer::produce(art::Event &e) {
 
         auto result = image::InferenceProduction::runInference(
             detector_images, absoluteScratch, cfg.arch, weights, wrapper,
-            assets);
+            runtime);
 
         image::ModelMetrics perf;
         perf.model = label_or_arch;

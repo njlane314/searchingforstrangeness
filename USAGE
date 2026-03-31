@@ -19,7 +19,7 @@ The examples below assume:
   * the MicroBooNE software environment is active;
   * your input files are art ROOT files from the expected reconstruction chain.
 
-Several checked-in FHiCL files use relative paths such as "assets" and
+Several checked-in FHiCL files use relative paths such as "runtime" and
 "scripts/inference_wrapper.sh".  Running from the repository top directory is
 the simplest way to make those paths resolve as expected.
 
@@ -133,9 +133,23 @@ Usage notes:
   * Use run_fullchain.fcl when starting from reconstructed input and you want
     the image, inference, and selection stages in one step.
 
-The inference jobs expect the checked-in model assets under assets/, including
-assets/models/checkpoint_step0010000.pt and the wrapper script reached through
-the AssetsBaseDir setting.
+The inference jobs expect the checked-in runtime bundle under runtime/,
+including runtime/models/mink_binary/checkpoint_step0010000.pt and the wrapper
+script reached through the RuntimeBaseDir setting.  The legacy AssetsBaseDir
+name and assets/ alias still work, but runtime/ is now the preferred layout.
+
+When you want to run the same network architecture with multiple checkpoints,
+put the shared settings in ModelDefaults and vary only the per-model labels and
+Checkpoint values:
+
+     ModelDefaults: {
+       Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+       WeightsDir: "models/mink_binary"
+     }
+     Models: [
+       { Label: "mink_binary_step0010000" Checkpoint: "checkpoint_step0010000.pt" }
+       { Label: "mink_binary_step0020000" Checkpoint: "checkpoint_step0020000.pt" }
+     ]
 
 
 4. Run over SAM definitions
@@ -331,7 +345,7 @@ campaign.  Common edits include:
 
   * switching between MC and data by choosing the right top-level FHiCL file;
   * changing TFileService output names;
-  * changing the inference model or wrapper path;
+  * changing the inference model family, checkpoint, or wrapper path;
   * adjusting XML entities to point at your own PNFS areas and SAM inputs.
 
 For development work, put ad hoc configurations under dev/ rather than editing
@@ -347,8 +361,8 @@ Check the following first:
     complete.  Re-run source .setup.sh or the equivalent manual setup.
   * If samweb is missing, set up sam_web_client or use the helper setup script.
   * If an inference job fails immediately, confirm that you are running from
-    the repository top directory and that assets/models/checkpoint_step0010000.pt
-    is present.
+    the repository top directory and that
+    runtime/models/mink_binary/checkpoint_step0010000.pt is present.
   * If a grid stage points to the wrong storage area, edit the entities in
     the XML file you are submitting before launching jobs.
 

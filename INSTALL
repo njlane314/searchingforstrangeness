@@ -122,10 +122,12 @@ If your checkout includes the local helper scripts, the setup is often done by:
 Installed files
 ---------------
 
-The build system installs headers, sources, FHiCL files, and assets into the
-MRB/LArSoft product area by way of the package `CMakeLists.txt` files.  The
-package is intended to be used from that development environment, not through a
-separate `make install` step in a generic system prefix.
+The build system installs headers, sources, FHiCL files, and the runtime
+bundle into the MRB/LArSoft product area by way of the package
+`CMakeLists.txt` files.  It installs that bundle under both `runtime/` and the
+legacy `assets/` alias.  The package is intended to be used from that
+development environment, not through a separate `make install` step in a
+generic system prefix.
 
 
 After installation

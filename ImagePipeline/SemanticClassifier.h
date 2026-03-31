@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "Support/PandoraUtilities.h"
+#include "Helpers/PandoraUtilities.h"
 #include "ImagePipeline/Image.h"
 
 #include "art/Framework/Principal/Event.h"

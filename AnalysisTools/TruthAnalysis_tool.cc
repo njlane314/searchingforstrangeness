@@ -17,10 +17,10 @@
 #include "nusimdata/SimulationBase/MCTruth.h"
 
 #include "AnalysisToolBase.h"
-#include "Support/BacktrackingUtilities.h"
-#include "Support/GeometryUtils.h"
-#include "Support/ParticleScattering.h"
-#include "Support/SpaceChargeCorrections.h"
+#include "Helpers/BacktrackingUtilities.h"
+#include "Helpers/GeometryUtils.h"
+#include "Helpers/ParticleScattering.h"
+#include "Helpers/SpaceChargeCorrections.h"
 
 #include "TLorentzVector.h"
 #include "TTree.h"
