@@ -1,6 +1,7 @@
 #ifndef DEFAULT_ANALYSIS_CXX
 #define DEFAULT_ANALYSIS_CXX
 
+#include "canvas/Persistency/Common/FindManyP.h"
 #include "canvas/Persistency/Common/TriggerResults.h"
 #include "lardataobj/RawData/TriggerData.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
@@ -12,7 +13,6 @@
 #include "Support/HitProximityClustering.h"
 #include "Support/PFParticleDescendants.h"
 #include "Support/PandoraUtilities.h"
-#include "Support/ParticleScattering.h"
 #include "Support/SpaceChargeCorrections.h"
 #include "Support/TrackShowerScore.h"
 
