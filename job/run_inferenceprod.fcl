@@ -45,7 +45,7 @@ physics: {
       Models: [
         {
           Label: "mink_binary"
-          Arch: "binary:device=cpu,seed=12345,thr=0.0"
+          Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
           Weights: "models/checkpoint_step0010000.pt"
         }
       ]

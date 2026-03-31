@@ -30,6 +30,7 @@ def parse_arch(s: str) -> Dict:
       embed_dim=128
       base=32
       blocks=2|2|2|2     (only if you want to override; usually inferred from weights)
+      in_ch=2|3|4
     """
     cfg = dict(
         seed=12345,
@@ -39,6 +40,7 @@ def parse_arch(s: str) -> Dict:
         embed_dim=None,
         base=None,
         blocks=None,
+        in_ch=3,
     )
     if not s:
         return cfg
@@ -66,6 +68,8 @@ def parse_arch(s: str) -> Dict:
             # blocks=2|2|2|2
             parts = [p for p in v.split("|") if p]
             cfg["blocks"] = tuple(int(p) for p in parts)
+        elif k in ("in_ch", "inch", "channels"):
+            cfg["in_ch"] = int(v)
     return cfg
 
 
@@ -200,6 +204,7 @@ def build_llr_model(
     weights_path: str,
     device: str,
     arch_cfg: Dict,
+    in_ch: int,
     plane_names: Tuple[str, ...] = ("u", "v", "w"),
 ) -> nn.Module:
     """
@@ -215,7 +220,7 @@ def build_llr_model(
                 "weights='random://' requires --arch to specify backbone and embed_dim "
                 "(e.g. --arch 'llr:backbone=base,embed_dim=128,thr=0.1,device=cpu')"
             )
-        backbone = make_backbone(arch_cfg["backbone"], in_ch=2, embed_dim=int(arch_cfg["embed_dim"]))
+        backbone = make_backbone(arch_cfg["backbone"], in_ch=int(in_ch), embed_dim=int(arch_cfg["embed_dim"]))
         model = MultiViewSetClassifier(backbone=backbone, embed_dim=int(arch_cfg["embed_dim"]), plane_names=plane_names)
         model.to(device)
         model.eval()
@@ -225,7 +230,7 @@ def build_llr_model(
     sd = _strip_module_prefix(_extract_state_dict(raw))
 
     if arch_cfg.get("backbone") is not None and arch_cfg.get("embed_dim") is not None:
-        backbone = make_backbone(arch_cfg["backbone"], in_ch=2, embed_dim=int(arch_cfg["embed_dim"]))
+        backbone = make_backbone(arch_cfg["backbone"], in_ch=int(in_ch), embed_dim=int(arch_cfg["embed_dim"]))
         model = MultiViewSetClassifier(backbone=backbone, embed_dim=int(arch_cfg["embed_dim"]), plane_names=plane_names)
     else:
         base, blocks, embed_dim, num_views = infer_hparams_from_state_dict(sd)
@@ -240,7 +245,7 @@ def build_llr_model(
         if arch_cfg.get("embed_dim") is not None:
             embed_dim = int(arch_cfg["embed_dim"])
 
-        backbone = SparseResNet2D(in_ch=2, base=int(base), blocks=tuple(blocks), embed_dim=int(embed_dim))
+        backbone = SparseResNet2D(in_ch=int(in_ch), base=int(base), blocks=tuple(blocks), embed_dim=int(embed_dim))
         model = MultiViewSetClassifier(backbone=backbone, embed_dim=int(embed_dim), plane_names=plane_names)
 
     model.load_state_dict(sd, strict=True)
@@ -254,6 +259,7 @@ def plane_sparse_to_sparse2d(
     features_flat: np.ndarray,
     *,
     feature_dim: int,
+    out_feature_dim: int,
     H: int,
     W: int,
     thr: float,
@@ -262,15 +268,20 @@ def plane_sparse_to_sparse2d(
 ) -> Tuple[ME.SparseTensor, float, int]:
     """
     Training-consistent sparsification:
-      idx = sparse adc > thr
+      idx = sparse adc > thr or dead flag > 0
       coords: [batch, y, x]
-      feats : [occ=1, logq=log1p(max(adc,0))]
+      feats :
+        out_feature_dim == 2 -> [occ=1, logq]
+        out_feature_dim == 3 -> [logq, nu_slice, dead]
+        out_feature_dim == 4 -> [occ=1, logq, nu_slice, dead]
     Returns: (SparseTensor, available_flag, nnz)
     """
     coords = np.asarray(coords_flat, dtype=np.int32).reshape(-1)
     features = np.asarray(features_flat, dtype=np.float32).reshape(-1)
     if feature_dim <= 0:
         raise RuntimeError(f"Invalid feature_dim={feature_dim}")
+    if out_feature_dim not in (2, 3, 4):
+        raise RuntimeError(f"Unsupported output feature_dim={out_feature_dim}; expected one of 2, 3, 4")
     if coords.size % 2 != 0:
         raise RuntimeError("Sparse coords payload must contain row/col pairs")
     nnz_total = coords.size // 2
@@ -280,15 +291,19 @@ def plane_sparse_to_sparse2d(
     coords = coords.reshape(-1, 2)
     features = features.reshape(-1, feature_dim)
     adc = features[:, 0]
+    nu_slice = features[:, 1] if feature_dim > 1 else np.zeros_like(adc, dtype=np.float32)
+    dead = features[:, 2] if feature_dim > 2 else np.zeros_like(adc, dtype=np.float32)
 
-    keep = adc > thr
+    keep = np.logical_or(adc > thr, dead > 0.0)
     coords = coords[keep]
     adc = adc[keep]
+    nu_slice = nu_slice[keep]
+    dead = dead[keep]
     nnz = int(coords.shape[0])
 
     if nnz == 0:
         coords = np.array([[batch_idx, 0, 0]], dtype=np.int32)
-        feats = np.zeros((1, 2), dtype=np.float32)
+        feats = np.zeros((1, out_feature_dim), dtype=np.float32)
         available = 0.0
     else:
         y = coords[:, 0].astype(np.int32, copy=False)
@@ -303,9 +318,19 @@ def plane_sparse_to_sparse2d(
         np.maximum(adc, 0.0, out=adc)
         np.log1p(adc, out=adc)
 
-        feats = np.empty((nnz, 2), dtype=np.float32)
-        feats[:, 0] = 1.0
-        feats[:, 1] = adc
+        feats = np.zeros((nnz, out_feature_dim), dtype=np.float32)
+        if out_feature_dim == 2:
+            feats[:, 0] = 1.0
+            feats[:, 1] = adc
+        elif out_feature_dim == 3:
+            feats[:, 0] = adc
+            feats[:, 1] = nu_slice.astype(np.float32, copy=False)
+            feats[:, 2] = dead.astype(np.float32, copy=False)
+        else:
+            feats[:, 0] = 1.0
+            feats[:, 1] = adc
+            feats[:, 2] = nu_slice.astype(np.float32, copy=False)
+            feats[:, 3] = dead.astype(np.float32, copy=False)
 
         available = 1.0
 
@@ -345,8 +370,20 @@ def main() -> int:
 
     C, H, W = 3, int(args.H), int(args.W)
     feature_dim, sparse_planes = read_sparse_planes(args.in_path, C, H, W)
+    model_in_ch = int(cfg.get("in_ch", 3))
+    if feature_dim != model_in_ch:
+        raise RuntimeError(
+            f"Sparse payload feature_dim={feature_dim} does not match model in_ch={model_in_ch}. "
+            "Use weights trained for the canonical sparse feature schema."
+        )
 
-    model = build_llr_model(weights_path=args.weights, device=device, arch_cfg=cfg, plane_names=("u", "v", "w"))
+    model = build_llr_model(
+        weights_path=args.weights,
+        device=device,
+        arch_cfg=cfg,
+        in_ch=model_in_ch,
+        plane_names=("u", "v", "w"),
+    )
 
     thr = float(cfg["thr"])
 
@@ -358,6 +395,7 @@ def main() -> int:
             sparse_planes[v][0],
             sparse_planes[v][1],
             feature_dim=feature_dim,
+            out_feature_dim=model_in_ch,
             H=H,
             W=W,
             thr=thr,
@@ -371,7 +409,8 @@ def main() -> int:
     t_setup = time.time()
 
     print(
-        f"[infer_bin] device={device} thr={thr} nnz(u,v,w)={tuple(nnz)} avail={tuple(int(x) for x in avail)}",
+        f"[infer_bin] device={device} thr={thr} sparse_feature_dim={feature_dim} "
+        f"model_in_ch={model_in_ch} nnz(u,v,w)={tuple(nnz)} avail={tuple(int(x) for x in avail)}",
         flush=True,
     )
 

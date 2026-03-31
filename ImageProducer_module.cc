@@ -119,6 +119,8 @@ class ImageProducer : public art::EDProducer {
     double fPitchU{0.0};
     double fPitchV{0.0};
     double fPitchW{0.0};
+    double fActiveMinDrift{0.0};
+    double fActiveMaxDrift{0.0};
     std::vector<ImageProperties> fFullWindowProps;
 
     void loadBadChannels(const std::string &filename);
@@ -128,6 +130,7 @@ class ImageProducer : public art::EDProducer {
     TVector3 computeImageCenter(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
                                 std::optional<TVector3> const &vertex, bool &center_defaulted) const;
     std::vector<ImageProperties> computeFullWindowProperties() const;
+    std::vector<Image<uint8_t>> buildDeadChannelMasks(std::vector<ImageProperties> const &properties) const;
 };
 
 ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
@@ -158,6 +161,9 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset) {
     fPitchU = fGeo->WirePitch(geo::kU);
     fPitchV = fGeo->WirePitch(geo::kV);
     fPitchW = fGeo->WirePitch(geo::kW);
+    auto const &bounds = fGeo->TPC().ActiveBoundingBox();
+    fActiveMinDrift = bounds.MinX();
+    fActiveMaxDrift = bounds.MaxX();
     fFullWindowProps = computeFullWindowProperties();
 
     fSemantic = std::make_unique<image::SemanticClassifier>(fMCPproducer);
@@ -369,6 +375,63 @@ std::vector<ImageProperties> ImageProducer::computeFullWindowProperties() const 
     return props;
 }
 
+std::vector<Image<uint8_t>>
+ImageProducer::buildDeadChannelMasks(std::vector<ImageProperties> const &properties) const {
+    std::vector<Image<uint8_t>> masks;
+    masks.reserve(properties.size());
+    for (auto const &p : properties) {
+        Image<uint8_t> mask(p);
+        mask.clear(0);
+        masks.push_back(std::move(mask));
+    }
+
+    if (fBadChannels.empty())
+        return masks;
+
+    auto const property_index_for_view = [&](geo::View_t view) -> std::optional<std::size_t> {
+        for (std::size_t i = 0; i < properties.size(); ++i) {
+            if (properties[i].view() == view)
+                return i;
+        }
+        return std::nullopt;
+    };
+
+    for (unsigned int channel : fBadChannels) {
+        std::vector<geo::WireID> wire_ids;
+        try {
+            wire_ids = fGeo->ChannelToWire(channel);
+        } catch (cet::exception const &ex) {
+            mf::LogDebug("ImageProducer") << "Skipping bad channel " << channel
+                                          << " because ChannelToWire failed: " << ex;
+            continue;
+        }
+
+        for (auto const &wid : wire_ids) {
+            auto const view = fGeo->View(wid);
+            auto const prop_idx = property_index_for_view(view);
+            if (!prop_idx)
+                continue;
+
+            auto const &prop = properties[*prop_idx];
+            auto const pandora_view = pandoraViewFor(view);
+            TVector3 const center = fGeo->WireIDToWireGeo(wid).GetCenter();
+            TVector3 const proj = common::ProjectToWireView(center.X(), center.Y(), center.Z(), pandora_view);
+            auto const col = prop.col(proj.Z());
+            if (!col)
+                continue;
+
+            for (std::size_t row = 0; row < prop.height(); ++row) {
+                double const drift = prop.origin_y() + (static_cast<double>(row) + 0.5) * prop.pixel_h();
+                if (drift < fActiveMinDrift || drift >= fActiveMaxDrift)
+                    continue;
+                masks[*prop_idx].set(row, *col, static_cast<uint8_t>(1), false);
+            }
+        }
+    }
+
+    return masks;
+}
+
 void ImageProducer::produce(art::Event &event) {
     mf::LogDebug("ImageProducer") << "Starting image production for event " << event.id();
 
@@ -397,7 +460,8 @@ void ImageProducer::produce(art::Event &event) {
     opts.semantic = fIsData ? nullptr : fSemantic.get();
 
     mf::LogDebug("ImageProducer") << "IsData=" << std::boolalpha << fIsData << ", semantic images "
-                                  << (fIsData ? "DISABLED" : "ENABLED");
+                                  << (fIsData ? "DISABLED" : "ENABLED")
+                                  << ", sparse features = [adc, nu-slice, dead]";
 
     image::ImageProduction builder(*fGeo, opts);
 
@@ -434,7 +498,8 @@ void ImageProducer::produce(art::Event &event) {
     };
 
     auto pack_plane = [&](Image<float> const &det, Image<int> const &sem, Image<uint8_t> const &slice,
-                          ImageProperties const &p, bool include_sem, uint32_t hit_count) {
+                          Image<uint8_t> const &dead, ImageProperties const &p, bool include_sem,
+                          uint32_t hit_count) {
         SparsePlaneImage out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
@@ -447,15 +512,18 @@ void ImageProducer::produce(art::Event &event) {
         auto [vertex_row, vertex_col] = vertex_pixel(p);
         out.vertex_row = vertex_row;
         out.vertex_col = vertex_col;
-        out.feature_dim = 2;
+        out.feature_dim = 3;
         auto const &det_pixels = det.data();
         auto const &sem_pixels = sem.data();
         auto const &slice_pixels = slice.data();
+        auto const &dead_pixels = dead.data();
         auto const width = p.width();
 
-        auto const n_active = static_cast<std::size_t>(
-            std::count_if(det_pixels.begin(), det_pixels.end(),
-                          [](float a) { return a > 0.f; }));
+        std::size_t n_active = 0;
+        for (std::size_t idx = 0; idx < det_pixels.size(); ++idx) {
+            if (det_pixels[idx] > 0.f || dead_pixels[idx] != 0)
+                ++n_active;
+        }
 
         out.coords.reserve(n_active * 2);
         out.features.reserve(n_active * out.feature_dim);
@@ -464,7 +532,8 @@ void ImageProducer::produce(art::Event &event) {
 
         for (std::size_t idx = 0; idx < det_pixels.size(); ++idx) {
             float const a = det_pixels[idx];
-            if (a <= 0.f)
+            float const d = static_cast<float>(dead_pixels[idx]);
+            if (a <= 0.f && d <= 0.f)
                 continue;
 
             auto const row = static_cast<int32_t>(idx / width);
@@ -474,6 +543,7 @@ void ImageProducer::produce(art::Event &event) {
             out.coords.push_back(col);
             out.features.push_back(a);
             out.features.push_back(static_cast<float>(slice_pixels[idx]));
+            out.features.push_back(d);
             if (include_sem)
                 out.semantic.push_back(static_cast<uint8_t>(sem_pixels[idx]));
         }
@@ -482,11 +552,12 @@ void ImageProducer::produce(art::Event &event) {
 
     auto append_planes = [&](std::vector<SparsePlaneImage> &out, std::vector<Image<float>> const &det_images,
                              std::vector<Image<int>> const &sem_images, std::vector<Image<uint8_t>> const &slice_images,
+                             std::vector<Image<uint8_t>> const &dead_images,
                              std::vector<ImageProperties> const &properties) {
         out.reserve(3);
         for (std::size_t i = 0; i < 3 && i < det_images.size(); ++i) {
-            out.emplace_back(pack_plane(det_images[i], sem_images[i], slice_images[i], properties[i], !fIsData,
-                                        hit_counts[i]));
+            out.emplace_back(pack_plane(det_images[i], sem_images[i], slice_images[i], dead_images[i], properties[i],
+                                        !fIsData, hit_counts[i]));
         }
     };
 
@@ -512,6 +583,7 @@ void ImageProducer::produce(art::Event &event) {
         slice_props.emplace_back(cU.Z(), cU.X(), fImgW, fImgH, fDriftStep, fPitchU, geo::kU);
         slice_props.emplace_back(cV.Z(), cV.X(), fImgW, fImgH, fDriftStep, fPitchV, geo::kV);
         slice_props.emplace_back(cW.Z(), cW.X(), fImgW, fImgH, fDriftStep, fPitchW, geo::kW);
+        auto dead_slice = buildDeadChannelMasks(slice_props);
 
         std::vector<Image<float>> det_slice;
         std::vector<Image<int>> sem_slice;
@@ -526,12 +598,13 @@ void ImageProducer::produce(art::Event &event) {
                                           << slice_props[i].width() << "x" << slice_props[i].height();
         }
 
-        append_planes(*out_slice, det_slice, sem_slice, slice_mask, slice_props);
+        append_planes(*out_slice, det_slice, sem_slice, slice_mask, dead_slice, slice_props);
     }
 
     std::vector<Image<float>> det_full;
     std::vector<Image<int>> sem_full;
     std::vector<Image<uint8_t>> full_slice_mask;
+    auto dead_full = buildDeadChannelMasks(fFullWindowProps);
     builder.build(event, event_hits, neutrino_hits, fFullWindowProps, det_full, sem_full, full_slice_mask, fDetp);
 
     mf::LogDebug("ImageProducer") << "Built FullWindow images: det=" << det_full.size()
@@ -543,7 +616,7 @@ void ImageProducer::produce(art::Event &event) {
                                       << fFullWindowProps[i].height();
     }
 
-    append_planes(*out_full, det_full, sem_full, full_slice_mask, fFullWindowProps);
+    append_planes(*out_full, det_full, sem_full, full_slice_mask, dead_full, fFullWindowProps);
 
     auto const n_slice = out_slice->size();
     auto const n_full = out_full->size();
