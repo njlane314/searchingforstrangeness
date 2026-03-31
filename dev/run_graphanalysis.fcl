@@ -1,0 +1,18 @@
+#include "run_nuselection.fcl"
+
+process_name: GraphAnalysisDev
+
+services.TFileService.fileName: "graphanalysis_dev.root"
+
+GraphAnalysisDebug: {
+  @table::GraphAnalysis
+  OnlySelectedSlices: false
+  SaveAllComponentGraphEdges: true
+}
+
+physics.filters.nuselection.filter: false
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.OpFilterProcName: ""
+physics.filters.nuselection.AnalysisTools: {
+  graph: @local::GraphAnalysisDebug
+}

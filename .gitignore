@@ -38,3 +38,5 @@
 *.err
 *.out
 *.tbz2
+__pycache__/
+*.pyc
