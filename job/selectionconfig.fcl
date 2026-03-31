@@ -43,6 +43,13 @@ LambdaAnalysis: {
     CLSproducer: @local::standard_producers.CLSproducer
     HITproducer: @local::standard_producers.HITproducer
     BKTproducer: @local::standard_producers.BKTproducer
+
+    fidvolXstart: @local::FidVol.Xstart
+    fidvolXend:   @local::FidVol.Xend
+    fidvolYstart: @local::FidVol.Ystart
+    fidvolYend:   @local::FidVol.Yend
+    fidvolZstart: @local::FidVol.Zstart
+    fidvolZend:   @local::FidVol.Zend
 }
 
 

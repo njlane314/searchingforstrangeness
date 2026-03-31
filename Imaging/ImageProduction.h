@@ -5,6 +5,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <set>
 #include <vector>
 
 #include "Common/PandoraUtilities.h"
@@ -46,11 +47,14 @@ class ImageProduction {
   public:
     ImageProduction(geo::GeometryCore const &geo, PixelImageOptions const &opts) : geo_{&geo}, opts_{opts} {}
 
-    void build(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits, const std::vector<ImageProperties> &properties,
+    void build(const art::Event &event, const std::vector<art::Ptr<recob::Hit>> &hits,
+               const std::vector<art::Ptr<recob::Hit>> &slice_hits, const std::vector<ImageProperties> &properties,
                std::vector<Image<float>> &detector_images, std::vector<Image<int>> &semantic_images,
+               std::vector<Image<uint8_t>> &slice_images,
                detinfo::DetectorProperties const *detprop) const {
         detector_images.clear();
         semantic_images.clear();
+        slice_images.clear();
 
         for (auto const &p : properties) {
             Image<float> det(p);
@@ -60,6 +64,10 @@ class ImageProduction {
             Image<int> sem(p);
             sem.clear(static_cast<int>(image::SemanticClassifier::SemanticLabel::Empty));
             semantic_images.push_back(std::move(sem));
+
+            Image<uint8_t> slice(p);
+            slice.clear(0);
+            slice_images.push_back(std::move(slice));
         }
 
         auto wires = event.getValidHandle<std::vector<recob::Wire>>(opts_.producers.wire);
@@ -85,8 +93,15 @@ class ImageProduction {
         for (auto const &ph : hits)
             hit_to_key.emplace(ph, static_cast<std::size_t>(ph.key()));
 
-        BuildContext ctx{properties,   detector_images, semantic_images, wire_hit_assoc, hit_to_key,    mcp_bkth_assoc, mcps,
-                         trkid_to_idx, sem_labels,      has_mcps,        geo_,           kAdcThreshold, detprop};
+        std::set<std::size_t> slice_hit_keys;
+        for (auto const &ph : slice_hits) {
+            if (ph)
+                slice_hit_keys.insert(static_cast<std::size_t>(ph.key()));
+        }
+
+        BuildContext ctx{properties,   detector_images, semantic_images, slice_images, wire_hit_assoc, hit_to_key,
+                         slice_hit_keys, mcp_bkth_assoc, mcps, trkid_to_idx, sem_labels, has_mcps, geo_,
+                         kAdcThreshold, detprop};
 
         if (!ctx.detprop) {
             throw cet::exception("ImageProduction") << "ImageProduction::build called with null DetectorProperties pointer.";
@@ -104,9 +119,11 @@ class ImageProduction {
         const std::vector<ImageProperties> &properties;
         std::vector<Image<float>> &detector_images;
         std::vector<Image<int>> &semantic_images;
+        std::vector<Image<uint8_t>> &slice_images;
 
         const art::FindManyP<recob::Hit> &wire_hit_assoc;
         const std::map<art::Ptr<recob::Hit>, std::size_t> &hit_to_key;
+        const std::set<std::size_t> &slice_hit_keys;
 
         const art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData> &mcp_bkth_assoc;
         const art::Handle<std::vector<simb::MCParticle>> &mcp_vector;
@@ -265,6 +282,7 @@ class ImageProduction {
 
         auto const nticks = static_cast<std::size_t>(max_tick - min_tick);
         std::vector<unsigned char> tick_active(nticks, 0);
+        std::vector<unsigned char> tick_in_slice(nticks, 0);
 
         int const empty_label =
             static_cast<int>(image::SemanticClassifier::SemanticLabel::Empty);
@@ -276,6 +294,8 @@ class ImageProduction {
 
         for (auto const &ph : w.hits_filtered) {
             const recob::Hit &hit = *ph;
+            bool const hit_in_slice =
+                ctx.slice_hit_keys.count(static_cast<std::size_t>(ph.key())) > 0;
 
             image::SemanticClassifier::SemanticLabel sem = image::SemanticClassifier::SemanticLabel::Cosmic;
             if (ctx.has_mcps) {
@@ -294,6 +314,8 @@ class ImageProduction {
             for (int t = tick_start; t < tick_end; ++t) {
                 auto const ti = static_cast<std::size_t>(t - min_tick);
                 tick_active[ti] = 1;
+                if (hit_in_slice)
+                    tick_in_slice[ti] = 1;
                 if (ctx.has_mcps) {
                     int &slot = tick_semantic[ti];
                     int const next = static_cast<int>(sem);
@@ -329,6 +351,8 @@ class ImageProduction {
                     continue;
 
                 ctx.detector_images[w.view_idx].set(*row, *col, a, true);
+                if (tick_in_slice[ti])
+                    ctx.slice_images[w.view_idx].set(*row, *col, static_cast<uint8_t>(1), false);
                 if (ctx.has_mcps && tick_semantic[ti] != empty_label) {
                     mergeSemanticPixel(
                         ctx.semantic_images[w.view_idx], *row, *col,

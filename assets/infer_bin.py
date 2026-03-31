@@ -69,12 +69,48 @@ def parse_arch(s: str) -> Dict:
     return cfg
 
 
-def read_chw_f32(path: str, C: int, H: int, W: int) -> np.ndarray:
-    arr = np.fromfile(path, dtype=np.float32)
-    exp = C * H * W
-    if arr.size != exp:
-        raise RuntimeError(f"Expected {exp} floats in {path}, got {arr.size}")
-    return arr.reshape(C, H, W)
+def read_sparse_planes(path: str, C: int, H: int, W: int) -> Tuple[int, Tuple[Tuple[np.ndarray, np.ndarray], ...]]:
+    with open(path, "rb") as f:
+        header = f.read(24)
+        if len(header) != 24:
+            raise RuntimeError(f"Incomplete sparse request header in {path}")
+
+        magic, version, nplanes, file_h, file_w, feature_dim = struct.unpack("<4sIIIII", header)
+        if magic != b"IASP" or version != 2:
+            raise RuntimeError(f"Bad sparse request header in {path}")
+        if nplanes != C:
+            raise RuntimeError(f"Expected {C} planes in {path}, got {nplanes}")
+        if file_h != H or file_w != W:
+            raise RuntimeError(
+                f"Request dimensions ({file_h}, {file_w}) do not match CLI args ({H}, {W})"
+            )
+        if feature_dim <= 0:
+            raise RuntimeError(f"Invalid sparse feature dimension {feature_dim} in {path}")
+
+        planes = []
+        for plane_id in range(C):
+            plane_header = f.read(8)
+            if len(plane_header) != 8:
+                raise RuntimeError(f"Incomplete plane header {plane_id} in {path}")
+            (nnz,) = struct.unpack("<Q", plane_header)
+
+            coords = np.fromfile(f, dtype=np.int32, count=2 * nnz)
+            feats = np.fromfile(f, dtype=np.float32, count=feature_dim * nnz)
+            if coords.size != 2 * nnz or feats.size != feature_dim * nnz:
+                raise RuntimeError(f"Short read for plane {plane_id} in {path}")
+            if coords.size:
+                coords2 = coords.reshape(-1, 2)
+                if np.any(coords2[:, 0] < 0) or np.any(coords2[:, 0] >= H):
+                    raise RuntimeError(f"Plane {plane_id} contains out-of-range sparse rows")
+                if np.any(coords2[:, 1] < 0) or np.any(coords2[:, 1] >= W):
+                    raise RuntimeError(f"Plane {plane_id} contains out-of-range sparse cols")
+
+            planes.append((coords, feats))
+
+        if f.read(1):
+            raise RuntimeError(f"Unexpected trailing data in sparse request {path}")
+
+    return feature_dim, tuple(planes)
 
 
 def write_results_bin(path: str, cls_f32: np.ndarray) -> None:
@@ -213,9 +249,11 @@ def build_llr_model(
     return model
 
 
-def plane_dense_to_sparse2d(
-    plane_hw: np.ndarray,
+def plane_sparse_to_sparse2d(
+    coords_flat: np.ndarray,
+    features_flat: np.ndarray,
     *,
+    feature_dim: int,
     H: int,
     W: int,
     thr: float,
@@ -224,38 +262,50 @@ def plane_dense_to_sparse2d(
 ) -> Tuple[ME.SparseTensor, float, int]:
     """
     Training-consistent sparsification:
-      idx = plane > thr
+      idx = sparse adc > thr
       coords: [batch, y, x]
       feats : [occ=1, logq=log1p(max(adc,0))]
     Returns: (SparseTensor, available_flag, nnz)
     """
-    flat = np.asarray(plane_hw, dtype=np.float32).reshape(-1)
-    if flat.size != H * W:
-        raise RuntimeError(f"Plane size {flat.size} != H*W ({H}*{W})")
+    coords = np.asarray(coords_flat, dtype=np.int32).reshape(-1)
+    features = np.asarray(features_flat, dtype=np.float32).reshape(-1)
+    if feature_dim <= 0:
+        raise RuntimeError(f"Invalid feature_dim={feature_dim}")
+    if coords.size % 2 != 0:
+        raise RuntimeError("Sparse coords payload must contain row/col pairs")
+    nnz_total = coords.size // 2
+    if features.size != nnz_total * feature_dim:
+        raise RuntimeError("Sparse coords and features have mismatched lengths")
 
-    idx = np.flatnonzero(flat > thr)
-    nnz = int(idx.size)
+    coords = coords.reshape(-1, 2)
+    features = features.reshape(-1, feature_dim)
+    adc = features[:, 0]
+
+    keep = adc > thr
+    coords = coords[keep]
+    adc = adc[keep]
+    nnz = int(coords.shape[0])
 
     if nnz == 0:
         coords = np.array([[batch_idx, 0, 0]], dtype=np.int32)
         feats = np.zeros((1, 2), dtype=np.float32)
         available = 0.0
     else:
-        y = (idx // W).astype(np.int32, copy=False)
-        x = (idx % W).astype(np.int32, copy=False)
+        y = coords[:, 0].astype(np.int32, copy=False)
+        x = coords[:, 1].astype(np.int32, copy=False)
 
         coords = np.empty((nnz, 3), dtype=np.int32)
         coords[:, 0] = np.int32(batch_idx)
         coords[:, 1] = y
         coords[:, 2] = x
 
-        vals = flat[idx].astype(np.float32, copy=True)
-        np.maximum(vals, 0.0, out=vals)
-        np.log1p(vals, out=vals)
+        adc = adc.astype(np.float32, copy=True)
+        np.maximum(adc, 0.0, out=adc)
+        np.log1p(adc, out=adc)
 
         feats = np.empty((nnz, 2), dtype=np.float32)
         feats[:, 0] = 1.0
-        feats[:, 1] = vals
+        feats[:, 1] = adc
 
         available = 1.0
 
@@ -294,18 +344,25 @@ def main() -> int:
         device = "cpu"
 
     C, H, W = 3, int(args.H), int(args.W)
-    chw = read_chw_f32(args.in_path, C, H, W)
+    feature_dim, sparse_planes = read_sparse_planes(args.in_path, C, H, W)
 
     model = build_llr_model(weights_path=args.weights, device=device, arch_cfg=cfg, plane_names=("u", "v", "w"))
 
     thr = float(cfg["thr"])
-    t_setup0 = time.time()
 
     inputs: Dict[str, ME.SparseTensor] = {}
     avail = []
     nnz = []
     for v, name in enumerate(("u", "v", "w")):
-        st, a, n = plane_dense_to_sparse2d(chw[v], H=H, W=W, thr=thr, device=device)
+        st, a, n = plane_sparse_to_sparse2d(
+            sparse_planes[v][0],
+            sparse_planes[v][1],
+            feature_dim=feature_dim,
+            H=H,
+            W=W,
+            thr=thr,
+            device=device,
+        )
         inputs[name] = st
         avail.append(a)
         nnz.append(n)

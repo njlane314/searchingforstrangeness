@@ -147,22 +147,55 @@ void InferenceProducer::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    auto check_dims = [](image::ImageProduct const *p, char label) {
-        std::size_t expected =
-            static_cast<std::size_t>(p->width) *
-            static_cast<std::size_t>(p->height);
-        if (p->adc.size() != expected) {
+    auto check_plane = [](image::ImageProduct const *p, char label) {
+        if (p->feature_dim == 0) {
             throw cet::exception("InferenceProduction")
-                << "Plane " << label << " has incompatible dimensions: "
-                << "width=" << p->width << " height=" << p->height
-                << " adc.size()=" << p->adc.size()
-                << " (expected " << expected << ")";
+                << "Plane " << label << " has invalid feature_dim=0";
+        }
+        if ((p->coords.size() % 2) != 0) {
+            throw cet::exception("InferenceProduction")
+                << "Plane " << label << " has odd coords.size()=" << p->coords.size();
+        }
+
+        std::size_t const nnz = p->coords.size() / 2;
+        if (p->features.size() != nnz * static_cast<std::size_t>(p->feature_dim)) {
+            throw cet::exception("InferenceProduction")
+                << "Plane " << label << " has mismatched sparse payload: "
+                << "coords.size()=" << p->coords.size()
+                << " feature_dim=" << p->feature_dim
+                << " features.size()=" << p->features.size();
+        }
+        if (!p->semantic.empty() && p->semantic.size() != nnz) {
+            throw cet::exception("InferenceProduction")
+                << "Plane " << label << " has semantic.size()=" << p->semantic.size()
+                << " but nnz=" << nnz;
+        }
+        for (std::size_t i = 0; i < nnz; ++i) {
+            auto const row = p->coords[2 * i];
+            auto const col = p->coords[2 * i + 1];
+            if (row < 0 || col < 0 ||
+                static_cast<std::size_t>(row) >= p->height ||
+                static_cast<std::size_t>(col) >= p->width) {
+                throw cet::exception("InferenceProduction")
+                    << "Plane " << label << " has out-of-range sparse coordinate ("
+                    << row << ", " << col << ") for image size "
+                    << p->width << "x" << p->height;
+            }
         }
     };
 
-    check_dims(U, 'U');
-    check_dims(V, 'V');
-    check_dims(W, 'W');
+    check_plane(U, 'U');
+    check_plane(V, 'V');
+    check_plane(W, 'W');
+
+    if (U->width != V->width || U->width != W->width ||
+        U->height != V->height || U->height != W->height) {
+        throw cet::exception("InferenceProduction")
+            << "U/V/W planes must have matching dimensions, got "
+            << "U=" << U->width << "x" << U->height << " "
+            << "V=" << V->width << "x" << V->height << " "
+            << "W=" << W->width << "x" << W->height;
+    }
 
     std::vector<image::ImageProduct> detector_images;
     detector_images.reserve(3);
@@ -171,10 +204,7 @@ void InferenceProducer::produce(art::Event &e) {
     detector_images.emplace_back(*W);
 
     auto is_empty = [](image::ImageProduct const &p) {
-        if (p.adc.empty())
-            return true;
-        return std::all_of(p.adc.begin(), p.adc.end(),
-                           [](float v) { return v == 0.0f; });
+        return p.coords.empty();
     };
 
     if (is_empty(detector_images[0]) &&

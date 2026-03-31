@@ -342,6 +342,7 @@ void ImageProducer::produce(art::Event &event) {
 
     std::vector<Image<float>> det_slice;
     std::vector<Image<int>> sem_slice;
+    std::vector<Image<uint8_t>> slice_mask;
 
     image::PixelImageOptions opts;
     opts.producers = {fWIREproducer, fHITproducer, fMCPproducer, fBKTproducer};
@@ -352,7 +353,7 @@ void ImageProducer::produce(art::Event &event) {
 
     image::ImageProduction builder(*fGeo, opts);
 
-    builder.build(event, event_hits, props, det_slice, sem_slice, fDetp);
+    builder.build(event, event_hits, neutrino_hits, props, det_slice, sem_slice, slice_mask, fDetp);
 
     mf::LogDebug("ImageProducer") << "Built images: det=" << det_slice.size() << ", sem=" << sem_slice.size();
 
@@ -405,8 +406,8 @@ void ImageProducer::produce(art::Event &event) {
         return {static_cast<int32_t>(*row), static_cast<int32_t>(*col)};
     };
 
-    auto pack_plane = [&](Image<float> const &det, Image<int> const &sem, ImageProperties const &p, bool include_sem,
-                          uint32_t hit_count) {
+    auto pack_plane = [&](Image<float> const &det, Image<int> const &sem, Image<uint8_t> const &slice,
+                          ImageProperties const &p, bool include_sem, uint32_t hit_count) {
         ImageProduct out;
         out.view = static_cast<int>(p.view());
         out.width = static_cast<uint32_t>(p.width());
@@ -419,15 +420,18 @@ void ImageProducer::produce(art::Event &event) {
         auto [vertex_row, vertex_col] = vertex_pixel(p);
         out.vertex_row = vertex_row;
         out.vertex_col = vertex_col;
+        out.feature_dim = 2;
         auto const &det_pixels = det.data();
         auto const &sem_pixels = sem.data();
+        auto const &slice_pixels = slice.data();
+        auto const width = p.width();
 
         auto const n_active = static_cast<std::size_t>(
             std::count_if(det_pixels.begin(), det_pixels.end(),
                           [](float a) { return a > 0.f; }));
 
-        out.index.reserve(n_active);
-        out.adc.reserve(n_active);
+        out.coords.reserve(n_active * 2);
+        out.features.reserve(n_active * out.feature_dim);
         if (include_sem)
             out.semantic.reserve(n_active);
 
@@ -436,8 +440,13 @@ void ImageProducer::produce(art::Event &event) {
             if (a <= 0.f)
                 continue;
 
-            out.index.push_back(static_cast<uint32_t>(idx));
-            out.adc.push_back(a);
+            auto const row = static_cast<int32_t>(idx / width);
+            auto const col = static_cast<int32_t>(idx % width);
+
+            out.coords.push_back(row);
+            out.coords.push_back(col);
+            out.features.push_back(a);
+            out.features.push_back(static_cast<float>(slice_pixels[idx]));
             if (include_sem)
                 out.semantic.push_back(static_cast<uint8_t>(sem_pixels[idx]));
         }
@@ -447,7 +456,8 @@ void ImageProducer::produce(art::Event &event) {
     auto out_slice = std::make_unique<std::vector<ImageProduct>>();
     out_slice->reserve(3);
     for (std::size_t i = 0; i < 3 && i < det_slice.size(); ++i) {
-        out_slice->emplace_back(pack_plane(det_slice[i], sem_slice[i], props[i], !fIsData, hit_counts[i]));
+        out_slice->emplace_back(
+            pack_plane(det_slice[i], sem_slice[i], slice_mask[i], props[i], !fIsData, hit_counts[i]));
     }
 
     auto const n_slice = out_slice->size();

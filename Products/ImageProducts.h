@@ -20,10 +20,10 @@ class ImageProduct {
         float pixel_h{0.f}; ///< Pixel height in world units.
         int32_t vertex_row{-1}; ///< Row index of the reco neutrino vertex in this plane (-1 if unavailable).
         int32_t vertex_col{-1}; ///< Column index of the reco neutrino vertex in this plane (-1 if unavailable).
-        // Sparse payload: index[k] maps to adc[k] and semantic[k] for one active pixel.
-        std::vector<uint32_t> index; ///< Flattened pixel index in row-major order for active pixels.
-        std::vector<float> adc; ///< ADC values for active pixels.
-        std::vector<uint8_t> semantic; ///< Semantic labels aligned with adc/index.
+        uint32_t feature_dim{2}; ///< Number of features stored per active pixel.
+        std::vector<int32_t> coords; ///< Interleaved (row, col) coordinates for active pixels.
+        std::vector<float> features; ///< Interleaved feature vectors aligned with coords.
+        std::vector<uint8_t> semantic; ///< Optional semantic labels aligned with the active-pixel ordering.
 };
 
 } // namespace image

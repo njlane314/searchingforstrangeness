@@ -8,7 +8,7 @@ namespace image {
 
 struct ModelPred {
     std::string model; ///< Model identifier or name.
-    std::vector<float> scores; ///< Prediction scores for the model output.
+    std::vector<float> scores; ///< Raw model outputs for the model (currently logits).
 };
 
 struct InferencePredProduct {

@@ -15,6 +15,7 @@
 #include "AnalysisToolBase.h"
 #include "Common/BacktrackingUtilities.h"
 #include "Common/PatternRecognitionUtils.h"
+#include "Common/TruthContainment.h"
 
 #include "TTree.h"
 #include "TVector3.h"
@@ -25,6 +26,7 @@
 #include <limits>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace analysis {
@@ -50,11 +52,19 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     art::InputTag fCLSproducer;
     art::InputTag fHITproducer;
     art::InputTag fBKTproducer;
+    double fFidvolXstart;
+    double fFidvolXend;
+    double fFidvolYstart;
+    double fFidvolYend;
+    double fFidvolZstart;
+    double fFidvolZend;
 
     int _mu_truth_trackid;
     int _mu_truth_pdg;
     float _mu_p;
     float _mu_theta;
+    int _best_slice_score;
+    bool _has_selected_slice_summary;
 
     struct TruthSummary {
         bool is_nc = false;
@@ -63,14 +73,18 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
 
         bool has_fs_lambda0 = false;
         bool has_fs_sigma0 = false;
+        bool has_g4_lambda0 = false;
         bool has_g4_lambda0_to_ppi = false;
+        bool has_g4_lambda0_from_sigma0 = false;
 
         bool has_ks0 = false;
         bool has_pi0 = false;
 
         int n_fs_lambda0 = 0;
         int n_fs_sigma0 = 0;
+        int n_g4_lambda0 = 0;
         int n_g4_lambda0_to_ppi = 0;
+        int n_g4_lambda0_from_sigma0 = 0;
         int n_ks0 = 0;
         int n_pi0 = 0;
 
@@ -122,8 +136,63 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
         void clear() { *this = G4LambdaDecaySummary{}; }
     };
 
+    struct G4AllLambdaSummary {
+        std::vector<int> trackid;
+        std::vector<int> pdg;
+        std::vector<int> parent_trackid;
+        std::vector<int> parent_pdg;
+        std::vector<int> has_sigma0_ancestor;
+        std::vector<int> sigma0_ancestor_trackid;
+        std::vector<int> sigma0_ancestor_pdg;
+        std::vector<int> has_ppi_decay;
+        std::vector<int> p_trackid;
+        std::vector<int> pi_trackid;
+        std::vector<int> start_in_fv;
+        std::vector<int> decay_in_fv;
+        std::vector<int> p_end_in_fv;
+        std::vector<int> pi_end_in_fv;
+        std::vector<int> ppi_contained_in_fv;
+
+        std::vector<float> E;
+        std::vector<float> mass;
+        std::vector<float> px;
+        std::vector<float> py;
+        std::vector<float> pz;
+        std::vector<float> p_mag;
+        std::vector<float> vx;
+        std::vector<float> vy;
+        std::vector<float> vz;
+        std::vector<float> endx;
+        std::vector<float> endy;
+        std::vector<float> endz;
+        std::vector<float> ct;
+        std::vector<float> decay_sep;
+        std::vector<float> sigma0_ancestor_p;
+        std::vector<float> p_p;
+        std::vector<float> pi_p;
+        std::vector<float> ppi_opening_angle;
+        std::vector<float> p_endx;
+        std::vector<float> p_endy;
+        std::vector<float> p_endz;
+        std::vector<float> pi_endx;
+        std::vector<float> pi_endy;
+        std::vector<float> pi_endz;
+
+        void clear() { *this = G4AllLambdaSummary{}; }
+    };
+
+    struct LambdaLineage {
+        int parent_trackid = -1;
+        int parent_pdg = 0;
+        int has_sigma0_ancestor = 0;
+        int sigma0_ancestor_trackid = -1;
+        int sigma0_ancestor_pdg = 0;
+        float sigma0_ancestor_p = std::numeric_limits<float>::quiet_NaN();
+    };
+
     TruthSummary _truth;
     G4LambdaDecaySummary _g4_lambda;
+    G4AllLambdaSummary _g4_all_lambda;
 
     template <class T> static T nan() {
         return std::numeric_limits<T>::quiet_NaN();
@@ -134,6 +203,15 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     static float ThreeDistance(float x1, float y1, float z1, float x2, float y2,
                                float z2) {
         return Mag3(x1 - x2, y1 - y2, z1 - z2);
+    }
+    static int Flag(const bool value) { return value ? 1 : 0; }
+    static const simb::MCTruth *
+    FindBeamTruth(const art::ValidHandle<std::vector<simb::MCTruth>> &mct_h) {
+        for (auto const &mct : *mct_h) {
+            if (mct.NeutrinoSet())
+                return &mct;
+        }
+        return nullptr;
     }
     static bool IsGeneratorFinalState(const simb::MCParticle &p) {
         return p.StatusCode() == 1;
@@ -166,9 +244,14 @@ class LambdaAnalysis_tool : public AnalysisToolBase {
     DecayMatch
     MatchLambdaToPPi(const art::Ptr<simb::MCParticle> &lam,
                      const std::map<int, art::Ptr<simb::MCParticle>> &mp) const;
+    LambdaLineage
+    GetLambdaLineage(const art::Ptr<simb::MCParticle> &lam,
+                     const std::map<int, art::Ptr<simb::MCParticle>> &mp) const;
+    bool IsInFiducial(const float x, const float y, const float z) const;
 
     void
-    FindTruthMuon(const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
+    FindTruthMuon(const simb::MCTruth &mct,
+                  const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
                   const TVector3 &nu_dir);
 
     void FillGeneratorTruthSummary(const simb::MCTruth &mct);
@@ -184,6 +267,12 @@ void LambdaAnalysis_tool::configure(const fhicl::ParameterSet &p) {
     fCLSproducer = p.get<art::InputTag>("CLSproducer");
     fHITproducer = p.get<art::InputTag>("HITproducer");
     fBKTproducer = p.get<art::InputTag>("BKTproducer");
+    fFidvolXstart = p.get<double>("fidvolXstart", 10.0);
+    fFidvolXend = p.get<double>("fidvolXend", 10.0);
+    fFidvolYstart = p.get<double>("fidvolYstart", 15.0);
+    fFidvolYend = p.get<double>("fidvolYend", 15.0);
+    fFidvolZstart = p.get<double>("fidvolZstart", 10.0);
+    fFidvolZend = p.get<double>("fidvolZend", 50.0);
 }
 
 void LambdaAnalysis_tool::setBranches(TTree *t) {
@@ -201,8 +290,13 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
               "truth_has_fs_lambda0/O");
     t->Branch("truth_has_fs_sigma0", &_truth.has_fs_sigma0,
               "truth_has_fs_sigma0/O");
+    t->Branch("truth_has_g4_lambda0", &_truth.has_g4_lambda0,
+              "truth_has_g4_lambda0/O");
     t->Branch("truth_has_g4_lambda0_to_ppi", &_truth.has_g4_lambda0_to_ppi,
               "truth_has_g4_lambda0_to_ppi/O");
+    t->Branch("truth_has_g4_lambda0_from_sigma0",
+              &_truth.has_g4_lambda0_from_sigma0,
+              "truth_has_g4_lambda0_from_sigma0/O");
     t->Branch("truth_has_ks0", &_truth.has_ks0, "truth_has_ks0/O");
     t->Branch("truth_has_pi0", &_truth.has_pi0, "truth_has_pi0/O");
 
@@ -210,8 +304,12 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
               "truth_n_fs_lambda0/I");
     t->Branch("truth_n_fs_sigma0", &_truth.n_fs_sigma0,
               "truth_n_fs_sigma0/I");
+    t->Branch("truth_n_g4_lambda0", &_truth.n_g4_lambda0, "truth_n_g4_lambda0/I");
     t->Branch("truth_n_g4_lambda0_to_ppi", &_truth.n_g4_lambda0_to_ppi,
               "truth_n_g4_lambda0_to_ppi/I");
+    t->Branch("truth_n_g4_lambda0_from_sigma0",
+              &_truth.n_g4_lambda0_from_sigma0,
+              "truth_n_g4_lambda0_from_sigma0/I");
     t->Branch("truth_n_ks0", &_truth.n_ks0, "truth_n_ks0/I");
     t->Branch("truth_n_pi0", &_truth.n_pi0, "truth_n_pi0/I");
 
@@ -255,6 +353,52 @@ void LambdaAnalysis_tool::setBranches(TTree *t) {
     t->Branch("g4_lambda_mu_true_hits", &_g4_lambda.mu_true_hits);
     t->Branch("g4_lambda_p_true_hits", &_g4_lambda.p_true_hits);
     t->Branch("g4_lambda_pi_true_hits", &_g4_lambda.pi_true_hits);
+
+    t->Branch("g4_all_lambda_trackid", &_g4_all_lambda.trackid);
+    t->Branch("g4_all_lambda_pdg", &_g4_all_lambda.pdg);
+    t->Branch("g4_all_lambda_parent_trackid", &_g4_all_lambda.parent_trackid);
+    t->Branch("g4_all_lambda_parent_pdg", &_g4_all_lambda.parent_pdg);
+    t->Branch("g4_all_lambda_has_sigma0_ancestor",
+              &_g4_all_lambda.has_sigma0_ancestor);
+    t->Branch("g4_all_lambda_sigma0_ancestor_trackid",
+              &_g4_all_lambda.sigma0_ancestor_trackid);
+    t->Branch("g4_all_lambda_sigma0_ancestor_pdg",
+              &_g4_all_lambda.sigma0_ancestor_pdg);
+    t->Branch("g4_all_lambda_has_ppi_decay", &_g4_all_lambda.has_ppi_decay);
+    t->Branch("g4_all_lambda_p_trackid", &_g4_all_lambda.p_trackid);
+    t->Branch("g4_all_lambda_pi_trackid", &_g4_all_lambda.pi_trackid);
+    t->Branch("g4_all_lambda_start_in_fv", &_g4_all_lambda.start_in_fv);
+    t->Branch("g4_all_lambda_decay_in_fv", &_g4_all_lambda.decay_in_fv);
+    t->Branch("g4_all_lambda_p_end_in_fv", &_g4_all_lambda.p_end_in_fv);
+    t->Branch("g4_all_lambda_pi_end_in_fv", &_g4_all_lambda.pi_end_in_fv);
+    t->Branch("g4_all_lambda_ppi_contained_in_fv",
+              &_g4_all_lambda.ppi_contained_in_fv);
+    t->Branch("g4_all_lambda_E", &_g4_all_lambda.E);
+    t->Branch("g4_all_lambda_mass", &_g4_all_lambda.mass);
+    t->Branch("g4_all_lambda_px", &_g4_all_lambda.px);
+    t->Branch("g4_all_lambda_py", &_g4_all_lambda.py);
+    t->Branch("g4_all_lambda_pz", &_g4_all_lambda.pz);
+    t->Branch("g4_all_lambda_p_mag", &_g4_all_lambda.p_mag);
+    t->Branch("g4_all_lambda_vx", &_g4_all_lambda.vx);
+    t->Branch("g4_all_lambda_vy", &_g4_all_lambda.vy);
+    t->Branch("g4_all_lambda_vz", &_g4_all_lambda.vz);
+    t->Branch("g4_all_lambda_endx", &_g4_all_lambda.endx);
+    t->Branch("g4_all_lambda_endy", &_g4_all_lambda.endy);
+    t->Branch("g4_all_lambda_endz", &_g4_all_lambda.endz);
+    t->Branch("g4_all_lambda_ct", &_g4_all_lambda.ct);
+    t->Branch("g4_all_lambda_decay_sep", &_g4_all_lambda.decay_sep);
+    t->Branch("g4_all_lambda_sigma0_ancestor_p",
+              &_g4_all_lambda.sigma0_ancestor_p);
+    t->Branch("g4_all_lambda_p_p", &_g4_all_lambda.p_p);
+    t->Branch("g4_all_lambda_pi_p", &_g4_all_lambda.pi_p);
+    t->Branch("g4_all_lambda_ppi_opening_angle",
+              &_g4_all_lambda.ppi_opening_angle);
+    t->Branch("g4_all_lambda_p_endx", &_g4_all_lambda.p_endx);
+    t->Branch("g4_all_lambda_p_endy", &_g4_all_lambda.p_endy);
+    t->Branch("g4_all_lambda_p_endz", &_g4_all_lambda.p_endz);
+    t->Branch("g4_all_lambda_pi_endx", &_g4_all_lambda.pi_endx);
+    t->Branch("g4_all_lambda_pi_endy", &_g4_all_lambda.pi_endy);
+    t->Branch("g4_all_lambda_pi_endz", &_g4_all_lambda.pi_endz);
 }
 
 void LambdaAnalysis_tool::resetTTree(TTree *) {
@@ -262,9 +406,12 @@ void LambdaAnalysis_tool::resetTTree(TTree *) {
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
     _mu_theta = nan<float>();
+    _best_slice_score = -1;
+    _has_selected_slice_summary = false;
 
     _truth.clear();
     _g4_lambda.clear();
+    _g4_all_lambda.clear();
 }
 
 LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
@@ -300,39 +447,106 @@ LambdaAnalysis_tool::DecayMatch LambdaAnalysis_tool::MatchLambdaToPPi(
     return ret;
 }
 
+LambdaAnalysis_tool::LambdaLineage LambdaAnalysis_tool::GetLambdaLineage(
+    const art::Ptr<simb::MCParticle> &lam,
+    const std::map<int, art::Ptr<simb::MCParticle>> &mp) const {
+    LambdaLineage out;
+    out.parent_trackid = lam->Mother();
+    auto parent_it = mp.find(out.parent_trackid);
+    if (parent_it != mp.end()) {
+        out.parent_pdg = parent_it->second->PdgCode();
+    }
+
+    int current_trackid = lam->Mother();
+    int depth = 0;
+    while (current_trackid != 0 && depth < 100) {
+        auto it = mp.find(current_trackid);
+        if (it == mp.end())
+            break;
+
+        const auto &ancestor = *(it->second);
+        if (std::abs(ancestor.PdgCode()) == 3212) {
+            out.has_sigma0_ancestor = 1;
+            out.sigma0_ancestor_trackid = ancestor.TrackId();
+            out.sigma0_ancestor_pdg = ancestor.PdgCode();
+            out.sigma0_ancestor_p =
+                Mag3(ancestor.Px(), ancestor.Py(), ancestor.Pz());
+            break;
+        }
+
+        current_trackid = ancestor.Mother();
+        ++depth;
+    }
+
+    return out;
+}
+
+bool LambdaAnalysis_tool::IsInFiducial(const float x, const float y,
+                                       const float z) const {
+    const double point[3] = {x, y, z};
+    return common::isFiducial(point, fFidvolXstart, fFidvolYstart, fFidvolZstart,
+                              fFidvolXend, fFidvolYend, fFidvolZend);
+}
+
 void LambdaAnalysis_tool::FindTruthMuon(
+    const simb::MCTruth &mct,
     const art::ValidHandle<std::vector<simb::MCParticle>> &mcp_h,
     const TVector3 &nu_dir) {
     _mu_truth_trackid = -1;
     _mu_truth_pdg = 0;
     _mu_p = nan<float>();
     _mu_theta = nan<float>();
-    double bestE = -1.0;
-    float best_px = 0.f, best_py = 0.f, best_pz = 0.f;
+
+    if (!mct.NeutrinoSet())
+        return;
+
+    const auto &nuinfo = mct.GetNeutrino();
+    const auto &nu = nuinfo.Nu();
+    const auto &lepton = nuinfo.Lepton();
+    if (nuinfo.CCNC() == simb::kNC || std::abs(nu.PdgCode()) != 14 ||
+        std::abs(lepton.PdgCode()) != 13) {
+        return;
+    }
+
+    _mu_truth_pdg = lepton.PdgCode();
+    _mu_p = Mag3(lepton.Px(), lepton.Py(), lepton.Pz());
+    if (nu_dir.Mag() > 0.f && _mu_p > 0.f) {
+        TVector3 mu_p(lepton.Px(), lepton.Py(), lepton.Pz());
+        _mu_theta = nu_dir.Angle(mu_p);
+    }
+
+    const int target_trackid = lepton.TrackId();
+    double best_score = std::numeric_limits<double>::infinity();
+    const simb::MCParticle *best_match = nullptr;
     for (size_t i = 0; i < mcp_h->size(); ++i) {
         const auto &p = mcp_h->at(i);
-        if (std::abs(p.PdgCode()) != 13)
+        if (p.PdgCode() != lepton.PdgCode())
             continue;
         if (!(p.Process() == "primary" && p.StatusCode() == 1))
             continue;
-        if (p.E() <= bestE)
-            continue;
-        bestE = p.E();
-        _mu_truth_trackid = p.TrackId();
-        _mu_truth_pdg = p.PdgCode();
-        best_px = p.Px();
-        best_py = p.Py();
-        best_pz = p.Pz();
+
+        if (target_trackid != 0 && p.TrackId() == target_trackid) {
+            best_match = &p;
+            break;
+        }
+
+        const double vertex_sep = ThreeDistance(p.Vx(), p.Vy(), p.Vz(),
+                                                lepton.Vx(), lepton.Vy(),
+                                                lepton.Vz());
+        const double mom_sep =
+            ThreeDistance(p.Px(), p.Py(), p.Pz(), lepton.Px(), lepton.Py(),
+                          lepton.Pz());
+        const double score = vertex_sep + 0.1 * mom_sep;
+        if (score < best_score) {
+            best_score = score;
+            best_match = &p;
+        }
     }
 
-    if (_mu_truth_trackid < 0)
+    if (!best_match)
         return;
 
-    _mu_p = Mag3(best_px, best_py, best_pz);
-    if (nu_dir.Mag() > 0.f && _mu_p > 0.f) {
-        TVector3 mu_p(best_px, best_py, best_pz);
-        _mu_theta = nu_dir.Angle(mu_p);
-    }
+    _mu_truth_trackid = best_match->TrackId();
 }
 
 void LambdaAnalysis_tool::FillGeneratorTruthSummary(const simb::MCTruth &mct) {
@@ -382,8 +596,7 @@ void LambdaAnalysis_tool::FillG4LambdaDecaySummary(
             continue;
 
         const DecayMatch dm = MatchLambdaToPPi(lam_ptr, mp);
-        if (!dm.ok)
-            continue;
+        const LambdaLineage lineage = GetLambdaLineage(lam_ptr, mp);
 
         const simb::MCParticle *p =
             (mp.count(dm.p_trkid) ? mp.at(dm.p_trkid).get() : nullptr);
@@ -416,8 +629,73 @@ void LambdaAnalysis_tool::FillG4LambdaDecaySummary(
                 opening_angle = vp.Angle(vpi);
         }
 
-        _truth.has_g4_lambda0_to_ppi = true;
-        ++_truth.n_g4_lambda0_to_ppi;
+        const int start_in_fv = Flag(IsInFiducial(lam.Vx(), lam.Vy(), lam.Vz()));
+        const int decay_in_fv = Flag(IsInFiducial(lam.EndX(), lam.EndY(), lam.EndZ()));
+        const int p_end_in_fv =
+            p ? Flag(IsInFiducial(p->EndX(), p->EndY(), p->EndZ())) : -1;
+        const int pi_end_in_fv =
+            pi ? Flag(IsInFiducial(pi->EndX(), pi->EndY(), pi->EndZ())) : -1;
+        const int ppi_contained_in_fv =
+            (p_end_in_fv < 0 || pi_end_in_fv < 0)
+                ? -1
+                : Flag(p_end_in_fv == 1 && pi_end_in_fv == 1);
+
+        _truth.has_g4_lambda0 = true;
+        ++_truth.n_g4_lambda0;
+        if (lineage.has_sigma0_ancestor == 1) {
+            _truth.has_g4_lambda0_from_sigma0 = true;
+            ++_truth.n_g4_lambda0_from_sigma0;
+        }
+
+        if (dm.ok) {
+            _truth.has_g4_lambda0_to_ppi = true;
+            ++_truth.n_g4_lambda0_to_ppi;
+        }
+
+        _g4_all_lambda.trackid.push_back(lam.TrackId());
+        _g4_all_lambda.pdg.push_back(lam.PdgCode());
+        _g4_all_lambda.parent_trackid.push_back(lineage.parent_trackid);
+        _g4_all_lambda.parent_pdg.push_back(lineage.parent_pdg);
+        _g4_all_lambda.has_sigma0_ancestor.push_back(lineage.has_sigma0_ancestor);
+        _g4_all_lambda.sigma0_ancestor_trackid.push_back(
+            lineage.sigma0_ancestor_trackid);
+        _g4_all_lambda.sigma0_ancestor_pdg.push_back(lineage.sigma0_ancestor_pdg);
+        _g4_all_lambda.has_ppi_decay.push_back(Flag(dm.ok));
+        _g4_all_lambda.p_trackid.push_back(dm.p_trkid);
+        _g4_all_lambda.pi_trackid.push_back(dm.pi_trkid);
+        _g4_all_lambda.start_in_fv.push_back(start_in_fv);
+        _g4_all_lambda.decay_in_fv.push_back(decay_in_fv);
+        _g4_all_lambda.p_end_in_fv.push_back(p_end_in_fv);
+        _g4_all_lambda.pi_end_in_fv.push_back(pi_end_in_fv);
+        _g4_all_lambda.ppi_contained_in_fv.push_back(ppi_contained_in_fv);
+
+        _g4_all_lambda.E.push_back(lam.E());
+        _g4_all_lambda.mass.push_back(lam.Mass());
+        _g4_all_lambda.px.push_back(lam.Px());
+        _g4_all_lambda.py.push_back(lam.Py());
+        _g4_all_lambda.pz.push_back(lam.Pz());
+        _g4_all_lambda.p_mag.push_back(p_mag);
+        _g4_all_lambda.vx.push_back(lam.Vx());
+        _g4_all_lambda.vy.push_back(lam.Vy());
+        _g4_all_lambda.vz.push_back(lam.Vz());
+        _g4_all_lambda.endx.push_back(lam.EndX());
+        _g4_all_lambda.endy.push_back(lam.EndY());
+        _g4_all_lambda.endz.push_back(lam.EndZ());
+        _g4_all_lambda.ct.push_back(ct);
+        _g4_all_lambda.decay_sep.push_back(decay_sep);
+        _g4_all_lambda.sigma0_ancestor_p.push_back(lineage.sigma0_ancestor_p);
+        _g4_all_lambda.p_p.push_back(pp);
+        _g4_all_lambda.pi_p.push_back(pip);
+        _g4_all_lambda.ppi_opening_angle.push_back(opening_angle);
+        _g4_all_lambda.p_endx.push_back(p ? p->EndX() : nan<float>());
+        _g4_all_lambda.p_endy.push_back(p ? p->EndY() : nan<float>());
+        _g4_all_lambda.p_endz.push_back(p ? p->EndZ() : nan<float>());
+        _g4_all_lambda.pi_endx.push_back(pi ? pi->EndX() : nan<float>());
+        _g4_all_lambda.pi_endy.push_back(pi ? pi->EndY() : nan<float>());
+        _g4_all_lambda.pi_endz.push_back(pi ? pi->EndZ() : nan<float>());
+
+        if (!dm.ok)
+            continue;
 
         _g4_lambda.trackid.push_back(lam.TrackId());
         _g4_lambda.pdg.push_back(lam.PdgCode());
@@ -470,9 +748,9 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
         event.getValidHandle<std::vector<simb::MCTruth>>(fMCTproducer);
     if (!mct_h.isValid() || mct_h->empty())
         return;
-    const auto &mct = mct_h->front();
-    if (mct.NeutrinoSet()) {
-        const auto nuinfo = mct.GetNeutrino();
+    const simb::MCTruth *beam_truth = FindBeamTruth(mct_h);
+    if (beam_truth) {
+        const auto &nuinfo = beam_truth->GetNeutrino();
         const auto &nu = nuinfo.Nu();
         nu_v[0] = nu.Vx();
         nu_v[1] = nu.Vy();
@@ -491,15 +769,19 @@ void LambdaAnalysis_tool::analyseEvent(const art::Event &event, bool is_data) {
     for (size_t i = 0; i < mcp_h->size(); ++i)
         mp[mcp_h->at(i).TrackId()] = art::Ptr<simb::MCParticle>(mcp_h, i);
 
-    FindTruthMuon(mcp_h, nu_dir);
-    FillGeneratorTruthSummary(mct);
+    if (beam_truth) {
+        FindTruthMuon(*beam_truth, mcp_h, nu_dir);
+        FillGeneratorTruthSummary(*beam_truth);
+    }
     FillG4LambdaDecaySummary(mcp_h, mp, nu_v);
 }
 
 void LambdaAnalysis_tool::analyseSlice(
     const art::Event &event, std::vector<common::ProxyPfpElem_t> &slice_pfp_vec,
-    bool is_data, bool) {
+    bool is_data, bool is_selected) {
     if (is_data)
+        return;
+    if (!is_selected)
         return;
     if (_g4_lambda.trackid.empty())
         return;
@@ -531,18 +813,33 @@ void LambdaAnalysis_tool::analyseSlice(
             _mu_truth_trackid, inputHits, assocMCPart));
     }
 
+    const size_t n_lambda = _g4_lambda.trackid.size();
+    std::vector<int> candidate_pr_valid_assignment(n_lambda, 0);
+    std::vector<float> candidate_pr_mu_purity(n_lambda, nan<float>());
+    std::vector<float> candidate_pr_mu_completeness(n_lambda, nan<float>());
+    std::vector<float> candidate_pr_p_purity(n_lambda, nan<float>());
+    std::vector<float> candidate_pr_p_completeness(n_lambda, nan<float>());
+    std::vector<float> candidate_pr_pi_purity(n_lambda, nan<float>());
+    std::vector<float> candidate_pr_pi_completeness(n_lambda, nan<float>());
+    std::vector<int> candidate_mu_true_hits(n_lambda, -1);
+    std::vector<int> candidate_p_true_hits(n_lambda, -1);
+    std::vector<int> candidate_pi_true_hits(n_lambda, -1);
+    int candidate_score = std::max(mu_true_hits, 0);
+
     for (size_t i = 0; i < _g4_lambda.trackid.size(); ++i) {
         const int p_tid = _g4_lambda.p_trackid[i];
         const int pi_tid = _g4_lambda.pi_trackid[i];
 
-        _g4_lambda.mu_true_hits[i] = mu_true_hits;
+        candidate_mu_true_hits[i] = mu_true_hits;
         if (p_tid >= 0) {
-            _g4_lambda.p_true_hits[i] = static_cast<int>(
+            candidate_p_true_hits[i] = static_cast<int>(
                 common::CountTruthHitsInSlice(p_tid, inputHits, assocMCPart));
+            candidate_score += std::max(candidate_p_true_hits[i], 0);
         }
         if (pi_tid >= 0) {
-            _g4_lambda.pi_true_hits[i] = static_cast<int>(
+            candidate_pi_true_hits[i] = static_cast<int>(
                 common::CountTruthHitsInSlice(pi_tid, inputHits, assocMCPart));
+            candidate_score += std::max(candidate_pi_true_hits[i], 0);
         }
 
         if (_mu_truth_trackid < 0 || p_tid < 0 || pi_tid < 0)
@@ -557,14 +854,30 @@ void LambdaAnalysis_tool::analyseSlice(
         if (metrics.purity.size() < 3 || metrics.completeness.size() < 3)
             continue;
 
-        _g4_lambda.pr_valid_assignment[i] = 1;
-        _g4_lambda.pr_mu_purity[i] = metrics.purity[0];
-        _g4_lambda.pr_mu_completeness[i] = metrics.completeness[0];
-        _g4_lambda.pr_p_purity[i] = metrics.purity[1];
-        _g4_lambda.pr_p_completeness[i] = metrics.completeness[1];
-        _g4_lambda.pr_pi_purity[i] = metrics.purity[2];
-        _g4_lambda.pr_pi_completeness[i] = metrics.completeness[2];
+        candidate_pr_valid_assignment[i] = 1;
+        candidate_pr_mu_purity[i] = metrics.purity[0];
+        candidate_pr_mu_completeness[i] = metrics.completeness[0];
+        candidate_pr_p_purity[i] = metrics.purity[1];
+        candidate_pr_p_completeness[i] = metrics.completeness[1];
+        candidate_pr_pi_purity[i] = metrics.purity[2];
+        candidate_pr_pi_completeness[i] = metrics.completeness[2];
     }
+
+    if (_has_selected_slice_summary && candidate_score <= _best_slice_score)
+        return;
+
+    _has_selected_slice_summary = true;
+    _best_slice_score = candidate_score;
+    _g4_lambda.pr_valid_assignment = std::move(candidate_pr_valid_assignment);
+    _g4_lambda.pr_mu_purity = std::move(candidate_pr_mu_purity);
+    _g4_lambda.pr_mu_completeness = std::move(candidate_pr_mu_completeness);
+    _g4_lambda.pr_p_purity = std::move(candidate_pr_p_purity);
+    _g4_lambda.pr_p_completeness = std::move(candidate_pr_p_completeness);
+    _g4_lambda.pr_pi_purity = std::move(candidate_pr_pi_purity);
+    _g4_lambda.pr_pi_completeness = std::move(candidate_pr_pi_completeness);
+    _g4_lambda.mu_true_hits = std::move(candidate_mu_true_hits);
+    _g4_lambda.p_true_hits = std::move(candidate_p_true_hits);
+    _g4_lambda.pi_true_hits = std::move(candidate_pi_true_hits);
 }
 
 DEFINE_ART_CLASS_TOOL(LambdaAnalysis_tool)
