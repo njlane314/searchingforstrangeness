@@ -52,6 +52,16 @@ job/run_nuselection_data.fcl
      Runs the data/EXT version of the selection and writes
      nu_selection_data.root.
 
+job/run_nuselection_noinference.fcl
+     Runs the MC-style selection on input that already contains imageprod
+     products, but skips loading inference products.  It writes
+     nu_selection_noinference.root.
+
+job/run_nuselection_data_noinference.fcl
+     Runs the data/EXT selection on input that already contains imageprod
+     products, but skips loading inference products.  It writes
+     nu_selection_data_noinference.root.
+
 job/run_imageprod.fcl
      Produces image::SparsePlaneImage objects for the selected slice and a
      full-detector companion collection, then writes the event file
@@ -98,6 +108,10 @@ Examples:
 
      lar -c job/run_nuselection_data.fcl -s data_input.root
 
+     lar -c job/run_nuselection_noinference.fcl -s imageprod_output.root
+
+     lar -c job/run_nuselection_data_noinference.fcl -s imageprod_output.root
+
      lar -c job/run_imageprod.fcl -s reco_input.root
 
      lar -c job/run_inferenceprod.fcl -s imageprod_output.root
@@ -109,6 +123,9 @@ Usage notes:
   * Use run_nuselection.fcl when you want flat analysis trees from MC-like
     input.
   * Use run_nuselection_data.fcl for data or EXT workflows.
+  * Use the `*_noinference` selection jobs on input that contains
+    `imageprod:CroppedWindow` and `imageprod:FullWindow` products when you do
+    not want to run or depend on `inferenceprod`.
   * Use run_imageprod.fcl when you want persisted image products in the art
     event output.
   * Use run_inferenceprod.fcl only on input files that already contain the
@@ -142,16 +159,13 @@ definition and loop over them:
 If you need to prepare or inspect SAM definitions, use the helper scripts in
 scripts/ and the top-level describe-definitions.sh helper:
 
-     ./scripts/apply_goodruns.sh <source_def> <goodruns_def>
-
-     ./scripts/apply_goodruns_run1_fhc.sh
-
      ./scripts/split_detvar_stride.sh <source_def> <training_def> <plotting_def>
 
      ./describe-definitions.sh
 
-The canonical Run 1 FHC naming used by these scripts is documented in
-scripts/README.md.
+scripts/README.md records the canonical Run 1 FHC source definitions and the
+legacy good-runs helper commands.  The checked-in XML workflows use the source
+definitions directly.
 
 
 5. Understand the outputs
@@ -185,9 +199,27 @@ The checked-in branch and product layout is summarized here.  In particular:
 6. Submit grid jobs
 -------------------
 
-The repository includes xml/numi_fhc_run1.xml for a production-style grid
-workflow.  Before submitting, review the XML entities near the top of the file.
-It hard-codes values such as:
+The repository includes four checked-in grid XML workflows:
+
+  * xml/numi_fhc_run1.xml
+    This keeps eventweight, image production, inference, and selection in the
+    same submitted stage as sequential substages.
+  * xml/numi_fhc_run1_staged.xml
+    This splits the workflow into `*_evtw`, `*_image`, `*_infer`, and `*_sel`
+    stages.  Each `*_evtw` stage runs all required eventweight FHiCL substages
+    in one submission, and each later stage consumes the checked output of the
+    previous one.
+  * xml/numi_fhc_run1_training.xml
+    This is the training-oriented workflow.  It skips inference entirely and
+    runs `*_evtw -> *_image -> *_sel` for MC and `*_image -> *_sel` for EXT,
+    using the no-inference selection FHiCL wrappers.
+  * xml/numi_fhc_run1_detvar_training.xml
+    This is the stride-split detector-variation training workflow.  It targets
+    the training definitions created by `scripts/split_detvar_stride.sh` and
+    runs only `image -> sel` with the no-inference MC selection wrapper.
+
+Before submitting, review the XML entities near the top of the file you plan
+to use.  They hard-code values such as:
 
   * the release tag;
   * the user name;
@@ -200,25 +232,95 @@ Create or refresh the tarball with:
 
 Then submit a stage, for example:
 
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --submit
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_sample0 --submit
+
+For the staged XML, submit and check each stage before launching the next one.
+Each later stage uses the checked output file list from the previous stage as
+its default input:
+
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_evtw --submit
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_evtw --check
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_image --submit
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_image --check
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_infer --submit
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_infer --check
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_sel --submit
+
+For the training XML, the same checked-output handoff applies, but there is no
+inference stage.  If you point it at dedicated training SAM definitions, update
+the XML input entities and `numjobs` counts to match those definitions.  Use
+the MC-like stage families (`beam_*`, `dirt_*`, `strangeness_*`) for overlay
+or truth-bearing training samples, and the `ext_*` stage families for data- or
+EXT-like training samples:
+
+     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_sample0_evtw --submit
+     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_sample0_evtw --check
+     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_sample0_image --submit
+     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_sample0_image --check
+     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_sample0_sel --submit
+
+For the stride-split detvar training XML, edit the two input SAM definitions
+and `numjobs` values first, then run the image and selection stages:
+
+     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_image --submit
+     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_image --check
+     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_sel --submit
 
 Checked-in stage names include:
 
-  * beam_s0
-  * beam_s1
-  * beam_s2
-  * beam_s3
-  * dirt_s0
-  * dirt_s1
+  * beam_sample0
+  * beam_sample1
+  * beam_sample2
+  * beam_sample3
+  * dirt_sample0
+  * dirt_sample1
   * strangeness_run1_fhc
-  * ext_p0
-  * ext_p1
-  * ext_p2
+  * ext_partition0
+  * ext_partition1
+  * ext_partition2
+
+The staged XML uses dataset-specific stage chains such as:
+
+  * beam_sample0_evtw, beam_sample0_image, beam_sample0_infer, beam_sample0_sel
+  * beam_sample1_evtw, beam_sample1_image, beam_sample1_infer, beam_sample1_sel
+  * beam_sample2_evtw, beam_sample2_image, beam_sample2_infer, beam_sample2_sel
+  * beam_sample3_evtw, beam_sample3_image, beam_sample3_infer, beam_sample3_sel
+  * dirt_sample0_evtw, dirt_sample0_image, dirt_sample0_infer, dirt_sample0_sel
+  * dirt_sample1_evtw, dirt_sample1_image, dirt_sample1_infer, dirt_sample1_sel
+  * strangeness_run1_fhc_evtw, strangeness_run1_fhc_image,
+    strangeness_run1_fhc_infer, strangeness_run1_fhc_sel
+  * ext_partition0_image, ext_partition0_infer, ext_partition0_sel
+  * ext_partition1_image, ext_partition1_infer, ext_partition1_sel
+  * ext_partition2_image, ext_partition2_infer, ext_partition2_sel
+
+The training XML uses the same sample stage names, but drops the infer stage:
+
+  * beam_sample0_evtw, beam_sample0_image, beam_sample0_sel
+  * beam_sample1_evtw, beam_sample1_image, beam_sample1_sel
+  * beam_sample2_evtw, beam_sample2_image, beam_sample2_sel
+  * beam_sample3_evtw, beam_sample3_image, beam_sample3_sel
+  * dirt_sample0_evtw, dirt_sample0_image, dirt_sample0_sel
+  * dirt_sample1_evtw, dirt_sample1_image, dirt_sample1_sel
+  * strangeness_run1_fhc_evtw, strangeness_run1_fhc_image,
+    strangeness_run1_fhc_sel
+  * ext_partition0_image, ext_partition0_sel
+  * ext_partition1_image, ext_partition1_sel
+  * ext_partition2_image, ext_partition2_sel
+
+The stride-split detvar training XML uses:
+
+  * beam_detvar_nominal_train_image, beam_detvar_nominal_train_sel
+  * strangeness_detvar_nominal_train_image, strangeness_detvar_nominal_train_sel
 
 To clean and resubmit a stage:
 
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --clean
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_s0 --submit
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_sample0 --clean
+     project.py --xml xml/numi_fhc_run1.xml --stage beam_sample0 --submit
+
+For the staged XML, clean and resubmit the specific stage you want to rerun:
+
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_infer --clean
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_sample0_infer --submit
 
 
 7. Common adjustments
@@ -248,7 +350,7 @@ Check the following first:
     the repository top directory and that assets/models/checkpoint_step0010000.pt
     is present.
   * If a grid stage points to the wrong storage area, edit the entities in
-    xml/numi_fhc_run1.xml before submitting.
+    the XML file you are submitting before launching jobs.
 
 
 End

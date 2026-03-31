@@ -29,6 +29,10 @@ LICENSE
 scripts/README.md
      Dataset naming, SAM-definition helpers, and sample-management notes.
 
+reference/
+     Extensionless reference copies of external batch-tool scripts kept in a
+     format that is easy for LLM and text-ingestion tooling to read.
+
 
 Requirements
 ------------
@@ -57,6 +61,7 @@ Repository layout
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
   * assets/             model assets, bad-channel data, and runtime helpers
+  * reference/          LLM-friendly plain-text reference copies of batch tools
 
 
 Checked-in entry points
@@ -66,6 +71,8 @@ The main top-level job configurations are:
 
   * job/run_nuselection.fcl
   * job/run_nuselection_data.fcl
+  * job/run_nuselection_noinference.fcl
+  * job/run_nuselection_data_noinference.fcl
   * job/run_imageprod.fcl
   * job/run_inferenceprod.fcl
   * job/run_fullchain.fcl
@@ -76,6 +83,13 @@ The main development configurations are:
   * dev/image_dev_cosmic.fcl
   * dev/numi_fhc_run1_dev.xml
   * dev/run_numisystematicweights_rhc_extragenie1.fcl
+
+The main grid-submission XML configurations are:
+
+  * xml/numi_fhc_run1.xml
+  * xml/numi_fhc_run1_staged.xml
+  * xml/numi_fhc_run1_training.xml
+  * xml/numi_fhc_run1_detvar_training.xml
 
 The repository root also contains helper scripts commonly used during local
 work:

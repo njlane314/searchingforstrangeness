@@ -1,11 +1,11 @@
 # Scripts
 
-## Run 1 NuMI FHC original SAM definitions (pre-goodruns)
+## Run 1 NuMI FHC source SAM definitions
 
-These are the original Run 1 NuMI FHC SAM definitions (pre-goodruns) you can
-use as the persistent source when carrying filenames through processing
-stages. This list includes beam, detector variations, strangeness (and
-strangeness detvars), dirt, and EXT/data.
+These are the Run 1 NuMI FHC SAM definitions to use as the persistent source
+when carrying filenames through processing stages. This list includes beam,
+detector variations, strangeness (and strangeness detvars), dirt, and
+EXT/data. The checked-in XML workflows use these source definitions directly.
 
 ### Beam
 - `prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0`
@@ -51,15 +51,15 @@ strangeness detvars), dirt, and EXT/data.
 ## Next steps
 
 1. Use the list above as the source definitions when you build new SAM defs.
-   For example, to re-apply a good-runs condition (or a custom condition),
-   run:
+   If you still need the legacy good-runs filtering helpers for an ad hoc SAM
+   workflow, run:
 
    ```bash
    ./scripts/apply_goodruns.sh <source_def> <goodruns_def> [condition]
    ```
 
-2. To apply the good-runs condition to every Run 1 NuMI FHC definition above
-   using consistent output names, run:
+2. To apply the legacy good-runs condition to every Run 1 NuMI FHC definition
+   above using consistent output names, run:
 
    ```bash
    ./scripts/apply_goodruns_run1_fhc.sh [--condition "<expr>"] [--dry-run]
@@ -82,8 +82,17 @@ strangeness detvars), dirt, and EXT/data.
    ./scripts/split_detvar_stride.sh --batch detvar_triples.txt
    ```
 
-## End-to-end workflow: partition large samples, apply good-runs, and create
-## training splits
+5. To process training definitions on the grid without running inference, use
+   `xml/numi_fhc_run1_training.xml` and update its input SAM definitions and
+   `numjobs` counts to match the training definitions you created.
+
+6. To process the stride-split nominal detvar training definitions created by
+   `split_detvar_stride.sh`, use `xml/numi_fhc_run1_detvar_training.xml`.
+   That workflow is image-plus-selection only and uses the no-inference
+   selection wrapper.
+
+## Legacy end-to-end workflow: partition large samples, apply good-runs, and
+## create training splits
 
 This workflow is intended for Run 1 NuMI FHC sources in the list above. It
 gives consistent naming, and keeps the steps repeatable.
@@ -216,7 +225,7 @@ samweb create-definition nl_beam_run1_chunk_0000_2500_train_2000 \
   "defname: nl_beam_run1_chunk_0000_2500_goodruns with limit 2000"
 ```
 
-## Good-runs commands for every Run 1 NuMI FHC source above
+## Legacy good-runs commands for every Run 1 NuMI FHC source above
 
 Run the commands below to create a good-runs definition for each source listed
 in this README. Beam, dirt, and EXT use the same short `nl_run1_fhc_*` naming

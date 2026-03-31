@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE project [
+    <!ENTITY release "v08_00_00_82">
+    <!ENTITY user "nlane">
+    <!ENTITY name "numi_fhc_run1_detvar_training">
+    <!ENTITY initsrc "assets/scripts/initsrc.sh">
+
+    <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
+    <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
+
+    <!-- Replace these with the training defs created by scripts/split_detvar_stride.sh. -->
+    <!ENTITY input_beam_detvar_nominal_train "nl_beam_detvar_nominal_training_stride2">
+    <!ENTITY input_strangeness_detvar_nominal_train "nl_strange_detvar_nominal_training_stride2">
+
+    <!ENTITY fcl_image "run_imageprod.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+]>
+
+<job>
+<project name="&name;">
+
+    <numevents>-1</numevents>
+    <os>SL7</os>
+    <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+    <larsoft>
+        <tag>&release;</tag>
+        <qual>e17:prof</qual>
+        <local>&larsoft_tar;</local>
+    </larsoft>
+    <check>1</check>
+    <copy>0</copy>
+    <version>prod_&release;</version>
+    <memory>4000</memory>
+    <disk>20GB</disk>
+    <schema>https</schema>
+    <maxfilesperjob>1</maxfilesperjob>
+
+    <!-- Update numjobs to match the file counts in the training defs you use. -->
+    <stage name="beam_detvar_nominal_train_image">
+        <inputdef>&input_beam_detvar_nominal_train;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/image/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/image/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar_nominal_train/image</workdir>
+        <datatier>image</datatier>
+        <numjobs>1</numjobs>
+    </stage>
+
+    <stage name="beam_detvar_nominal_train_sel">
+        <previousstage>beam_detvar_nominal_train_image</previousstage>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar_nominal_train/sel</workdir>
+        <datatier>selected</datatier>
+        <numjobs>1</numjobs>
+    </stage>
+
+    <stage name="strangeness_detvar_nominal_train_image">
+        <inputdef>&input_strangeness_detvar_nominal_train;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image</workdir>
+        <datatier>image</datatier>
+        <numjobs>1</numjobs>
+    </stage>
+
+    <stage name="strangeness_detvar_nominal_train_sel">
+        <previousstage>strangeness_detvar_nominal_train_image</previousstage>
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel</workdir>
+        <datatier>selected</datatier>
+        <numjobs>1</numjobs>
+    </stage>
+
+</project>
+</job>
