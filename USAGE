@@ -5,9 +5,8 @@ Copyright (C) searchingforstrangeness contributors.
 
 This file describes normal use of the package after it has been checked out and
 built inside a MicroBooNE ubana development area.  For installation and build
-instructions, see INSTALL.  For the structure of the generated ROOT files, see
-OUTPUTS.  For a repository overview, see README.  For dataset naming and
-SAM-definition notes, see scripts/README.md.
+instructions, see INSTALL.  For a repository overview, see README.  For
+dataset naming and SAM-definition notes, see scripts/README.md.
 
 
 Conventions
@@ -170,7 +169,7 @@ TFileService analysis files
      fullchain_nuselection_hist.root.  They contain TTrees and analysis
      branches intended for downstream plotting and ntuple-style analysis.
 
-Read OUTPUTS for the checked-in branch and product layout.  In particular:
+The checked-in branch and product layout is summarized here.  In particular:
 
   * EventSelectionFilter trees live in nu_selection.root,
     nu_selection_data.root, fullchain_nuselection_hist.root,
@@ -252,5 +251,5 @@ Check the following first:
 End
 ---
 
-This file is intentionally operational.  See INSTALL for setup/build, README
-for the repository overview, and OUTPUTS for the generated ROOT content.
+This file is intentionally operational.  See INSTALL for setup/build and
+README for the repository overview.

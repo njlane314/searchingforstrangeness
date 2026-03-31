@@ -23,8 +23,8 @@ USAGE
      How to run the checked-in jobs, use the helper scripts, and submit the
      shipped grid workflow.
 
-OUTPUTS
-     Description of the checked-in ROOT outputs and tree contents.
+LICENSE
+     MIT licensing terms for the repository.
 
 scripts/README.md
      Dataset naming, SAM-definition helpers, and sample-management notes.
@@ -94,9 +94,15 @@ Suggested reading order
 
 1. Read INSTALL to set up the development area and build the package.
 2. Read USAGE to run local jobs or grid workflows.
-3. Read OUTPUTS when you need the checked-in ROOT schema.
-4. Read scripts/README.md when working with sample definitions or dataset
+3. Read scripts/README.md when working with sample definitions or dataset
    bookkeeping.
+4. Read LICENSE for the repository terms.
+
+
+License
+-------
+
+This repository is distributed under the MIT License.  See LICENSE.
 
 
 End
