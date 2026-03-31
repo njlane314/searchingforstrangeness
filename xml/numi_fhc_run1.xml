@@ -9,17 +9,17 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!ENTITY input_beam_sample0 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0">
-    <!ENTITY input_beam_sample1 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1">
-    <!ENTITY input_beam_sample2 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2">
-    <!ENTITY input_beam_sample3 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3">
+    <!ENTITY input_beam_shard0 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0">
+    <!ENTITY input_beam_shard1 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1">
+    <!ENTITY input_beam_shard2 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2">
+    <!ENTITY input_beam_shard3 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3">
 
-    <!ENTITY input_dirt_sample0 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0">
-    <!ENTITY input_dirt_sample1 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1">
+    <!ENTITY input_dirt_shard0 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0">
+    <!ENTITY input_dirt_shard1 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1">
 
-    <!ENTITY input_ext_partition0 "nl_extnumi_run1_all_mcc9_reco2_p0">
-    <!ENTITY input_ext_partition1 "nl_extnumi_run1_all_mcc9_reco2_p1">
-    <!ENTITY input_ext_partition2 "nl_extnumi_run1_all_mcc9_reco2_p2">
+    <!ENTITY input_ext_shard0 "nl_extnumi_run1_all_mcc9_reco2_p0">
+    <!ENTITY input_ext_shard1 "nl_extnumi_run1_all_mcc9_reco2_p1">
+    <!ENTITY input_ext_shard2 "nl_extnumi_run1_all_mcc9_reco2_p2">
 
     <!ENTITY input_strange_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
 
@@ -57,8 +57,8 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="beam_sample0">
-        <inputdef>&input_beam_sample0;</inputdef>
+    <stage name="beam_shard0">
+        <inputdef>&input_beam_shard0;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -69,15 +69,15 @@
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample0/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/sample0</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/shard0</workdir>
         <datatier>selected</datatier>
         <numjobs>3765</numjobs>
     </stage>
 
-    <stage name="beam_sample1">
-        <inputdef>&input_beam_sample1;</inputdef>
+    <stage name="beam_shard1">
+        <inputdef>&input_beam_shard1;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -88,15 +88,15 @@
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample1/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/sample1</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/shard1</workdir>
         <datatier>selected</datatier>
         <numjobs>3894</numjobs>
     </stage>
 
-    <stage name="beam_sample2">
-        <inputdef>&input_beam_sample2;</inputdef>
+    <stage name="beam_shard2">
+        <inputdef>&input_beam_shard2;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -107,15 +107,15 @@
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample2/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/sample2</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/shard2</workdir>
         <datatier>selected</datatier>
         <numjobs>3806</numjobs>
     </stage>
 
-    <stage name="beam_sample3">
-        <inputdef>&input_beam_sample3;</inputdef>
+    <stage name="beam_shard3">
+        <inputdef>&input_beam_shard3;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -126,37 +126,37 @@
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample3/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/sample3/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/sample3</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/shard3</workdir>
         <datatier>selected</datatier>
         <numjobs>3654</numjobs>
     </stage>
 
-    <stage name="dirt_sample0">
-        <inputdef>&input_dirt_sample0;</inputdef>
+    <stage name="dirt_shard0">
+        <inputdef>&input_dirt_shard0;</inputdef>
         <fcl>&fcl_evtw_slim;</fcl>
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/sample0/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/sample0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/sample0</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/shard0</workdir>
         <datatier>selected</datatier>
         <numjobs>3900</numjobs>
     </stage>
 
-    <stage name="dirt_sample1">
-        <inputdef>&input_dirt_sample1;</inputdef>
+    <stage name="dirt_shard1">
+        <inputdef>&input_dirt_shard1;</inputdef>
         <fcl>&fcl_evtw_slim;</fcl>
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/sample1/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/sample1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/sample1</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/shard1</workdir>
         <datatier>selected</datatier>
         <numjobs>3904</numjobs>
     </stage>
@@ -180,41 +180,41 @@
         <numjobs>4593</numjobs>
     </stage>
 
-    <stage name="ext_partition0">
-        <inputdef>&input_ext_partition0;</inputdef>
+    <stage name="ext_shard0">
+        <inputdef>&input_ext_shard0;</inputdef>
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition0/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/partition0</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/shard0</workdir>
         <datatier>selected</datatier>
         <numjobs>10000</numjobs>
     </stage>
 
-    <stage name="ext_partition1">
-        <inputdef>&input_ext_partition1;</inputdef>
+    <stage name="ext_shard1">
+        <inputdef>&input_ext_shard1;</inputdef>
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition1/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/partition1</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/shard1</workdir>
         <datatier>selected</datatier>
         <numjobs>10000</numjobs>
     </stage>
 
-    <stage name="ext_partition2">
-        <inputdef>&input_ext_partition2;</inputdef>
+    <stage name="ext_shard2">
+        <inputdef>&input_ext_shard2;</inputdef>
         <fcl>&fcl_image;</fcl>
         <fcl>&fcl_infer;</fcl>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition2/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/partition2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/partition2</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/shard2</workdir>
         <datatier>selected</datatier>
         <numjobs>4868</numjobs>
     </stage>
