@@ -5,8 +5,8 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  split_detvar_stride.sh [--target-events <count>] [--dry-run] <source_def> <training_shard_def> <template_shard_def>
-  split_detvar_stride.sh [--target-events <count>] [--dry-run] --batch <triples_file>
+  train-template-pair.sh [--target-events <count>] [--dry-run] <source_def> <training_shard_def> <template_shard_def>
+  train-template-pair.sh [--target-events <count>] [--dry-run] --batch <triples_file>
 
 Creates two orthogonal SAM definition shards from a source sample using
 stride-2 splitting:
@@ -33,18 +33,18 @@ Batch mode:
   Empty lines and lines starting with # are ignored.
 
 Examples:
-  ./split_detvar_stride.sh \
+  ./train-template-pair.sh \
     detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2 \
     nl_run1_fhc_strangeness_detvar_cv_train_shard \
     nl_run1_fhc_strangeness_detvar_cv_template_shard
 
-  ./split_detvar_stride.sh \
+  ./train-template-pair.sh \
     --target-events 100000 \
     prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 \
     nl_run1_fhc_beam_detvar_cv_train_shard \
     nl_run1_fhc_beam_detvar_cv_template_shard
 
-  ./split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
+  ./train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 USAGE
 }
 

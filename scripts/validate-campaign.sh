@@ -5,8 +5,8 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  validate_campaign_local.sh [--workflow <mc|data|amarantin|fullchain>] [--samdef <def>] [--files <n>]
-  validate_campaign_local.sh [--workflow <mc|data|amarantin|fullchain>] --input <input.root>
+  validate-campaign.sh [--workflow <mc|data|amarantin|fullchain>] [--samdef <def>] [--files <n>]
+  validate-campaign.sh [--workflow <mc|data|amarantin|fullchain>] --input <input.root>
 
 Runs the checked-in dev FHiCL wrappers locally through .local.sh so you can
 validate the campaign path before submitting to the grid.

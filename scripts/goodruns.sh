@@ -3,7 +3,7 @@
 usage() {
   cat <<'USAGE'
 Usage:
-  apply_goodruns.sh <source_def> <goodruns_def> [condition]
+  goodruns.sh <source_def> <goodruns_def> [condition]
 
 Creates a new SAM definition by applying a good-runs condition to a source
 definition.
@@ -14,7 +14,7 @@ Arguments:
   [condition]    Optional condition (default: "goodruns: 1").
 
 Example:
-  ./apply_goodruns.sh prod_numi_fhc_beam_run1_reco2 \
+  ./goodruns.sh prod_numi_fhc_beam_run1_reco2 \
     nl_numi_fhc_beam_run1_reco2_goodruns
 USAGE
 }

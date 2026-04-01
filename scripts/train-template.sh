@@ -5,10 +5,10 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  create_training_template_shards.sh [--plan <triples_file>] [--target-events <count>] [--full-shards] [--dry-run]
+  train-template.sh [--plan <triples_file>] [--target-events <count>] [--full-shards] [--dry-run]
 
 Creates orthogonal training/template SAM definition shards from a triples file.
-The default plan is scripts/run1_detvar_cv_shards.txt.
+The default plan is scripts/run1-fhc-cv.plan.
 By default the wrapper caps only the training shard at roughly 100000 events.
 
 Each non-comment line in the plan file must contain:
@@ -30,7 +30,7 @@ if ! command -v samweb >/dev/null 2>&1; then
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-plan_file="${script_dir}/run1_detvar_cv_shards.txt"
+plan_file="${script_dir}/run1-fhc-cv.plan"
 target_events=100000
 full_shards=0
 dry_run=0
@@ -79,7 +79,7 @@ if (( full_shards == 0 )) && { ! [[ ${target_events} =~ ^[0-9]+$ ]] || (( target
   exit 1
 fi
 
-run_split_script="${script_dir}/split_detvar_stride.sh"
+run_split_script="${script_dir}/train-template-pair.sh"
 if [[ ! -f "${run_split_script}" ]]; then
   echo "Error: helper not found: ${run_split_script}" >&2
   exit 1

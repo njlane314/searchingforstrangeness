@@ -182,12 +182,12 @@ template surfaces are orthogonal before any processing stage runs.
 
 The checked-in batch file is:
 
-- `scripts/run1_detvar_cv_shards.txt`
+- `scripts/run1-fhc-cv.plan`
 
 Create the shard definitions with:
 
 ```bash
-./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
+./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 ```
 
 That produces:
@@ -213,32 +213,32 @@ Count the active campaign definitions and flag anything above the default
 5000-file sharding threshold:
 
 ```bash
-./scripts/query_campaign_numjobs.sh
+./scripts/campaign-jobs.sh
 ```
 
 Run the checked-in dev FHiCL chain locally before you launch a campaign:
 
 ```bash
-./scripts/validate_campaign_local.sh --workflow mc --samdef prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0
+./scripts/validate-campaign.sh --workflow mc --samdef prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0
 ```
 
 Run the Run 1 data/EXT-like staged path locally:
 
 ```bash
-./scripts/validate_campaign_local.sh --workflow data
+./scripts/validate-campaign.sh --workflow data
 ```
 
 Build the compact amarantin validation surface locally:
 
 ```bash
-./scripts/validate_campaign_local.sh --workflow amarantin
+./scripts/validate-campaign.sh --workflow amarantin
 ```
 
 Count a specific campaign XML and include derived train/template shard
 definitions:
 
 ```bash
-./scripts/query_campaign_numjobs.sh \
+./scripts/campaign-jobs.sh \
   --xml xml/numi_reco2_run1_fhc_campaign.xml \
   --include-derived-shards
 ```
@@ -246,7 +246,7 @@ definitions:
 Create one orthogonal pair by hand:
 
 ```bash
-./scripts/split_detvar_stride.sh \
+./scripts/train-template-pair.sh \
   prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 \
   nl_run1_fhc_beam_detvar_cv_train_shard \
   nl_run1_fhc_beam_detvar_cv_template_shard
@@ -255,7 +255,7 @@ Create one orthogonal pair by hand:
 Create the whole Run 1 CV shard set with the full alternating-file split:
 
 ```bash
-./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
+./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 ```
 
 Or use the wrapper that prints source counts and then applies the whole plan,
@@ -263,17 +263,17 @@ targeting roughly 100000 events in the training shard by default while keeping
 the full template shard:
 
 ```bash
-./scripts/create_training_template_shards.sh
+./scripts/train-template.sh
 ```
 
 Preview the sharding commands without creating any SAM definitions:
 
 ```bash
-./scripts/create_training_template_shards.sh --dry-run
+./scripts/train-template.sh --dry-run
 ```
 
 To keep the original full alternating-file shards through the wrapper:
 
 ```bash
-./scripts/create_training_template_shards.sh --full-shards
+./scripts/train-template.sh --full-shards
 ```

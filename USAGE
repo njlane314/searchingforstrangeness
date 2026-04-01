@@ -203,7 +203,7 @@ art event file.
 If you want one wrapper that runs the checked-in dev chain end-to-end before
 submitting a campaign, use:
 
-     ./scripts/validate_campaign_local.sh --workflow mc
+     ./scripts/validate-campaign.sh --workflow mc
 
 That defaults to the Run 1 FHC staged MC path:
 
@@ -214,11 +214,11 @@ That defaults to the Run 1 FHC staged MC path:
 and enforces a single-file starting point so the local stage handoff stays on
 one ROOT file at a time. You can switch workflows or inputs, for example:
 
-     ./scripts/validate_campaign_local.sh --workflow data
+     ./scripts/validate-campaign.sh --workflow data
 
-     ./scripts/validate_campaign_local.sh --workflow amarantin
+     ./scripts/validate-campaign.sh --workflow amarantin
 
-     ./scripts/validate_campaign_local.sh \
+     ./scripts/validate-campaign.sh \
        --workflow mc \
        --evtw-config extragenie1 \
        --samdef prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1
@@ -262,11 +262,11 @@ definition and loop over them:
 If you need to prepare or inspect SAM definitions, use the helper scripts in
 scripts/ and the top-level describe-definitions.sh helper:
 
-     ./scripts/split_detvar_stride.sh <source_def> <training_shard_def> <template_shard_def>
+     ./scripts/train-template-pair.sh <source_def> <training_shard_def> <template_shard_def>
 
-     ./scripts/query_campaign_numjobs.sh
+     ./scripts/campaign-jobs.sh
 
-     ./scripts/create_training_template_shards.sh --dry-run
+     ./scripts/train-template.sh --dry-run
 
      ./describe-definitions.sh
 
@@ -349,24 +349,24 @@ Before submitting:
 Run 1 CV train/template shards are created upstream at the SAM-definition
 level. To build the checked-in shard names, run:
 
-     ./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
+     ./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 
 or use the wrapper:
 
-     ./scripts/create_training_template_shards.sh
+     ./scripts/train-template.sh
 
 The wrapper now caps only the training shard at roughly 100000 events by
 default.
 Use:
 
-     ./scripts/create_training_template_shards.sh --full-shards
+     ./scripts/train-template.sh --full-shards
 
 when you want the original full alternating-file split instead.
 
 To decide whether a source definition should be split first, query the file
 counts from the active XMLs:
 
-     ./scripts/query_campaign_numjobs.sh
+     ./scripts/campaign-jobs.sh
 
 That helper uses a default sharding threshold of 5000 files, matching the
 common NuMI note examples for splitting large SAM definitions with

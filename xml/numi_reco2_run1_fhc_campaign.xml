@@ -26,7 +26,7 @@
     <!--
       Run 1 CV split strategy:
       create the orthogonal training/template shard definitions with the batch
-      mode of scripts/split_detvar_stride.sh using scripts/run1_detvar_cv_shards.txt
+      mode of scripts/train-template-pair.sh using scripts/run1-fhc-cv.plan
       and replace these entities only if your SAM naming differs.
     -->
     <!ENTITY input_beam_detvar_cv_train_shard "nl_run1_fhc_beam_detvar_cv_train_shard">

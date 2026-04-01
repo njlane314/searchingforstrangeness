@@ -5,7 +5,7 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  query_campaign_numjobs.sh [--xml <xml_file>]... [--threshold <files>] [--include-derived-shards] [--tsv]
+  campaign-jobs.sh [--xml <xml_file>]... [--threshold <files>] [--include-derived-shards] [--tsv]
 
 Counts files for the input SAM definitions declared in the staged campaign XMLs.
 Because the checked-in XMLs use maxfilesperjob=1, the file count is the numjobs

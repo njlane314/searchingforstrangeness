@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  apply_goodruns_run1_fhc.sh [--condition <expr>] [--dry-run]
+  goodruns-run1-fhc.sh [--condition <expr>] [--dry-run]
 
 Applies the good-runs condition to the Run 1 NuMI FHC beam, generic detvar,
 dirt, and EXT source definitions listed in scripts/README.md, generating
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-apply_script="${script_dir}/apply_goodruns.sh"
+apply_script="${script_dir}/goodruns.sh"
 
 if [[ ! -x "${apply_script}" ]]; then
   echo "Error: ${apply_script} is not executable." >&2
