@@ -3,32 +3,27 @@
 <!DOCTYPE project [
     <!ENTITY release "v08_00_00_82">
     <!ENTITY user "nlane">
-    <!ENTITY name "numi_fhc_run2a_campaign">
+    <!ENTITY name "numi_reco2_run2a_fhc_campaign">
     <!ENTITY initsrc "runtime/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
     <!--
-      Run 2a FHC sample inventory sourced from:
-      /Users/user/programs/internal-note/sections/appendix-numi-workflows.tex
-      and /Users/user/programs/internal-note/sections/02-detectors.tex
+      Official Run 2a FHC Reco2 source SAM definitions from the March 2022 NuMI
+      dataset list, plus the dedicated Run 2 FHC strangeness overlay.
 
-      The Run 2a FHC table in the note also contains a second "Beam" row,
-      "run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2", which is
-      duplicated under the Run 2b RHC block and appears to be a copied typo.
-      This XML therefore uses only the clearly FHC-tagged nominal beam SAM
-      definition below.
+      The same list also shows a regenerated beam entry,
+      run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2, under the
+      Run 2a FHC block. Because that definition is explicitly RHC-tagged and is
+      duplicated under Run 2b RHC, this template defaults to the clearly
+      FHC-tagged source below.
     -->
     <!ENTITY input_beam_campaign_run2a_fhc "prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2">
     <!ENTITY input_dirt_campaign_run2a_fhc "prodgenie_numi_fhc_dirt_overlay_pandora_reco2_run2_reco2">
     <!ENTITY input_strangeness_campaign_run2a_fhc "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
-
-    <!-- Run 2a EXT cosmic partitions from the note's good-run partition table. -->
-    <!ENTITY input_ext_campaign_run2a_p0 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p0">
-    <!ENTITY input_ext_campaign_run2a_p1 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p1">
-    <!ENTITY input_ext_campaign_run2a_p2 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p2">
-    <!ENTITY input_ext_campaign_run2a_p3 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p3">
+    <!ENTITY input_ext_campaign_run2a_fhc "prod_extnumi_swizzle_inclusive_v4_run2a_reco2_run2a_all_reco2">
+    <!ENTITY input_data_campaign_run2a_fhc "prod_numi_swizzle_inclusive_v4_run2_reco2_run2a_beam_good_reco2">
 
     <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
@@ -41,26 +36,22 @@
       Temporary campaign settings:
       keep only fcl_evtw_00 so these jobs write the first 100 multisim
       universes, use the NuMI old-flux reweighting chain, and skip inference
-      until the checked-in models are updated. There is no upstream OldRW slim
-      config, so the dirt stages intentionally use the full fcl_evtw_00 file.
+      until the checked-in models are updated.
+
+      The March 2022 list warns that good-runs were not yet applied to the Run
+      2a samples. If you want filtered or partitioned definitions, derive them
+      upstream and replace the input entities here.
     -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
     <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
     <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
 
-    <!--
-      Placeholder job counts. This shell does not have samweb configured, so
-      replace these with `samweb count-files defname:<...>` results before
-      submission if you want exact one-file-per-job coverage.
-    -->
     <!ENTITY numjobs_beam_campaign_run2a_fhc "1">
     <!ENTITY numjobs_dirt_campaign_run2a_fhc "1">
     <!ENTITY numjobs_strangeness_campaign_run2a_fhc "1">
-    <!ENTITY numjobs_ext_campaign_run2a_p0 "1">
-    <!ENTITY numjobs_ext_campaign_run2a_p1 "1">
-    <!ENTITY numjobs_ext_campaign_run2a_p2 "1">
-    <!ENTITY numjobs_ext_campaign_run2a_p3 "1">
+    <!ENTITY numjobs_ext_campaign_run2a_fhc "1">
+    <!ENTITY numjobs_data_campaign_run2a_fhc "1">
 ]>
 
 <job>
@@ -139,56 +130,30 @@
         <numjobs>&numjobs_strangeness_campaign_run2a_fhc;</numjobs>
     </stage>
 
-    <stage name="ext_campaign_run2a_p0">
-        <inputdef>&input_ext_campaign_run2a_p0;</inputdef>
+    <stage name="ext_campaign_run2a_fhc">
+        <inputdef>&input_ext_campaign_run2a_fhc;</inputdef>
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p0/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p0/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run2a/p0</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run2a_fhc</workdir>
         <datatier>selected</datatier>
-        <numjobs>&numjobs_ext_campaign_run2a_p0;</numjobs>
+        <numjobs>&numjobs_ext_campaign_run2a_fhc;</numjobs>
     </stage>
 
-    <stage name="ext_campaign_run2a_p1">
-        <inputdef>&input_ext_campaign_run2a_p1;</inputdef>
+    <stage name="data_campaign_run2a_fhc">
+        <inputdef>&input_data_campaign_run2a_fhc;</inputdef>
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p1/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p1/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run2a/p1</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run2a_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run2a_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run2a_fhc</workdir>
         <datatier>selected</datatier>
-        <numjobs>&numjobs_ext_campaign_run2a_p1;</numjobs>
-    </stage>
-
-    <stage name="ext_campaign_run2a_p2">
-        <inputdef>&input_ext_campaign_run2a_p2;</inputdef>
-        <fcl>&fcl_image;</fcl>
-        <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p2/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p2/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run2a/p2</workdir>
-        <datatier>selected</datatier>
-        <numjobs>&numjobs_ext_campaign_run2a_p2;</numjobs>
-    </stage>
-
-    <stage name="ext_campaign_run2a_p3">
-        <inputdef>&input_ext_campaign_run2a_p3;</inputdef>
-        <fcl>&fcl_image;</fcl>
-        <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p3/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run2a/p3/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run2a/p3</workdir>
-        <datatier>selected</datatier>
-        <numjobs>&numjobs_ext_campaign_run2a_p3;</numjobs>
+        <numjobs>&numjobs_data_campaign_run2a_fhc;</numjobs>
     </stage>
 
 </project>

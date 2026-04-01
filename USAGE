@@ -90,7 +90,8 @@ dev/image_dev_cosmic.fcl
 dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
      Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
      the same order as the staged XML when you want to reproduce the
-     `*_evtw` substage sequence on a small local sample.
+     `*_evtw` substage sequence on a small local sample.  These wrappers use
+     the NuMI old-flux reweighting chain.
 
 dev/run_stage_image_dev.fcl
      Local wrapper for the staged image-production step.
@@ -112,8 +113,9 @@ dev/amarantin_local_dev.fcl
      Local MC-style ntuple job for downstream amarantin testing.  It runs the
      eventweight and image stages in-process, writes the EventSelectionFilter
      and SubRun trees, limits the local sample to 100 events, keeps only 100
-     GENIE and 100 PPFX universes, and leaves inference disabled until the
-     checked-in model bundle is refreshed.
+     GENIE and 100 PPFX universes, uses the NuMI old-flux reweighting chain,
+     and leaves inference disabled until the checked-in model bundle is
+     refreshed.
 
 dev/run_numisystematicweights_rhc_extragenie1.fcl
      Standalone extra-GENIE RHC event-weight job writing
@@ -272,30 +274,58 @@ The repository includes five checked-in grid XML workflows:
   * xml/numi_fhc_run1.xml
     This keeps eventweight, image production, and selection in the same
     submitted stage as sequential substages.  For now it keeps only the first
-    eventweight chunk (100 multisim universes) and skips inference until the
-    checked-in models are updated.
+    eventweight chunk (100 multisim universes), uses the NuMI old-flux
+    reweighting chain, and skips inference until the checked-in models are
+    updated.
   * xml/numi_fhc_run2a_campaign.xml
     This is the Run 2a FHC campaign template built from the Run 2a NuMI sample
     inventory in the internal note.  It uses one nominal beam sample, one dirt
     sample, one strangeness sample, and four good-run EXT partitions.  Its
     `numjobs` values are placeholders and should be replaced from `samweb`
     counts in a configured environment before submission.  Like the Run 1
-    campaign XML, it currently keeps only the first eventweight chunk and
-    skips inference until the checked-in models are updated.
+    campaign XML, it currently keeps only the first eventweight chunk, uses the
+    NuMI old-flux reweighting chain, and skips inference until the checked-in
+    models are updated.
   * xml/numi_fhc_run1_staged.xml
     This currently splits the workflow into `*_evtw`, `*_image`, and `*_sel`
-    stages.  Each `*_evtw` stage keeps only the first eventweight chunk, and
-    each later stage consumes the checked output of the previous one.
+    stages.  Each `*_evtw` stage keeps only the first eventweight chunk, uses
+    the NuMI old-flux reweighting chain, and each later stage consumes the
+    checked output of the previous one.
     Dedicated `*_infer` stages are commented out until the checked-in models
     are updated.
   * xml/numi_fhc_run1_training.xml
     This is the training-oriented workflow.  It skips inference entirely, runs
-    only the first eventweight chunk for MC, and uses the no-inference
-    selection FHiCL wrappers.
+    only the first eventweight chunk for MC, uses the NuMI old-flux
+    reweighting chain, and uses the no-inference selection FHiCL wrappers.
   * xml/numi_fhc_run1_detvar_training.xml
     This is the stride-split detector-variation training workflow.  It targets
     the training definitions created by `scripts/split_detvar_stride.sh` and
     runs only `image -> sel` with the no-inference MC selection wrapper.
+
+The repository also includes four source-samdef Reco2 campaign templates built
+from the March 2022 NuMI dataset list plus the matching dedicated strangeness
+overlay samples recorded in the internal note:
+
+  * xml/numi_reco2_run1_fhc_campaign.xml
+    Run 1 FHC source campaign using the official Reco2 beam, dirt, EXT, and
+    beam-good data definitions together with the Run 1 FHC strangeness sample.
+  * xml/numi_reco2_run2a_fhc_campaign.xml
+    Run 2a FHC source campaign using the official Reco2 source definitions.
+    It defaults to the clearly FHC-tagged beam definition and documents the
+    duplicated `run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2`
+    line from the March 2022 list as an ambiguity to review manually.
+  * xml/numi_reco2_run2b_rhc_campaign.xml
+    Run 2b RHC source campaign using the regenerated RHC beam definition, the
+    Run 2 RHC dirt and strangeness samples, plus the listed EXT and data defs.
+  * xml/numi_reco2_run3b_rhc_campaign.xml
+    Run 3b RHC source campaign using the four official beam shards, the two
+    dirt shards, the Run 3 RHC strangeness sample, and the listed EXT/data
+    definitions.
+
+These Reco2 source templates keep only the first eventweight chunk, disable
+inference until the checked-in models are updated, and leave all `numjobs`
+values as placeholders that should be replaced with
+`samweb count-files defname:<...>` results before submission.
 
 Before submitting, review the XML entities near the top of the file you plan
 to use.  They hard-code values such as:
@@ -362,6 +392,25 @@ Checked-in stage names include:
   * ext_campaign_run2a_p1
   * ext_campaign_run2a_p2
   * ext_campaign_run2a_p3
+
+The Reco2 source-campaign XMLs use similarly named stage families such as:
+
+  * beam_campaign_run1_fhc_sample0 through beam_campaign_run1_fhc_sample3
+  * dirt_campaign_run1_fhc_sample0 and dirt_campaign_run1_fhc_sample1
+  * strangeness_campaign_run1_fhc
+  * ext_campaign_run1_fhc
+  * data_campaign_run1_fhc
+  * beam_campaign_run2a_fhc, dirt_campaign_run2a_fhc,
+    strangeness_campaign_run2a_fhc, ext_campaign_run2a_fhc,
+    data_campaign_run2a_fhc
+  * beam_campaign_run2b_rhc, dirt_campaign_run2b_rhc,
+    strangeness_campaign_run2b_rhc, ext_campaign_run2b_rhc,
+    data_campaign_run2b_rhc
+  * beam_campaign_run3b_rhc_sample0 through beam_campaign_run3b_rhc_sample3
+  * dirt_campaign_run3b_rhc_sample0 and dirt_campaign_run3b_rhc_sample1
+  * strangeness_campaign_run3b_rhc
+  * ext_campaign_run3b_rhc
+  * data_campaign_run3b_rhc
 
 The staged XML uses dataset-specific stage chains such as:
 

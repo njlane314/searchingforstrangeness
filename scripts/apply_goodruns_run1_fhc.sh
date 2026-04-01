@@ -6,8 +6,10 @@ usage() {
 Usage:
   apply_goodruns_run1_fhc.sh [--condition <expr>] [--dry-run]
 
-Applies the good-runs condition to each Run 1 NuMI FHC source definition
-listed in scripts/README.md, generating consistent output names.
+Applies the good-runs condition to the Run 1 NuMI FHC beam, generic detvar,
+dirt, and EXT source definitions listed in scripts/README.md, generating
+consistent output names. Dedicated strangeness Reco2 SAM definitions are
+excluded because they were already produced from good-run-filtered inputs.
 
 Options:
   --condition <expr>  Override the condition (default: "goodruns: 1").
@@ -68,20 +70,6 @@ sources=(
   "prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2"
   "prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2"
 
-  # Strangeness (nominal)
-  "prod_strange_resample_fhc_run1_fhc_reco2_reco2"
-
-  # Strangeness detvars (ordered to match beam detvars)
-  "detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2"
-  "Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2"
-  "Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2"
-  "detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2"
-  "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2"
-  "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2"
-
   # Dirt
   "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0"
   "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1"
@@ -108,16 +96,6 @@ goodruns_name() {
     ["prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2"]="nl_run1_fhc_detvar_wiremodyz_goodruns"
     ["prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2"]="nl_run1_fhc_detvar_wiremodthetaxz_goodruns"
     ["prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2"]="nl_run1_fhc_detvar_wiremodthetayz_goodruns"
-    ["prod_strange_resample_fhc_run1_fhc_reco2_reco2"]="nl_run1_fhc_strange_nominal_goodruns"
-    ["detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2"]="nl_run1_fhc_strange_cv_goodruns"
-    ["Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2"]="nl_run1_fhc_strange_ly_down_goodruns"
-    ["Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2"]="nl_run1_fhc_strange_ly_rayleigh_goodruns"
-    ["detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2"]="nl_run1_fhc_strange_wiremodx_sce_goodruns"
-    ["detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2"]="nl_run1_fhc_strange_wiremodyz_sce_goodruns"
-    ["Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2"]="nl_run1_fhc_strange_wiremodyz_goodruns"
-    ["Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2"]="nl_run1_fhc_strange_wiremodthetayz_goodruns"
-    ["detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2"]="nl_run1_fhc_strange_sce_goodruns"
-    ["detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2"]="nl_run1_fhc_strange_recomb2_goodruns"
     ["prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0"]="nl_run1_fhc_dirt_sample0_goodruns"
     ["prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1"]="nl_run1_fhc_dirt_sample1_goodruns"
     ["prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2"]="nl_run1_fhc_ext_goodruns"

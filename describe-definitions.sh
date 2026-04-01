@@ -23,13 +23,15 @@ datasets=(
   prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2
   prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2
 
-  # --- Strangeness + detvars ---
+  # --- Strangeness + confirmed Reco2 detvars ---
   prod_strange_resample_fhc_run1_fhc_reco2_reco2
   detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2
   Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2
   Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2
-  detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2
-  detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2
+  detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2
+  detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2
+  # Production tracking currently labels the next sample as ThetaXZ in one
+  # spreadsheet, but the SAM definition itself still says WireMod_YZ.
   Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2
   Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2
   detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2

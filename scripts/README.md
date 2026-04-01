@@ -1,5 +1,58 @@
 # Scripts
 
+## Reco2 campaign source SAM definitions
+
+These are the official Reco2 source definitions used by the source-based
+campaign XML templates:
+
+- `xml/numi_reco2_run1_fhc_campaign.xml`
+- `xml/numi_reco2_run2a_fhc_campaign.xml`
+- `xml/numi_reco2_run2b_rhc_campaign.xml`
+- `xml/numi_reco2_run3b_rhc_campaign.xml`
+
+Only the campaign-relevant categories are listed here: beam, dirt,
+strangeness, EXT, and beam-on data. The full detector-variation inventories
+remain in the internal note.
+
+### Run 1 FHC
+- Beam: `prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0`,
+  `prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1`,
+  `prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2`,
+  `prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3`
+- Dirt: `prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0`,
+  `prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1`
+- Strangeness: `prod_strange_resample_fhc_run1_fhc_reco2_reco2`
+- EXT: `prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2`
+- Data: `prod_mcc9_v08_00_00_45_numi_reco2_run1_beam_good_reco2`
+
+### Run 2a FHC
+- Beam: `prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2`
+- Dirt: `prodgenie_numi_fhc_dirt_overlay_pandora_reco2_run2_reco2`
+- Strangeness: `prod_strange_resample_fhc_run2_fhc_reco2_reco2`
+- EXT: `prod_extnumi_swizzle_inclusive_v4_run2a_reco2_run2a_all_reco2`
+- Data: `prod_numi_swizzle_inclusive_v4_run2_reco2_run2a_beam_good_reco2`
+
+### Run 2b RHC
+- Beam: `run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2`
+- Dirt: `prodgenie_numi_rhc_dirt_overlay_pandora_reco2_run2_reco2`
+- Strangeness: `prod_strange_resample_rhc_run2_rhc_reco2_reco2`
+- EXT: `prod_extnumi_swizzle_crt_inclusive_v4b_offbeam_run2_reco2_new2_run2_reco2_all`
+- Data: `prod_numi_swizzle_inclusive_v4b_run2_beamon_run2_reco2_run2_beam_good_reco2`
+
+### Run 3b RHC
+- Beam: `prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0`,
+  `prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample1`,
+  `prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample2_v3`,
+  `prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample3`
+- Dirt: `prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample0`,
+  `prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample1`
+- Strangeness: `prod_strange_resample_rhc_run3_rhc_reco2_reco2`
+- EXT: `prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2`
+- Data: `prod_numi_mcc9_v08_00_00_45_run3b_run3b_reco2_beam_good_reco2`
+
+Run 1 RHC is not templated here because this repository does not record a
+matching dedicated Run 1 RHC strangeness source definition.
+
 ## Run 1 NuMI FHC source SAM definitions
 
 These are the Run 1 NuMI FHC SAM definitions to use as the persistent source
@@ -28,16 +81,25 @@ EXT/data. The checked-in XML workflows use these source definitions directly.
 ### Strangeness (nominal)
 - `prod_strange_resample_fhc_run1_fhc_reco2_reco2`
 
-### Strangeness detvars (ordered to match beam detvars)
+### Strangeness detvars confirmed in the Run 1 FHC Reco2 campaign tracking
 - `detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2`
 - `Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2`
 - `Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2`
 - `detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2`
 - `detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2`
-- `detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2`
-- `detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2`
+- `detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2`
+- `detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2`
 - `Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2`
 - `Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2`
+
+Notes:
+- No separate Run 1 FHC strangeness Reco2 LY-attenuation sample is currently
+  listed in the confirmed production table.
+- One production row labels
+  `Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2`
+  as "WireMod ThetaXZ", but the SAM definition name itself says `WireMod_YZ`.
+  This repository keeps the literal SAM definition until that campaign label is
+  resolved externally.
 
 ### Dirt
 - `prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0`
@@ -227,10 +289,13 @@ samweb create-definition nl_beam_run1_chunk_0000_2500_train_2000 \
 
 ## Legacy good-runs commands for every Run 1 NuMI FHC source above
 
-Run the commands below to create a good-runs definition for each source listed
-in this README. Beam, dirt, and EXT use the same short `nl_run1_fhc_*` naming
-style as the detector variations for consistency. The beam-good data sample is
-already filtered, so it is intentionally omitted.
+Run the commands below to create a good-runs definition for the generic Run 1
+FHC beam, detvar, dirt, and EXT sources. Beam, dirt, and EXT use the same
+short `nl_run1_fhc_*` naming style as the detector variations for consistency.
+The beam-good data sample is already filtered, so it is intentionally omitted.
+The dedicated strangeness Reco2 SAM definitions are also intentionally omitted:
+their upstream Reco1 source names already indicate that the good-runs
+requirement was applied before the strangeness productions were made.
 
 ```bash
 # Beam
@@ -264,30 +329,6 @@ already filtered, so it is intentionally omitted.
   nl_run1_fhc_detvar_wiremodthetaxz_goodruns
 ./scripts/apply_goodruns.sh prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2 \
   nl_run1_fhc_detvar_wiremodthetayz_goodruns
-
-# Strangeness (nominal)
-./scripts/apply_goodruns.sh prod_strange_resample_fhc_run1_fhc_reco2_reco2 \
-  nl_run1_fhc_strange_nominal_goodruns
-
-# Strangeness detvars (ordered to match beam detvars)
-./scripts/apply_goodruns.sh detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2 \
-  nl_run1_fhc_strange_cv_goodruns
-./scripts/apply_goodruns.sh Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2 \
-  nl_run1_fhc_strange_ly_rayleigh_goodruns
-./scripts/apply_goodruns.sh Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2 \
-  nl_run1_fhc_strange_ly_down_goodruns
-./scripts/apply_goodruns.sh detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2 \
-  nl_run1_fhc_strange_sce_goodruns
-./scripts/apply_goodruns.sh detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2 \
-  nl_run1_fhc_strange_recomb2_goodruns
-./scripts/apply_goodruns.sh detvar_prod_strange_resample_fhc_run1_respin_wiremodX_sce_reco2_reco2 \
-  nl_run1_fhc_strange_wiremodx_sce_goodruns
-./scripts/apply_goodruns.sh detvar_prod_strange_resample_fhc_run1_respin_wiremodYZ_sce_reco2_reco2 \
-  nl_run1_fhc_strange_wiremodyz_sce_goodruns
-./scripts/apply_goodruns.sh Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2 \
-  nl_run1_fhc_strange_wiremodyz_goodruns
-./scripts/apply_goodruns.sh Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2 \
-  nl_run1_fhc_strange_wiremodthetayz_goodruns
 
 # Dirt
 ./scripts/apply_goodruns.sh prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0 \
@@ -336,20 +377,6 @@ nl_run1_fhc_detvar_wiremodx_goodruns
 nl_run1_fhc_detvar_wiremodyz_goodruns
 nl_run1_fhc_detvar_wiremodthetaxz_goodruns
 nl_run1_fhc_detvar_wiremodthetayz_goodruns
-
-# Strangeness (nominal)
-nl_run1_fhc_strange_nominal_goodruns
-
-# Strangeness detvars
-nl_run1_fhc_strange_cv_goodruns
-nl_run1_fhc_strange_ly_rayleigh_goodruns
-nl_run1_fhc_strange_ly_down_goodruns
-nl_run1_fhc_strange_sce_goodruns
-nl_run1_fhc_strange_recomb2_goodruns
-nl_run1_fhc_strange_wiremodx_sce_goodruns
-nl_run1_fhc_strange_wiremodyz_sce_goodruns
-nl_run1_fhc_strange_wiremodyz_goodruns
-nl_run1_fhc_strange_wiremodthetayz_goodruns
 
 # Dirt
 nl_run1_fhc_dirt_sample0_goodruns

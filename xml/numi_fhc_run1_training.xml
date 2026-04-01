@@ -23,21 +23,20 @@
 
     <!ENTITY input_strange_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_slim "run_eventweight_microboone_sept24_numi_fhc_slim.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
 
     <!--
       Temporary campaign settings:
       keep only fcl_evtw_00 so these jobs write the first 100 multisim
-      universes. This training workflow already skips inference because the
-      checked-in models have not been updated.
-      fcl_evtw_slim remains defined for reference, but it is CV-only and is
-      therefore disabled below.
+      universes and use the NuMI old-flux reweighting chain. This training
+      workflow already skips inference because the checked-in models have not
+      been updated. There is no upstream OldRW slim config, so the dirt stages
+      intentionally use the full fcl_evtw_00 file.
     -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
@@ -223,7 +222,6 @@
         <!-- <fcl>&fcl_evtw_03;</fcl> -->
         <!-- <fcl>&fcl_evtw_04;</fcl> -->
         <!-- <fcl>&fcl_evtw_05;</fcl> -->
-        <!-- <fcl>&fcl_evtw_slim;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/log</logdir>
@@ -262,7 +260,6 @@
         <!-- <fcl>&fcl_evtw_03;</fcl> -->
         <!-- <fcl>&fcl_evtw_04;</fcl> -->
         <!-- <fcl>&fcl_evtw_05;</fcl> -->
-        <!-- <fcl>&fcl_evtw_slim;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/log</logdir>

@@ -1,0 +1,238 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE project [
+    <!ENTITY release "v08_00_00_82">
+    <!ENTITY user "nlane">
+    <!ENTITY name "numi_reco2_run1_fhc_campaign">
+    <!ENTITY initsrc "runtime/scripts/initsrc.sh">
+
+    <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
+    <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
+
+    <!--
+      Official Run 1 FHC Reco2 source SAM definitions from the March 2022 NuMI
+      dataset list, plus the dedicated Run 1 FHC strangeness overlay.
+    -->
+    <!ENTITY input_beam_campaign_run1_fhc_sample0 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0">
+    <!ENTITY input_beam_campaign_run1_fhc_sample1 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1">
+    <!ENTITY input_beam_campaign_run1_fhc_sample2 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample2">
+    <!ENTITY input_beam_campaign_run1_fhc_sample3 "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample3">
+    <!ENTITY input_dirt_campaign_run1_fhc_sample0 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample0">
+    <!ENTITY input_dirt_campaign_run1_fhc_sample1 "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_sample1">
+    <!ENTITY input_strangeness_campaign_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
+    <!ENTITY input_ext_campaign_run1_fhc "prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2">
+    <!ENTITY input_data_campaign_run1_fhc "prod_mcc9_v08_00_00_45_numi_reco2_run1_beam_good_reco2">
+
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+
+    <!--
+      Temporary campaign settings:
+      keep only fcl_evtw_00 so these jobs write the first 100 multisim
+      universes, use the NuMI old-flux reweighting chain, and skip inference
+      until the checked-in models are updated.
+    -->
+    <!ENTITY fcl_image "run_imageprod.fcl">
+    <!ENTITY fcl_infer "run_inferenceprod.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
+
+    <!--
+      Placeholder job counts. Replace with:
+      samweb count-files defname:<definition>
+    -->
+    <!ENTITY numjobs_beam_campaign_run1_fhc_sample0 "1">
+    <!ENTITY numjobs_beam_campaign_run1_fhc_sample1 "1">
+    <!ENTITY numjobs_beam_campaign_run1_fhc_sample2 "1">
+    <!ENTITY numjobs_beam_campaign_run1_fhc_sample3 "1">
+    <!ENTITY numjobs_dirt_campaign_run1_fhc_sample0 "1">
+    <!ENTITY numjobs_dirt_campaign_run1_fhc_sample1 "1">
+    <!ENTITY numjobs_strangeness_campaign_run1_fhc "1">
+    <!ENTITY numjobs_ext_campaign_run1_fhc "1">
+    <!ENTITY numjobs_data_campaign_run1_fhc "1">
+]>
+
+<job>
+<project name="&name;">
+
+    <numevents>-1</numevents>
+    <os>SL7</os>
+    <resource>DEDICATED,OPPORTUNISTIC,OFFSITE</resource>
+    <larsoft>
+        <tag>&release;</tag>
+        <qual>e17:prof</qual>
+        <local>&larsoft_tar;</local>
+    </larsoft>
+    <check>1</check>
+    <copy>0</copy>
+    <version>prod_&release;</version>
+    <memory>4000</memory>
+    <disk>20GB</disk>
+    <schema>https</schema>
+    <maxfilesperjob>1</maxfilesperjob>
+
+    <stage name="beam_campaign_run1_fhc_sample0">
+        <inputdef>&input_beam_campaign_run1_fhc_sample0;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/sample0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_beam_campaign_run1_fhc_sample0;</numjobs>
+    </stage>
+
+    <stage name="beam_campaign_run1_fhc_sample1">
+        <inputdef>&input_beam_campaign_run1_fhc_sample1;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/sample1</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_beam_campaign_run1_fhc_sample1;</numjobs>
+    </stage>
+
+    <stage name="beam_campaign_run1_fhc_sample2">
+        <inputdef>&input_beam_campaign_run1_fhc_sample2;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample2/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample2/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/sample2</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_beam_campaign_run1_fhc_sample2;</numjobs>
+    </stage>
+
+    <stage name="beam_campaign_run1_fhc_sample3">
+        <inputdef>&input_beam_campaign_run1_fhc_sample3;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample3/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sample3/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/sample3</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_beam_campaign_run1_fhc_sample3;</numjobs>
+    </stage>
+
+    <stage name="dirt_campaign_run1_fhc_sample0">
+        <inputdef>&input_dirt_campaign_run1_fhc_sample0;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/sample0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/sample0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run1_fhc/sample0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_dirt_campaign_run1_fhc_sample0;</numjobs>
+    </stage>
+
+    <stage name="dirt_campaign_run1_fhc_sample1">
+        <inputdef>&input_dirt_campaign_run1_fhc_sample1;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/sample1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/sample1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run1_fhc/sample1</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_dirt_campaign_run1_fhc_sample1;</numjobs>
+    </stage>
+
+    <stage name="strangeness_campaign_run1_fhc">
+        <inputdef>&input_strangeness_campaign_run1_fhc;</inputdef>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_mc;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_strangeness_campaign_run1_fhc;</numjobs>
+    </stage>
+
+    <stage name="ext_campaign_run1_fhc">
+        <inputdef>&input_ext_campaign_run1_fhc;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1_fhc</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_ext_campaign_run1_fhc;</numjobs>
+    </stage>
+
+    <stage name="data_campaign_run1_fhc">
+        <inputdef>&input_data_campaign_run1_fhc;</inputdef>
+        <fcl>&fcl_image;</fcl>
+        <!-- <fcl>&fcl_infer;</fcl> -->
+        <fcl>&fcl_sel_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1_fhc</workdir>
+        <datatier>selected</datatier>
+        <numjobs>&numjobs_data_campaign_run1_fhc;</numjobs>
+    </stage>
+
+</project>
+</job>

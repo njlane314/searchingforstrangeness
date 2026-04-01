@@ -104,17 +104,17 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _createPPFXBranch = p.get<bool>("createPPFXBranch", true);
     _SaveAllFlux = p.get<bool>("SaveAllFlux", true);
     _createGenieUpDnVecs = p.get<bool>("createGenieUpDnVecs", true);
-    _genieAllUniverses = p.get<int>("genieAllUniverses", 500);
+    _genieAllUniverses = p.get<int>("genieAllUniverses", 600);
     _ppfxAllUniverses = p.get<int>("ppfxAllUniverses", 600);
     _makeNuMItuple = p.get<bool>("makeNuMINtuple", true);
-    _useReweightedFlux = p.get<bool>("useReweightedFlux", false);
+    _useReweightedFlux = p.get<bool>("useReweightedFlux", true);
 
-    _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24");
-    _event_weight_process_name_01 = p.get<std::string>("eventWeightProcessName01", "EventWeightSep24ExtraGENIE1");
-    _event_weight_process_name_02 = p.get<std::string>("eventWeightProcessName02", "EventWeightSep24ExtraGENIE2");
-    _event_weight_process_name_03 = p.get<std::string>("eventWeightProcessName03", "EventWeightSep24ExtraGENIE3");
-    _event_weight_process_name_04 = p.get<std::string>("eventWeightProcessName04", "EventWeightSep24ExtraGENIE4");
-    _event_weight_process_name_05 = p.get<std::string>("eventWeightProcessName05", "EventWeightSep24ExtraGENIE5");
+    _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24OldRW");
+    _event_weight_process_name_01 = p.get<std::string>("eventWeightProcessName01", "EventWeightSep24OldRWExtraGENIE1");
+    _event_weight_process_name_02 = p.get<std::string>("eventWeightProcessName02", "EventWeightSep24OldRWExtraGENIE2");
+    _event_weight_process_name_03 = p.get<std::string>("eventWeightProcessName03", "EventWeightSep24OldRWExtraGENIE3");
+    _event_weight_process_name_04 = p.get<std::string>("eventWeightProcessName04", "EventWeightSep24OldRWExtraGENIE4");
+    _event_weight_process_name_05 = p.get<std::string>("eventWeightProcessName05", "EventWeightSep24OldRWExtraGENIE5");
 }
 
 void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
