@@ -1,5 +1,5 @@
 #include "microboone_eventweight_service.fcl"
-#include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+#include "job/local_eventweight_oldrw/eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "run_nuselection.fcl"
 
 process_name: AmarantinLocalDev

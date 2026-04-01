@@ -1,0 +1,21 @@
+##########################################################
+## Total cross section spline reweighting
+##
+## Maintainer: Steven Gardiner <gardiner@fnal.gov>
+##########################################################
+
+microboone_eventweight_spline: {
+
+  weight_functions_spline: [
+    splines_general
+  ]
+
+  splines_general: {
+    type: Spline
+    new_splines_file: "systematics/splines/splines_CCQE_v304a_G18_10a_02_11a.xml"
+    check_old_xsec: false
+    new_tune: "G18_10a_02_11a"
+    number_of_multisims: 1 # Unused. More than one doesn't make sense for this calculator
+  }
+
+}

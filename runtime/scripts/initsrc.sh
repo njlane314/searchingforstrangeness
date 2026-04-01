@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 : "${RUNTIME_BASE_DIR:=}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-DEFAULT_RUNTIME_DIR="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+INITSRC_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+DEFAULT_RUNTIME_DIR="$(cd "$INITSRC_SCRIPT_DIR/.." && pwd -P)"
 
 if [[ -z "$RUNTIME_BASE_DIR" && -n "${CONDOR_DIR_INPUT:-}" && -d "${CONDOR_DIR_INPUT}/strangeness/runtime" ]]; then
   RUNTIME_BASE_DIR="${CONDOR_DIR_INPUT}/strangeness/runtime"

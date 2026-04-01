@@ -1,0 +1,48 @@
+#include "job/local_eventweight_oldrw/microboone_piplus_reweight_parameters.fcl"
+#include "job/local_eventweight_oldrw/microboone_piminus_reweight_parameters.fcl"
+#include "job/local_eventweight_oldrw/microboone_proton_reweight_parameters.fcl"
+#include "job/local_eventweight_oldrw/eventweight_microboone_g4rwt_reint.fcl"
+
+BEGIN_PROLOG
+
+#include "job/local_eventweight_oldrw/eventweight_microboone_genie.fcl"
+#include "job/local_eventweight_oldrw/eventweight_microboone_spline.fcl"
+#include "job/local_eventweight_oldrw/eventweight_microboone_xs.fcl"
+#include "job/local_eventweight_oldrw/ppfx_numi_reweight_sept24_rhc.fcl"
+
+microboone_eventweight_sept24_oldflux: {
+  module_type: "EventWeight"
+
+  # Throw exception if weight outside limits
+  min_weight: 0
+  max_weight: 1000
+
+  genie_module_label: generator
+
+  # Revised MicroBooNE CV tune, 24 September 2020
+  # Based on 4-parameter fit with NUISANCE to T2K 2016 CC0pi data
+  genie_central_values: {
+    MaCCQE: 4.9778 # GENIE knob setting, gives Ma = 1.10 GeV
+    RPA_CCQE: 0.151 # 0 --> Nieves CCQE default, 1 --> RPA off
+    NormCCMEC: 1.31189 # GENIE knob setting, gives scaling factor of 1.66
+    XSecShape_CCMEC: 1.0 # 0 --> Nieves CCMEC default, 1 --> GENIE empirical
+  }
+
+  # Load calculator configurations
+  @table::reweight_numi_ppfx
+  @table::microboone_eventweight_genie
+  @table::microboone_eventweight_spline
+  @table::microboone_eventweight_xs
+  @table::microboone_eventweight_reint
+}
+
+# All available weight functions
+microboone_eventweight_sept24_oldflux.weight_functions: [
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_oldrw_ppfx,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_genie,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_spline,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_xs,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_reint
+]
+
+END_PROLOG

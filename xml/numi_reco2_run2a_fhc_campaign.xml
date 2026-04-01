@@ -36,12 +36,12 @@
     <!ENTITY input_beam_detvar_wiremodthetaxz "prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_FHC_reco2_v08_00_00_55_run2_reco2">
     <!ENTITY input_beam_detvar_wiremodthetayz "prodgenie_numi_nu_overlay_pandora_reco2_run2_FHC_WireModThetaYZ_withSplines_reco2">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_00 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_01 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_02 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_03 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_04 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_05 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
 
     <!--
       Staged campaign settings:
