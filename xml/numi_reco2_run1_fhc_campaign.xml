@@ -60,16 +60,17 @@
     <!ENTITY input_strangeness_detvar_wiremod_mismatch "Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2">
     <!ENTITY input_strangeness_detvar_wiremodthetayz "Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2">
 
-    <!ENTITY fcl_evtw_00 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_01 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_02 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_03 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_04 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_05 "job/local_eventweight_oldrw/run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
 
     <!--
       Staged campaign settings:
-      - nominal beam, dirt, and dedicated strangeness run evtw -> image -> sel
+      - nominal beam, dirt, and dedicated strangeness run redk2nu -> evtw -> image -> sel
       - only fcl_evtw_00 is active, so the campaign keeps the first 100
         multisim universes
       - detector-variation stages run image -> sel only
@@ -102,6 +103,8 @@
 
     <stage name="beam_shard0_evtw">
         <inputdef>&input_beam_shard0;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -140,6 +143,8 @@
 
     <stage name="beam_shard1_evtw">
         <inputdef>&input_beam_shard1;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -178,6 +183,8 @@
 
     <stage name="beam_shard2_evtw">
         <inputdef>&input_beam_shard2;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -216,6 +223,8 @@
 
     <stage name="beam_shard3_evtw">
         <inputdef>&input_beam_shard3;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -254,6 +263,8 @@
 
     <stage name="dirt_shard0_evtw">
         <inputdef>&input_dirt_shard0;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -292,6 +303,8 @@
 
     <stage name="dirt_shard1_evtw">
         <inputdef>&input_dirt_shard1;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -330,6 +343,8 @@
 
     <stage name="strangeness_evtw">
         <inputdef>&input_strangeness;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->

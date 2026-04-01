@@ -69,6 +69,8 @@ Checked-in entry points
 
 The main top-level job configurations are:
 
+  * job/run_redk2nu_numi_fhc.fcl
+  * job/run_redk2nu_numi_rhc.fcl
   * job/run_nuselection.fcl
   * job/run_nuselection_data.fcl
   * job/run_nuselection_noinference.fcl
@@ -81,6 +83,7 @@ The main development configurations are:
 
   * dev/image_dev.fcl
   * dev/image_dev_cosmic.fcl
+  * dev/run_stage_redk2nu_dev.fcl
   * dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
   * dev/run_stage_image_dev.fcl
   * dev/run_stage_infer_dev.fcl

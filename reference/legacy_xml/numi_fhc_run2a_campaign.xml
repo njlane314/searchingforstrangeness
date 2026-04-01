@@ -30,19 +30,19 @@
     <!ENTITY input_ext_campaign_run2a_p2 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p2">
     <!ENTITY input_ext_campaign_run2a_p3 "nl_extnumi_run2a_all_mcc9_goodruns_reco2_p3">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
 
     <!--
       Temporary campaign settings:
       keep only fcl_evtw_00 so these jobs write the first 100 multisim
-      universes, use the NuMI old-flux reweighting chain, and skip inference
-      until the checked-in models are updated. There is no upstream OldRW slim
-      config, so the dirt stages intentionally use the full fcl_evtw_00 file.
+      universes, use the standard NuMI EventWeight chain, and skip inference
+      until the checked-in models are updated.
     -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
@@ -84,6 +84,8 @@
 
     <stage name="beam_campaign_run2a_fhc">
         <inputdef>&input_beam_campaign_run2a_fhc;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -103,6 +105,8 @@
 
     <stage name="dirt_campaign_run2a_fhc">
         <inputdef>&input_dirt_campaign_run2a_fhc;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -122,6 +126,8 @@
 
     <stage name="strangeness_campaign_run2a_fhc">
         <inputdef>&input_strangeness_campaign_run2a_fhc;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->

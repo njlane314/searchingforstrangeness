@@ -1,8 +1,12 @@
+#include "redk2nu_numi.fcl"
 #include "run_eventweight_microboone_sept24_numi_rhc.fcl"
 
 process_name: NuMISystematicWeights_RHC_ExtraGENIE1
 
 outputs.out1.fileName: "%ifb_extragenie1_rhc.root"
+
+physics.producers.generator: @local::microboone_redk2nu_rhc
+physics.simulate: [ generator, rns, eventweightSep24 ]
 
 physics.producers.eventweightSep24.weight_functions: [
   All,

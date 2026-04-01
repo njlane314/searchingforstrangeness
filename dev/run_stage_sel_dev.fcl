@@ -1,4 +1,4 @@
-#include "run_nuselection.fcl"
+#include "run_nuselection_noinference.fcl"
 
 process_name: NuSelectionStageDev
 

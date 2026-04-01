@@ -14,7 +14,8 @@ reference without looking like active submission entry points.
 
 All four checked-in campaign XMLs follow the same high-level rules:
 
-- nominal beam, dirt, and dedicated strangeness chains run `evtw -> image -> sel`
+- nominal beam, dirt, and dedicated strangeness chains run
+  `redk2nu -> evtw -> image -> sel`
 - only `fcl_evtw_00` is active, so the nominal MC chains keep the first 100
   multisim universes
 - detector-variation chains run `image -> sel` only
@@ -22,6 +23,9 @@ All four checked-in campaign XMLs follow the same high-level rules:
   updated yet
 - `numjobs` values are placeholders and should be replaced with
   `samweb count-files defname:<...>` results before submission
+
+The checked-in local validation helper mirrors that same staged MC path via
+`dev/run_stage_redk2nu_dev.fcl` before the standard EventWeight wrappers.
 
 ## Source SAM definitions
 

@@ -78,6 +78,11 @@ job/run_fullchain.fcl
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
+job/run_redk2nu_numi_fhc.fcl
+job/run_redk2nu_numi_rhc.fcl
+     Restore Dk2Nu information to reco2 artroot files before EventWeight,
+     using the checked-in FHC or RHC NuMI dk2nu file paths.
+
 The development entry points are under dev/.
 
 dev/image_dev.fcl
@@ -87,11 +92,15 @@ dev/image_dev.fcl
 dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
+dev/run_stage_redk2nu_dev.fcl
+     Local wrapper for the staged Run 1 FHC redk2nu preprocessing step.
+
 dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
      Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
      the same order as the staged XML when you want to reproduce the
-     `*_evtw` substage sequence on a small local sample.  These wrappers use
-     the NuMI old-flux reweighting chain.
+     `*_evtw` substage sequence on a small local sample.  Run
+     `dev/run_stage_redk2nu_dev.fcl` first when reproducing the full staged
+     MC path.  These wrappers use the standard NuMI EventWeight chain.
 
 dev/run_stage_image_dev.fcl
      Local wrapper for the staged image-production step.
@@ -111,14 +120,14 @@ dev/run_stage_fullchain_dev.fcl
 
 dev/amarantin_local_dev.fcl
      Local MC-style ntuple job for downstream amarantin testing.  It runs the
-     eventweight and image stages in-process, writes the EventSelectionFilter
-     and SubRun trees, limits the local sample to 100 events, keeps only 100
-     GENIE and 100 PPFX universes, uses the NuMI old-flux reweighting chain,
-     and leaves inference disabled until the checked-in model bundle is
-     refreshed.
+     redk2nu, eventweight, and image stages in-process, writes the
+     EventSelectionFilter and SubRun trees, limits the local sample to 100
+     events, keeps only 100 GENIE and 100 PPFX universes, uses the standard
+     NuMI EventWeight chain, and leaves inference disabled until the checked-in
+     model bundle is refreshed.
 
 dev/run_numisystematicweights_rhc_extragenie1.fcl
-     Standalone extra-GENIE RHC event-weight job writing
+     Standalone extra-GENIE RHC redk2nu-plus-event-weight job writing
      %ifb_extragenie1_rhc.root.
 
 dev/numi_fhc_run1_dev.xml
@@ -306,7 +315,8 @@ Older XMLs were archived under `reference/legacy_xml/`.
 
 All four campaigns share the same staging rules:
 
-  * nominal beam, dirt, and dedicated strangeness use `evtw -> image -> sel`
+  * nominal beam, dirt, and dedicated strangeness use
+    `redk2nu -> evtw -> image -> sel`
   * only `fcl_evtw_00` is active, so nominal MC keeps the first 100 multisim
     universes
   * detector-variation chains use `image -> sel`

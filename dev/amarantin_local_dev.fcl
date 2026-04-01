@@ -1,5 +1,6 @@
 #include "microboone_eventweight_service.fcl"
-#include "job/local_eventweight_oldrw/eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+#include "redk2nu_numi.fcl"
+#include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection.fcl"
 
 process_name: AmarantinLocalDev
@@ -9,8 +10,8 @@ services.UBEventWeight: @local::microboone_eventweight_service
 services.NuRandomService: @local::microboone_seedservice
 
 # Keep the local test artifact small enough to build quick amarantin samples.
-# This local path still uses the NuMI old-flux reweighting chain so downstream
-# tests see the same modern PPFX treatment as the campaign workflows.
+# This local path uses the standard NuMI EventWeight chain so downstream
+# tests match the repo-backed campaign defaults.
 source.maxEvents: 100
 
 physics.producers.imageprod: {
@@ -25,7 +26,8 @@ physics.producers.imageprod: {
   BadChannelFile: "runtime/detector/badchannels.txt"
 }
 
-physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux
+physics.producers.generator: @local::microboone_redk2nu_fhc
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
 
 # Leave inference disabled for this local amarantin test sample until the
 # checked-in model bundle has been updated. The downstream test only needs the
@@ -48,7 +50,7 @@ physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflu
 #   ]
 # }
 
-physics.path1: [ eventweightSep24, imageprod, nuselection ]
+physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
 # physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 

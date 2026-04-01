@@ -23,19 +23,19 @@
 
     <!ENTITY input_strange_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
 
     <!--
       Temporary campaign settings:
       keep only fcl_evtw_00 so these jobs write the first 100 multisim
-      universes, use the NuMI old-flux reweighting chain, and skip inference
-      until the checked-in models are updated. There is no upstream OldRW slim
-      config, so the dirt stages intentionally use the full fcl_evtw_00 file.
+      universes, use the standard NuMI EventWeight chain, and skip inference
+      until the checked-in models are updated.
     -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
@@ -64,6 +64,8 @@
 
     <stage name="beam_shard0_evtw">
         <inputdef>&input_beam_shard0;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -115,6 +117,8 @@
 
     <stage name="beam_shard1_evtw">
         <inputdef>&input_beam_shard1;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -166,6 +170,8 @@
 
     <stage name="beam_shard2_evtw">
         <inputdef>&input_beam_shard2;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -217,6 +223,8 @@
 
     <stage name="beam_shard3_evtw">
         <inputdef>&input_beam_shard3;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -268,6 +276,8 @@
 
     <stage name="dirt_shard0_evtw">
         <inputdef>&input_dirt_shard0;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -319,6 +329,8 @@
 
     <stage name="dirt_shard1_evtw">
         <inputdef>&input_dirt_shard1;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
@@ -370,6 +382,8 @@
 
     <stage name="strangeness_campaign_run1_fhc_evtw">
         <inputdef>&input_strange_run1_fhc;</inputdef>
+        <fcl>&fcl_redk2nu;</fcl>
+
         <fcl>&fcl_evtw_00;</fcl>
         <!-- <fcl>&fcl_evtw_01;</fcl> -->
         <!-- <fcl>&fcl_evtw_02;</fcl> -->
