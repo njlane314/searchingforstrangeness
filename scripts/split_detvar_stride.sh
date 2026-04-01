@@ -3,36 +3,36 @@
 usage() {
   cat <<'USAGE'
 Usage:
-  split_detvar_stride.sh <source_def> <training_def> <plotting_def>
+  split_detvar_stride.sh <source_def> <training_shard_def> <template_shard_def>
   split_detvar_stride.sh --batch <triples_file>
 
-Creates two SAM definitions from a nominal detector-variation sample using
+Creates two orthogonal SAM definition shards from a source sample using
 stride-2 splitting:
-  - <training_def>: defname:<source_def> with stride 2
-  - <plotting_def>: defname:<source_def> with stride 2 with offset 1
+  - <training_shard_def>: defname:<source_def> with stride 2
+  - <template_shard_def>: defname:<source_def> with stride 2 with offset 1
 
 Arguments:
-  <source_def>   Source SAM definition (strangeness, beam, dirt, EXT, etc.).
-  <training_def> Training subset definition name.
-  <plotting_def> Plotting (nominal, orthogonal) subset definition name.
+  <source_def>          Source SAM definition (strangeness, beam, dirt, EXT, etc.).
+  <training_shard_def>  Training subset definition name.
+  <template_shard_def>  Template subset definition name.
 
 Batch mode:
   Provide a file with whitespace-separated triples per line:
-    <source_def> <training_def> <plotting_def>
+    <source_def> <training_shard_def> <template_shard_def>
   Empty lines and lines starting with # are ignored.
 
 Examples:
   ./split_detvar_stride.sh \
-    prod_strange_resample_fhc_run2_fhc_reco2_reco2_detvar_nominal \
-    nl_strange_detvar_nominal_training_stride2 \
-    nl_strange_detvar_nominal
+    detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2 \
+    nl_run1_fhc_strangeness_detvar_cv_train_shard \
+    nl_run1_fhc_strangeness_detvar_cv_template_shard
 
   ./split_detvar_stride.sh \
-    prod_numi_fhc_beam_detvar_nominal \
-    nl_beam_detvar_nominal_training_stride2 \
-    nl_beam_detvar_nominal
+    prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 \
+    nl_run1_fhc_beam_detvar_cv_train_shard \
+    nl_run1_fhc_beam_detvar_cv_template_shard
 
-  ./split_detvar_stride.sh --batch detvar_triples.txt
+  ./split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
 USAGE
 }
 
@@ -48,26 +48,26 @@ fi
 
 run_split() {
   local source_def="$1"
-  local training_def="$2"
-  local nominal_def="$3"
+  local training_shard_def="$2"
+  local template_shard_def="$3"
 
   set -x
-  samweb create-definition "${training_def}" "defname: ${source_def} with stride 2"
-  samweb create-definition "${nominal_def}" "defname: ${source_def} with stride 2 with offset 1"
+  samweb create-definition "${training_shard_def}" "defname: ${source_def} with stride 2"
+  samweb create-definition "${template_shard_def}" "defname: ${source_def} with stride 2 with offset 1"
   set +x
 
   echo "Created definitions:"
-  echo "  source  : ${source_def}"
-  echo "  training: ${training_def}"
-  echo "  nominal : ${nominal_def}"
+  echo "  source         : ${source_def}"
+  echo "  training shard : ${training_shard_def}"
+  echo "  template shard : ${template_shard_def}"
 
   echo
-  echo "Summary (training):"
-  samweb list-files --summary "defname: ${training_def}"
+  echo "Summary (training shard):"
+  samweb list-files --summary "defname: ${training_shard_def}"
 
   echo
-  echo "Summary (nominal):"
-  samweb list-files --summary "defname: ${nominal_def}"
+  echo "Summary (template shard):"
+  samweb list-files --summary "defname: ${template_shard_def}"
 }
 
 if [[ ${1:-} == "--batch" ]]; then
@@ -82,15 +82,15 @@ if [[ ${1:-} == "--batch" ]]; then
     exit 1
   fi
 
-  while read -r source_def training_def nominal_def extra; do
+  while read -r source_def training_shard_def template_shard_def extra; do
     if [[ -z ${source_def:-} || ${source_def} == "#"* ]]; then
       continue
     fi
-    if [[ -n ${extra:-} || -z ${training_def:-} || -z ${nominal_def:-} ]]; then
-      echo "Error: invalid line (expected 3 fields): ${source_def} ${training_def:-} ${nominal_def:-} ${extra:-}" >&2
+    if [[ -n ${extra:-} || -z ${training_shard_def:-} || -z ${template_shard_def:-} ]]; then
+      echo "Error: invalid line (expected 3 fields): ${source_def} ${training_shard_def:-} ${template_shard_def:-} ${extra:-}" >&2
       exit 1
     fi
-    run_split "${source_def}" "${training_def}" "${nominal_def}"
+    run_split "${source_def}" "${training_shard_def}" "${template_shard_def}"
   done < "${triples_file}"
   exit 0
 fi

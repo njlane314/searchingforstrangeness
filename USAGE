@@ -190,6 +190,29 @@ Because `amarantin` consumes the EventSelectionFilter and SubRun trees, this
 selection-ntuple output is the intended local-test surface rather than a full
 art event file.
 
+If you want one wrapper that runs the checked-in dev chain end-to-end before
+submitting a campaign, use:
+
+     ./scripts/validate_campaign_local.sh --workflow mc
+
+That defaults to the Run 1 FHC staged MC path:
+
+  * `dev/run_stage_evtw_cv_dev.fcl`
+  * `dev/run_stage_image_dev.fcl`
+  * `dev/run_stage_sel_dev.fcl`
+
+and enforces a single-file starting point so the local stage handoff stays on
+one ROOT file at a time. You can switch workflows or inputs, for example:
+
+     ./scripts/validate_campaign_local.sh --workflow data
+
+     ./scripts/validate_campaign_local.sh --workflow amarantin
+
+     ./scripts/validate_campaign_local.sh \
+       --workflow mc \
+       --evtw-config extragenie1 \
+       --samdef prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_sample1
+
 The inference jobs expect the checked-in runtime bundle under runtime/,
 including runtime/models/mink_binary/checkpoint_step0010000.pt and the wrapper
 script reached through the RuntimeBaseDir setting.
@@ -229,13 +252,16 @@ definition and loop over them:
 If you need to prepare or inspect SAM definitions, use the helper scripts in
 scripts/ and the top-level describe-definitions.sh helper:
 
-     ./scripts/split_detvar_stride.sh <source_def> <training_def> <plotting_def>
+     ./scripts/split_detvar_stride.sh <source_def> <training_shard_def> <template_shard_def>
+
+     ./scripts/query_campaign_numjobs.sh
+
+     ./scripts/create_training_template_shards.sh --dry-run
 
      ./describe-definitions.sh
 
-scripts/README.md records the canonical Run 1 FHC source definitions and the
-legacy good-runs helper commands.  The checked-in XML workflows use the source
-definitions directly.
+scripts/README.md records the current staged campaign surface, the source SAM
+definitions behind it, and the Run 1 CV train/template shard strategy.
 
 
 5. Understand the outputs
@@ -269,193 +295,113 @@ The checked-in branch and product layout is summarized here.  In particular:
 6. Submit grid jobs
 -------------------
 
-The repository includes five checked-in grid XML workflows:
-
-  * xml/numi_fhc_run1.xml
-    This keeps eventweight, image production, and selection in the same
-    submitted stage as sequential substages.  For now it keeps only the first
-    eventweight chunk (100 multisim universes), uses the NuMI old-flux
-    reweighting chain, and skips inference until the checked-in models are
-    updated.
-  * xml/numi_fhc_run2a_campaign.xml
-    This is the Run 2a FHC campaign template built from the Run 2a NuMI sample
-    inventory in the internal note.  It uses one nominal beam sample, one dirt
-    sample, one strangeness sample, and four good-run EXT partitions.  Its
-    `numjobs` values are placeholders and should be replaced from `samweb`
-    counts in a configured environment before submission.  Like the Run 1
-    campaign XML, it currently keeps only the first eventweight chunk, uses the
-    NuMI old-flux reweighting chain, and skips inference until the checked-in
-    models are updated.
-  * xml/numi_fhc_run1_staged.xml
-    This currently splits the workflow into `*_evtw`, `*_image`, and `*_sel`
-    stages.  Each `*_evtw` stage keeps only the first eventweight chunk, uses
-    the NuMI old-flux reweighting chain, and each later stage consumes the
-    checked output of the previous one.
-    Dedicated `*_infer` stages are commented out until the checked-in models
-    are updated.
-  * xml/numi_fhc_run1_training.xml
-    This is the training-oriented workflow.  It skips inference entirely, runs
-    only the first eventweight chunk for MC, uses the NuMI old-flux
-    reweighting chain, and uses the no-inference selection FHiCL wrappers.
-  * xml/numi_fhc_run1_detvar_training.xml
-    This is the stride-split detector-variation training workflow.  It targets
-    the training definitions created by `scripts/split_detvar_stride.sh` and
-    runs only `image -> sel` with the no-inference MC selection wrapper.
-
-The repository also includes four source-samdef Reco2 campaign templates built
-from the March 2022 NuMI dataset list plus the matching dedicated strangeness
-overlay samples recorded in the internal note:
+`xml/` now contains only four staged campaign entry points:
 
   * xml/numi_reco2_run1_fhc_campaign.xml
-    Run 1 FHC source campaign using the official Reco2 beam, dirt, EXT, and
-    beam-good data definitions together with the Run 1 FHC strangeness sample.
   * xml/numi_reco2_run2a_fhc_campaign.xml
-    Run 2a FHC source campaign using the official Reco2 source definitions.
-    It defaults to the clearly FHC-tagged beam definition and documents the
-    duplicated `run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2`
-    line from the March 2022 list as an ambiguity to review manually.
   * xml/numi_reco2_run2b_rhc_campaign.xml
-    Run 2b RHC source campaign using the regenerated RHC beam definition, the
-    Run 2 RHC dirt and strangeness samples, plus the listed EXT and data defs.
   * xml/numi_reco2_run3b_rhc_campaign.xml
-    Run 3b RHC source campaign using the four official beam shards, the two
-    dirt shards, the Run 3 RHC strangeness sample, and the listed EXT/data
-    definitions.
 
-These Reco2 source templates keep only the first eventweight chunk, disable
-inference until the checked-in models are updated, and leave all `numjobs`
-values as placeholders that should be replaced with
-`samweb count-files defname:<...>` results before submission.
+Older XMLs were archived under `reference/legacy_xml/`.
 
-Before submitting, review the XML entities near the top of the file you plan
-to use.  They hard-code values such as:
+All four campaigns share the same staging rules:
 
-  * the release tag;
-  * the user name;
-  * tarball and output PNFS locations;
-  * the input SAM definitions.
+  * nominal beam, dirt, and dedicated strangeness use `evtw -> image -> sel`
+  * only `fcl_evtw_00` is active, so nominal MC keeps the first 100 multisim
+    universes
+  * detector-variation chains use `image -> sel`
+  * inference is omitted because the checked-in model bundle has not been
+    updated yet
+  * `numjobs` values are placeholders and should be replaced from `samweb`
+    counts before submission
 
-Create or refresh the tarball with:
+Run-specific notes:
 
-     ./.tar.sh
+  * Run 1 FHC includes the nominal beam/dirt shards, the dedicated
+    strangeness sample, generic beam detvars, confirmed dedicated strangeness
+    detvars, and explicit CV `train_shard` / `template_shard` stage families.
+  * Run 2a FHC includes the nominal beam/dirt/strangeness chains plus the
+    generic Run 2a FHC beam detvars.
+  * Run 2b RHC includes the regenerated nominal beam chain, the Run 2 RHC
+    dirt and strangeness chains, and the generic Run 2b RHC beam detvars.
+  * Run 3b RHC includes the nominal beam and dirt shards, the Run 3 RHC
+    strangeness chain, and the generic Run 3b RHC beam detvars.
 
-Then submit a stage, for example:
+Before submitting:
 
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_shard0 --submit
+  * review the XML entities near the top of the file you plan to use
+  * confirm the release tag, PNFS paths, and SAM definitions
+  * replace the placeholder `numjobs` values with
+    `samweb count-files defname:<...>` results
+  * refresh the tarball with `./.tar.sh`
 
-For the staged XML, submit and check each stage before launching the next one.
-Each later stage uses the checked output file list from the previous stage as
-its default input:
+Run 1 CV train/template shards are created upstream at the SAM-definition
+level. To build the checked-in shard names, run:
 
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_evtw --submit
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_evtw --check
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --submit
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --check
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_sel --submit
+     ./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
 
-For the training XML, the same checked-output handoff applies, but there is no
-inference stage.  If you point it at dedicated training SAM definitions, update
-the XML input entities and `numjobs` counts to match those definitions.  Use
-the MC-like stage families (`beam_*`, `dirt_*`, `strangeness_*`) for overlay
-or truth-bearing training samples, and the `ext_*` stage families for data- or
-EXT-like training samples:
+or equivalently:
 
-     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_shard0_evtw --submit
-     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_shard0_evtw --check
-     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_shard0_image --submit
-     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_shard0_image --check
-     project.py --xml xml/numi_fhc_run1_training.xml --stage beam_shard0_sel --submit
+     ./scripts/create_training_template_shards.sh
 
-For the stride-split detvar training XML, edit the two input SAM definitions
-and `numjobs` values first, then run the image and selection stages:
+To decide whether a source definition should be split first, query the file
+counts from the active XMLs:
 
-     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_image --submit
-     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_image --check
-     project.py --xml xml/numi_fhc_run1_detvar_training.xml --stage beam_detvar_nominal_train_sel --submit
+     ./scripts/query_campaign_numjobs.sh
 
-Checked-in stage names include:
+That helper uses a default sharding threshold of 5000 files, matching the
+common NuMI note examples for splitting large SAM definitions with
+`limit 5000` / `offset 5000`.
 
-  * beam_shard0
-  * beam_shard1
-  * beam_shard2
-  * beam_shard3
-  * beam_campaign_run2a_fhc
-  * dirt_shard0
-  * dirt_shard1
-  * dirt_campaign_run2a_fhc
-  * strangeness_campaign_run1_fhc
-  * strangeness_campaign_run2a_fhc
-  * ext_shard0
-  * ext_shard1
-  * ext_shard2
-  * ext_campaign_run2a_p0
-  * ext_campaign_run2a_p1
-  * ext_campaign_run2a_p2
-  * ext_campaign_run2a_p3
+Nominal Run 1 submission example:
 
-The Reco2 source-campaign XMLs use similarly named stage families such as:
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_evtw --submit
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_evtw --check
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --submit
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --check
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_sel --submit
 
-  * beam_campaign_run1_fhc_sample0 through beam_campaign_run1_fhc_sample3
-  * dirt_campaign_run1_fhc_sample0 and dirt_campaign_run1_fhc_sample1
-  * strangeness_campaign_run1_fhc
-  * ext_campaign_run1_fhc
-  * data_campaign_run1_fhc
-  * beam_campaign_run2a_fhc, dirt_campaign_run2a_fhc,
-    strangeness_campaign_run2a_fhc, ext_campaign_run2a_fhc,
-    data_campaign_run2a_fhc
-  * beam_campaign_run2b_rhc, dirt_campaign_run2b_rhc,
-    strangeness_campaign_run2b_rhc, ext_campaign_run2b_rhc,
-    data_campaign_run2b_rhc
-  * beam_campaign_run3b_rhc_sample0 through beam_campaign_run3b_rhc_sample3
-  * dirt_campaign_run3b_rhc_sample0 and dirt_campaign_run3b_rhc_sample1
-  * strangeness_campaign_run3b_rhc
-  * ext_campaign_run3b_rhc
-  * data_campaign_run3b_rhc
+Run 1 CV train-shard detvar example:
 
-The staged XML uses dataset-specific stage chains such as:
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --submit
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --check
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_sel --submit
 
-  * beam_shard0_evtw, beam_shard0_image, beam_shard0_sel
-  * beam_shard1_evtw, beam_shard1_image, beam_shard1_sel
-  * beam_shard2_evtw, beam_shard2_image, beam_shard2_sel
-  * beam_shard3_evtw, beam_shard3_image, beam_shard3_sel
-  * dirt_shard0_evtw, dirt_shard0_image, dirt_shard0_sel
-  * dirt_shard1_evtw, dirt_shard1_image, dirt_shard1_sel
-  * strangeness_campaign_run1_fhc_evtw,
-    strangeness_campaign_run1_fhc_image,
-    strangeness_campaign_run1_fhc_sel
-  * ext_shard0_image, ext_shard0_sel
-  * ext_shard1_image, ext_shard1_sel
-  * ext_shard2_image, ext_shard2_sel
+Run 2a nominal example:
 
-The training XML uses the same sample stage names, but drops the infer stage:
+     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_evtw --submit
+     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_evtw --check
+     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_image --submit
+     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_sel --submit
 
-  * beam_shard0_evtw, beam_shard0_image, beam_shard0_sel
-  * beam_shard1_evtw, beam_shard1_image, beam_shard1_sel
-  * beam_shard2_evtw, beam_shard2_image, beam_shard2_sel
-  * beam_shard3_evtw, beam_shard3_image, beam_shard3_sel
-  * dirt_shard0_evtw, dirt_shard0_image, dirt_shard0_sel
-  * dirt_shard1_evtw, dirt_shard1_image, dirt_shard1_sel
-  * strangeness_campaign_run1_fhc_evtw,
-    strangeness_campaign_run1_fhc_image,
-    strangeness_campaign_run1_fhc_sel
-  * ext_shard0_image, ext_shard0_sel
-  * ext_shard1_image, ext_shard1_sel
-  * ext_shard2_image, ext_shard2_sel
+Run 2b nominal example:
 
-The stride-split detvar training XML uses:
+     project.py --xml xml/numi_reco2_run2b_rhc_campaign.xml --stage beam_evtw --submit
 
-  * beam_detvar_nominal_train_image, beam_detvar_nominal_train_sel
-  * strangeness_detvar_nominal_train_image, strangeness_detvar_nominal_train_sel
+Run 3b nominal example:
 
-To clean and resubmit a stage:
+     project.py --xml xml/numi_reco2_run3b_rhc_campaign.xml --stage beam_shard0_evtw --submit
 
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_shard0 --clean
-     project.py --xml xml/numi_fhc_run1.xml --stage beam_shard0 --submit
+Stage naming follows a fixed pattern:
 
-For the staged XML, clean and resubmit the specific stage you want to rerun:
+  * nominal shard-based campaigns use names such as `beam_shard0_evtw`,
+    `beam_shard0_image`, `beam_shard0_sel`
+  * unsplit nominal campaigns use names such as `beam_evtw`, `beam_image`,
+    `beam_sel`
+  * detvars use names such as `beam_detvar_sce_image`, `beam_detvar_sce_sel`
+  * Run 1 dedicated strangeness detvars use names such as
+    `strangeness_detvar_ly_rayleigh_image` and
+    `strangeness_detvar_ly_rayleigh_sel`
+  * Run 1 CV split chains use names such as
+    `beam_detvar_cv_train_shard_image`,
+    `beam_detvar_cv_template_shard_image`,
+    `strangeness_detvar_cv_train_shard_image`, and
+    `strangeness_detvar_cv_template_shard_image`
 
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --clean
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --submit
+To clean and resubmit a stage, target the specific staged node you want to rerun:
+
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --clean
+     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --submit
 
 
 7. Common adjustments

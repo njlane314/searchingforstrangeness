@@ -93,15 +93,13 @@ The main development configurations are:
 
 The main grid-submission XML configurations are:
 
-  * xml/numi_fhc_run1.xml
-  * xml/numi_fhc_run2a_campaign.xml
-  * xml/numi_fhc_run1_staged.xml
-  * xml/numi_fhc_run1_training.xml
-  * xml/numi_fhc_run1_detvar_training.xml
   * xml/numi_reco2_run1_fhc_campaign.xml
   * xml/numi_reco2_run2a_fhc_campaign.xml
   * xml/numi_reco2_run2b_rhc_campaign.xml
   * xml/numi_reco2_run3b_rhc_campaign.xml
+
+Older XMLs were archived under reference/legacy_xml/ so xml/ only contains the
+current staged campaign entry points.
 
 The repository root also contains helper scripts commonly used during local
 work:

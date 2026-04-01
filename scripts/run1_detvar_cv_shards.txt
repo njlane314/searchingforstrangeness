@@ -1,0 +1,3 @@
+# Source definition                                    Training shard definition                          Template shard definition
+prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 nl_run1_fhc_beam_detvar_cv_train_shard nl_run1_fhc_beam_detvar_cv_template_shard
+detvar_prod_strange_resample_fhc_run1_respin_cv_reco2_reco2 nl_run1_fhc_strangeness_detvar_cv_train_shard nl_run1_fhc_strangeness_detvar_cv_template_shard
