@@ -9,7 +9,7 @@ Usage:
 
 Creates orthogonal training/template SAM definition shards from a triples file.
 The default plan is scripts/run1_detvar_cv_shards.txt.
-By default the wrapper caps each output shard at roughly 100000 events.
+By default the wrapper caps only the training shard at roughly 100000 events.
 
 Each non-comment line in the plan file must contain:
   <source_def> <training_shard_def> <template_shard_def>

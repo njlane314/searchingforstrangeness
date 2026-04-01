@@ -259,7 +259,8 @@ Create the whole Run 1 CV shard set with the full alternating-file split:
 ```
 
 Or use the wrapper that prints source counts and then applies the whole plan,
-targeting roughly 100000 events per output shard by default:
+targeting roughly 100000 events in the training shard by default while keeping
+the full template shard:
 
 ```bash
 ./scripts/create_training_template_shards.sh

@@ -355,7 +355,8 @@ or use the wrapper:
 
      ./scripts/create_training_template_shards.sh
 
-The wrapper now caps each output shard at roughly 100000 events by default.
+The wrapper now caps only the training shard at roughly 100000 events by
+default.
 Use:
 
      ./scripts/create_training_template_shards.sh --full-shards

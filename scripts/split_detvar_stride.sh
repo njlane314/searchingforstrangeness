@@ -13,9 +13,10 @@ stride-2 splitting:
   - <training_shard_def>: defname:<source_def> with stride 2
   - <template_shard_def>: defname:<source_def> with stride 2 with offset 1
 
-When --target-events is set, each shard is additionally capped with a
-file-level `with limit <N>` chosen from the shard's average events per file so
-the output lands near the requested event count.
+When --target-events is set, only the training shard is additionally capped
+with a file-level `with limit <N>` chosen from the training shard's average
+events per file so the output lands near the requested event count. The
+template shard keeps the full orthogonal stride-2 split.
 
 Arguments:
   <source_def>          Source SAM definition (strangeness, beam, dirt, EXT, etc.).
@@ -68,6 +69,7 @@ query_summary() {
 build_shard_query() {
   local source_def="$1"
   local offset="$2"
+  local cap_to_target="$3"
   local base_query="defname: ${source_def} with stride 2"
   local base_summary
   local full_file_count
@@ -96,7 +98,7 @@ build_shard_query() {
   result_file_count="${full_file_count}"
   result_event_count="${full_event_count}"
 
-  if [[ -n ${target_events:-} && ${target_events} -gt 0 && ${full_event_count} -gt ${target_events} ]]; then
+  if (( cap_to_target == 1 )) && [[ -n ${target_events:-} && ${target_events} -gt 0 && ${full_event_count} -gt ${target_events} ]]; then
     file_limit=$(( (target_events * full_file_count + full_event_count - 1) / full_event_count ))
     if (( file_limit < 1 )); then
       file_limit=1
@@ -169,8 +171,8 @@ run_split() {
   local source_file_count
   local source_event_count
 
-  IFS=$'\t' read -r train_base_query train_query train_full_files train_full_events train_limit train_result_files train_result_events <<< "$(build_shard_query "${source_def}" 0)"
-  IFS=$'\t' read -r template_base_query template_query template_full_files template_full_events template_limit template_result_files template_result_events <<< "$(build_shard_query "${source_def}" 1)"
+  IFS=$'\t' read -r train_base_query train_query train_full_files train_full_events train_limit train_result_files train_result_events <<< "$(build_shard_query "${source_def}" 0 1)"
+  IFS=$'\t' read -r template_base_query template_query template_full_files template_full_events template_limit template_result_files template_result_events <<< "$(build_shard_query "${source_def}" 1 0)"
 
   source_file_count=$(( train_full_files + template_full_files ))
   source_event_count=$(( train_full_events + template_full_events ))
@@ -179,7 +181,7 @@ run_split() {
   echo "Source file count  : ${source_file_count}"
   echo "Source event count : ${source_event_count}"
   if [[ -n ${target_events:-} && ${target_events} -gt 0 ]]; then
-    echo "Target events/shard: ${target_events}"
+    echo "Target training evts: ${target_events}"
   fi
   describe_shard "Training shard :" "${training_shard_def}" "${train_result_files}" "${train_full_files}" "${train_result_events}" "${train_full_events}"
   describe_shard "Template shard :" "${template_shard_def}" "${template_result_files}" "${template_full_files}" "${template_result_events}" "${template_full_events}"
