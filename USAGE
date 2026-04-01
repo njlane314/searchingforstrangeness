@@ -93,14 +93,15 @@ dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
 dev/run_stage_redk2nu_dev.fcl
-     Local wrapper for the staged Run 1 FHC redk2nu preprocessing step.
+     Standalone local wrapper for inspecting the staged Run 1 FHC redk2nu
+     preprocessing step by itself.
 
 dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
      Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
      the same order as the staged XML when you want to reproduce the
-     `*_evtw` substage sequence on a small local sample.  Run
-     `dev/run_stage_redk2nu_dev.fcl` first when reproducing the full staged
-     MC path.  These wrappers use the standard NuMI EventWeight chain.
+     `*_evtw` substage sequence on a small local sample.  These wrappers run
+     the redk2nu preprocessing internally before the standard NuMI EventWeight
+     chain.
 
 dev/run_stage_image_dev.fcl
      Local wrapper for the staged image-production step.
@@ -183,7 +184,7 @@ either a SAM-backed mini-run or a direct local handoff between stages:
 
 When you pass an integer as the second argument, `.local.sh` resolves that many
 files from `SAM_DEF`.  When you pass a `.root` path as the second argument, it
-uses that file directly.  Outputs are written under `local-output/` by default.
+uses that file directly.  Outputs are written under `out/` by default.
 Histogram outputs are combined automatically; art event outputs are left as
 per-file ROOT files and are also listed in a `*_events.list` manifest so they
 can be fed into the next stage.
@@ -194,7 +195,7 @@ job on a single SAM file:
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
        ./.local.sh dev/amarantin_local_dev.fcl 1
 
-That produces one combined TFileService ROOT file under `local-output/`.
+That produces one combined TFileService ROOT file under `out/`.
 Because `amarantin` consumes the EventSelectionFilter and SubRun trees, this
 selection-ntuple output is the intended local-test surface rather than a full
 art event file.

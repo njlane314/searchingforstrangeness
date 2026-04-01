@@ -191,7 +191,7 @@ fi
 FHICL_FILE="$(abs_path "${FHICL_FILE}")"
 FHICL_BASE="$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')"
 SAM_DEF="${SAM_DEF:-prod_strange_resample_fhc_run2_fhc_reco2_reco2}"
-OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-${REPO_DIR}/local-output}"
+OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-${REPO_DIR}/out}"
 RUN_STEM="${SAM_DEF}_${FHICL_BASE}"
 
 if is_integer "${INPUT_SPEC}"; then

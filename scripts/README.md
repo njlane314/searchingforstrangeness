@@ -24,8 +24,9 @@ All four checked-in campaign XMLs follow the same high-level rules:
 - `numjobs` values are placeholders and should be replaced with
   `samweb count-files defname:<...>` results before submission
 
-The checked-in local validation helper mirrors that same staged MC path via
-`dev/run_stage_redk2nu_dev.fcl` before the standard EventWeight wrappers.
+The checked-in local validation helper now uses the staged EventWeight dev
+wrappers directly, and those wrappers run redk2nu internally before the
+standard EventWeight configuration.
 
 ## Source SAM definitions
 

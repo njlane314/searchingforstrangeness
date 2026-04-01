@@ -12,7 +12,7 @@ Runs the checked-in dev FHiCL wrappers locally through .local.sh so you can
 validate the campaign path before submitting to the grid.
 
 Workflows:
-  mc         Run staged MC validation: redk2nu -> evtw -> image -> sel
+  mc         Run staged MC validation: evtw(with redk2nu) -> image -> sel
              Default evtw config is cv, matching the active campaign XMLs.
   data       Run staged data/EXT-style validation: image -> sel_data
   amarantin  Run the compact downstream ntuple surface for amarantin
@@ -25,7 +25,7 @@ Options:
   --input <input.root>    Local ROOT file to use instead of SAM
   --evtw-config <name>    One of: cv, extragenie1, extragenie2, extragenie3,
                           extragenie4, extragenie5. Default: cv
-  --output-base <dir>     Base directory for local-output runs
+  --output-base <dir>     Base directory for out/ runs
 
 Notes:
   - staged mc/data validation requires exactly one starting input file when
@@ -49,7 +49,7 @@ samdef=""
 files=1
 input_path=""
 evtw_config="cv"
-output_base="${repo_root}/local-output/validation"
+output_base="${repo_root}/out/validation"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -243,9 +243,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "dev/run_stage_redk2nu_dev.fcl" "${first_input}"
-    require_single_event_output "redk2nu stage"
-    run_step "${evtw_fhicl}" "${LAST_EVENT_OUTPUT}"
+    run_step "${evtw_fhicl}" "${first_input}"
     require_single_event_output "eventweight stage"
     run_step "dev/run_stage_image_dev.fcl" "${LAST_EVENT_OUTPUT}"
     require_single_event_output "image stage"
