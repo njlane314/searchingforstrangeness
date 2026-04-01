@@ -37,7 +37,6 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ${ROOT_EG}
                          ${ROOT_MINUIT}
                          ubreco_ShowerReco_ProximityClustering_Algorithms
-                         uboonecode_uboone_XGBoost
                          art_Persistency_Common
                          art_Framework_Services_System_TriggerNamesService_service
                          ubreco_SelectionTool_OpT0FinderBase

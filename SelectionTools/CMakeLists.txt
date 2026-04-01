@@ -32,7 +32,6 @@ art_make( TOOL_LIBRARIES lardataobj_RecoBase
                          ${ROOT_BASIC_LIB_LIST}
                          ${ROOT_EG}
                          ${ROOT_MINUIT}
-                         uboonecode_uboone_XGBoost
         )
 
 install_headers()
