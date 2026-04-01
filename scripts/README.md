@@ -228,10 +228,10 @@ Run the Run 1 data/EXT-like staged path locally:
 ./scripts/validate-campaign.sh --workflow data
 ```
 
-Build the compact amarantin validation surface locally:
+Build the compact local ntuple validation surface locally:
 
 ```bash
-./scripts/validate-campaign.sh --workflow amarantin
+./scripts/validate-campaign.sh --workflow ntuple
 ```
 
 Count a specific campaign XML and include derived train/template shard

@@ -90,7 +90,7 @@ The main development configurations are:
   * dev/run_stage_sel_dev.fcl
   * dev/run_stage_sel_data_dev.fcl
   * dev/run_stage_fullchain_dev.fcl
-  * dev/amarantin_local_dev.fcl
+  * dev/run_local_ntuple_dev.fcl
   * dev/numi_fhc_run1_dev.xml
   * dev/run_numisystematicweights_rhc_extragenie1.fcl
 

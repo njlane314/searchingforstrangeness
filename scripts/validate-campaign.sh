@@ -5,8 +5,8 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  validate-campaign.sh [--workflow <mc|data|amarantin|fullchain>] [--samdef <def>] [--files <n>]
-  validate-campaign.sh [--workflow <mc|data|amarantin|fullchain>] --input <input.root>
+  validate-campaign.sh [--workflow <mc|data|ntuple|fullchain>] [--samdef <def>] [--files <n>]
+  validate-campaign.sh [--workflow <mc|data|ntuple|fullchain>] --input <input.root>
 
 Runs the checked-in dev FHiCL wrappers locally through .local.sh so you can
 validate the campaign path before submitting to the grid.
@@ -15,7 +15,7 @@ Workflows:
   mc         Run staged MC validation: evtw(with redk2nu) -> image -> sel
              Default evtw config is cv, matching the active campaign XMLs.
   data       Run staged data/EXT-style validation: image -> sel_data
-  amarantin  Run the compact downstream ntuple surface for amarantin
+  ntuple     Run the compact local ntuple surface
   fullchain  Run the single-process dev fullchain wrapper
 
 Options:
@@ -125,7 +125,7 @@ if ! [[ ${files} =~ ^[0-9]+$ ]] || (( files <= 0 )); then
 fi
 
 case "${workflow}" in
-  mc|data|amarantin|fullchain)
+  mc|data|ntuple|fullchain)
     ;;
   *)
     echo "Error: unsupported workflow: ${workflow}" >&2
@@ -147,7 +147,7 @@ default_data_samdef="prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2"
 
 if [[ -z "${input_path}" && -z "${samdef}" ]]; then
   case "${workflow}" in
-    mc|amarantin|fullchain)
+    mc|ntuple|fullchain)
       samdef="${default_mc_samdef}"
       ;;
     data)
@@ -262,14 +262,14 @@ case "${workflow}" in
     run_step "dev/run_stage_sel_data_dev.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
-  amarantin)
+  ntuple)
     if [[ -n "${input_path}" ]]; then
       first_input="${input_path}"
     else
       first_input="${files}"
     fi
 
-    run_step "dev/amarantin_local_dev.fcl" "${first_input}"
+    run_step "dev/run_local_ntuple_dev.fcl" "${first_input}"
     print_summary
     ;;
   fullchain)

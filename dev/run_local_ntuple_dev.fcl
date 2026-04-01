@@ -3,16 +3,14 @@
 #include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection.fcl"
 
-process_name: AmarantinLocalDev
+process_name: LocalNtupleDev
 
-services.TFileService.fileName: "amarantin_local_dev.root"
+services.TFileService.fileName: "local_ntuple_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
 services.NuRandomService: @local::microboone_seedservice
 
-# Keep the local test artifact small enough to build quick amarantin samples.
 # This local path uses the standard NuMI EventWeight chain so downstream
 # tests match the repo-backed campaign defaults.
-source.maxEvents: 100
 
 physics.producers.imageprod: {
   module_type: "ImageProducer"
@@ -29,7 +27,7 @@ physics.producers.imageprod: {
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
 
-# Leave inference disabled for this local amarantin test sample until the
+# Leave inference disabled for this local ntuple test sample until the
 # checked-in model bundle has been updated. The downstream test only needs the
 # image and event-weight branches for now.
 # physics.producers.inferenceprod: {
@@ -54,14 +52,14 @@ physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
 # physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
-AmarantinLocalEventWeightAnalysis: {
+LocalNtupleEventWeightAnalysis: {
   @table::EventWeightAnalysis
   genieAllUniverses: 100
   ppfxAllUniverses: 100
-  eventWeightProcessName00: "AmarantinLocalDev"
+  eventWeightProcessName00: "LocalNtupleDev"
 }
 
-physics.filters.nuselection.AnalysisTools.weight: @local::AmarantinLocalEventWeightAnalysis
+physics.filters.nuselection.AnalysisTools.weight: @local::LocalNtupleEventWeightAnalysis
 physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
 physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
 physics.filters.nuselection.CountWithOpFilter: false

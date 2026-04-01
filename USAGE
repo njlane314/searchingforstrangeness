@@ -119,13 +119,12 @@ dev/run_stage_fullchain_dev.fcl
      Local wrapper for running the image, inference, and selection chain in
      one process while still using dev-local output names.
 
-dev/amarantin_local_dev.fcl
-     Local MC-style ntuple job for downstream amarantin testing.  It runs the
+dev/run_local_ntuple_dev.fcl
+     Local MC-style ntuple job for downstream ntuple validation.  It runs the
      redk2nu, eventweight, and image stages in-process, writes the
-     EventSelectionFilter and SubRun trees, limits the local sample to 100
-     events, keeps only 100 GENIE and 100 PPFX universes, uses the standard
-     NuMI EventWeight chain, and leaves inference disabled until the checked-in
-     model bundle is refreshed.
+     EventSelectionFilter and SubRun trees, keeps only 100 GENIE and 100 PPFX
+     universes, uses the standard NuMI EventWeight chain, and leaves
+     inference disabled until the checked-in model bundle is refreshed.
 
 dev/run_numisystematicweights_rhc_extragenie1.fcl
      Standalone extra-GENIE RHC redk2nu-plus-event-weight job writing
@@ -189,16 +188,16 @@ Histogram outputs are combined automatically; art event outputs are left as
 per-file ROOT files and are also listed in a `*_events.list` manifest so they
 can be fed into the next stage.
 
-For a compact downstream amarantin input file, run the dedicated local ntuple
+For a compact local ntuple validation file, run the dedicated local ntuple
 job on a single SAM file:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh dev/amarantin_local_dev.fcl 1
+       ./.local.sh dev/run_local_ntuple_dev.fcl 1
 
 That produces one combined TFileService ROOT file under `out/`.
-Because `amarantin` consumes the EventSelectionFilter and SubRun trees, this
-selection-ntuple output is the intended local-test surface rather than a full
-art event file.
+Because downstream ntuple consumers use the EventSelectionFilter and SubRun
+trees, this selection-ntuple output is the intended local-test surface rather
+than a full art event file.
 
 If you want one wrapper that runs the checked-in dev chain end-to-end before
 submitting a campaign, use:
@@ -216,7 +215,7 @@ one ROOT file at a time. You can switch workflows or inputs, for example:
 
      ./scripts/validate-campaign.sh --workflow data
 
-     ./scripts/validate-campaign.sh --workflow amarantin
+     ./scripts/validate-campaign.sh --workflow ntuple
 
      ./scripts/validate-campaign.sh \
        --workflow mc \
