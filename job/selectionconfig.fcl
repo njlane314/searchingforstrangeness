@@ -1,6 +1,3 @@
-#include "reco_uboone_data_mcc9_8.fcl"
-#include "mcreco.fcl"
-#include "proximityclustering.fcl"
 #include "particleinventoryservice.fcl"
 #include "producers.fcl"
 
