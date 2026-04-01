@@ -351,9 +351,16 @@ level. To build the checked-in shard names, run:
 
      ./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
 
-or equivalently:
+or use the wrapper:
 
      ./scripts/create_training_template_shards.sh
+
+The wrapper now caps each output shard at roughly 100000 events by default.
+Use:
+
+     ./scripts/create_training_template_shards.sh --full-shards
+
+when you want the original full alternating-file split instead.
 
 To decide whether a source definition should be split first, query the file
 counts from the active XMLs:

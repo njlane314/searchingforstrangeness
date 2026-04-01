@@ -252,13 +252,14 @@ Create one orthogonal pair by hand:
   nl_run1_fhc_beam_detvar_cv_template_shard
 ```
 
-Create the whole Run 1 CV shard set:
+Create the whole Run 1 CV shard set with the full alternating-file split:
 
 ```bash
 ./scripts/split_detvar_stride.sh --batch scripts/run1_detvar_cv_shards.txt
 ```
 
-Or use the wrapper that prints source counts and then applies the whole plan:
+Or use the wrapper that prints source counts and then applies the whole plan,
+targeting roughly 100000 events per output shard by default:
 
 ```bash
 ./scripts/create_training_template_shards.sh
@@ -268,4 +269,10 @@ Preview the sharding commands without creating any SAM definitions:
 
 ```bash
 ./scripts/create_training_template_shards.sh --dry-run
+```
+
+To keep the original full alternating-file shards through the wrapper:
+
+```bash
+./scripts/create_training_template_shards.sh --full-shards
 ```

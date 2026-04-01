@@ -5,10 +5,11 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  create_training_template_shards.sh [--plan <triples_file>] [--dry-run]
+  create_training_template_shards.sh [--plan <triples_file>] [--target-events <count>] [--full-shards] [--dry-run]
 
 Creates orthogonal training/template SAM definition shards from a triples file.
 The default plan is scripts/run1_detvar_cv_shards.txt.
+By default the wrapper caps each output shard at roughly 100000 events.
 
 Each non-comment line in the plan file must contain:
   <source_def> <training_shard_def> <template_shard_def>
@@ -30,6 +31,8 @@ fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 plan_file="${script_dir}/run1_detvar_cv_shards.txt"
+target_events=100000
+full_shards=0
 dry_run=0
 
 while [[ $# -gt 0 ]]; do
@@ -41,6 +44,18 @@ while [[ $# -gt 0 ]]; do
       fi
       plan_file="$2"
       shift 2
+      ;;
+    --target-events)
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --target-events expects an integer." >&2
+        exit 1
+      fi
+      target_events="$2"
+      shift 2
+      ;;
+    --full-shards)
+      full_shards=1
+      shift
       ;;
     --dry-run)
       dry_run=1
@@ -59,10 +74,23 @@ if [[ ! -f "${plan_file}" ]]; then
   exit 1
 fi
 
+if (( full_shards == 0 )) && { ! [[ ${target_events} =~ ^[0-9]+$ ]] || (( target_events <= 0 )); }; then
+  echo "Error: --target-events must be a positive integer." >&2
+  exit 1
+fi
+
 run_split_script="${script_dir}/split_detvar_stride.sh"
 if [[ ! -f "${run_split_script}" ]]; then
   echo "Error: helper not found: ${run_split_script}" >&2
   exit 1
+fi
+
+split_args=()
+if (( full_shards == 0 )); then
+  split_args+=(--target-events "${target_events}")
+fi
+if (( dry_run )); then
+  split_args+=(--dry-run)
 fi
 
 while read -r source_def training_shard_def template_shard_def extra; do
@@ -73,27 +101,5 @@ while read -r source_def training_shard_def template_shard_def extra; do
     echo "Error: invalid line (expected 3 fields): ${source_def} ${training_shard_def:-} ${template_shard_def:-} ${extra:-}" >&2
     exit 1
   fi
-
-  source_count="$(samweb count-files "defname:${source_def}")"
-  if ! [[ ${source_count} =~ ^[0-9]+$ ]]; then
-    echo "Error: could not count source definition: ${source_def}" >&2
-    exit 1
-  fi
-
-  training_estimate=$(( (source_count + 1) / 2 ))
-  template_estimate=$(( source_count / 2 ))
-
-  echo "Source definition : ${source_def}"
-  echo "Source file count : ${source_count}"
-  echo "Training shard    : ${training_shard_def} (~${training_estimate} files)"
-  echo "Template shard    : ${template_shard_def} (~${template_estimate} files)"
-
-  if (( dry_run )); then
-    printf 'samweb create-definition "%s" "defname: %s with stride 2"\n' "${training_shard_def}" "${source_def}"
-    printf 'samweb create-definition "%s" "defname: %s with stride 2 with offset 1"\n' "${template_shard_def}" "${source_def}"
-  else
-    bash "${run_split_script}" "${source_def}" "${training_shard_def}" "${template_shard_def}"
-  fi
-
-  echo
+  bash "${run_split_script}" "${split_args[@]}" "${source_def}" "${training_shard_def}" "${template_shard_def}"
 done < "${plan_file}"
