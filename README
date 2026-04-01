@@ -81,12 +81,20 @@ The main development configurations are:
 
   * dev/image_dev.fcl
   * dev/image_dev_cosmic.fcl
+  * dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
+  * dev/run_stage_image_dev.fcl
+  * dev/run_stage_infer_dev.fcl
+  * dev/run_stage_sel_dev.fcl
+  * dev/run_stage_sel_data_dev.fcl
+  * dev/run_stage_fullchain_dev.fcl
+  * dev/amarantin_local_dev.fcl
   * dev/numi_fhc_run1_dev.xml
   * dev/run_numisystematicweights_rhc_extragenie1.fcl
 
 The main grid-submission XML configurations are:
 
   * xml/numi_fhc_run1.xml
+  * xml/numi_fhc_run2a_campaign.xml
   * xml/numi_fhc_run1_staged.xml
   * xml/numi_fhc_run1_training.xml
   * xml/numi_fhc_run1_detvar_training.xml

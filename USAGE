@@ -87,6 +87,34 @@ dev/image_dev.fcl
 dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
+dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
+     Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
+     the same order as the staged XML when you want to reproduce the
+     `*_evtw` substage sequence on a small local sample.
+
+dev/run_stage_image_dev.fcl
+     Local wrapper for the staged image-production step.
+
+dev/run_stage_infer_dev.fcl
+     Local wrapper for the staged inference step.
+
+dev/run_stage_sel_dev.fcl
+     Local wrapper for the staged MC-style selection step.
+
+dev/run_stage_sel_data_dev.fcl
+     Local wrapper for the staged data/EXT-style selection step.
+
+dev/run_stage_fullchain_dev.fcl
+     Local wrapper for running the image, inference, and selection chain in
+     one process while still using dev-local output names.
+
+dev/amarantin_local_dev.fcl
+     Local MC-style ntuple job for downstream amarantin testing.  It runs the
+     eventweight and image stages in-process, writes the EventSelectionFilter
+     and SubRun trees, limits the local sample to 100 events, keeps only 100
+     GENIE and 100 PPFX universes, and leaves inference disabled until the
+     checked-in model bundle is refreshed.
+
 dev/run_numisystematicweights_rhc_extragenie1.fcl
      Standalone extra-GENIE RHC event-weight job writing
      %ifb_extragenie1_rhc.root.
@@ -132,6 +160,33 @@ Usage notes:
     imageprod:CroppedWindow products expected by the InferenceProducer.
   * Use run_fullchain.fcl when starting from reconstructed input and you want
     the image, inference, and selection stages in one step.
+
+For quick staged-workflow tests from this checkout, `.local.sh` now supports
+either a SAM-backed mini-run or a direct local handoff between stages:
+
+     SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
+       ./.local.sh dev/run_stage_evtw_cv_dev.fcl 1
+
+     ./.local.sh dev/run_stage_image_dev.fcl \
+       /absolute/path/to/previous_stage.root
+
+When you pass an integer as the second argument, `.local.sh` resolves that many
+files from `SAM_DEF`.  When you pass a `.root` path as the second argument, it
+uses that file directly.  Outputs are written under `local-output/` by default.
+Histogram outputs are combined automatically; art event outputs are left as
+per-file ROOT files and are also listed in a `*_events.list` manifest so they
+can be fed into the next stage.
+
+For a compact downstream amarantin input file, run the dedicated local ntuple
+job on a single SAM file:
+
+     SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
+       ./.local.sh dev/amarantin_local_dev.fcl 1
+
+That produces one combined TFileService ROOT file under `local-output/`.
+Because `amarantin` consumes the EventSelectionFilter and SubRun trees, this
+selection-ntuple output is the intended local-test surface rather than a full
+art event file.
 
 The inference jobs expect the checked-in runtime bundle under runtime/,
 including runtime/models/mink_binary/checkpoint_step0010000.pt and the wrapper
@@ -212,20 +267,31 @@ The checked-in branch and product layout is summarized here.  In particular:
 6. Submit grid jobs
 -------------------
 
-The repository includes four checked-in grid XML workflows:
+The repository includes five checked-in grid XML workflows:
 
   * xml/numi_fhc_run1.xml
-    This keeps eventweight, image production, inference, and selection in the
-    same submitted stage as sequential substages.
+    This keeps eventweight, image production, and selection in the same
+    submitted stage as sequential substages.  For now it keeps only the first
+    eventweight chunk (100 multisim universes) and skips inference until the
+    checked-in models are updated.
+  * xml/numi_fhc_run2a_campaign.xml
+    This is the Run 2a FHC campaign template built from the Run 2a NuMI sample
+    inventory in the internal note.  It uses one nominal beam sample, one dirt
+    sample, one strangeness sample, and four good-run EXT partitions.  Its
+    `numjobs` values are placeholders and should be replaced from `samweb`
+    counts in a configured environment before submission.  Like the Run 1
+    campaign XML, it currently keeps only the first eventweight chunk and
+    skips inference until the checked-in models are updated.
   * xml/numi_fhc_run1_staged.xml
-    This splits the workflow into `*_evtw`, `*_image`, `*_infer`, and `*_sel`
-    stages.  Each `*_evtw` stage runs all required eventweight FHiCL substages
-    in one submission, and each later stage consumes the checked output of the
-    previous one.
+    This currently splits the workflow into `*_evtw`, `*_image`, and `*_sel`
+    stages.  Each `*_evtw` stage keeps only the first eventweight chunk, and
+    each later stage consumes the checked output of the previous one.
+    Dedicated `*_infer` stages are commented out until the checked-in models
+    are updated.
   * xml/numi_fhc_run1_training.xml
-    This is the training-oriented workflow.  It skips inference entirely and
-    runs `*_evtw -> *_image -> *_sel` for MC and `*_image -> *_sel` for EXT,
-    using the no-inference selection FHiCL wrappers.
+    This is the training-oriented workflow.  It skips inference entirely, runs
+    only the first eventweight chunk for MC, and uses the no-inference
+    selection FHiCL wrappers.
   * xml/numi_fhc_run1_detvar_training.xml
     This is the stride-split detector-variation training workflow.  It targets
     the training definitions created by `scripts/split_detvar_stride.sh` and
@@ -255,8 +321,6 @@ its default input:
      project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_evtw --check
      project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --submit
      project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --check
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_infer --submit
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_infer --check
      project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_sel --submit
 
 For the training XML, the same checked-output handoff applies, but there is no
@@ -285,26 +349,34 @@ Checked-in stage names include:
   * beam_shard1
   * beam_shard2
   * beam_shard3
+  * beam_campaign_run2a_fhc
   * dirt_shard0
   * dirt_shard1
-  * strangeness_run1_fhc
+  * dirt_campaign_run2a_fhc
+  * strangeness_campaign_run1_fhc
+  * strangeness_campaign_run2a_fhc
   * ext_shard0
   * ext_shard1
   * ext_shard2
+  * ext_campaign_run2a_p0
+  * ext_campaign_run2a_p1
+  * ext_campaign_run2a_p2
+  * ext_campaign_run2a_p3
 
 The staged XML uses dataset-specific stage chains such as:
 
-  * beam_shard0_evtw, beam_shard0_image, beam_shard0_infer, beam_shard0_sel
-  * beam_shard1_evtw, beam_shard1_image, beam_shard1_infer, beam_shard1_sel
-  * beam_shard2_evtw, beam_shard2_image, beam_shard2_infer, beam_shard2_sel
-  * beam_shard3_evtw, beam_shard3_image, beam_shard3_infer, beam_shard3_sel
-  * dirt_shard0_evtw, dirt_shard0_image, dirt_shard0_infer, dirt_shard0_sel
-  * dirt_shard1_evtw, dirt_shard1_image, dirt_shard1_infer, dirt_shard1_sel
-  * strangeness_run1_fhc_evtw, strangeness_run1_fhc_image,
-    strangeness_run1_fhc_infer, strangeness_run1_fhc_sel
-  * ext_shard0_image, ext_shard0_infer, ext_shard0_sel
-  * ext_shard1_image, ext_shard1_infer, ext_shard1_sel
-  * ext_shard2_image, ext_shard2_infer, ext_shard2_sel
+  * beam_shard0_evtw, beam_shard0_image, beam_shard0_sel
+  * beam_shard1_evtw, beam_shard1_image, beam_shard1_sel
+  * beam_shard2_evtw, beam_shard2_image, beam_shard2_sel
+  * beam_shard3_evtw, beam_shard3_image, beam_shard3_sel
+  * dirt_shard0_evtw, dirt_shard0_image, dirt_shard0_sel
+  * dirt_shard1_evtw, dirt_shard1_image, dirt_shard1_sel
+  * strangeness_campaign_run1_fhc_evtw,
+    strangeness_campaign_run1_fhc_image,
+    strangeness_campaign_run1_fhc_sel
+  * ext_shard0_image, ext_shard0_sel
+  * ext_shard1_image, ext_shard1_sel
+  * ext_shard2_image, ext_shard2_sel
 
 The training XML uses the same sample stage names, but drops the infer stage:
 
@@ -314,8 +386,9 @@ The training XML uses the same sample stage names, but drops the infer stage:
   * beam_shard3_evtw, beam_shard3_image, beam_shard3_sel
   * dirt_shard0_evtw, dirt_shard0_image, dirt_shard0_sel
   * dirt_shard1_evtw, dirt_shard1_image, dirt_shard1_sel
-  * strangeness_run1_fhc_evtw, strangeness_run1_fhc_image,
-    strangeness_run1_fhc_sel
+  * strangeness_campaign_run1_fhc_evtw,
+    strangeness_campaign_run1_fhc_image,
+    strangeness_campaign_run1_fhc_sel
   * ext_shard0_image, ext_shard0_sel
   * ext_shard1_image, ext_shard1_sel
   * ext_shard2_image, ext_shard2_sel
@@ -332,8 +405,8 @@ To clean and resubmit a stage:
 
 For the staged XML, clean and resubmit the specific stage you want to rerun:
 
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_infer --clean
-     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_infer --submit
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --clean
+     project.py --xml xml/numi_fhc_run1_staged.xml --stage beam_shard0_image --submit
 
 
 7. Common adjustments

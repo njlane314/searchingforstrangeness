@@ -1,0 +1,8 @@
+#include "run_fullchain.fcl"
+
+process_name: FullChainStageDev
+
+services.TFileService.fileName: "stage_fullchain_dev_hist.root"
+outputs.out1.fileName: "stage_fullchain_dev.root"
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 100

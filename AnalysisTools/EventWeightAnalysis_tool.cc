@@ -82,6 +82,7 @@ private:
     bool _SaveAllFlux;
     bool _createGenieUpDnVecs;
     int _genieAllUniverses;
+    int _ppfxAllUniverses;
     bool _makeNuMItuple;
     bool _useReweightedFlux;
 
@@ -104,8 +105,9 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _SaveAllFlux = p.get<bool>("SaveAllFlux", true);
     _createGenieUpDnVecs = p.get<bool>("createGenieUpDnVecs", true);
     _genieAllUniverses = p.get<int>("genieAllUniverses", 500);
+    _ppfxAllUniverses = p.get<int>("ppfxAllUniverses", 600);
     _makeNuMItuple = p.get<bool>("makeNuMINtuple", true);
-    _useReweightedFlux = p.get<bool>("useReweightedFlux", true);
+    _useReweightedFlux = p.get<bool>("useReweightedFlux", false);
 
     _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24");
     _event_weight_process_name_01 = p.get<std::string>("eventWeightProcessName01", "EventWeightSep24ExtraGENIE1");
@@ -126,8 +128,8 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _vecWeightsGenieDn.clear();
 
     if (_makeNuMItuple) {
-        _vecWeightsPPFX  = std::vector<unsigned short>(600,1);
-        _vecWeightsPPFXD = std::vector<double>(600,1.0);
+        _vecWeightsPPFX  = std::vector<unsigned short>(_ppfxAllUniverses,1);
+        _vecWeightsPPFXD = std::vector<double>(_ppfxAllUniverses,1.0);
     }
 
     std::vector<art::InputTag> vecTag;

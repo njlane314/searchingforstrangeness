@@ -31,10 +31,17 @@
     <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
     <!ENTITY fcl_evtw_slim "run_eventweight_microboone_sept24_numi_fhc_slim.fcl">
 
+    <!--
+      Temporary campaign settings:
+      keep only fcl_evtw_00 so these jobs write the first 100 multisim
+      universes, and skip inference until the checked-in models are updated.
+      fcl_evtw_slim remains defined for reference, but it is CV-only and is
+      therefore disabled below.
+    -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
 ]>
 
 <job>
@@ -59,11 +66,11 @@
     <stage name="beam_shard0_evtw">
         <inputdef>&input_beam_shard0;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/evtw/log</logdir>
@@ -83,6 +90,7 @@
         <numjobs>3765</numjobs>
     </stage>
 
+    <!--
     <stage name="beam_shard0_infer">
         <previousstage>beam_shard0_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -93,9 +101,10 @@
         <datatier>inference</datatier>
         <numjobs>3765</numjobs>
     </stage>
+    -->
 
     <stage name="beam_shard0_sel">
-        <previousstage>beam_shard0_infer</previousstage>
+        <previousstage>beam_shard0_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/sel/out</outdir>
@@ -108,11 +117,11 @@
     <stage name="beam_shard1_evtw">
         <inputdef>&input_beam_shard1;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/evtw/log</logdir>
@@ -132,6 +141,7 @@
         <numjobs>3894</numjobs>
     </stage>
 
+    <!--
     <stage name="beam_shard1_infer">
         <previousstage>beam_shard1_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -142,9 +152,10 @@
         <datatier>inference</datatier>
         <numjobs>3894</numjobs>
     </stage>
+    -->
 
     <stage name="beam_shard1_sel">
-        <previousstage>beam_shard1_infer</previousstage>
+        <previousstage>beam_shard1_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/sel/out</outdir>
@@ -157,11 +168,11 @@
     <stage name="beam_shard2_evtw">
         <inputdef>&input_beam_shard2;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/evtw/log</logdir>
@@ -181,6 +192,7 @@
         <numjobs>3806</numjobs>
     </stage>
 
+    <!--
     <stage name="beam_shard2_infer">
         <previousstage>beam_shard2_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -191,9 +203,10 @@
         <datatier>inference</datatier>
         <numjobs>3806</numjobs>
     </stage>
+    -->
 
     <stage name="beam_shard2_sel">
-        <previousstage>beam_shard2_infer</previousstage>
+        <previousstage>beam_shard2_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/sel/out</outdir>
@@ -206,11 +219,11 @@
     <stage name="beam_shard3_evtw">
         <inputdef>&input_beam_shard3;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/evtw/log</logdir>
@@ -230,6 +243,7 @@
         <numjobs>3654</numjobs>
     </stage>
 
+    <!--
     <stage name="beam_shard3_infer">
         <previousstage>beam_shard3_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -240,9 +254,10 @@
         <datatier>inference</datatier>
         <numjobs>3654</numjobs>
     </stage>
+    -->
 
     <stage name="beam_shard3_sel">
-        <previousstage>beam_shard3_infer</previousstage>
+        <previousstage>beam_shard3_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/sel/out</outdir>
@@ -254,7 +269,13 @@
 
     <stage name="dirt_shard0_evtw">
         <inputdef>&input_dirt_shard0;</inputdef>
-        <fcl>&fcl_evtw_slim;</fcl>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <!-- <fcl>&fcl_evtw_slim;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/log</logdir>
@@ -274,6 +295,7 @@
         <numjobs>3900</numjobs>
     </stage>
 
+    <!--
     <stage name="dirt_shard0_infer">
         <previousstage>dirt_shard0_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -284,9 +306,10 @@
         <datatier>inference</datatier>
         <numjobs>3900</numjobs>
     </stage>
+    -->
 
     <stage name="dirt_shard0_sel">
-        <previousstage>dirt_shard0_infer</previousstage>
+        <previousstage>dirt_shard0_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/sel/out</outdir>
@@ -298,7 +321,13 @@
 
     <stage name="dirt_shard1_evtw">
         <inputdef>&input_dirt_shard1;</inputdef>
-        <fcl>&fcl_evtw_slim;</fcl>
+        <fcl>&fcl_evtw_00;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <!-- <fcl>&fcl_evtw_slim;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/log</logdir>
@@ -318,6 +347,7 @@
         <numjobs>3904</numjobs>
     </stage>
 
+    <!--
     <stage name="dirt_shard1_infer">
         <previousstage>dirt_shard1_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -328,9 +358,10 @@
         <datatier>inference</datatier>
         <numjobs>3904</numjobs>
     </stage>
+    -->
 
     <stage name="dirt_shard1_sel">
-        <previousstage>dirt_shard1_infer</previousstage>
+        <previousstage>dirt_shard1_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/sel/out</outdir>
@@ -340,14 +371,14 @@
         <numjobs>3904</numjobs>
     </stage>
 
-    <stage name="strangeness_run1_fhc_evtw">
+    <stage name="strangeness_campaign_run1_fhc_evtw">
         <inputdef>&input_strange_run1_fhc;</inputdef>
         <fcl>&fcl_evtw_00;</fcl>
-        <fcl>&fcl_evtw_01;</fcl>
-        <fcl>&fcl_evtw_02;</fcl>
-        <fcl>&fcl_evtw_03;</fcl>
-        <fcl>&fcl_evtw_04;</fcl>
-        <fcl>&fcl_evtw_05;</fcl>
+        <!-- <fcl>&fcl_evtw_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/evtw/log</logdir>
@@ -356,8 +387,8 @@
         <numjobs>4593</numjobs>
     </stage>
 
-    <stage name="strangeness_run1_fhc_image">
-        <previousstage>strangeness_run1_fhc_evtw</previousstage>
+    <stage name="strangeness_campaign_run1_fhc_image">
+        <previousstage>strangeness_campaign_run1_fhc_evtw</previousstage>
         <fcl>&fcl_image;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/image/out</outdir>
@@ -367,8 +398,9 @@
         <numjobs>4593</numjobs>
     </stage>
 
-    <stage name="strangeness_run1_fhc_infer">
-        <previousstage>strangeness_run1_fhc_image</previousstage>
+    <!--
+    <stage name="strangeness_campaign_run1_fhc_infer">
+        <previousstage>strangeness_campaign_run1_fhc_image</previousstage>
         <fcl>&fcl_infer;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/infer/out</outdir>
@@ -377,9 +409,10 @@
         <datatier>inference</datatier>
         <numjobs>4593</numjobs>
     </stage>
+    -->
 
-    <stage name="strangeness_run1_fhc_sel">
-        <previousstage>strangeness_run1_fhc_infer</previousstage>
+    <stage name="strangeness_campaign_run1_fhc_sel">
+        <previousstage>strangeness_campaign_run1_fhc_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/sel/out</outdir>
@@ -400,6 +433,7 @@
         <numjobs>10000</numjobs>
     </stage>
 
+    <!--
     <stage name="ext_shard0_infer">
         <previousstage>ext_shard0_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -410,9 +444,10 @@
         <datatier>inference</datatier>
         <numjobs>10000</numjobs>
     </stage>
+    -->
 
     <stage name="ext_shard0_sel">
-        <previousstage>ext_shard0_infer</previousstage>
+        <previousstage>ext_shard0_image</previousstage>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard0/sel/out</outdir>
@@ -433,6 +468,7 @@
         <numjobs>10000</numjobs>
     </stage>
 
+    <!--
     <stage name="ext_shard1_infer">
         <previousstage>ext_shard1_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -443,9 +479,10 @@
         <datatier>inference</datatier>
         <numjobs>10000</numjobs>
     </stage>
+    -->
 
     <stage name="ext_shard1_sel">
-        <previousstage>ext_shard1_infer</previousstage>
+        <previousstage>ext_shard1_image</previousstage>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard1/sel/out</outdir>
@@ -466,6 +503,7 @@
         <numjobs>4868</numjobs>
     </stage>
 
+    <!--
     <stage name="ext_shard2_infer">
         <previousstage>ext_shard2_image</previousstage>
         <fcl>&fcl_infer;</fcl>
@@ -476,9 +514,10 @@
         <datatier>inference</datatier>
         <numjobs>4868</numjobs>
     </stage>
+    -->
 
     <stage name="ext_shard2_sel">
-        <previousstage>ext_shard2_infer</previousstage>
+        <previousstage>ext_shard2_image</previousstage>
         <fcl>&fcl_sel_data;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/shard2/sel/out</outdir>

@@ -1,0 +1,6 @@
+#include "run_inferenceprod.fcl"
+
+process_name: InferenceProdStageDev
+
+services.TFileService.fileName: "stage_infer_dev_hist.root"
+outputs.out1.fileName: "stage_infer_dev.root"

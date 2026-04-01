@@ -1,0 +1,64 @@
+#include "microboone_eventweight_service.fcl"
+#include "eventweight_microboone_sep24.fcl"
+#include "run_nuselection.fcl"
+
+process_name: AmarantinLocalDev
+
+services.TFileService.fileName: "amarantin_local_dev.root"
+services.UBEventWeight: @local::microboone_eventweight_service
+services.NuRandomService: @local::microboone_seedservice
+
+# Keep the local test artifact small enough to build quick amarantin samples.
+source.maxEvents: 100
+
+physics.producers.imageprod: {
+  module_type: "ImageProducer"
+  PFPproducer: @local::standard_producers.PFPproducer
+  SLCproducer: @local::standard_producers.SLCproducer
+  HITproducer: @local::standard_producers.HITproducer
+  WIREproducer: @local::standard_producers.WIREproducer
+  MCPproducer: @local::standard_producers.MCPproducer
+  BKTproducer: @local::standard_producers.BKTproducer
+  SPproducer: @local::standard_producers.SPproducer
+  BadChannelFile: "runtime/detector/badchannels.txt"
+}
+
+physics.producers.eventweightSep24: @local::microboone_eventweight_sep24
+
+# Leave inference disabled for this local amarantin test sample until the
+# checked-in model bundle has been updated. The downstream test only needs the
+# image and event-weight branches for now.
+# physics.producers.inferenceprod: {
+#   module_type: "InferenceProducer"
+#   PlanesTag: "imageprod:CroppedWindow"
+#   ScratchDir: ""
+#   RuntimeBaseDir: "runtime"
+#   DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
+#   ModelDefaults: {
+#     Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+#     WeightsDir: "models/mink_binary"
+#   }
+#   Models: [
+#     {
+#       Label: "mink_binary"
+#       Checkpoint: "checkpoint_step0010000.pt"
+#     }
+#   ]
+# }
+
+physics.path1: [ eventweightSep24, imageprod, nuselection ]
+# physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
+physics.trigger_paths: [ path1 ]
+
+AmarantinLocalEventWeightAnalysis: {
+  @table::EventWeightAnalysis
+  genieAllUniverses: 100
+  ppfxAllUniverses: 100
+  eventWeightProcessName00: "AmarantinLocalDev"
+}
+
+physics.filters.nuselection.AnalysisTools.weight: @local::AmarantinLocalEventWeightAnalysis
+physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
+physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.OpFilterProcName: ""

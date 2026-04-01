@@ -29,6 +29,7 @@
 *.png
 
 .tmp/*
+local-output/
 
 *.log
 *.tar

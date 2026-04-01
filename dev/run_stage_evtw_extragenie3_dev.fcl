@@ -1,0 +1,3 @@
+#include "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl"
+
+outputs.out1.fileName: "stage_evtw_extragenie3_dev.root"

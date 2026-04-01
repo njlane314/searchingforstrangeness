@@ -1,0 +1,7 @@
+#include "run_nuselection.fcl"
+
+process_name: NuSelectionStageDev
+
+services.TFileService.fileName: "stage_sel_dev.root"
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 100

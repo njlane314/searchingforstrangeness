@@ -1,0 +1,6 @@
+#include "run_imageprod.fcl"
+
+process_name: ImageProdStageDev
+
+services.TFileService.fileName: "stage_image_dev_hist.root"
+outputs.out1.fileName: "stage_image_dev.root"

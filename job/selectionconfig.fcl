@@ -50,9 +50,10 @@ EventWeightAnalysis: {
     createSplineTimesTuneBranch: true
     createPPFXBranch: true
     makeNuMINtuple: true
-    genieAllUniverses: 500
+    genieAllUniverses: 600
+    ppfxAllUniverses: 600
 
-    useReweightedFlux: true
+    useReweightedFlux: false
     eventWeightProcessName00: "EventWeightSep24"
     eventWeightProcessName01: "EventWeightSep24ExtraGENIE1"
     eventWeightProcessName02: "EventWeightSep24ExtraGENIE2"
