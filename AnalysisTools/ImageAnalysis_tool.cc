@@ -285,16 +285,23 @@ void ImageAnalysis::analyseSlice(
         art::Handle<std::vector<image::SparsePlaneImage>> imageH;
         event.getByLabel(tag, imageH);
         if (!imageH.isValid()) {
-            mf::LogDebug("ImageAnalysis")
-                << "SparsePlaneImage collection with tag \"" << tag.encode()
-                << "\" not found; leaving default image-analysis values.";
-            return;
+            throw cet::exception("ImageAnalysis")
+                << "Required SparsePlaneImage collection with tag \"" << tag.encode()
+                << "\" is missing for event " << event.id()
+                << ". Check the image production stage and InputTag wiring.";
         }
 
         auto const planes = find_views(*imageH);
         auto const *U = planes[0];
         auto const *V = planes[1];
         auto const *W = planes[2];
+
+        if (!U && !V && !W) {
+            throw cet::exception("ImageAnalysis")
+                << "SparsePlaneImage collection with tag \"" << tag.encode()
+                << "\" was present for event " << event.id()
+                << " but did not contain any U/V/W view planes.";
+        }
 
         active_u = U ? countActivePixels(U->coords) : 0;
         active_v = V ? countActivePixels(V->coords) : 0;
@@ -312,6 +319,17 @@ void ImageAnalysis::analyseSlice(
             vtx_u = (U && in_img(*U, vtx_proj_u->X(), vtx_proj_u->Z()));
             vtx_v = (V && in_img(*V, vtx_proj_v->X(), vtx_proj_v->Z()));
             vtx_w = (W && in_img(*W, vtx_proj_w->X(), vtx_proj_w->Z()));
+        }
+
+        if (active_u == 0 && active_v == 0 && active_w == 0) {
+            mf::LogWarning("ImageAnalysis")
+                << "SparsePlaneImage collection with tag \"" << tag.encode()
+                << "\" is present for event " << event.id()
+                << " but all U/V/W planes are empty."
+                << " Plane counts: total=" << imageH->size()
+                << ", hasU=" << static_cast<bool>(U)
+                << ", hasV=" << static_cast<bool>(V)
+                << ", hasW=" << static_cast<bool>(W) << ".";
         }
     };
 
