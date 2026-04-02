@@ -212,6 +212,26 @@ verify_count=0
 no_count=0
 error_count=0
 
+extract_dimensions() {
+  awk '
+    BEGIN {
+      IGNORECASE = 1
+      capture = 0
+    }
+    capture {
+      if ($0 ~ /^[[:alpha:]_][[:alnum:]_ -]*[[:space:]]*[:=][[:space:]]*/) exit
+      if ($0 ~ /^[[:space:]]*$/) exit
+      print
+      next
+    }
+    /^(dimensions|dims)[[:space:]]*[:=][[:space:]]*/ {
+      sub(/^[^:=]*[:=][[:space:]]*/, "", $0)
+      print
+      capture = 1
+    }
+  ' | paste -sd' ' - | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//'
+}
+
 for def in "${datasets[@]}"; do
   desc="$(samweb describe-definition "$def" 2>&1)" || {
     printf 'ERROR   %s\n' "$def"
@@ -220,24 +240,35 @@ for def in "${datasets[@]}"; do
     continue
   }
 
-  dims="$(printf '%s\n' "$desc" | sed -n 's/^Dimensions: //p')"
-  if [[ -z "$dims" ]]; then
-    printf 'ERROR   %s\n' "$def"
-    printf '  Could not extract Dimensions from samweb describe-definition output.\n\n'
-    error_count=$((error_count + 1))
-    continue
+  dims="$(printf '%s\n' "$desc" | extract_dimensions)"
+  search_blob="$desc"
+  note=""
+  if [[ -n "$dims" ]]; then
+    search_blob="$dims"
+  else
+    note="(raw describe-definition format did not expose a parsable dimensions line)"
   fi
 
-  if printf '%s\n' "$dims" | grep -Eq 'goodruns:[[:space:]]*1|goodruns_mcc9'; then
+  if printf '%s\n' "$search_blob" | grep -Eqi 'goodruns:[[:space:]]*1|goodruns_mcc9'; then
     printf 'YES     %s\n\n' "$def"
     yes_count=$((yes_count + 1))
-  elif printf '%s\n' "$dims" | grep -Eq 'beam_good'; then
+  elif printf '%s\n' "$search_blob" | grep -Eqi 'beam_good'; then
     printf 'VERIFY  %s\n' "$def"
-    printf '  %s\n\n' "$dims"
+    if [[ -n "$dims" ]]; then
+      printf '  %s\n' "$dims"
+    elif [[ -n "$note" ]]; then
+      printf '  %s\n' "$note"
+    fi
+    printf '\n'
     verify_count=$((verify_count + 1))
   else
     printf 'NO      %s\n' "$def"
-    printf '  %s\n\n' "$dims"
+    if [[ -n "$dims" ]]; then
+      printf '  %s\n' "$dims"
+    elif [[ -n "$note" ]]; then
+      printf '  %s\n' "$note"
+    fi
+    printf '\n'
     no_count=$((no_count + 1))
   fi
 done
