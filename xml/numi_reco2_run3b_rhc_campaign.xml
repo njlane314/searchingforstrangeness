@@ -10,13 +10,12 @@
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
     <!--
-      Official Run 3b RHC Reco2 source SAM definitions from the March 2022 NuMI
-      dataset list, plus the dedicated Run 3 RHC strangeness overlay.
+      Nominal Run 3 RHC beam now starts from the merged Pandora reco2 campaign
+      output. The SAM definition name retains an older "wirecell" token in the
+      bookkeeping spreadsheet even though the production row is the Pandora
+      reco2 chain.
     -->
-    <!ENTITY input_beam_shard0 "prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_v2_sample0">
-    <!ENTITY input_beam_shard1 "prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample1">
-    <!ENTITY input_beam_shard2 "prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample2_v3">
-    <!ENTITY input_beam_shard3 "prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_sample3">
+    <!ENTITY input_beam "run3_nu_overlay_wirecell_reco2_reco2_cnguyen_reco2_reco2">
     <!ENTITY input_dirt_shard0 "prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample0">
     <!ENTITY input_dirt_shard1 "prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample1">
     <!ENTITY input_strangeness "prod_strange_resample_rhc_run3_rhc_reco2_reco2">
@@ -75,8 +74,8 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="beam_shard0_evtw">
-        <inputdef>&input_beam_shard0;</inputdef>
+    <stage name="beam_evtw">
+        <inputdef>&input_beam;</inputdef>
         <fcl>&fcl_redk2nu;</fcl>
 
         <fcl>&fcl_evtw_00;</fcl>
@@ -86,153 +85,33 @@
         <!-- <fcl>&fcl_evtw_04;</fcl> -->
         <!-- <fcl>&fcl_evtw_05;</fcl> -->
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard0/evtw</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/evtw/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/evtw/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>7102</numjobs>
     </stage>
 
-    <stage name="beam_shard0_image">
-        <previousstage>beam_shard0_evtw</previousstage>
+    <stage name="beam_image">
+        <previousstage>beam_evtw</previousstage>
         <fcl>&fcl_image;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard0/image</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/image/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/image/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>7102</numjobs>
     </stage>
 
-    <stage name="beam_shard0_sel">
-        <previousstage>beam_shard0_image</previousstage>
+    <stage name="beam_sel">
+        <previousstage>beam_image</previousstage>
         <fcl>&fcl_sel_mc;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard0/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard0/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/sel/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/sel/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard1_evtw">
-        <inputdef>&input_beam_shard1;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
-
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard1/evtw</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard1_image">
-        <previousstage>beam_shard1_evtw</previousstage>
-        <fcl>&fcl_image;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard1/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard1_sel">
-        <previousstage>beam_shard1_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard1/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard1/sel</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard2_evtw">
-        <inputdef>&input_beam_shard2;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
-
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard2/evtw</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard2_image">
-        <previousstage>beam_shard2_evtw</previousstage>
-        <fcl>&fcl_image;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard2/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard2_sel">
-        <previousstage>beam_shard2_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard2/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard2/sel</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard3_evtw">
-        <inputdef>&input_beam_shard3;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
-
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard3/evtw</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard3_image">
-        <previousstage>beam_shard3_evtw</previousstage>
-        <fcl>&fcl_image;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard3/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_shard3_sel">
-        <previousstage>beam_shard3_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/shard3/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run3b_rhc/shard3/sel</workdir>
-        <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>7102</numjobs>
     </stage>
 
     <stage name="dirt_shard0_evtw">

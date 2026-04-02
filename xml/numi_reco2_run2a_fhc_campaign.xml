@@ -10,16 +10,10 @@
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
     <!--
-      Official Run 2a FHC Reco2 source SAM definitions from the March 2022 NuMI
-      dataset list, plus the dedicated Run 2 FHC strangeness overlay.
-
-      The same list also shows a regenerated beam entry,
-      run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2, under the
-      Run 2a FHC block. Because that definition is explicitly RHC-tagged and is
-      duplicated under Run 2b RHC, this campaign defaults to the clearly
-      FHC-tagged source below.
+      Nominal Run 2 FHC beam now starts from the newer Pandora reco2 campaign
+      output rather than the older CV reco2 overlay definition.
     -->
-    <!ENTITY input_beam "prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2">
+    <!ENTITY input_beam "Run2_FHC_New_Flux_Nu_Overlay_Pandora_Reco2_pandora_reco2_reco2">
     <!ENTITY input_dirt "prodgenie_numi_fhc_dirt_overlay_pandora_reco2_run2_reco2">
     <!ENTITY input_strangeness "prod_strange_resample_fhc_run2_fhc_reco2_reco2">
     <!ENTITY input_ext "prod_extnumi_swizzle_inclusive_v4_run2a_reco2_run2a_all_reco2">
@@ -36,13 +30,13 @@
     <!ENTITY input_beam_detvar_wiremodthetaxz "prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_FHC_reco2_v08_00_00_55_run2_reco2">
     <!ENTITY input_beam_detvar_wiremodthetayz "prodgenie_numi_nu_overlay_pandora_reco2_run2_FHC_WireModThetaYZ_withSplines_reco2">
 
+    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
     <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
     <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
     <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
     <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
     <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
     <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
-    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
 
     <!--
       Staged campaign settings:
@@ -96,7 +90,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2a_fhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2a_fhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>9207</numjobs>
     </stage>
 
     <stage name="beam_image">
@@ -107,7 +101,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2a_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2a_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>9207</numjobs>
     </stage>
 
     <stage name="beam_sel">
@@ -118,7 +112,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2a_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2a_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>9207</numjobs>
     </stage>
 
     <stage name="dirt_evtw">
@@ -136,7 +130,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2a_fhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2a_fhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2073</numjobs>
     </stage>
 
     <stage name="dirt_image">
@@ -147,7 +141,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2a_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2a_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2073</numjobs>
     </stage>
 
     <stage name="dirt_sel">
@@ -158,7 +152,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2a_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2a_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2073</numjobs>
     </stage>
 
     <stage name="strangeness_evtw">

@@ -10,14 +10,10 @@
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
     <!--
-      Official Run 2b RHC Reco2 source SAM definitions from the March 2022 NuMI
-      dataset list, plus the dedicated Run 2 RHC strangeness overlay.
-
-      The original CV overlay is listed as mostly bad runs, so this campaign
-      defaults to the regenerated run2_numi_nu_overlay_pandora_unified sample
-      for the nominal beam chain.
+      Nominal Run 2 RHC beam now starts from the newer Pandora reco2 campaign
+      output rather than the older unified reco2 overlay definition.
     -->
-    <!ENTITY input_beam "run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2">
+    <!ENTITY input_beam "Run2_RHC_New_Flux_Nu_Overlay_Pandora_Reco2_pandora_reco2_reco2">
     <!ENTITY input_dirt "prodgenie_numi_rhc_dirt_overlay_pandora_reco2_run2_reco2">
     <!ENTITY input_strangeness "prod_strange_resample_rhc_run2_rhc_reco2_reco2">
     <!ENTITY input_ext "prod_extnumi_swizzle_crt_inclusive_v4b_offbeam_run2_reco2_new2_run2_reco2_all">
@@ -90,7 +86,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2b_rhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2b_rhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>13801</numjobs>
     </stage>
 
     <stage name="beam_image">
@@ -101,7 +97,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2b_rhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2b_rhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>13801</numjobs>
     </stage>
 
     <stage name="beam_sel">
@@ -112,7 +108,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run2b_rhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run2b_rhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>13801</numjobs>
     </stage>
 
     <stage name="dirt_evtw">
@@ -130,7 +126,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2b_rhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2b_rhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2036</numjobs>
     </stage>
 
     <stage name="dirt_image">
@@ -141,7 +137,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2b_rhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2b_rhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2036</numjobs>
     </stage>
 
     <stage name="dirt_sel">
@@ -152,7 +148,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run2b_rhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run2b_rhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>2036</numjobs>
     </stage>
 
     <stage name="strangeness_evtw">
