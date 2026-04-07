@@ -1,12 +1,12 @@
 #ifndef ANALYSIS_IMAGE_PRODUCTS_COMPAT_H
 #define ANALYSIS_IMAGE_PRODUCTS_COMPAT_H
 
-#include "Products/SparsePlaneImage.h"
+#include "Products/ImageFeatures.h"
 
 namespace image {
 
 // Backward-compatible alias for stale dictionary dependencies and includes.
-using ImageProduct = SparsePlaneImage;
+using ImageProduct = ImageFeatures;
 
 } // namespace image
 

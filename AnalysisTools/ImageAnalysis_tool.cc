@@ -31,7 +31,7 @@
 #include "AnalysisToolBase.h"
 #include "Products/InferenceMetrics.h"
 #include "Products/InferencePredictions.h"
-#include "Products/SparsePlaneImage.h"
+#include "Products/ImageFeatures.h"
 #include "Helpers/PandoraUtilities.h"
 #include "Helpers/ProxyTypes.h"
 #include "ImagePipeline/SemanticClassifier.h"
@@ -246,8 +246,8 @@ void ImageAnalysis::analyseSlice(
         }
     }
 
-    auto find_views = [](const std::vector<image::SparsePlaneImage> &images) {
-        std::array<const image::SparsePlaneImage *, 3> out{nullptr, nullptr, nullptr};
+    auto find_views = [](const std::vector<image::ImageFeatures> &images) {
+        std::array<const image::ImageFeatures *, 3> out{nullptr, nullptr, nullptr};
         for (const auto &img : images) {
             if (img.view == static_cast<int>(geo::kU)) out[0] = &img;
             if (img.view == static_cast<int>(geo::kV)) out[1] = &img;
@@ -256,7 +256,7 @@ void ImageAnalysis::analyseSlice(
         return out;
     };
 
-    auto in_img = [](const image::SparsePlaneImage &im, double drift, double wire) {
+    auto in_img = [](const image::ImageFeatures &im, double drift, double wire) {
         bool in_row = (drift >= im.origin_y) &&
                                     (drift < im.origin_y + im.pixel_h * static_cast<double>(im.height));
         bool in_col = (wire >= im.origin_x) &&
@@ -282,11 +282,11 @@ void ImageAnalysis::analyseSlice(
                                    int &active_u, int &active_v, int &active_w,
                                    std::vector<int> &sem_u, std::vector<int> &sem_v, std::vector<int> &sem_w,
                                    bool &vtx_u, bool &vtx_v, bool &vtx_w) {
-        art::Handle<std::vector<image::SparsePlaneImage>> imageH;
+        art::Handle<std::vector<image::ImageFeatures>> imageH;
         event.getByLabel(tag, imageH);
         if (!imageH.isValid()) {
             throw cet::exception("ImageAnalysis")
-                << "Required SparsePlaneImage collection with tag \"" << tag.encode()
+                << "Required ImageFeatures collection with tag \"" << tag.encode()
                 << "\" is missing for event " << event.id()
                 << ". Check the image production stage and InputTag wiring.";
         }
@@ -298,7 +298,7 @@ void ImageAnalysis::analyseSlice(
 
         if (!U && !V && !W) {
             throw cet::exception("ImageAnalysis")
-                << "SparsePlaneImage collection with tag \"" << tag.encode()
+                << "ImageFeatures collection with tag \"" << tag.encode()
                 << "\" was present for event " << event.id()
                 << " but did not contain any U/V/W view planes.";
         }
@@ -323,7 +323,7 @@ void ImageAnalysis::analyseSlice(
 
         if (active_u == 0 && active_v == 0 && active_w == 0) {
             mf::LogWarning("ImageAnalysis")
-                << "SparsePlaneImage collection with tag \"" << tag.encode()
+                << "ImageFeatures collection with tag \"" << tag.encode()
                 << "\" is present for event " << event.id()
                 << " but all U/V/W planes are empty."
                 << " Plane counts: total=" << imageH->size()

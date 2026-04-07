@@ -1,8 +1,8 @@
 <lcgdict>
-  <class name="image::SparsePlaneImage"/>
-  <class name="art::Wrapper<image::SparsePlaneImage>"/>
-  <class name="std::vector<image::SparsePlaneImage>"/>
-  <class name="art::Wrapper<std::vector<image::SparsePlaneImage>>"/>
+  <class name="image::ImageFeatures"/>
+  <class name="art::Wrapper<image::ImageFeatures>"/>
+  <class name="std::vector<image::ImageFeatures>"/>
+  <class name="art::Wrapper<std::vector<image::ImageFeatures>>"/>
 
   <class name="image::ModelMetrics"/>
   <class name="std::vector<image::ModelMetrics>"/>

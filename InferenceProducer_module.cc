@@ -8,7 +8,7 @@
 #include "cetlib_except/exception.h"
 
 #include "ImagePipeline/InferenceProduction.h"
-#include "Products/SparsePlaneImage.h"
+#include "Products/ImageFeatures.h"
 #include "Products/InferenceMetrics.h"
 #include "Products/InferencePredictions.h"
 
@@ -74,8 +74,8 @@ T get_first_present(fhicl::ParameterSet const &pset,
     return fallback;
 }
 
-const image::SparsePlaneImage *find_view(
-    std::vector<image::SparsePlaneImage> const &planes, geo::View_t view) {
+const image::ImageFeatures *find_view(
+    std::vector<image::ImageFeatures> const &planes, geo::View_t view) {
     for (auto const &plane : planes) {
         if (plane.view == static_cast<int>(view))
             return &plane;
@@ -185,7 +185,7 @@ void InferenceProducer::produce(art::Event &e) {
     auto perfProduct = std::make_unique<image::InferenceMetrics>();
     auto predProduct = std::make_unique<image::InferencePredictions>();
 
-    auto planes = e.getValidHandle<std::vector<image::SparsePlaneImage>>(planes_tag_);
+    auto planes = e.getValidHandle<std::vector<image::ImageFeatures>>(planes_tag_);
     if (planes->size() < 3) {
         mf::LogDebug("InferenceProduction")
             << "Need at least three planes (U,V,W), got " << planes->size()
@@ -204,7 +204,7 @@ void InferenceProducer::produce(art::Event &e) {
             << "Unable to identify U/V/W planes";
     }
 
-    auto check_plane = [](image::SparsePlaneImage const *p, char label) {
+    auto check_plane = [](image::ImageFeatures const *p, char label) {
         if (p->feature_dim == 0) {
             throw cet::exception("InferenceProduction")
                 << "Plane " << label << " has invalid feature_dim=0";
@@ -254,13 +254,13 @@ void InferenceProducer::produce(art::Event &e) {
             << "W=" << W->width << "x" << W->height;
     }
 
-    std::vector<image::SparsePlaneImage> detector_images;
+    std::vector<image::ImageFeatures> detector_images;
     detector_images.reserve(3);
     detector_images.emplace_back(*U);
     detector_images.emplace_back(*V);
     detector_images.emplace_back(*W);
 
-    auto is_empty = [](image::SparsePlaneImage const &p) {
+    auto is_empty = [](image::ImageFeatures const &p) {
         return p.coords.empty();
     };
 

@@ -1,5 +1,5 @@
-#ifndef ANALYSIS_SPARSE_PLANE_IMAGE_H
-#define ANALYSIS_SPARSE_PLANE_IMAGE_H
+#ifndef ANALYSIS_IMAGE_FEATURES_H
+#define ANALYSIS_IMAGE_FEATURES_H
 
 #include <cstdint>
 #include <vector>
@@ -8,7 +8,7 @@
 
 namespace image {
 
-class SparsePlaneImage {
+class ImageFeatures {
     public:
         int view{static_cast<int>(geo::kUnknown)}; ///< Readout plane/view identifier.
         uint32_t width{0}; ///< Image width in pixels.
@@ -20,12 +20,12 @@ class SparsePlaneImage {
         float pixel_h{0.f}; ///< Pixel height in world units.
         int32_t vertex_row{-1}; ///< Row index of the reco neutrino vertex in this plane (-1 if unavailable).
         int32_t vertex_col{-1}; ///< Column index of the reco neutrino vertex in this plane (-1 if unavailable).
-        uint32_t feature_dim{3}; ///< Number of features stored per active pixel (adc, nu-slice mask, dead mask).
-        std::vector<int32_t> coords; ///< Interleaved (row, col) coordinates for active pixels, including dead-only pixels if encoded.
+        uint32_t feature_dim{2}; ///< Number of features stored per active pixel (adc, nu-slice mask).
+        std::vector<int32_t> coords; ///< Interleaved sparse pixel coordinates stored as (row, col) index pairs.
         std::vector<float> features; ///< Interleaved feature vectors aligned with coords.
         std::vector<uint8_t> semantic; ///< Optional semantic labels aligned with the active-pixel ordering.
 };
 
 } // namespace image
 
-#endif // ANALYSIS_SPARSE_PLANE_IMAGE_H
+#endif // ANALYSIS_IMAGE_FEATURES_H

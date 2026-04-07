@@ -268,12 +268,12 @@ def plane_sparse_to_sparse2d(
 ) -> Tuple[ME.SparseTensor, float, int]:
     """
     Training-consistent sparsification:
-      idx = sparse adc > thr or dead flag > 0
+      idx = sparse adc > thr
       coords: [batch, y, x]
       feats :
         out_feature_dim == 2 -> [occ=1, logq]
-        out_feature_dim == 3 -> [logq, nu_slice, dead]
-        out_feature_dim == 4 -> [occ=1, logq, nu_slice, dead]
+        out_feature_dim == 3 -> [logq, nu_slice, dead=0 if absent from payload]
+        out_feature_dim == 4 -> [occ=1, logq, nu_slice, dead=0 if absent from payload]
     Returns: (SparseTensor, available_flag, nnz)
     """
     coords = np.asarray(coords_flat, dtype=np.int32).reshape(-1)
@@ -294,7 +294,7 @@ def plane_sparse_to_sparse2d(
     nu_slice = features[:, 1] if feature_dim > 1 else np.zeros_like(adc, dtype=np.float32)
     dead = features[:, 2] if feature_dim > 2 else np.zeros_like(adc, dtype=np.float32)
 
-    keep = np.logical_or(adc > thr, dead > 0.0)
+    keep = adc > thr
     coords = coords[keep]
     adc = adc[keep]
     nu_slice = nu_slice[keep]
@@ -371,10 +371,21 @@ def main() -> int:
     C, H, W = 3, int(args.H), int(args.W)
     feature_dim, sparse_planes = read_sparse_planes(args.in_path, C, H, W)
     model_in_ch = int(cfg.get("in_ch", 3))
-    if feature_dim != model_in_ch:
+    if feature_dim not in (2, 3):
         raise RuntimeError(
-            f"Sparse payload feature_dim={feature_dim} does not match model in_ch={model_in_ch}. "
-            "Use weights trained for the canonical sparse feature schema."
+            f"Unsupported sparse payload feature_dim={feature_dim}. Expected 2 ([adc, nu_slice]) or 3 "
+            "([adc, nu_slice, dead])."
+        )
+    if feature_dim != model_in_ch and not (feature_dim == 2 and model_in_ch in (3, 4)):
+        raise RuntimeError(
+            f"Sparse payload feature_dim={feature_dim} is incompatible with model in_ch={model_in_ch}. "
+            "Only the 2->3/4 compatibility path is supported."
+        )
+    if feature_dim != model_in_ch:
+        print(
+            f"[infer_bin] sparse payload feature_dim={feature_dim}; padding missing dead feature(s) to match "
+            f"model_in_ch={model_in_ch}",
+            flush=True,
         )
 
     model = build_llr_model(

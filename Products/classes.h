@@ -2,14 +2,14 @@
 
 #include "canvas/Persistency/Common/Wrapper.h"
 
-#include "Products/SparsePlaneImage.h"
+#include "Products/ImageFeatures.h"
 #include "Products/InferenceMetrics.h"
 #include "Products/InferencePredictions.h"
 
-// Sparse plane image products
-template class std::vector<image::SparsePlaneImage>;
-template class art::Wrapper<image::SparsePlaneImage>;
-template class art::Wrapper<std::vector<image::SparsePlaneImage>>;
+// Image feature products
+template class std::vector<image::ImageFeatures>;
+template class art::Wrapper<image::ImageFeatures>;
+template class art::Wrapper<std::vector<image::ImageFeatures>>;
 
 // Inference metrics products
 template class std::vector<image::ModelMetrics>;
