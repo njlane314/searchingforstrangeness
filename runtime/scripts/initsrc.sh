@@ -39,7 +39,10 @@ prepend_fhicl_path() {
 }
 
 prepend_fhicl_path "${REPO_BASE_DIR}/dev"
+prepend_fhicl_path "${REPO_BASE_DIR}/dev/flux"
 prepend_fhicl_path "${REPO_BASE_DIR}/job"
+prepend_fhicl_path "${REPO_BASE_DIR}/job/flux"
+prepend_fhicl_path "${REPO_BASE_DIR}/job/reinteractions"
 
 if [[ -d "${UBSIM_EVENTWEIGHT_BASE}" ]]; then
   prepend_fhicl_path "${UBSIM_EVENTWEIGHT_BASE}/App"

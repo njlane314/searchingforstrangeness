@@ -42,7 +42,10 @@ prepend_fhicl_path() {
 UBSIM_EVENTWEIGHT_BASE="${WRK_DIR}/../ubsim/ubsim/EventWeight"
 
 prepend_fhicl_path "${WRK_DIR}/dev"
+prepend_fhicl_path "${WRK_DIR}/dev/flux"
 prepend_fhicl_path "${WRK_DIR}/job"
+prepend_fhicl_path "${WRK_DIR}/job/flux"
+prepend_fhicl_path "${WRK_DIR}/job/reinteractions"
 
 if [ -d "${UBSIM_EVENTWEIGHT_BASE}" ]; then
   prepend_fhicl_path "${UBSIM_EVENTWEIGHT_BASE}/App"

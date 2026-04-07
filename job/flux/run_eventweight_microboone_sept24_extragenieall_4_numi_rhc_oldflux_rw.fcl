@@ -1,0 +1,17 @@
+#include "flux/run_eventweight_microboone_sept24_numi_rhc_oldflux_rw.fcl"
+
+process_name: EventWeightSep24OldRWExtraGENIE4
+
+outputs: {
+  out1: {
+    module_type: RootOutput
+    fileName: "%ifb_extragenie4.root"
+    dataTier: "detector-simulated"
+    compressionLevel: 1
+  }
+}
+
+physics.producers.eventweightSep24.weight_functions: [ All, ppfx_oldrw_ms ]
+physics.producers.eventweightSep24.All.random_seed: 1104
+physics.producers.eventweightSep24.ppfx_oldrw_cv.random_seed: 842
+physics.producers.eventweightSep24.ppfx_oldrw_ms.random_seed: 884

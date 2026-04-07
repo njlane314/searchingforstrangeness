@@ -1,0 +1,15 @@
+#include "flux/eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+
+BEGIN_PROLOG
+
+microboone_eventweight_sept24_oldflux_decomp: @local::microboone_eventweight_sept24_oldflux
+
+microboone_eventweight_sept24_oldflux_decomp.weight_functions: [
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_oldrw_ppfx_decomp,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_genie,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_spline,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_xs,
+  @sequence::microboone_eventweight_sept24_oldflux.weight_functions_reint
+]
+
+END_PROLOG

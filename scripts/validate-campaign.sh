@@ -229,12 +229,12 @@ print_summary() {
 case "${workflow}" in
   mc)
     case "${evtw_config}" in
-      cv) evtw_fhicl="dev/run_stage_evtw_cv_dev.fcl" ;;
-      extragenie1) evtw_fhicl="dev/run_stage_evtw_extragenie1_dev.fcl" ;;
-      extragenie2) evtw_fhicl="dev/run_stage_evtw_extragenie2_dev.fcl" ;;
-      extragenie3) evtw_fhicl="dev/run_stage_evtw_extragenie3_dev.fcl" ;;
-      extragenie4) evtw_fhicl="dev/run_stage_evtw_extragenie4_dev.fcl" ;;
-      extragenie5) evtw_fhicl="dev/run_stage_evtw_extragenie5_dev.fcl" ;;
+      cv) evtw_fhicl="dev/flux/run_stage_evtw_cv_dev.fcl" ;;
+      extragenie1) evtw_fhicl="dev/flux/run_stage_evtw_extragenie1_dev.fcl" ;;
+      extragenie2) evtw_fhicl="dev/flux/run_stage_evtw_extragenie2_dev.fcl" ;;
+      extragenie3) evtw_fhicl="dev/flux/run_stage_evtw_extragenie3_dev.fcl" ;;
+      extragenie4) evtw_fhicl="dev/flux/run_stage_evtw_extragenie4_dev.fcl" ;;
+      extragenie5) evtw_fhicl="dev/flux/run_stage_evtw_extragenie5_dev.fcl" ;;
     esac
 
     if [[ -n "${input_path}" ]]; then
@@ -269,7 +269,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "dev/run_local_ntuple_dev.fcl" "${first_input}"
+    run_step "dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
     print_summary
     ;;
   fullchain)

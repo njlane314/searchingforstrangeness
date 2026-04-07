@@ -78,25 +78,25 @@ job/run_fullchain.fcl
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
-job/run_redk2nu_numi_fhc.fcl
-job/run_redk2nu_numi_rhc.fcl
+job/flux/run_redk2nu_numi_fhc.fcl
+job/flux/run_redk2nu_numi_rhc.fcl
      Restore Dk2Nu information to reco2 artroot files before EventWeight,
      using the checked-in FHC or RHC NuMI dk2nu file paths.
 
 The development entry points are under dev/.
 
-dev/image_dev.fcl
+dev/flux/image_dev.fcl
      Development chain for imaging, inference, and selection with event-weight
      analysis enabled.
 
 dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
-dev/run_stage_redk2nu_dev.fcl
+dev/flux/run_stage_redk2nu_dev.fcl
      Standalone local wrapper for inspecting the staged Run 1 FHC redk2nu
      preprocessing step by itself.
 
-dev/run_stage_evtw_cv_dev.fcl through dev/run_stage_evtw_extragenie5_dev.fcl
+dev/flux/run_stage_evtw_cv_dev.fcl through dev/flux/run_stage_evtw_extragenie5_dev.fcl
      Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
      the same order as the staged XML when you want to reproduce the
      `*_evtw` substage sequence on a small local sample.  These wrappers run
@@ -119,14 +119,14 @@ dev/run_stage_fullchain_dev.fcl
      Local wrapper for running the image, inference, and selection chain in
      one process while still using dev-local output names.
 
-dev/run_local_ntuple_dev.fcl
+dev/flux/run_local_ntuple_dev.fcl
      Local MC-style ntuple job for downstream ntuple validation.  It runs the
      redk2nu, eventweight, and image stages in-process, writes the
      EventSelectionFilter and SubRun trees, keeps only 100 GENIE and 100 PPFX
      universes, uses the standard NuMI EventWeight chain, and leaves
      inference disabled until the checked-in model bundle is refreshed.
 
-dev/run_numisystematicweights_rhc_extragenie1.fcl
+dev/flux/run_numisystematicweights_rhc_extragenie1.fcl
      Standalone extra-GENIE RHC redk2nu-plus-event-weight job writing
      %ifb_extragenie1_rhc.root.
 
@@ -176,7 +176,7 @@ For quick staged-workflow tests from this checkout, `.local.sh` now supports
 either a SAM-backed mini-run or a direct local handoff between stages:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh dev/run_stage_evtw_cv_dev.fcl 1
+       ./.local.sh dev/flux/run_stage_evtw_cv_dev.fcl 1
 
      ./.local.sh dev/run_stage_image_dev.fcl \
        /absolute/path/to/previous_stage.root
@@ -192,7 +192,7 @@ For a compact local ntuple validation file, run the dedicated local ntuple
 job on a single SAM file:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh dev/run_local_ntuple_dev.fcl 1
+       ./.local.sh dev/flux/run_local_ntuple_dev.fcl 1
 
 That produces one combined TFileService ROOT file under `out/`.
 Because downstream ntuple consumers use the EventSelectionFilter and SubRun
@@ -206,7 +206,7 @@ submitting a campaign, use:
 
 That defaults to the Run 1 FHC staged MC path:
 
-  * `dev/run_stage_evtw_cv_dev.fcl`
+  * `dev/flux/run_stage_evtw_cv_dev.fcl`
   * `dev/run_stage_image_dev.fcl`
   * `dev/run_stage_sel_dev.fcl`
 

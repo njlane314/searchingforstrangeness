@@ -1,0 +1,16 @@
+#include "flux/redk2nu_numi_oldflux.fcl"
+#include "flux/run_eventweight_microboone_sept24_numi_rhc_oldflux_rw.fcl"
+
+process_name: NuMISystematicWeights_RHC_ExtraGENIE1
+
+outputs.out1.fileName: "%ifb_extragenie1_rhc.root"
+
+physics.producers.generator: @local::microboone_redk2nu_rhc
+physics.simulate: [ generator, rns, eventweightSep24 ]
+
+physics.producers.eventweightSep24.weight_functions: [ All, ppfx_oldrw_ms ]
+
+physics.producers.eventweightSep24.All.random_seed: 2101
+
+physics.producers.eventweightSep24.ppfx_oldrw_cv.random_seed: 242
+physics.producers.eventweightSep24.ppfx_oldrw_ms.random_seed: 284
