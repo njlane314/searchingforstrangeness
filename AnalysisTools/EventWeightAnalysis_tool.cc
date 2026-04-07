@@ -205,6 +205,8 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     
     int GenieCounter = 0;
     int PPFXCounter = 0;
+    const std::string reintPrefix = "reinteractions_";
+    const std::string reintSuffix = "_Geant4";
 
     for(auto& thisTag : vecTag){
         art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
@@ -392,7 +394,11 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                             }
                         }
                     }
-                else if ( keyname == "reinteractions_piplus_Geant4" || keyname == "reinteractions_piminus_Geant4" || keyname == "reinteractions_proton_Geant4" ) {
+                else if ( keyname.find(reintPrefix) == 0 &&
+                          keyname.size() >= reintPrefix.size() + reintSuffix.size() &&
+                          keyname.compare(keyname.size() - reintSuffix.size(),
+                                          reintSuffix.size(),
+                                          reintSuffix) == 0 ) {
                     if(isFirstVectorReint){
                         _vecWeightsReintD = it->second;
                         isFirstVectorReint = false;
