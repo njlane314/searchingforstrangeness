@@ -11,7 +11,9 @@
 ##########################################################
 
 # Local copies are used here because the runtime stack available to this repo
-# does not reliably provide the kaon and neutron old-RW reinteraction includes.
+# does not reliably provide the kaon and neutron old-RW reinteraction includes,
+# and the ROOT inputs are versioned with this repository under
+# job/reinteractions/data/.
 #include "microboone_piplus_reweight_parameters.fcl"
 #include "microboone_piminus_reweight_parameters.fcl"
 #include "microboone_proton_reweight_parameters.fcl"
@@ -50,8 +52,8 @@ microboone_eventweight_reint: {
     parameters: @local::PiPlusParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piplus.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_piplus.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_piplus.root"
+    xsecfile: "job/reinteractions/data/g4_cross_section_piplus.root"
     makeoutputtree: false
     pdg_to_reweight: 211
     debug: false
@@ -62,8 +64,8 @@ microboone_eventweight_reint: {
     parameters: @local::PiMinusParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piminus.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_piminus.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_piminus.root"
+    xsecfile: "job/reinteractions/data/g4_cross_section_piminus.root"
     makeoutputtree: false
     pdg_to_reweight: -211
     debug: false
@@ -74,8 +76,8 @@ microboone_eventweight_reint: {
     parameters: @local::ProtonParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_proton.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_proton.root"
+    xsecfile: "job/reinteractions/data/g4_cross_section_proton.root"
     makeoutputtree: false
     pdg_to_reweight: 2212
     debug: false
@@ -86,8 +88,8 @@ microboone_eventweight_reint: {
     parameters: @local::KPlusParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/kplus_cross_section.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_proton.root"
+    xsecfile: "job/reinteractions/data/kplus_cross_section.root"
     makeoutputtree: false
     pdg_to_reweight: 321
     debug: false
@@ -98,8 +100,8 @@ microboone_eventweight_reint: {
     parameters: @local::KMinusParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/kminus_cross_section.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_proton.root"
+    xsecfile: "job/reinteractions/data/kminus_cross_section.root"
     makeoutputtree: false
     pdg_to_reweight: -321
     debug: false
@@ -110,8 +112,8 @@ microboone_eventweight_reint: {
     parameters: @local::NeutronParameters
     mode: multisim
     number_of_multisims: 1000
-    fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
-    xsecfile: "$UBOONEDATA_DIR/systematics/reint/neutron_cross_section.root"
+    fracsfile: "job/reinteractions/data/g4_fracs_proton.root"
+    xsecfile: "job/reinteractions/data/neutron_cross_section.root"
     makeoutputtree: false
     pdg_to_reweight: 2112
     debug: false

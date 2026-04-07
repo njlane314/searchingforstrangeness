@@ -25,6 +25,8 @@
 *.app
 
 *.root
+!job/reinteractions/data/
+!job/reinteractions/data/*.root
 *.csv
 *.png
 
