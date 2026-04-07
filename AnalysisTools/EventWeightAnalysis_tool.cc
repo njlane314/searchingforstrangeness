@@ -182,6 +182,14 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     if (_makeNuMItuple) {
         _vecWeightsPPFX  = std::vector<unsigned short>(_ppfxAllUniverses,1);
         _vecWeightsPPFXD = std::vector<double>(_ppfxAllUniverses,1.0);
+        if (_createPPFXComponentBranches) {
+            for (auto& componentWeights : _vecWeightsPPFXComponents) {
+                componentWeights = std::vector<unsigned short>(_ppfxAllUniverses, 1);
+            }
+            for (auto& componentWeights : _vecWeightsPPFXComponentsD) {
+                componentWeights = std::vector<double>(_ppfxAllUniverses, 1.0);
+            }
+        }
     }
 
     std::vector<art::InputTag> vecTag;
@@ -365,7 +373,11 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 else if (_createPPFXComponentBranches && _makeNuMItuple) {
                     const int componentIndex = GetPPFXComponentIndex(keyname);
                     if (componentIndex >= 0) {
-                        _vecWeightsPPFXComponentsD[componentIndex] = it->second;
+                        for (unsigned int i = 0; i < it->second.size(); ++i) {
+                            if ((i + (100 * PPFXCounter)) < _vecWeightsPPFXComponentsD[componentIndex].size()) {
+                                _vecWeightsPPFXComponentsD[componentIndex][i + (100 * PPFXCounter)] *= it->second[i];
+                            }
+                        }
                     }
                 }
                 else if(!_makeNuMItuple &&
