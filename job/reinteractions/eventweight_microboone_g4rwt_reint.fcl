@@ -41,7 +41,8 @@ microboone_eventweight_reint: {
     reinteractions_piminus,
     reinteractions_proton,
     reinteractions_kplus,
-    reinteractions_kminus
+    reinteractions_kminus,
+    reinteractions_neutron
   ]
   reinteractions_piplus: {
     type: Geant4
