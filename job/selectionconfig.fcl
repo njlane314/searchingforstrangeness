@@ -50,13 +50,13 @@ EventWeightAnalysis: {
     genieAllUniverses: 600
     ppfxAllUniverses: 600
 
-    useReweightedFlux: false
-    eventWeightProcessName00: "EventWeightSep24"
-    eventWeightProcessName01: "EventWeightSep24ExtraGENIE1"
-    eventWeightProcessName02: "EventWeightSep24ExtraGENIE2"
-    eventWeightProcessName03: "EventWeightSep24ExtraGENIE3"
-    eventWeightProcessName04: "EventWeightSep24ExtraGENIE4"
-    eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
+    useReweightedFlux: true
+    eventWeightProcessName00: "EventWeightSep24OldRW"
+    eventWeightProcessName01: "EventWeightSep24OldRWExtraGENIE1"
+    eventWeightProcessName02: "EventWeightSep24OldRWExtraGENIE2"
+    eventWeightProcessName03: "EventWeightSep24OldRWExtraGENIE3"
+    eventWeightProcessName04: "EventWeightSep24OldRWExtraGENIE4"
+    eventWeightProcessName05: "EventWeightSep24OldRWExtraGENIE5"
 }
 
 ImageAnalysis: {
