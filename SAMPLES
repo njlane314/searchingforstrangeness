@@ -1,286 +1,394 @@
 Run 1A:
   Run 1A open trigger beam-on:
-    run1_beamon_opentrigger_numi_pandora_3v_a_reprocessing_v08_00_00_84_reco2_reco2_beam_good_good_runs
+    original reco2: run1_beamon_opentrigger_numi_pandora_3v_a_reprocessing_v08_00_00_84_reco2_reco2_beam_good_good_runs
+    goodruns list: goodruns_mcc9_run1_open_trigger_hardcoded
+    updated reco2: ub_numi_run1aot_beam_3va_repro_gr
 
 Run 1B:
   (none listed)
 
 Run 1:
   Run 1 Beam-off:
-    prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2
+    original reco2: prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_ext_gr
   Run 1 Beam on:
-    prod_mcc9_v08_00_00_45_numi_reco2_run1_beam_good_reco2
+    original reco2: prod_mcc9_v08_00_00_45_numi_reco2_run1_beam_good_reco2
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_data_gr
 
 Run 1 FHC:
   Run 1 Nu Overlay:
-    prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_all_snapshot
-  Run 1 Intrinsic Nue:
-    prodgenie__numi_nue_overlay_mcc9_v08_00_00_48_CV_reco2_run1_reco2
+    original reco2: prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_all_snapshot
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_fhc_beam_gr
   Run 1 Dirt:
-    prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all_snapshot
-  Run 1 CC/NC pi0:
-    run1_numi_fhc_CCNCPi0_overlay_v08_00_00_66_reco2_fv_reco2_reco2
-    note: 328336 events
+    original reco2: prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all_snapshot
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_fhc_dirt_gr
+  Run 1 Strangeness Reco2:
+    original reco2: prod_strange_resample_fhc_run1_fhc_reco2_reco2
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_fhc_strangeness_gr
 
   Run 1 DetVar Nu Overlay:
-    prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2
-    note: Default
-    prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2
-    note: LY Rayleigh
-    prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2
-    note: LY Down
-    prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2
-    note: Alternative SC Map
-    prodgenie_numi_nu_overlay_detvar_Recomb2_run1_reco2_run1_reco2
-    note: Alternative Recombination
-    prodgenie_numi_nu_overlay_detvar_WireModX_run1_reco2_fixed_run1_reco2
-    note: Wire Mod X
-    prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2
-    note: Wire Mod YZ
-    prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2
-    note: Wire Mod Theta XZ
-    prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2
-    note: Wire Mod Theta YZ
+    CV:
+      original reco2: prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_cv_gr
+    LY Rayleigh:
+      original reco2: prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_ly_rayleigh_gr
+    LY Down:
+      original reco2: prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_ly_down_gr
+    SCE:
+      original reco2: prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_sce_gr
+    Recombination:
+      original reco2: prodgenie_numi_nu_overlay_detvar_Recomb2_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_recomb2_gr
+    Wire Mod X:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModX_run1_reco2_fixed_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_wmx_gr
+    Wire Mod YZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_wmyz_gr
+    Wire Mod Theta XZ:
+      original reco2: prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_wmtxz_gr
+    Wire Mod Theta YZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_wmtyz_gr
 
-  Run 1 DetVar Nue Overlay:
-    prodgenie__numi_nue_overlay_mcc9_v08_00_00_48_CV_reco2_run1_reco2
-    note: CV (ALREADY HAVE, be careful of training)
-    prodgenie_numi_intrinsic_nue_Reco2_LYRayleigh_v08_00_00_48_rerun_reco2_run1_reco2
-    note: LY Rayleigh
-    NuMI_run1_intrinsic_nue_reco2_LYDown_reco2_LYDown_reco2
-    note: LY Down
-    prodgenie_numi_overlay_mcc9_v08_00_00_48_TPCDetVar_run1_reco2_nue_SCE_reco2
-    note: Alternative SC Map
-    prodgenie_numi_intrinsic_nue_Reco2_run1_LYAttenuation_v08_00_00_48_reco2_run1_reco2
-    note: LY Attenuation
-    prodgenie_numi_overlay_mcc9_v08_00_00_48_TPCDetVar_run1_reco2_nue_Recomb2_reco2
-    note: Alternative Recombination
-    prodgenie_numi_nue_Reco2_run1_WireModX_v08_00_00_48_fixedinput_reco2_run1_reco2
-    note: Wire Mod X
-    prodgenie_numi_nue_intrinsic_Reco2_run1_WireModYZ_v08_00_00_48_fixed_input_reco2_run1_reco2
-    note: Wire Mod YZ
-    prodgenie__numi_nue_Reco2_run1_WireModThetaXZ_v08_00_00_48_reco2_reco2_run1_reco2
-    note: Wire Mod Theta XZ
-    prodgenie__numi_nue_Reco2_run1_WireModThetaYZ_with_sigma_splines_v08_00_00_48_reco2_reco2_run1_reco2
-    note: Wire Mod Theta YZ
+  Run 1 Strangeness DetVar Reco2:
+    LY Rayleigh:
+      original reco2: Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_ly_rayleigh_gr
+    LY Down:
+      original reco2: Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_ly_down_gr
+    SCE:
+      original reco2: detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_sce_gr
+    Recombination:
+      original reco2: detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_recomb2_gr
+    Wire Mod X:
+      original reco2: detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_wmx_gr
+    Wire Mod YZ:
+      original reco2: detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_wmyz_gr
+    Wire Mod Theta XZ:
+      original reco2: Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_wmtxz_gr
+    Wire Mod Theta YZ:
+      original reco2: Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_strangeness_dv_wmtyz_gr
 
 Run 1 RHC:
   Run 1 RHC nu overlay:
-    prodgenie_numi_rhc_nu_overlay_v08_00_00_54_run1_reco2_reco2
-  Run 1 RHC intrinsic nue:
-    prodgenie_numi_rhc_intrinsic_nue_overlay_v08_00_00_54_run1_reco2_reco2_reco2
+    original reco2: prodgenie_numi_rhc_nu_overlay_v08_00_00_54_run1_reco2_reco2
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_rhc_beam_gr
   Run 1 RHC dirt overlay:
-    prod_extunbiased_numi_rhc_dirt_overlay_run1_reco2_v08_00_00_67_reco2
+    original reco2: prod_extunbiased_numi_rhc_dirt_overlay_run1_reco2_v08_00_00_67_reco2
+    goodruns list: goodruns_mcc9_run1_hardcoded
+    updated reco2: ub_numi_run1_rhc_dirt_gr
 
 Run 2a FHC:
   Run 2a nu overlay:
-    prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    run2_numi_nu_overlay_pandora_unified_reco2_run2a_fhc_reco2
-  Run 2a intrinsic nue:
-    prodgenie_numi_nue_overlay_detvar_CV_run2_FHC_reco2_v08_00_00_55_run2_reco2_goodruns
+    CV:
+      original reco2: prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_beam_cv_gr
+    Nominal:
+      original reco2: run2_numi_nu_overlay_pandora_unified_reco2_run2a_fhc_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_beam_gr
   Run 2a dirt overlay:
-    prodgenie_numi_fhc_dirt_overlay_pandora_reco2_run2_reco2
+    original reco2: prodgenie_numi_fhc_dirt_overlay_pandora_reco2_run2_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2a_fhc_dirt_gr
+  Run 2a strangeness reco2:
+    original reco2: prod_strange_resample_fhc_run2_fhc_reco2_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2a_fhc_strangeness_gr
   Run 2a beam off:
-    prod_extnumi_swizzle_inclusive_v4_run2a_reco2_run2a_all_reco2
+    original reco2: prod_extnumi_swizzle_inclusive_v4_run2a_reco2_run2a_all_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2a_fhc_ext_gr
   Run 2a beam on:
-    prod_numi_swizzle_inclusive_v4_run2_reco2_run2a_beam_good_reco2
+    original reco2: prod_numi_swizzle_inclusive_v4_run2_reco2_run2a_beam_good_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2a_fhc_data_gr
 
   Run 2a DetVar Nu Overlay:
-    prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    note: CV
-    prodgenie_numi_overlay_detvar_LYAttenuation_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    note: LY Attenuation
-    prodgenie_numi_overlay_detvar_LYRayleigh_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    note: LY Rayleigh
-    prodgenie_numi_overlay_detvar_LYDown_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    note: LY Down
-    prodgenie_numi_nu_overlay_detvar_SCE_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    note: Alternative SC Map
-    prodgenie_numi_overlay_detvar_Recomb2_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    note: Recombination
-    prodgenie_numi_detvar_WireModX_standard_FHC_nu_overlay_400k_run2_reco2_reco2_reco2
-    note: Wire Mod X
-    prodgenie_numi_overlay_detvar_WireModYZ_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
-    note: Wire Mod YZ
-    prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    note: Wire Mod Theta XZ
-    prodgenie_numi_nu_overlay_pandora_reco2_run2_FHC_WireModThetaYZ_withSplines_reco2
-    note: Wire Mod Theta YZ
-
-  Run 2a DetVar Nue Overlay:
-    prodgenie_numi_nue_overlay_detvar_CV_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    note: CV, same as standard (be careful of training)
-    prodgenie_numi_nue_overlay_detvar_LYAttenuation_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_nue_overlay_detvar_LYRayleigh_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_nue_overlay_detvar_LYDown_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_nue_overlay_detvar_SCE_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_nue_overlay_pandora_reco2_run2_FHC_Recomb2_reco2
-    prodgenie_numi_nue_overlay_detvar_WireModX_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_overlay_detvar_CV_run2_FHC_intrinsic_nue_WireModYZ_reco2_run2_reco2
-    note: BAD
-    prodgenie_numi_nue_overlay_detvar_WireModThetaXZ_run2_FHC_reco2_v08_00_00_55_run2_reco2
-    prodgenie_numi_nue_overlay_pandora_reco2_run2_FHC_WireModThetaYZ_withSplines_reco2
+    CV:
+      original reco2: prodgenie_numi_overlay_detvar_CV_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_cv_gr
+    LY Attenuation:
+      original reco2: prodgenie_numi_overlay_detvar_LYAttenuation_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_ly_attenuation_gr
+    LY Rayleigh:
+      original reco2: prodgenie_numi_overlay_detvar_LYRayleigh_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_ly_rayleigh_gr
+    LY Down:
+      original reco2: prodgenie_numi_overlay_detvar_LYDown_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_ly_down_gr
+    SCE:
+      original reco2: prodgenie_numi_nu_overlay_detvar_SCE_run2_FHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_sce_gr
+    Recombination:
+      original reco2: prodgenie_numi_overlay_detvar_Recomb2_run2_FHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_recomb2_gr
+    Wire Mod X:
+      original reco2: prodgenie_numi_detvar_WireModX_standard_FHC_nu_overlay_400k_run2_reco2_reco2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_wmx_gr
+    Wire Mod YZ:
+      original reco2: prodgenie_numi_overlay_detvar_WireModYZ_run2_FHC_standard_nu_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_wmyz_gr
+    Wire Mod Theta XZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_FHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_wmtxz_gr
+    Wire Mod Theta YZ:
+      original reco2: prodgenie_numi_nu_overlay_pandora_reco2_run2_FHC_WireModThetaYZ_withSplines_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2a_fhc_dv_wmtyz_gr
 
 Run 2b RHC:
   Run 2b nu overlay:
-    prodgenie_numi_nu_overlay_detvar_CV_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: bad
-    run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2
-  Run 2b intrinsic nue:
-    prodgenie_numi_overlay_detvar_CV_run2_RHC_nue_reco2_v08_00_00_55_run2_run2_reco2_goodruns
+    CV:
+      original reco2: prodgenie_numi_nu_overlay_detvar_CV_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_beam_cv_gr
+    Nominal:
+      original reco2: run2_numi_nu_overlay_pandora_unified_reco2_run2b_rhc_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_beam_gr
   Run 2b dirt overlay:
-    prodgenie_numi_rhc_dirt_overlay_pandora_reco2_run2_reco2
+    original reco2: prodgenie_numi_rhc_dirt_overlay_pandora_reco2_run2_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2b_rhc_dirt_gr
+  Run 2b strangeness reco2:
+    original reco2: prod_strange_resample_rhc_run2_rhc_reco2_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2b_rhc_strangeness_gr
   Run 2b beam off:
-    prod_extnumi_swizzle_crt_inclusive_v4b_offbeam_run2_reco2_new2_run2_reco2_all
+    original reco2: prod_extnumi_swizzle_crt_inclusive_v4b_offbeam_run2_reco2_new2_run2_reco2_all
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2b_rhc_ext_gr
   Run 2b beam on:
-    prod_numi_swizzle_inclusive_v4b_run2_beamon_run2_reco2_run2_beam_good_reco2
+    original reco2: prod_numi_swizzle_inclusive_v4b_run2_beamon_run2_reco2_run2_beam_good_reco2
+    goodruns list: goodruns_mcc9_run2_hardcoded
+    updated reco2: ub_numi_run2b_rhc_data_gr
 
   Run 2b DetVar Nu Overlay:
-    note: only about 100k events are good runs
-    note: CV same as default nu overlay
-    prodgenie_numi_nu_overlay_detvar_LYAttenuation_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: LY Attenuation
-    prodgenie_numi_nu_overlay_400k_run2_CV_reco2_detvar_LYRayleigh_run2_reco2
-    note: LY Rayleigh
-    prodgenie_numi_nu_overlay_400k_run2_CV_reco2_detvar_LYDown_run2_reco2
-    note: LY Down
-    prodgenie_numi_overlay_run2_RHC_standard_nu_reco2_detvar_SCE_run2_reco2
-    note: Alternative SC Map
-    prodgenie_numi_nu_overlay_detvar_Recomb2_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: Recombination
-    prodgenie_numi_nu_overlay_detvar_WireModX_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: Wire Mod X
-    prodgenie_numi_nu_overlay_detvar_WireModYZ_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: Wire Mod YZ
-    prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_RHC_reco2_v08_00_00_55_run2_reco2
-    note: Wire Mod Theta XZ
-    prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_wsplines_run2_RHC_reco2_v08_00_00_5_run2_reco2
-    note: Wire Mod Theta YZ
-
-  Run 2b DetVar nue overlay:
-    note: CV, same as standard (be careful of training)
-    prodgenie_numi_overlay_detvar_LYAttenuation_run2_RHC_nue_reco2_v08_00_00_55_run2_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_LYRayleigh_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_LYDown_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_SCE_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_Recomb2_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_WireModX_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_WireModYZ_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_detvar_WireModThetaXZ_run2_RHC_reco2_v08_00_00_55_run2_reco2_goodruns
-    prodgenie_numi_nue_overlay_pandora_reco2_run2_RHC_WireModThetaYZ_withSplines_reco2_goodruns
+    LY Attenuation:
+      original reco2: prodgenie_numi_nu_overlay_detvar_LYAttenuation_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_ly_attenuation_gr
+    LY Rayleigh:
+      original reco2: prodgenie_numi_nu_overlay_400k_run2_CV_reco2_detvar_LYRayleigh_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_ly_rayleigh_gr
+    LY Down:
+      original reco2: prodgenie_numi_nu_overlay_400k_run2_CV_reco2_detvar_LYDown_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_ly_down_gr
+    SCE:
+      original reco2: prodgenie_numi_overlay_run2_RHC_standard_nu_reco2_detvar_SCE_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_sce_gr
+    Recombination:
+      original reco2: prodgenie_numi_nu_overlay_detvar_Recomb2_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_recomb2_gr
+    Wire Mod X:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModX_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_wmx_gr
+    Wire Mod YZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModYZ_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_wmyz_gr
+    Wire Mod Theta XZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModThetaXZ_run2_RHC_reco2_v08_00_00_55_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_wmtxz_gr
+    Wire Mod Theta YZ:
+      original reco2: prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_wsplines_run2_RHC_reco2_v08_00_00_5_run2_reco2
+      goodruns list: goodruns_mcc9_run2_hardcoded
+      updated reco2: ub_numi_run2b_rhc_dv_wmtyz_gr
 
 Run 3 RHC:
   Run 3b Nu Overlay:
-    prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_all_snapshot
-  Run 3b intrinsic nue:
-    prodgenie_numi_intrinsic_nue_overlay_Reco2_CV_run3b_v08_00_00_48_reco2_run3b_reco2
+    original reco2: prodgenie_numi_uboone_overlay_rhc_mcc9_run3b_v28_all_snapshot
+    goodruns list: goodruns_mcc9_run3_hardcoded
+    updated reco2: ub_numi_run3b_rhc_beam_gr
+  Run 3b Strangeness Reco2:
+    original reco2: prod_strange_resample_rhc_run3_rhc_reco2_reco2
+    goodruns list: goodruns_mcc9_run3_hardcoded
+    updated reco2: ub_numi_run3b_rhc_strangeness_gr
   Run 3b beam-off:
-    prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2
+    original reco2: prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2
+    goodruns list: goodruns_mcc9_run3_hardcoded
+    updated reco2: ub_numi_run3b_rhc_ext_gr
   Run 3b beam-on:
-    prod_numi_mcc9_v08_00_00_45_run3b_run3b_reco2_beam_good_reco2
-  Run 3b CC/NC pi0:
-    run3_numi_rhc_CCNCPi0_overlay_v08_00_00_66_reco2_fv_fix_reco2_reco2
+    original reco2: prod_numi_mcc9_v08_00_00_45_run3b_run3b_reco2_beam_good_reco2
+    goodruns list: goodruns_mcc9_run3_hardcoded
+    updated reco2: ub_numi_run3b_rhc_data_gr
 
   Run 3b DetVar Nu Overlay:
-    numi_run3_standard_nu_overlay_cv_reco2_v08_00_00_54_run3_reco2
-    note: Default
-    numi_run3_standard_nu_overlay_LYattenuation_reco2_run3_reco2
-    note: LY Attenuation
-    numi_run3_standard_nu_overlay_LYrayleigh_reco2_run3_reco2
-    note: LY Rayleigh
-    numi_run3_standard_nu_overlay_LYDown_reco2_v08_00_00_54_run3_reco2
-    note: LY Down
-    numi_run3_standard_nu_overlay_SCE_reco2_v08_00_00_54_run3_reco2
-    note: Alternative SC Map
-    numi_run3_standard_nu_overlay_Recomb2_reco2_v08_00_00_54_run3_reco2
-    note: Alternative Recombination Model
-    numi_run3_standard_nu_overlay_cv_v08_00_00_54_run3_reco2_WiremodX_run3b_reco2
-    note: Wire Mod X
-    numi_run3_standard_nu_overlay_WireModYZ_reco2_run3b_reco2
-    note: Wire Mod YZ
-    numi_run3_standard_nu_overlay_WireModThetaXZ_reco2_v08_00_00_54_run3_reco2
-    note: Wire Mod Theta XZ
-    numi_run3_standard_nu_overlay_WireModThetaYZwithsplines_reco2_run3_reco2
-    note: Wire Mod Theta YZ
-
-  Run 3b DetVar Nue Overlay:
-    prodgenie_numi_intrinsic_nue_overlay_Reco2_CV_run3b_v08_00_00_48_reco2_run3b_reco2
-    note: CV (same as already generated samples)
-    prodgenie_numi_intrinsic_nue_mcc9_v08_00_00_48_LYRayleigh_run3b_run3b_reco2
-    note: LYRayleigh
-    prodgenie_numi_nue_overlay_mcc9_v08_00_00_48_LYDown_reco2_run3b_reco2
-    note: LYDown
-    prodgenie_numi_run3b_reco2_LY_Attenuation_intrinsic_nue_run_3b_reco2
-    note: LYAttenuation
-    prodgenie_numi_nue_overlay_Reco2_SCE_run3b_v08_00_00_48_reco2_run3b_reco2
-    note: SCE
-    prodgenie_numi_nue_overlay_mcc9_v08_00_00_48_Recomb2_reco1_run3b_reco2_run3b_reco2
-    note: Recombination
-    prodgenie_numi_standard_intrinsic_nue_mcc9_v08_00_00_48_WireModX_reco2_run3b_run3b_reco2
-    note: WireModX
-    prodgenie_numi_nue_overlay_mcc9_v08_00_00_48_WireModYZ_reco2_run3b_reco2
-    note: WireModYZ
-    prodgenie_numi_nue_overlay_mcc9_v08_00_00_48_WireModThetaXZ_reco2_run3b_reco2
-    note: WireModThetaXZ
-    prodgenie_numi_run3b_reco2_WireModThetaYZ_sigmaSplines_fixed2_intrinsic_nue_run_3b_reco2
-    note: WireModThetaYZ
+    CV:
+      original reco2: numi_run3_standard_nu_overlay_cv_reco2_v08_00_00_54_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_cv_gr
+    LY Attenuation:
+      original reco2: numi_run3_standard_nu_overlay_LYattenuation_reco2_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_ly_attenuation_gr
+    LY Rayleigh:
+      original reco2: numi_run3_standard_nu_overlay_LYrayleigh_reco2_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_ly_rayleigh_gr
+    LY Down:
+      original reco2: numi_run3_standard_nu_overlay_LYDown_reco2_v08_00_00_54_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_ly_down_gr
+    SCE:
+      original reco2: numi_run3_standard_nu_overlay_SCE_reco2_v08_00_00_54_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_sce_gr
+    Recombination:
+      original reco2: numi_run3_standard_nu_overlay_Recomb2_reco2_v08_00_00_54_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_recomb2_gr
+    Wire Mod X:
+      original reco2: numi_run3_standard_nu_overlay_cv_v08_00_00_54_run3_reco2_WiremodX_run3b_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_wmx_gr
+    Wire Mod YZ:
+      original reco2: numi_run3_standard_nu_overlay_WireModYZ_reco2_run3b_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_wmyz_gr
+    Wire Mod Theta XZ:
+      original reco2: numi_run3_standard_nu_overlay_WireModThetaXZ_reco2_v08_00_00_54_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_wmtxz_gr
+    Wire Mod Theta YZ:
+      original reco2: numi_run3_standard_nu_overlay_WireModThetaYZwithsplines_reco2_run3_reco2
+      goodruns list: goodruns_mcc9_run3_hardcoded
+      updated reco2: ub_numi_run3b_rhc_dv_wmtyz_gr
 
 Run 4a:
   Run 4a Nu Overlay:
-    run4a_NuMI_RHC_nu_overlay_pandora_unified_reco2_reco2_reco2
-  Run 4a Nue Overlay:
-    numi_run4a_rhc_nue_overlay_pandora_unified_reco2_run4a_rhc_reco2
+    original reco2: run4a_NuMI_RHC_nu_overlay_pandora_unified_reco2_reco2_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4a_rhc_beam_gr
   Run 4a Dirt Overlay:
-    run_4a_numi_rhc_dirt_overlay_pandora_unified_reco2_run4a_rhc_reco2
+    original reco2: run_4a_numi_rhc_dirt_overlay_pandora_unified_reco2_run4a_rhc_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4a_rhc_dirt_gr
   Run 4a Beam Off:
-    NuMI_beam_off_reco_2_for_run_4a_run4a_reco2
+    original reco2: NuMI_beam_off_reco_2_for_run_4a_run4a_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4a_rhc_ext_gr
 
 Run 4b:
   Run 4b Nu Overlay:
-    numi_run4b_rhc_nu_overlay_pandora_unified_reco2_run4b_reco2
-  Run 4b Nue Overlay:
-    numi_run4b_rhc_nue_overlay_pandora_unified_reco2_run4b_rhc_reco2
+    original reco2: numi_run4b_rhc_nu_overlay_pandora_unified_reco2_run4b_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4b_rhc_beam_gr
   Run 4b Dirt Overlay:
-    numi_run4b_rhc_dirt_overlay_pandora_unified_reco2_run4b_reco2
+    original reco2: numi_run4b_rhc_dirt_overlay_pandora_unified_reco2_run4b_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4b_rhc_dirt_gr
   Run 4b Beam Off:
-    Run_4b_NuMI_beam_off_Pandora_Reco2_run4b_reco2_all
+    original reco2: Run_4b_NuMI_beam_off_Pandora_Reco2_run4b_reco2_all
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4b_rhc_ext_gr
   Run 4b Beam On:
-    Run_4b_NuMI_beam_on_Pandora_Reco2_run4b_reco2_beam_good
+    original reco2: Run_4b_NuMI_beam_on_Pandora_Reco2_run4b_reco2_beam_good
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4b_rhc_data_gr
 
 Run 4c:
   Run 4c Nu Overlay:
-    numi_run4c_fhc_nu_overlay_pandora_unified_reco2_run4c_reco2
-  Run 4c Nue Overlay:
-    numi_run4c_fhc_nue_overlay_pandora_unified_reco2_run4c_fhc_reco2
+    original reco2: numi_run4c_fhc_nu_overlay_pandora_unified_reco2_run4c_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4c_fhc_beam_gr
   Run 4c Dirt Overlay:
-    numi_run4c_fhc_dirt_overlay_pandora_unified_reco2_run4c_reco2
+    original reco2: numi_run4c_fhc_dirt_overlay_pandora_unified_reco2_run4c_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4c_fhc_dirt_gr
   Run 4c Beam Off:
-    run4c_numi_beam_off_pandora_reco2_run4c_reco2_all
+    original reco2: run4c_numi_beam_off_pandora_reco2_run4c_reco2_all
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4c_fhc_ext_gr
   Run 4c Beam On:
-    Run_4c_NuMI_beam_on_Pandora_Reco2_run4c_reco2_beam_good
+    original reco2: Run_4c_NuMI_beam_on_Pandora_Reco2_run4c_reco2_beam_good
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4c_fhc_data_gr
 
 Run 4d:
   Run 4d Nu Overlay:
-    run4d_numi_fhc_nu_overlay_pandora_unified_reco2_run4d_fhc_reco2
-  Run 4d Nue Overlay:
-    run4d_numi_fhc_nue_overlay_pandora_unified_reco2_run4d_fhc_reco2
+    original reco2: run4d_numi_fhc_nu_overlay_pandora_unified_reco2_run4d_fhc_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4d_fhc_beam_gr
   Run 4d Dirt Overlay:
-    numi_run4d_fhc_dirt_overlay_pandora_unified_reco2_run4d_reco2
+    original reco2: numi_run4d_fhc_dirt_overlay_pandora_unified_reco2_run4d_reco2
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4d_fhc_dirt_gr
   Run 4d Beam Off:
-    run4d_numi_beam_off_pandora_reco2_run4d_reco2_all
+    original reco2: run4d_numi_beam_off_pandora_reco2_run4d_reco2_all
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4d_fhc_ext_gr
   Run 4d Beam On:
-    run4d_NuMI_beam_on_pandora_unified_reco2_run4d_reco2_beam_good
+    original reco2: run4d_NuMI_beam_on_pandora_unified_reco2_run4d_reco2_beam_good
+    goodruns list: goodruns_mcc9_run4_hardcoded
+    updated reco2: ub_numi_run4d_fhc_data_gr
 
 Run 5:
   Run 5 nu overlay:
-    NuMI_Run5_FHC_nu_overlay_pandora_Reco2_run5_reco2_nonzerolifetime_goodruns
-  Run 5 nue overlay:
-    run5_numi_fhc_nue_overlay_pandora_unified_reco2_run5_fhc_reco2_goodruns
+    original reco2: NuMI_Run5_FHC_nu_overlay_pandora_Reco2_run5_reco2_nonzerolifetime_goodruns
+    goodruns list: goodruns_mcc9_run5_hardcoded
+    updated reco2: ub_numi_run5_fhc_beam_nzlt_gr
   Run 5 dirt overlay:
-    numi_fhc_dirt_overlay_pandora_reco2_run5_run5_fhc_reco2
-  Run 5 CC/NC pi0:
-    run5_numi_fhc_CCNCPi0_overlay_v08_00_00_66_reco2_fv_fix_reco2_reco2
+    original reco2: numi_fhc_dirt_overlay_pandora_reco2_run5_run5_fhc_reco2
+    goodruns list: goodruns_mcc9_run5_hardcoded
+    updated reco2: ub_numi_run5_fhc_dirt_gr
   Run 5 Beam Off:
-    run5_numi_beam_off_pandora_reco2_all_run5_reco2_all
+    original reco2: run5_numi_beam_off_pandora_reco2_all_run5_reco2_all
+    goodruns list: goodruns_mcc9_run5_hardcoded
+    updated reco2: ub_numi_run5_fhc_ext_gr
   Run 5 Beam On:
-    run5_numi_beam_on_pandora_reco2_all_run5_reco2_beam_good
+    original reco2: run5_numi_beam_on_pandora_reco2_all_run5_reco2_beam_good
+    goodruns list: goodruns_mcc9_run5_hardcoded
+    updated reco2: ub_numi_run5_fhc_data_gr
