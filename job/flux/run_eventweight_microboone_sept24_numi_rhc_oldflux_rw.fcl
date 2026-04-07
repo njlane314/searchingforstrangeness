@@ -15,7 +15,6 @@ services: {
   TFileService: { fileName: "microboone_reint_hist.root" }
   ExptGeoHelperInterface: @local::microboone_geometry_helper
   Geometry: @local::microboone_geo
-  G4RWManagerService: @local::microboone_g4rw_manager
 }
 
 source: {

@@ -50,6 +50,7 @@ microboone_eventweight_reint: {
     mode: multisim
     number_of_multisims: 1000
     fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piplus.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_piplus.root"
     makeoutputtree: false
     pdg_to_reweight: 211
     debug: false
@@ -61,6 +62,7 @@ microboone_eventweight_reint: {
     mode: multisim
     number_of_multisims: 1000
     fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_piminus.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_piminus.root"
     makeoutputtree: false
     pdg_to_reweight: -211
     debug: false
@@ -72,6 +74,7 @@ microboone_eventweight_reint: {
     mode: multisim
     number_of_multisims: 1000
     fracsfile: "$UBOONEDATA_DIR/systematics/reint/g4_fracs_proton.root"
+    xsecfile: "$UBOONEDATA_DIR/systematics/reint/g4_cross_section_proton.root"
     makeoutputtree: false
     pdg_to_reweight: 2212
     debug: false
