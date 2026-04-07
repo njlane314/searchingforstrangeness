@@ -1,4 +1,5 @@
 #include "microboone_eventweight_service.fcl"
+#include "redk2nu_numi_oldflux.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "run_nuselection_noinference.fcl"
 
@@ -20,9 +21,10 @@ physics.producers.imageprod: {
   BadChannelFile: "runtime/detector/badchannels.txt"
 }
 
+physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux
 
-physics.path1: [ eventweightSep24, imageprod, nuselection ]
+physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
 
 LocalNtupleEventWeightAnalysis: {
   @table::EventWeightAnalysis

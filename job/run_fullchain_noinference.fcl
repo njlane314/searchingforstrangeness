@@ -1,6 +1,7 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
 #include "microboone_eventweight_service.fcl"
+#include "redk2nu_numi_oldflux.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_slim_oldflux_rw.fcl"
 #include "selectionconfig.fcl"
 
@@ -67,6 +68,7 @@ source: {
 
 physics: {
   producers: {
+    generator: @local::microboone_redk2nu_fhc
     eventweightSep24: @local::microboone_eventweight_sept24_oldflux
     rns: {
       module_type: "RandomNumberSaver"
@@ -88,7 +90,7 @@ physics: {
     nuselection: @local::SlimWeightNeutrinoSelectionFilter
   }
 
-  path1: [ rns, eventweightSep24, imageprod, nuselection ]
+  path1: [ generator, rns, eventweightSep24, imageprod, nuselection ]
   trigger_paths: [ path1 ]
 
   stream1: [ out1 ]
