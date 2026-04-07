@@ -1,0 +1,14 @@
+#include "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+#include "eventweight_microboone_sept24_numi_fhc_oldflux_rw_decomp.fcl"
+
+process_name: EventWeightSep24OldRWDecomp
+
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux_decomp
+
+outputs.out1.fileName: "%ifb_%tc_eventweight_fluxdecomp.root"
+
+source.inputCommands: [
+  "keep *",
+  "drop *_*_*_EventWeightSep24",
+  "drop *_*_*_EventWeightSep24OldRW"
+]

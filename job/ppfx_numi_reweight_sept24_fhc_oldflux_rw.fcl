@@ -6,6 +6,13 @@ reweight_numi_ppfx: {
   ]
   # Use only when working from old flux files with the modern PPFX tune.
   weight_functions_oldrw_ppfx: [ppfx_oldrw_cv, ppfx_oldrw_ms]
+  # Study-only path: keep the old-flux total weights and also expose the
+  # source-by-source PPFX components in the same eventweight product.
+  weight_functions_oldrw_ppfx_decomp: [
+    ppfx_oldrw_cv, ppfx_oldrw_ms, ppfx_mipppi, ppfx_mippk, ppfx_thinmes,
+    ppfx_thinpi, ppfx_other, ppfx_thinnpi, ppfx_totabs, ppfx_targatt,
+    ppfx_thinna, ppfx_think, ppfx_thinn
+  ]
 
   min_weight: 0
   max_weight: 100
