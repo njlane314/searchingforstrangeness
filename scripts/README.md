@@ -2,9 +2,11 @@
 
 ## Current XML surface
 
-`xml/` now contains only the four staged Reco2 campaign entry points:
+`xml/` now contains the four staged Reco2 campaign entry points plus one
+dedicated Run 1 training/test entry point:
 
 - `xml/numi_reco2_run1_fhc_campaign.xml`
+- `xml/numi_reco2_run1_fhc_training.xml`
 - `xml/numi_reco2_run2a_fhc_campaign.xml`
 - `xml/numi_reco2_run2b_rhc_campaign.xml`
 - `xml/numi_reco2_run3b_rhc_campaign.xml`
@@ -161,18 +163,10 @@ Notes:
 
 ## Good-runs notes
 
-Current repo policy is:
-
-- generic overlay, dirt, generic detvars, and EXT can be replaced with
-  upstream good-run-filtered definitions if that is the campaign surface you
-  want to process
-- dedicated strangeness Reco2 definitions should be used directly and should
-  not be re-filtered here, because their upstream provenance already indicates
-  good-run filtering
-- beam-good data definitions should be used directly
-
-The checked-in XMLs currently preserve the source definitions above; they do
-not auto-rewrite anything to good-run-filtered variants.
+The repo no longer keeps helper scripts for good-runs SAM-definition creation.
+The explicit `samweb create-definition ...` commands now live at the bottom of
+`SAMPLES`, alongside the `original reco2`, `goodruns list`, and `updated
+reco2` mapping for each sample.
 
 ## Run 1 CV train/template shards
 
@@ -200,6 +194,29 @@ That produces:
 The Run 1 campaign XML already points at those names. If you use different SAM
 definition names, update the four XML entities near the top of
 `xml/numi_reco2_run1_fhc_campaign.xml`.
+
+For a lightweight grid test surface on just the training shards, use:
+
+- `xml/numi_reco2_run1_fhc_training.xml`
+
+That XML contains only the beam/strangeness CV training-shard single-step
+fullchain stages, uses the ubsim NuMI slim EventWeight config, and fixes each
+stage to `25` jobs.
+
+Note:
+
+If `samweb create-definition` fails on the GPVM after stale token attempts,
+the working reset sequence was:
+
+```bash
+unset BEARER_TOKEN
+unset BEARER_TOKEN_FILE
+htdestroytoken || true
+htgettoken -a htvaultprod.fnal.gov -i uboone
+```
+
+That was sufficient for successful `samweb create-definition ...` calls from
+this checkout without setting `BEARER_TOKEN_FILE` by hand.
 
 ## Useful commands
 
@@ -276,4 +293,14 @@ To keep the original full alternating-file shards through the wrapper:
 
 ```bash
 ./scripts/train-template.sh --full-shards
+```
+
+Submit the dedicated 25-job training test stages:
+
+```bash
+project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --submit
+project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --check
+
+project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --submit
+project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --check
 ```
