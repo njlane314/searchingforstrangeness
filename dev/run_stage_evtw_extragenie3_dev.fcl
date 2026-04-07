@@ -1,7 +1,3 @@
-#include "redk2nu_numi.fcl"
 #include "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl"
-
-physics.producers.generator: @local::microboone_redk2nu_fhc
-physics.simulate: [ generator, rns, eventweightSep24 ]
 
 outputs.out1.fileName: "stage_evtw_extragenie3_dev.root"
