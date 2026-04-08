@@ -8,34 +8,6 @@
 
 process_name: FullChainNuSelectionNoInferenceOldFlux
 
-SlimNumiEventWeightAnalysisOldFlux: {
-  @table::EventWeightAnalysis
-  createFluxBranch: false
-  createGenieBranch: false
-  createReintBranch: false
-  createSplineBranch: true
-  createTuneBranch: true
-  createSplineTimesTuneBranch: true
-  createPPFXBranch: true
-  createGenieUpDnVecs: false
-  genieAllUniverses: 0
-  ppfxAllUniverses: 0
-  makeNuMINtuple: false
-  useReweightedFlux: true
-  eventWeightProcessName00: "FullChainNuSelectionNoInferenceOldFlux"
-}
-
-SlimWeightNeutrinoSelectionFilterOldFlux: {
-  @table::NeutrinoSelectionFilter
-  AnalysisTools: {
-    default: @local::DefaultAnalysis
-    weight: @local::SlimNumiEventWeightAnalysisOldFlux
-    image: @local::ImageAnalysis
-    signal: @local::SignalAnalysis
-    truth: @local::TruthAnalysis
-  }
-}
-
 services: {
   TFileService: { fileName: "fullchain_nuselection_noinference_oldflux_hist.root" }
   TimeTracker: {}
@@ -74,21 +46,11 @@ physics: {
     rns: {
       module_type: "RandomNumberSaver"
     }
-    imageprod: {
-      module_type: "ImageProducer"
-      PFPproducer: @local::standard_producers.PFPproducer
-      SLCproducer: @local::standard_producers.SLCproducer
-      HITproducer: @local::standard_producers.HITproducer
-      WIREproducer: @local::standard_producers.WIREproducer
-      MCPproducer: @local::standard_producers.MCPproducer
-      BKTproducer: @local::standard_producers.BKTproducer
-      SPproducer: @local::standard_producers.SPproducer
-      BadChannelFile: "runtime/detector/badchannels.txt"
-    }
+    imageprod: @local::standard_image_producer
   }
 
   filters: {
-    nuselection: @local::SlimWeightNeutrinoSelectionFilterOldFlux
+    nuselection: @local::SlimWeightNeutrinoSelectionFilter
   }
 
   path1: [ generator, rns, eventweightSep24, imageprod, nuselection ]
@@ -99,8 +61,8 @@ physics: {
 }
 
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
-physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
-physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
+physics.filters.nuselection.AnalysisTools.weight.useReweightedFlux: true
+physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName00: "FullChainNuSelectionNoInferenceOldFlux"
 
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""

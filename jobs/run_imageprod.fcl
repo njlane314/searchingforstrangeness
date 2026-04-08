@@ -36,17 +36,7 @@ source: {
 
 physics: {
   producers: {
-    imageprod: {
-      module_type: "ImageProducer"
-      PFPproducer: @local::standard_producers.PFPproducer
-      SLCproducer: @local::standard_producers.SLCproducer
-      HITproducer: @local::standard_producers.HITproducer
-      WIREproducer: @local::standard_producers.WIREproducer
-      MCPproducer: @local::standard_producers.MCPproducer
-      BKTproducer: @local::standard_producers.BKTproducer
-      SPproducer: @local::standard_producers.SPproducer
-      BadChannelFile: "runtime/detector/badchannels.txt"
-    }
+    imageprod: @local::standard_image_producer
   }
 
   path1: [ imageprod ]

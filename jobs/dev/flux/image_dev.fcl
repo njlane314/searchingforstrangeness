@@ -11,24 +11,7 @@ services.NuRandomService: @local::microboone_seedservice
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
-
-physics.producers.inferenceprod: {
-  module_type: "InferenceProducer"
-  PlanesTag: "imageprod:CroppedWindow"
-  ScratchDir: ""
-  RuntimeBaseDir: "runtime"
-  DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
-  ModelDefaults: {
-    Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
-    WeightsDir: "models/mink_binary"
-  }
-  Models: [
-    {
-      Label: "mink_binary"
-      Checkpoint: "checkpoint_step0010000.pt"
-    }
-  ]
-}
+physics.producers.inferenceprod: @local::standard_inference_producer
 
 physics.path1: [ generator, eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]

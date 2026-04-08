@@ -12,44 +12,12 @@ services.NuRandomService: @local::microboone_seedservice
 # This local path follows the standard NuMI EventWeight configuration from
 # ubsim and the standard g4_10_4 redk2nu lookup from ubana/redk2nu.
 
-physics.producers.imageprod: {
-  module_type: "ImageProducer"
-  PFPproducer: @local::standard_producers.PFPproducer
-  SLCproducer: @local::standard_producers.SLCproducer
-  HITproducer: @local::standard_producers.HITproducer
-  WIREproducer: @local::standard_producers.WIREproducer
-  MCPproducer: @local::standard_producers.MCPproducer
-  BKTproducer: @local::standard_producers.BKTproducer
-  SPproducer: @local::standard_producers.SPproducer
-  BadChannelFile: "runtime/detector/badchannels.txt"
-}
+physics.producers.imageprod: @local::standard_image_producer
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
 
-# Leave inference disabled for this local ntuple test sample until the
-# checked-in model bundle has been updated. The downstream test only needs the
-# image and event-weight branches for now.
-# physics.producers.inferenceprod: {
-#   module_type: "InferenceProducer"
-#   PlanesTag: "imageprod:CroppedWindow"
-#   ScratchDir: ""
-#   RuntimeBaseDir: "runtime"
-#   DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
-#   ModelDefaults: {
-#     Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
-#     WeightsDir: "models/mink_binary"
-#   }
-#   Models: [
-#     {
-#       Label: "mink_binary"
-#       Checkpoint: "checkpoint_step0010000.pt"
-#     }
-#   ]
-# }
-
 physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
-# physics.path1: [ eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
 LocalNtupleEventWeightAnalysis: {
@@ -61,7 +29,6 @@ LocalNtupleEventWeightAnalysis: {
 }
 
 physics.filters.nuselection.AnalysisTools.weight: @local::LocalNtupleEventWeightAnalysis
-physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
-physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
+physics.filters.nuselection.AnalysisTools.image: @local::NoInferenceImageAnalysis
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""

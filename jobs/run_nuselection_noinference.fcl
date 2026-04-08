@@ -4,5 +4,4 @@ process_name: NuSelectionMCNoInference
 
 services.TFileService.fileName: "nu_selection_noinference.root"
 
-physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
-physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
+physics.filters.nuselection.AnalysisTools.image: @local::NoInferenceImageAnalysis

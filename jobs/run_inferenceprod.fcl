@@ -36,23 +36,7 @@ source: {
 
 physics: {
   producers: {
-    inferenceprod: {
-      module_type: "InferenceProducer"
-      PlanesTag: "imageprod:CroppedWindow"
-      ScratchDir: ""
-      RuntimeBaseDir: "runtime"
-      DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
-      ModelDefaults: {
-        Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
-        WeightsDir: "models/mink_binary"
-      }
-      Models: [
-        {
-          Label: "mink_binary"
-          Checkpoint: "checkpoint_step0010000.pt"
-        }
-      ]
-    }
+    inferenceprod: @local::standard_inference_producer
   }
 
   path1: [ inferenceprod ]

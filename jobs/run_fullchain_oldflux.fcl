@@ -4,10 +4,4 @@ process_name: FullChainNuSelectionOldFlux
 
 services.TFileService.fileName: "fullchain_nuselection_oldflux_hist.root"
 
-physics.filters.nuselection.AnalysisTools.weight.useReweightedFlux: true
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName00: "EventWeightSep24OldRW"
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName01: "EventWeightSep24OldRWExtraGENIE1"
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName02: "EventWeightSep24OldRWExtraGENIE2"
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName03: "EventWeightSep24OldRWExtraGENIE3"
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName04: "EventWeightSep24OldRWExtraGENIE4"
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName05: "EventWeightSep24OldRWExtraGENIE5"
+physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisOldFlux

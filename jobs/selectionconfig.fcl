@@ -61,6 +61,15 @@ EventWeightAnalysis: {
     eventWeightProcessName05: "EventWeightSep24ExtraGENIE5"
 }
 
+EventWeightAnalysisOldFlux: @local::EventWeightAnalysis
+EventWeightAnalysisOldFlux.useReweightedFlux: true
+EventWeightAnalysisOldFlux.eventWeightProcessName00: "EventWeightSep24OldRW"
+EventWeightAnalysisOldFlux.eventWeightProcessName01: "EventWeightSep24OldRWExtraGENIE1"
+EventWeightAnalysisOldFlux.eventWeightProcessName02: "EventWeightSep24OldRWExtraGENIE2"
+EventWeightAnalysisOldFlux.eventWeightProcessName03: "EventWeightSep24OldRWExtraGENIE3"
+EventWeightAnalysisOldFlux.eventWeightProcessName04: "EventWeightSep24OldRWExtraGENIE4"
+EventWeightAnalysisOldFlux.eventWeightProcessName05: "EventWeightSep24OldRWExtraGENIE5"
+
 ImageAnalysis: {
     tool_type: "ImageAnalysis"
     PFPproducer: @local::standard_producers.PFPproducer
@@ -74,6 +83,24 @@ ImageAnalysis: {
     InferencePredTag: "inferenceprod"
     InferencePerfTag: "inferenceprod"
 }
+
+NoInferenceImageAnalysis: @local::ImageAnalysis
+NoInferenceImageAnalysis.InferencePredTag: ""
+NoInferenceImageAnalysis.InferencePerfTag: ""
+
+SlimNumiEventWeightAnalysis: @local::EventWeightAnalysis
+SlimNumiEventWeightAnalysis.createFluxBranch: false
+SlimNumiEventWeightAnalysis.createGenieBranch: false
+SlimNumiEventWeightAnalysis.createReintBranch: false
+SlimNumiEventWeightAnalysis.createSplineBranch: true
+SlimNumiEventWeightAnalysis.createTuneBranch: true
+SlimNumiEventWeightAnalysis.createSplineTimesTuneBranch: true
+SlimNumiEventWeightAnalysis.createPPFXBranch: true
+SlimNumiEventWeightAnalysis.createGenieUpDnVecs: false
+SlimNumiEventWeightAnalysis.genieAllUniverses: 0
+SlimNumiEventWeightAnalysis.ppfxAllUniverses: 0
+SlimNumiEventWeightAnalysis.makeNuMINtuple: false
+SlimNumiEventWeightAnalysis.eventWeightProcessName00: "FullChainNuSelectionNoInference"
 
 TruthAnalysis: {
     tool_type: "TruthAnalysis"
@@ -127,3 +154,7 @@ NeutrinoSelectionFilter: {
         truth: @local::TruthAnalysis
     }
 }
+
+SlimWeightNeutrinoSelectionFilter: @local::NeutrinoSelectionFilter
+SlimWeightNeutrinoSelectionFilter.AnalysisTools.weight: @local::SlimNumiEventWeightAnalysis
+SlimWeightNeutrinoSelectionFilter.AnalysisTools.image: @local::NoInferenceImageAnalysis
