@@ -17,6 +17,7 @@ if [[ ! -d "$RUNTIME_BASE_DIR" ]]; then
 fi
 
 REPO_BASE_DIR="$(cd "$INITSRC_SCRIPT_DIR/../.." && pwd -P)"
+UBSIM_BASE="${REPO_BASE_DIR}/../ubsim/ubsim"
 UBSIM_EVENTWEIGHT_BASE="${REPO_BASE_DIR}/../ubsim/ubsim/EventWeight"
 
 prepend_fhicl_path() {
@@ -43,6 +44,7 @@ prepend_fhicl_path "${REPO_BASE_DIR}/dev/flux"
 prepend_fhicl_path "${REPO_BASE_DIR}/job"
 prepend_fhicl_path "${REPO_BASE_DIR}/job/flux"
 prepend_fhicl_path "${REPO_BASE_DIR}/job/reinteractions"
+prepend_fhicl_path "${UBSIM_BASE}/Simulation"
 
 if [[ -d "${UBSIM_EVENTWEIGHT_BASE}" ]]; then
   prepend_fhicl_path "${UBSIM_EVENTWEIGHT_BASE}/App"
