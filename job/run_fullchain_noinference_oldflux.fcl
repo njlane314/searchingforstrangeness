@@ -1,13 +1,13 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
 #include "microboone_eventweight_service.fcl"
-#include "redk2nu.fcl"
-#include "eventweight_microboone_sept24_numi_fhc_slim.fcl"
+#include "redk2nu_g4_9_2.fcl"
+#include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "selectionconfig.fcl"
 
-process_name: FullChainNuSelectionNoInference
+process_name: FullChainNuSelectionNoInferenceOldFlux
 
-SlimNumiEventWeightAnalysis: {
+SlimNumiEventWeightAnalysisOldFlux: {
   @table::EventWeightAnalysis
   createFluxBranch: false
   createGenieBranch: false
@@ -20,15 +20,15 @@ SlimNumiEventWeightAnalysis: {
   genieAllUniverses: 0
   ppfxAllUniverses: 0
   makeNuMINtuple: false
-  useReweightedFlux: false
-  eventWeightProcessName00: "FullChainNuSelectionNoInference"
+  useReweightedFlux: true
+  eventWeightProcessName00: "FullChainNuSelectionNoInferenceOldFlux"
 }
 
-SlimWeightNeutrinoSelectionFilter: {
+SlimWeightNeutrinoSelectionFilterOldFlux: {
   @table::NeutrinoSelectionFilter
   AnalysisTools: {
     default: @local::DefaultAnalysis
-    weight: @local::SlimNumiEventWeightAnalysis
+    weight: @local::SlimNumiEventWeightAnalysisOldFlux
     image: @local::ImageAnalysis
     signal: @local::SignalAnalysis
     truth: @local::TruthAnalysis
@@ -36,7 +36,7 @@ SlimWeightNeutrinoSelectionFilter: {
 }
 
 services: {
-  TFileService: { fileName: "fullchain_nuselection_noinference_hist.root" }
+  TFileService: { fileName: "fullchain_nuselection_noinference_oldflux_hist.root" }
   TimeTracker: {}
   MemoryTracker: {}
   RandomNumberGenerator: {}
@@ -69,7 +69,7 @@ source: {
 physics: {
   producers: {
     generator: @local::microboone_redk2nu_fhc
-    eventweightSep24: @local::microboone_eventweight_sept24
+    eventweightSep24: @local::microboone_eventweight_sept24_oldflux
     rns: {
       module_type: "RandomNumberSaver"
     }
@@ -87,7 +87,7 @@ physics: {
   }
 
   filters: {
-    nuselection: @local::SlimWeightNeutrinoSelectionFilter
+    nuselection: @local::SlimWeightNeutrinoSelectionFilterOldFlux
   }
 
   path1: [ generator, rns, eventweightSep24, imageprod, nuselection ]
@@ -108,7 +108,7 @@ physics.filters.nuselection.OpFilterProcName: ""
 outputs: {
   out1: {
     module_type: RootOutput
-    fileName: "%ifb_%tc_fullchain_nuselection_noinference.root"
+    fileName: "%ifb_%tc_fullchain_nuselection_noinference_oldflux.root"
     dataTier: "selected"
     compressionLevel: 1
   }

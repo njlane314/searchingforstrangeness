@@ -38,6 +38,18 @@ If your shell is already in the correct MicroBooNE/MRB environment, sourcing
 .setup.sh from the repository top directory is usually enough.  That helper
 also sets up sam_web_client for the SAM-based workflows described below.
 
+For SAM write operations on the GPVM such as `samweb create-definition`, a
+stale bearer-token environment can cause confusing auth failures.  The working
+recovery sequence from this checkout was:
+
+     unset BEARER_TOKEN
+     unset BEARER_TOKEN_FILE
+     htdestroytoken || true
+     htgettoken -a htvaultprod.fnal.gov -i uboone
+
+After that, `samweb create-definition ...` succeeded without needing an
+explicit `BEARER_TOKEN_FILE` export.
+
 
 2. Choose a checked-in job configuration
 ----------------------------------------
@@ -63,7 +75,7 @@ job/run_nuselection_data_noinference.fcl
      nu_selection_data_noinference.root.
 
 job/run_imageprod.fcl
-     Produces image::SparsePlaneImage objects for the selected slice and a
+     Produces image::ImageFeatures objects for the selected slice and a
      full-detector companion collection, then writes the event file
      %ifb_%tc_imageprod.root.  The checked-in TFileService output is
      imageprod_hist.root.
@@ -78,10 +90,11 @@ job/run_fullchain.fcl
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
-job/flux/run_redk2nu_numi_fhc.fcl
-job/flux/run_redk2nu_numi_rhc.fcl
+run_redk2nu_fhc.fcl
+run_redk2nu_rhc.fcl
      Restore Dk2Nu information to reco2 artroot files before EventWeight,
-     using the checked-in FHC or RHC NuMI dk2nu file paths.
+     using the FHC or RHC NuMI dk2nu file paths from the sibling ubana
+     redk2nu package.
 
 The development entry points are under dev/.
 
@@ -215,6 +228,7 @@ one ROOT file at a time. You can switch workflows or inputs, for example:
 
      ./scripts/validate-campaign.sh --workflow data
 
+
      ./scripts/validate-campaign.sh --workflow ntuple
 
      ./scripts/validate-campaign.sh \
@@ -281,7 +295,7 @@ The package writes two kinds of ROOT output.
 art event files
      These are written by jobs such as run_imageprod.fcl, run_inferenceprod.fcl,
      run_fullchain.fcl, and the extra-GENIE weight job.  They contain event
-     products such as image::SparsePlaneImage and inference products.
+     products such as image::ImageFeatures and inference products.
 
 TFileService analysis files
      These are files such as nu_selection.root, nu_selection_data.root, and
@@ -384,6 +398,14 @@ Run 1 CV train-shard detvar example:
      project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --submit
      project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --check
      project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_sel --submit
+
+Dedicated Run 1 training/test XML example (25 jobs per stage, ubsim NuMI slim
+event weights):
+
+     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --submit
+     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --check
+     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --submit
+     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --check
 
 Run 2a nominal example:
 

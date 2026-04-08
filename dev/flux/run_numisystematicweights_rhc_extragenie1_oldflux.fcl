@@ -1,0 +1,10 @@
+#include "redk2nu_g4_9_2.fcl"
+#include "run_eventweight_microboone_sept24_extragenieall_1_numi_rhc_oldflux_rw.fcl"
+
+process_name: NuMISystematicWeightsRHCOldFluxExtraGENIE1
+
+physics.producers.generator: @local::microboone_redk2nu_rhc
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux
+
+physics.simulate: [ generator, rns, eventweightSep24 ]
+outputs.out1.fileName: "numisystematicweights_rhc_extragenie1_oldflux.root"

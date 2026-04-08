@@ -1,0 +1,8 @@
+#include "run_fullchain_oldflux.fcl"
+
+process_name: FullChainStageOldFluxDev
+
+services.TFileService.fileName: "stage_fullchain_oldflux_dev_hist.root"
+outputs.out1.fileName: "stage_fullchain_oldflux_dev.root"
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 100

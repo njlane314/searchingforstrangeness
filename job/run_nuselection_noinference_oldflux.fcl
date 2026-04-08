@@ -1,0 +1,8 @@
+#include "run_nuselection_oldflux.fcl"
+
+process_name: NuSelectionMCNoInferenceOldFlux
+
+services.TFileService.fileName: "nu_selection_noinference_oldflux.root"
+
+physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
+physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""

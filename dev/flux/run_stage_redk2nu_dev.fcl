@@ -1,4 +1,4 @@
-#include "flux/run_redk2nu_numi_fhc.fcl"
+#include "run_redk2nu_fhc.fcl"
 
 process_name: ReDk2NuStageDev
 

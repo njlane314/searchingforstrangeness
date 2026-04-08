@@ -1,6 +1,6 @@
 #include "microboone_eventweight_service.fcl"
-#include "flux/redk2nu_numi_oldflux.fcl"
-#include "flux/eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+#include "redk2nu.fcl"
+#include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection.fcl"
 
 process_name: LocalNtupleDev
@@ -9,8 +9,8 @@ services.TFileService.fileName: "local_ntuple_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
 services.NuRandomService: @local::microboone_seedservice
 
-# This local path uses the old-flux-reweighted NuMI EventWeight chain so
-# downstream tests match the repo-backed campaign defaults.
+# This local path follows the standard NuMI EventWeight configuration from
+# ubsim and the standard g4_10_4 redk2nu lookup from ubana/redk2nu.
 
 physics.producers.imageprod: {
   module_type: "ImageProducer"
@@ -25,7 +25,7 @@ physics.producers.imageprod: {
 }
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
-physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux
+physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
 
 # Leave inference disabled for this local ntuple test sample until the
 # checked-in model bundle has been updated. The downstream test only needs the
@@ -56,7 +56,7 @@ LocalNtupleEventWeightAnalysis: {
   @table::EventWeightAnalysis
   genieAllUniverses: 100
   ppfxAllUniverses: 100
-  useReweightedFlux: true
+  useReweightedFlux: false
   eventWeightProcessName00: "LocalNtupleDev"
 }
 

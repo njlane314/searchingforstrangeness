@@ -69,8 +69,8 @@ Checked-in entry points
 
 The main top-level job configurations are:
 
-  * job/flux/run_redk2nu_numi_fhc.fcl
-  * job/flux/run_redk2nu_numi_rhc.fcl
+  * run_redk2nu_fhc.fcl (from the sibling ubana redk2nu package)
+  * run_redk2nu_rhc.fcl (from the sibling ubana redk2nu package)
   * job/run_nuselection.fcl
   * job/run_nuselection_data.fcl
   * job/run_nuselection_noinference.fcl

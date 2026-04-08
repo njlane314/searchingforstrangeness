@@ -1,5 +1,5 @@
-#include "flux/redk2nu_numi_oldflux.fcl"
-#include "flux/run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl"
+#include "redk2nu.fcl"
+#include "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl"
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.simulate: [ generator, rns, eventweightSep24 ]

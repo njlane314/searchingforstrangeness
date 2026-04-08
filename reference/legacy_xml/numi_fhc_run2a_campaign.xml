@@ -36,7 +36,7 @@
     <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
     <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
     <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
-    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_fhc.fcl">
 
     <!--
       Temporary campaign settings:

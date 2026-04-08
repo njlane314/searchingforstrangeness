@@ -1,0 +1,7 @@
+#include "run_nuselection_noinference_oldflux.fcl"
+
+process_name: NuSelectionStageOldFluxDev
+
+services.TFileService.fileName: "stage_sel_oldflux_dev.root"
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 100

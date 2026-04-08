@@ -29,17 +29,26 @@
     <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
     <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
     <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
-    <!ENTITY fcl_redk2nu "run_redk2nu_numi_fhc.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_fhc.fcl">
+    <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_old_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_old_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_old_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_old_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_old_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
 
     <!--
       Temporary campaign settings:
       keep only fcl_evtw_00 so these jobs write the first 100 multisim
-      universes, use the standard NuMI EventWeight chain, and skip inference
-      until the checked-in models are updated.
+      universes, route the legacy beam and dirt shards through the old-flux
+      chain, keep the dedicated strangeness sample on the standard new-flux
+      chain, and skip inference until the checked-in models are updated.
     -->
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
     <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
     <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
 ]>
 
@@ -64,17 +73,17 @@
 
     <stage name="beam_shard0">
         <inputdef>&input_beam_shard0;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/log</logdir>
@@ -85,17 +94,17 @@
 
     <stage name="beam_shard1">
         <inputdef>&input_beam_shard1;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/log</logdir>
@@ -106,17 +115,17 @@
 
     <stage name="beam_shard2">
         <inputdef>&input_beam_shard2;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/log</logdir>
@@ -127,17 +136,17 @@
 
     <stage name="beam_shard3">
         <inputdef>&input_beam_shard3;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/log</logdir>
@@ -148,17 +157,17 @@
 
     <stage name="dirt_shard0">
         <inputdef>&input_dirt_shard0;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/log</logdir>
@@ -169,17 +178,17 @@
 
     <stage name="dirt_shard1">
         <inputdef>&input_dirt_shard1;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
+        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
         <fcl>&fcl_image;</fcl>
         <!-- <fcl>&fcl_infer;</fcl> -->
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/log</logdir>
