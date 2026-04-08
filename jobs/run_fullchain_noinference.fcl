@@ -1,11 +1,43 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
+#include "microboone_eventweight_service.fcl"
+#include "redk2nu.fcl"
+#include "eventweight_microboone_sept24_numi_fhc_slim.fcl"
 #include "selectionconfig.fcl"
+#include "is_numi.fcl"
 
-process_name: FullChainNuSelection
+process_name: FullChainNuSelectionNoInference
+
+SlimNumiEventWeightAnalysis: {
+  @table::EventWeightAnalysis
+  createFluxBranch: false
+  createGenieBranch: false
+  createReintBranch: false
+  createSplineBranch: true
+  createTuneBranch: true
+  createSplineTimesTuneBranch: true
+  createPPFXBranch: true
+  createGenieUpDnVecs: false
+  genieAllUniverses: 0
+  ppfxAllUniverses: 0
+  makeNuMINtuple: false
+  useReweightedFlux: false
+  eventWeightProcessName00: "FullChainNuSelectionNoInference"
+}
+
+SlimWeightNeutrinoSelectionFilter: {
+  @table::NeutrinoSelectionFilter
+  AnalysisTools: {
+    default: @local::DefaultAnalysis
+    weight: @local::SlimNumiEventWeightAnalysis
+    image: @local::ImageAnalysis
+    signal: @local::SignalAnalysis
+    truth: @local::TruthAnalysis
+  }
+}
 
 services: {
-  TFileService: { fileName: "fullchain_nuselection_hist.root" }
+  TFileService: { fileName: "fullchain_nuselection_noinference_hist.root" }
   TimeTracker: {}
   MemoryTracker: {}
   RandomNumberGenerator: {}
@@ -20,6 +52,7 @@ services: {
   message: @local::standard_info
 
   NuRandomService: @local::microboone_seedservice
+  UBEventWeight: @local::microboone_eventweight_service
 }
 
 services.DetectorClocksService.InheritClockConfig: false
@@ -36,6 +69,11 @@ source: {
 
 physics: {
   producers: {
+    generator: @local::microboone_redk2nu_fhc
+    eventweightSep24: @local::microboone_eventweight_sept24
+    rns: {
+      module_type: "RandomNumberSaver"
+    }
     imageprod: {
       module_type: "ImageProducer"
       PFPproducer: @local::standard_producers.PFPproducer
@@ -47,42 +85,22 @@ physics: {
       SPproducer: @local::standard_producers.SPproducer
       BadChannelFile: "runtime/detector/badchannels.txt"
     }
-
-    inferenceprod: {
-      module_type: "InferenceProducer"
-      PlanesTag: "imageprod:CroppedWindow"
-      ScratchDir: ""
-      RuntimeBaseDir: "runtime"
-      DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
-      ModelDefaults: {
-        Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
-        WeightsDir: "models/mink_binary"
-      }
-      Models: [
-        {
-          Label: "mink_binary"
-          Checkpoint: "checkpoint_step0010000.pt"
-        }
-      ]
-    }
   }
 
   filters: {
-    nuselection: {
-      @table::NeutrinoSelectionFilter
-    }
+    nuselection: @local::SlimWeightNeutrinoSelectionFilter
   }
 
-  path1: [ imageprod, inferenceprod, nuselection ]
+  path1: [ generator, rns, eventweightSep24, imageprod, nuselection ]
   trigger_paths: [ path1 ]
 
   stream1: [ out1 ]
   end_paths: [ stream1 ]
 }
 
-physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
-physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true
+physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
+physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""
 
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""
@@ -90,8 +108,8 @@ physics.filters.nuselection.OpFilterProcName: ""
 outputs: {
   out1: {
     module_type: RootOutput
-    fileName: "%ifb_%tc_fullchain_nuselection.root"
-    dataTier: "detector-simulated"
+    fileName: "%ifb_%tc_fullchain_nuselection_noinference.root"
+    dataTier: "selected"
     compressionLevel: 1
   }
 }

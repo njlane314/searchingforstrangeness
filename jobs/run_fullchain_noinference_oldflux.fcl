@@ -4,6 +4,7 @@
 #include "redk2nu_g4_9_2.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "selectionconfig.fcl"
+#include "is_numi.fcl"
 
 process_name: FullChainNuSelectionNoInferenceOldFlux
 
@@ -97,7 +98,6 @@ physics: {
   end_paths: [ stream1 ]
 }
 
-physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
 physics.filters.nuselection.AnalysisTools.image.InferencePredTag: ""
 physics.filters.nuselection.AnalysisTools.image.InferencePerfTag: ""

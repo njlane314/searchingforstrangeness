@@ -30,6 +30,27 @@ abs_path() {
     printf '%s/%s\n' "${target_dir}" "$(basename "$target")"
 }
 
+resolve_fhicl_path() {
+    local target="$1"
+    local fhicl_dir
+
+    if [ -f "${target}" ]; then
+        abs_path "${target}"
+        return 0
+    fi
+
+    IFS=':' read -r -a FHICL_DIRS <<< "${FHICL_FILE_PATH:-}"
+    for fhicl_dir in "${FHICL_DIRS[@]}"; do
+        if [ -n "${fhicl_dir}" ] && [ -f "${fhicl_dir}/${target}" ]; then
+            abs_path "${fhicl_dir}/${target}"
+            return 0
+        fi
+    done
+
+    echo "Error: FHiCL file '${target}' does not exist locally and was not found on FHICL_FILE_PATH." >&2
+    return 1
+}
+
 fhicl_has_tfile_output() {
     grep -Eq 'TFileService|services\.TFileService\.fileName' "${FHICL_FILE}"
 }
@@ -182,13 +203,7 @@ fi
 
 FHICL_FILE="$1"
 INPUT_SPEC="$2"
-
-if [ ! -f "${FHICL_FILE}" ]; then
-    echo "Error: FHiCL file '${FHICL_FILE}' does not exist." >&2
-    exit 1
-fi
-
-FHICL_FILE="$(abs_path "${FHICL_FILE}")"
+FHICL_FILE="$(resolve_fhicl_path "${FHICL_FILE}")" || exit 1
 FHICL_BASE="$(basename "${FHICL_FILE}" .fcl | sed 's/^run_//')"
 SAM_DEF="${SAM_DEF:-prod_strange_resample_fhc_run2_fhc_reco2_reco2}"
 OUTPUT_BASE_DIR="${OUTPUT_BASE_DIR:-${REPO_DIR}/out}"

@@ -9,37 +9,38 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!--
-      Nominal Run 3 RHC beam now starts from the merged Pandora reco2 campaign
-      output. The SAM definition name retains an older "wirecell" token in the
-      bookkeeping spreadsheet even though the production row is the Pandora
-      reco2 chain.
-    -->
-    <!ENTITY input_beam "run3_nu_overlay_wirecell_reco2_reco2_cnguyen_reco2_reco2">
+    <!ENTITY input_beam "ub_numi_run3b_rhc_beam_gr">
     <!ENTITY input_dirt_shard0 "prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample0">
     <!ENTITY input_dirt_shard1 "prodgenie_numi_uboone_overlay_dirt_rhc_mcc9_run3b_v28_sample1">
-    <!ENTITY input_strangeness "prod_strange_resample_rhc_run3_rhc_reco2_reco2">
-    <!ENTITY input_ext "prod_extnumi_mcc9_v08_00_00_45_run3_run3b_reco2_all_reco2">
-    <!ENTITY input_data "prod_numi_mcc9_v08_00_00_45_run3b_run3b_reco2_beam_good_reco2">
+    <!ENTITY input_strangeness "ub_numi_run3b_rhc_strangeness_gr">
+    <!ENTITY input_ext "ub_numi_run3b_rhc_ext_gr">
+    <!ENTITY input_data "ub_numi_run3b_rhc_data_gr">
 
-    <!ENTITY input_beam_detvar_cv "numi_run3_standard_nu_overlay_cv_reco2_v08_00_00_54_run3_reco2">
-    <!ENTITY input_beam_detvar_ly_attenuation "numi_run3_standard_nu_overlay_LYattenuation_reco2_run3_reco2">
-    <!ENTITY input_beam_detvar_ly_rayleigh "numi_run3_standard_nu_overlay_LYrayleigh_reco2_run3_reco2">
-    <!ENTITY input_beam_detvar_ly_down "numi_run3_standard_nu_overlay_LYDown_reco2_v08_00_00_54_run3_reco2">
-    <!ENTITY input_beam_detvar_sce "numi_run3_standard_nu_overlay_SCE_reco2_v08_00_00_54_run3_reco2">
-    <!ENTITY input_beam_detvar_recomb2 "numi_run3_standard_nu_overlay_Recomb2_reco2_v08_00_00_54_run3_reco2">
-    <!ENTITY input_beam_detvar_wiremodx "numi_run3_standard_nu_overlay_cv_v08_00_00_54_run3_reco2_WiremodX_run3b_reco2">
-    <!ENTITY input_beam_detvar_wiremodyz "numi_run3_standard_nu_overlay_WireModYZ_reco2_run3b_reco2">
-    <!ENTITY input_beam_detvar_wiremodthetaxz "numi_run3_standard_nu_overlay_WireModThetaXZ_reco2_v08_00_00_54_run3_reco2">
-    <!ENTITY input_beam_detvar_wiremodthetayz "numi_run3_standard_nu_overlay_WireModThetaYZwithsplines_reco2_run3_reco2">
+    <!ENTITY input_beam_detvar_cv "ub_numi_run3b_rhc_dv_cv_gr">
+    <!ENTITY input_beam_detvar_ly_attenuation "ub_numi_run3b_rhc_dv_ly_attenuation_gr">
+    <!ENTITY input_beam_detvar_ly_rayleigh "ub_numi_run3b_rhc_dv_ly_rayleigh_gr">
+    <!ENTITY input_beam_detvar_ly_down "ub_numi_run3b_rhc_dv_ly_down_gr">
+    <!ENTITY input_beam_detvar_sce "ub_numi_run3b_rhc_dv_sce_gr">
+    <!ENTITY input_beam_detvar_recomb2 "ub_numi_run3b_rhc_dv_recomb2_gr">
+    <!ENTITY input_beam_detvar_wiremodx "ub_numi_run3b_rhc_dv_wmx_gr">
+    <!ENTITY input_beam_detvar_wiremodyz "ub_numi_run3b_rhc_dv_wmyz_gr">
+    <!ENTITY input_beam_detvar_wiremodthetaxz "ub_numi_run3b_rhc_dv_wmtxz_gr">
+    <!ENTITY input_beam_detvar_wiremodthetayz "ub_numi_run3b_rhc_dv_wmtyz_gr">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_rhc.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_rhc.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_rhc.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_rhc.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_rhc.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_rhc.fcl">
-    <!ENTITY fcl_redk2nu "run_redk2nu_rhc.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_rhc_oldflux_rw.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_v4_9_2_rhc.fcl">
+    <!ENTITY fcl_redk2nu_strangeness "run_redk2nu_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_00 "run_eventweight_microboone_sept24_numi_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_rhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_rhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_rhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_old_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_rhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_old_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_rhc_oldflux_rw.fcl">
@@ -48,19 +49,9 @@
     <!ENTITY fcl_evtw_old_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_rhc_oldflux_rw.fcl">
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_rhc.fcl">
 
-    <!--
-      Staged campaign settings:
-      - nominal beam and dedicated strangeness run the standard new-flux
-        redk2nu -> evtw -> image -> sel chain
-      - legacy dirt shards run the old-flux redk2nu -> evtw -> image -> sel chain
-      - only fcl_evtw_00 is active, so the campaign keeps the first 100
-        multisim universes
-      - detector-variation stages run image -> sel only
-      - dedicated inference stages are omitted because the checked-in model
-        bundle has not been updated yet
-    -->
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
     <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
     <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
 ]>
@@ -86,14 +77,13 @@
 
     <stage name="beam_evtw">
         <inputdef>&input_beam;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_old;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_old_00;</fcl>
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/evtw/log</logdir>
@@ -115,7 +105,7 @@
 
     <stage name="beam_sel">
         <previousstage>beam_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run3b_rhc/sel/log</logdir>
@@ -129,11 +119,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run3b_rhc/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run3b_rhc/shard0/evtw/log</logdir>
@@ -169,11 +158,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run3b_rhc/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run3b_rhc/shard1/evtw/log</logdir>
@@ -206,14 +194,13 @@
 
     <stage name="strangeness_evtw">
         <inputdef>&input_strangeness;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_strangeness;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_strangeness_00;</fcl>
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run3b_rhc/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run3b_rhc/evtw/log</logdir>
@@ -235,7 +222,7 @@
 
     <stage name="strangeness_sel">
         <previousstage>strangeness_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_strangeness;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run3b_rhc/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run3b_rhc/sel/log</logdir>
@@ -301,7 +288,7 @@
 
     <stage name="beam_detvar_cv_sel">
         <previousstage>beam_detvar_cv_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/cv/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/cv/sel/log</logdir>
@@ -323,7 +310,7 @@
 
     <stage name="beam_detvar_ly_attenuation_sel">
         <previousstage>beam_detvar_ly_attenuation_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_attenuation/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_attenuation/sel/log</logdir>
@@ -345,7 +332,7 @@
 
     <stage name="beam_detvar_ly_rayleigh_sel">
         <previousstage>beam_detvar_ly_rayleigh_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_rayleigh/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_rayleigh/sel/log</logdir>
@@ -367,7 +354,7 @@
 
     <stage name="beam_detvar_ly_down_sel">
         <previousstage>beam_detvar_ly_down_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_down/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/ly_down/sel/log</logdir>
@@ -389,7 +376,7 @@
 
     <stage name="beam_detvar_sce_sel">
         <previousstage>beam_detvar_sce_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/sce/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/sce/sel/log</logdir>
@@ -411,7 +398,7 @@
 
     <stage name="beam_detvar_recomb2_sel">
         <previousstage>beam_detvar_recomb2_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/recomb2/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/recomb2/sel/log</logdir>
@@ -433,7 +420,7 @@
 
     <stage name="beam_detvar_wiremodx_sel">
         <previousstage>beam_detvar_wiremodx_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodx/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodx/sel/log</logdir>
@@ -455,7 +442,7 @@
 
     <stage name="beam_detvar_wiremodyz_sel">
         <previousstage>beam_detvar_wiremodyz_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodyz/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodyz/sel/log</logdir>
@@ -477,7 +464,7 @@
 
     <stage name="beam_detvar_wiremodthetaxz_sel">
         <previousstage>beam_detvar_wiremodthetaxz_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodthetaxz/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodthetaxz/sel/log</logdir>
@@ -499,7 +486,7 @@
 
     <stage name="beam_detvar_wiremodthetayz_sel">
         <previousstage>beam_detvar_wiremodthetayz_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodthetayz/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run3b_rhc/wiremodthetayz/sel/log</logdir>

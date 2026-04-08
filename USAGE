@@ -54,38 +54,38 @@ explicit `BEARER_TOKEN_FILE` export.
 2. Choose a checked-in job configuration
 ----------------------------------------
 
-The standard entry points are under job/.
+The standard entry points are under jobs/.
 
-job/run_nuselection.fcl
+jobs/run_nuselection.fcl
      Runs the neutrino-selection filter on MC-style input and writes the
      analysis TTree file nu_selection.root.
 
-job/run_nuselection_data.fcl
+jobs/run_nuselection_data.fcl
      Runs the data/EXT version of the selection and writes
      nu_selection_data.root.
 
-job/run_nuselection_noinference.fcl
+jobs/run_nuselection_noinference.fcl
      Runs the MC-style selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
      nu_selection_noinference.root.
 
-job/run_nuselection_data_noinference.fcl
+jobs/run_nuselection_data_noinference.fcl
      Runs the data/EXT selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
      nu_selection_data_noinference.root.
 
-job/run_imageprod.fcl
+jobs/run_imageprod.fcl
      Produces image::ImageFeatures objects for the selected slice and a
      full-detector companion collection, then writes the event file
      %ifb_%tc_imageprod.root.  The checked-in TFileService output is
      imageprod_hist.root.
 
-job/run_inferenceprod.fcl
+jobs/run_inferenceprod.fcl
      Runs model inference on existing imageprod:CroppedWindow products and writes
      the event file %ifb_%tc_inference.root.  The checked-in TFileService
      output is inferenceprod_hist.root.
 
-job/run_fullchain.fcl
+jobs/run_fullchain.fcl
      Runs image production, inference, and neutrino selection in one process.
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
@@ -96,54 +96,36 @@ run_redk2nu_rhc.fcl
      using the FHC or RHC NuMI dk2nu file paths from the sibling ubana
      redk2nu package.
 
-The development entry points are under job/dev/.
+The development entry points are under jobs/dev/.
 
-job/dev/flux/image_dev.fcl
+jobs/dev/flux/image_dev.fcl
      Development chain for imaging, inference, and selection with event-weight
      analysis enabled.
 
-job/dev/image_dev_cosmic.fcl
+jobs/dev/flux/image_oldflux_dev.fcl
+     Old-flux variant of the same imaging, inference, and selection chain.
+
+jobs/dev/image_dev_cosmic.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
-job/dev/flux/run_stage_redk2nu_dev.fcl
-     Standalone local wrapper for inspecting the staged Run 1 FHC redk2nu
-     preprocessing step by itself.
-
-job/dev/flux/run_stage_evtw_cv_dev.fcl through job/dev/flux/run_stage_evtw_extragenie5_dev.fcl
-     Local wrappers for the staged Run 1 FHC eventweight chain.  Run them in
-     the same order as the staged XML when you want to reproduce the
-     `*_evtw` substage sequence on a small local sample.  These wrappers run
-     the redk2nu preprocessing internally before the standard NuMI EventWeight
-     chain.
-
-job/dev/run_stage_image_dev.fcl
-     Local wrapper for the staged image-production step.
-
-job/dev/run_stage_infer_dev.fcl
-     Local wrapper for the staged inference step.
-
-job/dev/run_stage_sel_dev.fcl
+jobs/dev/run_stage_sel_dev.fcl
      Local wrapper for the staged MC-style selection step.
 
-job/dev/run_stage_sel_data_dev.fcl
-     Local wrapper for the staged data/EXT-style selection step.
-
-job/dev/run_stage_fullchain_dev.fcl
+jobs/dev/run_stage_fullchain_dev.fcl
      Local wrapper for running the image, inference, and selection chain in
      one process while still using dev-local output names.
 
-job/dev/flux/run_local_ntuple_dev.fcl
+jobs/dev/flux/run_local_ntuple_dev.fcl
      Local MC-style ntuple job for downstream ntuple validation.  It runs the
      redk2nu, eventweight, and image stages in-process, writes the
      EventSelectionFilter and SubRun trees, keeps only 100 GENIE and 100 PPFX
      universes, uses the standard NuMI EventWeight chain, and leaves
      inference disabled until the checked-in model bundle is refreshed.
 
-job/dev/flux/run_numisystematicweights_rhc_extragenie1.fcl
-     Standalone extra-GENIE RHC redk2nu-plus-event-weight job writing
-     %ifb_extragenie1_rhc.root.
+jobs/dev/flux/run_local_ntuple_oldflux_dev.fcl
+     Old-flux counterpart to the local ntuple validation job.
 
-job/dev/numi_fhc_run1_dev.xml
+jobs/dev/numi_fhc_run1_dev.xml
      Grid job template for the dev imaging and inference chain.
 
 
@@ -156,19 +138,19 @@ The most common command form is:
 
 Examples:
 
-     lar -c job/run_nuselection.fcl -s reco_input.root
+     lar -c jobs/run_nuselection.fcl -s reco_input.root
 
-     lar -c job/run_nuselection_data.fcl -s data_input.root
+     lar -c jobs/run_nuselection_data.fcl -s data_input.root
 
-     lar -c job/run_nuselection_noinference.fcl -s imageprod_output.root
+     lar -c jobs/run_nuselection_noinference.fcl -s imageprod_output.root
 
-     lar -c job/run_nuselection_data_noinference.fcl -s imageprod_output.root
+     lar -c jobs/run_nuselection_data_noinference.fcl -s imageprod_output.root
 
-     lar -c job/run_imageprod.fcl -s reco_input.root
+     lar -c jobs/run_imageprod.fcl -s reco_input.root
 
-     lar -c job/run_inferenceprod.fcl -s imageprod_output.root
+     lar -c jobs/run_inferenceprod.fcl -s imageprod_output.root
 
-     lar -c job/run_fullchain.fcl -s reco_input.root
+     lar -c jobs/run_fullchain.fcl -s reco_input.root
 
 Usage notes:
 
@@ -186,12 +168,17 @@ Usage notes:
     the image, inference, and selection stages in one step.
 
 For quick staged-workflow tests from this checkout, `.local.sh` now supports
-either a SAM-backed mini-run or a direct local handoff between stages:
+either a SAM-backed mini-run or a direct local handoff between stages. It also
+resolves bare FHiCL names from `FHICL_FILE_PATH`, so you can use the upstream
+redk2nu/EventWeight entry points directly:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh job/dev/flux/run_stage_evtw_cv_dev.fcl 1
+       ./.local.sh run_redk2nu_fhc.fcl 1
 
-     ./.local.sh job/dev/run_stage_image_dev.fcl \
+     ./.local.sh run_eventweight_microboone_sept24_numi_fhc.fcl \
+       /absolute/path/to/previous_stage.root
+
+     ./.local.sh run_imageprod.fcl \
        /absolute/path/to/previous_stage.root
 
 When you pass an integer as the second argument, `.local.sh` resolves that many
@@ -205,7 +192,7 @@ For a compact local ntuple validation file, run the dedicated local ntuple
 job on a single SAM file:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh job/dev/flux/run_local_ntuple_dev.fcl 1
+       ./.local.sh jobs/dev/flux/run_local_ntuple_dev.fcl 1
 
 That produces one combined TFileService ROOT file under `out/`.
 Because downstream ntuple consumers use the EventSelectionFilter and SubRun
@@ -219,9 +206,10 @@ submitting a campaign, use:
 
 That defaults to the Run 1 FHC staged MC path:
 
-  * `job/dev/flux/run_stage_evtw_cv_dev.fcl`
-  * `job/dev/run_stage_image_dev.fcl`
-  * `job/dev/run_stage_sel_dev.fcl`
+  * `run_redk2nu_fhc.fcl`
+  * `run_eventweight_microboone_sept24_numi_fhc.fcl`
+  * `run_imageprod.fcl`
+  * `jobs/dev/run_stage_sel_dev.fcl`
 
 and enforces a single-file starting point so the local stage handoff stays on
 one ROOT file at a time. You can switch workflows or inputs, for example:
@@ -265,7 +253,7 @@ definition and loop over them:
      counter=1
      for file in $files; do
          filedir=$(samweb locate-file "$file" | grep -o '/pnfs/.*' | head -n 1)
-         lar -c job/run_fullchain.fcl -s "${filedir}/${file}"
+         lar -c jobs/run_fullchain.fcl -s "${filedir}/${file}"
          mv fullchain_nuselection_hist.root "fullchain_${counter}.root"
          counter=$((counter + 1))
      done
@@ -318,22 +306,31 @@ The checked-in branch and product layout is summarized here.  In particular:
 6. Submit grid jobs
 -------------------
 
-`xml/` now contains only four staged campaign entry points:
+`xml/` now contains these staged campaign entry points:
 
-  * xml/numi_reco2_run1_fhc_campaign.xml
-  * xml/numi_reco2_run2a_fhc_campaign.xml
-  * xml/numi_reco2_run2b_rhc_campaign.xml
-  * xml/numi_reco2_run3b_rhc_campaign.xml
+  * xml/numi_run1aot_campaign.xml
+  * xml/numi_run1_campaign.xml
+  * xml/numi_run1_fhc_campaign.xml
+  * xml/numi_run1_rhc_campaign.xml
+  * xml/numi_run2a_fhc_campaign.xml
+  * xml/numi_run2b_rhc_campaign.xml
+  * xml/numi_run3b_rhc_campaign.xml
+  * xml/numi_run4a_rhc_campaign.xml
+  * xml/numi_run4b_rhc_campaign.xml
+  * xml/numi_run4c_fhc_campaign.xml
+  * xml/numi_run4d_fhc_campaign.xml
+  * xml/numi_run5_fhc_campaign.xml
 
 Older XMLs were archived under `reference/legacy_xml/`.
 
-All four campaigns share the same staging rules:
+The campaign XMLs use the same building blocks:
 
-  * nominal beam, dirt, and dedicated strangeness use
+  * MC beam, dirt, and dedicated strangeness stages use
     `redk2nu -> evtw -> image -> sel`
-  * only `fcl_evtw_00` is active, so nominal MC keeps the first 100 multisim
+  * only `fcl_evtw_00` is active, so MC keeps the first 100 multisim
     universes
-  * detector-variation chains use `image -> sel`
+  * data and EXT stages use `image -> sel`
+  * detector-variation chains, where present, use `image -> sel`
   * inference is omitted because the checked-in model bundle has not been
     updated yet
   * `numjobs` values are placeholders and should be replaced from `samweb`
@@ -387,40 +384,32 @@ common NuMI note examples for splitting large SAM definitions with
 
 Nominal Run 1 submission example:
 
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_evtw --submit
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_evtw --check
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --submit
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --check
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_sel --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_evtw --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_evtw --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_sel --submit
 
 Run 1 CV train-shard detvar example:
 
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --submit
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --check
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_sel --submit
-
-Dedicated Run 1 training/test XML example (25 jobs per stage, ubsim NuMI slim
-event weights):
-
-     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --submit
-     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --check
-     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --submit
-     project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_sel --submit
 
 Run 2a nominal example:
 
-     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_evtw --submit
-     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_evtw --check
-     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_image --submit
-     project.py --xml xml/numi_reco2_run2a_fhc_campaign.xml --stage beam_sel --submit
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_evtw --submit
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_evtw --check
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_image --submit
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_sel --submit
 
 Run 2b nominal example:
 
-     project.py --xml xml/numi_reco2_run2b_rhc_campaign.xml --stage beam_evtw --submit
+     project.py --xml xml/numi_run2b_rhc_campaign.xml --stage beam_evtw --submit
 
 Run 3b nominal example:
 
-     project.py --xml xml/numi_reco2_run3b_rhc_campaign.xml --stage beam_shard0_evtw --submit
+     project.py --xml xml/numi_run3b_rhc_campaign.xml --stage beam_shard0_evtw --submit
 
 Stage naming follows a fixed pattern:
 
@@ -440,8 +429,8 @@ Stage naming follows a fixed pattern:
 
 To clean and resubmit a stage, target the specific staged node you want to rerun:
 
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --clean
-     project.py --xml xml/numi_reco2_run1_fhc_campaign.xml --stage beam_shard0_image --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --clean
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --submit
 
 
 7. Common adjustments
@@ -455,8 +444,8 @@ campaign.  Common edits include:
   * changing the inference model family, checkpoint, or wrapper path;
   * adjusting XML entities to point at your own PNFS areas and SAM inputs.
 
-For development work, put ad hoc configurations under job/dev/ rather than editing
-the production files in job/ without a reason.
+For development work, put ad hoc configurations under jobs/dev/ rather than editing
+the production files in jobs/ without a reason.
 
 
 8. If something fails early

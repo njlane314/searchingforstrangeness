@@ -17,7 +17,7 @@ add_subdirectory(Products)
 add_subdirectory(SelectionTools)
 add_subdirectory(AnalysisTools)
 add_subdirectory(ImagePipeline)
-add_subdirectory(job)
+add_subdirectory(jobs)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
 message("Compiler: ${CMAKE_CXX_COMPILER}")

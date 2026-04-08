@@ -1,0 +1,6 @@
+#include "run_nuselection.fcl"
+#include "is_data.fcl"
+
+process_name: NuSelectionDATA
+
+services.TFileService.fileName: "nu_selection_data.root"

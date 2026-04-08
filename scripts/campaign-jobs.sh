@@ -12,7 +12,7 @@ Because the checked-in XMLs use maxfilesperjob=1, the file count is the numjobs
 value for that definition.
 
 Defaults:
-  XML files : xml/numi_reco2_*_campaign.xml
+  XML files : xml/numi_*_campaign.xml
   Threshold : 5000 files
 
 Recommendations:
@@ -84,7 +84,7 @@ if ! [[ ${threshold} =~ ^[0-9]+$ ]] || (( threshold <= 0 )); then
 fi
 
 if [[ ${#xml_files[@]} -eq 0 ]]; then
-  xml_files=("${repo_root}"/xml/numi_reco2_*_campaign.xml)
+  xml_files=("${repo_root}"/xml/numi_*_campaign.xml)
 fi
 
 for xml_file in "${xml_files[@]}"; do

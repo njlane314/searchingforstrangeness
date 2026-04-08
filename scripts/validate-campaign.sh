@@ -8,11 +8,11 @@ Usage:
   validate-campaign.sh [--workflow <mc|data|ntuple|fullchain>] [--samdef <def>] [--files <n>]
   validate-campaign.sh [--workflow <mc|data|ntuple|fullchain>] --input <input.root>
 
-Runs the checked-in dev FHiCL wrappers locally through .local.sh so you can
-validate the campaign path before submitting to the grid.
+Runs the checked-in dev workflow locally through .local.sh so you can validate
+the campaign path before submitting to the grid.
 
 Workflows:
-  mc         Run staged MC validation: evtw(with redk2nu) -> image -> sel
+  mc         Run staged MC validation: redk2nu -> evtw -> image -> sel
              Default evtw config is cv, matching the active campaign XMLs.
   data       Run staged data/EXT-style validation: image -> sel_data
   ntuple     Run the compact local ntuple surface
@@ -229,12 +229,12 @@ print_summary() {
 case "${workflow}" in
   mc)
     case "${evtw_config}" in
-      cv) evtw_fhicl="job/dev/flux/run_stage_evtw_cv_dev.fcl" ;;
-      extragenie1) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie1_dev.fcl" ;;
-      extragenie2) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie2_dev.fcl" ;;
-      extragenie3) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie3_dev.fcl" ;;
-      extragenie4) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie4_dev.fcl" ;;
-      extragenie5) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie5_dev.fcl" ;;
+      cv) evtw_fhicl="run_eventweight_microboone_sept24_numi_fhc.fcl" ;;
+      extragenie1) evtw_fhicl="run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl" ;;
+      extragenie2) evtw_fhicl="run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl" ;;
+      extragenie3) evtw_fhicl="run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl" ;;
+      extragenie4) evtw_fhicl="run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl" ;;
+      extragenie5) evtw_fhicl="run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl" ;;
     esac
 
     if [[ -n "${input_path}" ]]; then
@@ -243,11 +243,13 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "${evtw_fhicl}" "${first_input}"
+    run_step "run_redk2nu_fhc.fcl" "${first_input}"
+    require_single_event_output "redk2nu stage"
+    run_step "${evtw_fhicl}" "${LAST_EVENT_OUTPUT}"
     require_single_event_output "eventweight stage"
-    run_step "job/dev/run_stage_image_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "run_imageprod.fcl" "${LAST_EVENT_OUTPUT}"
     require_single_event_output "image stage"
-    run_step "job/dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "jobs/dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   data)
@@ -257,9 +259,9 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "job/dev/run_stage_image_dev.fcl" "${first_input}"
+    run_step "run_imageprod.fcl" "${first_input}"
     require_single_event_output "image stage"
-    run_step "job/dev/run_stage_sel_data_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "jobs/run_nuselection_data.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   ntuple)
@@ -269,7 +271,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "job/dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
+    run_step "jobs/dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
     print_summary
     ;;
   fullchain)
@@ -279,7 +281,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "job/dev/run_stage_fullchain_dev.fcl" "${first_input}"
+    run_step "jobs/dev/run_stage_fullchain_dev.fcl" "${first_input}"
     print_summary
     ;;
 esac

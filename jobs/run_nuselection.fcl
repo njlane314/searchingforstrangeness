@@ -1,12 +1,12 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
-#include "isdata.fcl"
+#include "is_numi.fcl"
 
-process_name: NuSelectionDATA
+process_name: NuSelectionMC
 
 services: {
-  TFileService: { fileName: "nu_selection_data.root" }
+  TFileService: { fileName: "nu_selection.root" }
   TimeTracker: {}
   MemoryTracker: {}
   RandomNumberGenerator: {}
@@ -46,9 +46,8 @@ physics: {
   trigger_paths: [ path1 ]
 }
 
-physics.filters.nuselection.IsData: true
-physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
+physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true
+
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""
-physics.filters.nuselection.AnalysisTools.default.NuMISWTriggerProcName: ""

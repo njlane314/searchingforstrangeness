@@ -39,7 +39,7 @@
 
     <stage name="dev_beam_imaging_evtw">
       <inputdef>&input_beam;</inputdef>
-      <fcl>job/dev/flux/image_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_oldflux_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/out</outdir>
@@ -52,7 +52,7 @@
 
     <stage name="dev_beam_imaging_evtw_full">
       <inputdef>&input_beam;</inputdef>
-      <fcl>job/dev/flux/image_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_oldflux_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/out</outdir>
@@ -65,7 +65,7 @@
 
     <stage name="dev_strange_imaging_evtw">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>job/dev/flux/image_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/out</outdir>
@@ -78,7 +78,7 @@
 
     <stage name="dev_strange_imaging_evtw_full">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>job/dev/flux/image_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/out</outdir>
@@ -91,7 +91,7 @@
 
     <stage name="dev_dirt_imaging_evtw">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>job/dev/flux/image_oldflux_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_oldflux_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/out</outdir>
@@ -104,7 +104,7 @@
 
     <stage name="dev_dirt_imaging_evtw_full">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>job/dev/flux/image_oldflux_dev.fcl</fcl>
+      <fcl>jobs/dev/flux/image_oldflux_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/out</outdir>
@@ -117,7 +117,7 @@
 
     <stage name="dev_cosmic_imaging_data">
       <inputdef>&input_ext;</inputdef>
-      <fcl>job/dev/image_dev_cosmic.fcl</fcl>
+      <fcl>jobs/dev/image_dev_cosmic.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/out</outdir>
@@ -130,7 +130,7 @@
 
     <stage name="dev_cosmic_imaging_data_full">
       <inputdef>&input_ext;</inputdef>
-      <fcl>job/dev/image_dev_cosmic.fcl</fcl>
+      <fcl>jobs/dev/image_dev_cosmic.fcl</fcl>
       <initsource>&initsrc;</initsource>
 
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/out</outdir>

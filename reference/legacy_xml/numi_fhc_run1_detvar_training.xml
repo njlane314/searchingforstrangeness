@@ -9,12 +9,13 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!-- Replace these with the training defs created by scripts/split_detvar_stride.sh. -->
     <!ENTITY input_beam_detvar_nominal_train "nl_beam_detvar_nominal_training_stride2">
     <!ENTITY input_strangeness_detvar_nominal_train "nl_strange_detvar_nominal_training_stride2">
 
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
 ]>
 
 <job>
@@ -36,7 +37,6 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <!-- Update numjobs to match the file counts in the training defs you use. -->
     <stage name="beam_detvar_nominal_train_image">
         <inputdef>&input_beam_detvar_nominal_train;</inputdef>
         <fcl>&fcl_image;</fcl>
@@ -50,7 +50,7 @@
 
     <stage name="beam_detvar_nominal_train_sel">
         <previousstage>beam_detvar_nominal_train_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/log</logdir>
@@ -72,7 +72,7 @@
 
     <stage name="strangeness_detvar_nominal_train_sel">
         <previousstage>strangeness_detvar_nominal_train_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_strangeness;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/log</logdir>

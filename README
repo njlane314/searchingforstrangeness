@@ -56,8 +56,8 @@ Repository layout
   * Helpers/            shared utilities and helper classes
   * ImagePipeline/      image-production and inference support
   * Products/           art product definitions
-  * job/                standard production FHiCL files
-  * job/dev/                development and debugging FHiCL files
+  * jobs/               standard production FHiCL files
+  * jobs/dev/           development and debugging FHiCL files
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
   * runtime/            model checkpoints, detector data, and inference helpers
@@ -71,35 +71,43 @@ The main top-level job configurations are:
 
   * run_redk2nu_fhc.fcl (from the sibling ubana redk2nu package)
   * run_redk2nu_rhc.fcl (from the sibling ubana redk2nu package)
-  * job/run_nuselection.fcl
-  * job/run_nuselection_data.fcl
-  * job/run_nuselection_noinference.fcl
-  * job/run_nuselection_data_noinference.fcl
-  * job/run_imageprod.fcl
-  * job/run_inferenceprod.fcl
-  * job/run_fullchain.fcl
+  * jobs/run_nuselection.fcl
+  * jobs/run_nuselection_data.fcl
+  * jobs/run_nuselection_noinference.fcl
+  * jobs/run_nuselection_data_noinference.fcl
+  * jobs/run_imageprod.fcl
+  * jobs/run_inferenceprod.fcl
+  * jobs/run_fullchain.fcl
 
 The main development configurations are:
 
-  * job/dev/flux/image_dev.fcl
-  * job/dev/image_dev_cosmic.fcl
-  * job/dev/flux/run_stage_redk2nu_dev.fcl
-  * job/dev/flux/run_stage_evtw_cv_dev.fcl through job/dev/flux/run_stage_evtw_extragenie5_dev.fcl
-  * job/dev/run_stage_image_dev.fcl
-  * job/dev/run_stage_infer_dev.fcl
-  * job/dev/run_stage_sel_dev.fcl
-  * job/dev/run_stage_sel_data_dev.fcl
-  * job/dev/run_stage_fullchain_dev.fcl
-  * job/dev/flux/run_local_ntuple_dev.fcl
-  * job/dev/numi_fhc_run1_dev.xml
-  * job/dev/flux/run_numisystematicweights_rhc_extragenie1.fcl
+  * jobs/dev/flux/image_dev.fcl
+  * jobs/dev/flux/image_oldflux_dev.fcl
+  * jobs/dev/image_dev_cosmic.fcl
+  * jobs/dev/run_stage_sel_dev.fcl
+  * jobs/dev/run_stage_fullchain_dev.fcl
+  * jobs/dev/flux/run_local_ntuple_dev.fcl
+  * jobs/dev/flux/run_local_ntuple_oldflux_dev.fcl
+  * jobs/dev/numi_fhc_run1_dev.xml
+
+Standalone redk2nu and EventWeight debugging now uses the upstream FHiCL entry
+points directly through `.local.sh`, for example `run_redk2nu_fhc.fcl` and
+`run_eventweight_microboone_sept24_numi_fhc.fcl`.
 
 The main grid-submission XML configurations are:
 
-  * xml/numi_reco2_run1_fhc_campaign.xml
-  * xml/numi_reco2_run2a_fhc_campaign.xml
-  * xml/numi_reco2_run2b_rhc_campaign.xml
-  * xml/numi_reco2_run3b_rhc_campaign.xml
+  * xml/numi_run1aot_campaign.xml
+  * xml/numi_run1_campaign.xml
+  * xml/numi_run1_fhc_campaign.xml
+  * xml/numi_run1_rhc_campaign.xml
+  * xml/numi_run2a_fhc_campaign.xml
+  * xml/numi_run2b_rhc_campaign.xml
+  * xml/numi_run3b_rhc_campaign.xml
+  * xml/numi_run4a_rhc_campaign.xml
+  * xml/numi_run4b_rhc_campaign.xml
+  * xml/numi_run4c_fhc_campaign.xml
+  * xml/numi_run4d_fhc_campaign.xml
+  * xml/numi_run5_fhc_campaign.xml
 
 Older XMLs were archived under reference/legacy_xml/ so xml/ only contains the
 current staged campaign entry points.

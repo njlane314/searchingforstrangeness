@@ -83,9 +83,9 @@ prepend_local_product_runtime() {
   done
 }
 
-prepend_fhicl_path "${REPO_BASE_DIR}/job"
-prepend_fhicl_path "${REPO_BASE_DIR}/job/dev"
-prepend_fhicl_path "${REPO_BASE_DIR}/job/dev/flux"
+prepend_fhicl_path "${REPO_BASE_DIR}/jobs"
+prepend_fhicl_path "${REPO_BASE_DIR}/jobs/dev"
+prepend_fhicl_path "${REPO_BASE_DIR}/jobs/dev/flux"
 prepend_fhicl_path "${UBSIM_BASE}/Simulation"
 prepend_local_product_runtime "ubsim"
 prepend_local_product_runtime "ubana"

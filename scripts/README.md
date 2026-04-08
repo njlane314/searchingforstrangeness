@@ -2,25 +2,32 @@
 
 ## Current XML surface
 
-`xml/` now contains the four staged Reco2 campaign entry points plus one
-dedicated Run 1 training/test entry point:
+`xml/` now contains these staged campaign entry points:
 
-- `xml/numi_reco2_run1_fhc_campaign.xml`
-- `xml/numi_reco2_run1_fhc_training.xml`
-- `xml/numi_reco2_run2a_fhc_campaign.xml`
-- `xml/numi_reco2_run2b_rhc_campaign.xml`
-- `xml/numi_reco2_run3b_rhc_campaign.xml`
+- `xml/numi_run1aot_campaign.xml`
+- `xml/numi_run1_campaign.xml`
+- `xml/numi_run1_fhc_campaign.xml`
+- `xml/numi_run1_rhc_campaign.xml`
+- `xml/numi_run2a_fhc_campaign.xml`
+- `xml/numi_run2b_rhc_campaign.xml`
+- `xml/numi_run3b_rhc_campaign.xml`
+- `xml/numi_run4a_rhc_campaign.xml`
+- `xml/numi_run4b_rhc_campaign.xml`
+- `xml/numi_run4c_fhc_campaign.xml`
+- `xml/numi_run4d_fhc_campaign.xml`
+- `xml/numi_run5_fhc_campaign.xml`
 
 Legacy XMLs were moved to `reference/legacy_xml/` so they stay available as
 reference without looking like active submission entry points.
 
-All four checked-in campaign XMLs follow the same high-level rules:
+The checked-in campaign XMLs use the same high-level building blocks:
 
-- nominal beam, dirt, and dedicated strangeness chains run
+- MC beam, dirt, and dedicated strangeness chains run
   `redk2nu -> evtw -> image -> sel`
-- only `fcl_evtw_00` is active, so the nominal MC chains keep the first 100
+- only `fcl_evtw_00` is active, so the MC chains keep the first 100
   multisim universes
-- detector-variation chains run `image -> sel` only
+- data and EXT chains run `image -> sel`
+- detector-variation chains, where present, run `image -> sel` only
 - inference stages are omitted because the checked-in model bundle has not been
   updated yet
 - `numjobs` values are placeholders and should be replaced with
@@ -64,7 +71,7 @@ These are the source definitions currently encoded in the staged campaign XMLs.
 ### Run 1 FHC dedicated strangeness detvars
 
 These are the confirmed Run 1 FHC strangeness Reco2 detvars currently wired
-into `xml/numi_reco2_run1_fhc_campaign.xml`:
+into `xml/numi_run1_fhc_campaign.xml`:
 
 - `Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2`
 - `Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2`
@@ -193,15 +200,7 @@ That produces:
 
 The Run 1 campaign XML already points at those names. If you use different SAM
 definition names, update the four XML entities near the top of
-`xml/numi_reco2_run1_fhc_campaign.xml`.
-
-For a lightweight grid test surface on just the training shards, use:
-
-- `xml/numi_reco2_run1_fhc_training.xml`
-
-That XML contains only the beam/strangeness CV training-shard single-step
-fullchain stages, uses the ubsim NuMI slim EventWeight config, and fixes each
-stage to `25` jobs.
+`xml/numi_run1_fhc_campaign.xml`.
 
 Note:
 
@@ -256,7 +255,7 @@ definitions:
 
 ```bash
 ./scripts/campaign-jobs.sh \
-  --xml xml/numi_reco2_run1_fhc_campaign.xml \
+  --xml xml/numi_run1_fhc_campaign.xml \
   --include-derived-shards
 ```
 
@@ -293,14 +292,4 @@ To keep the original full alternating-file shards through the wrapper:
 
 ```bash
 ./scripts/train-template.sh --full-shards
-```
-
-Submit the dedicated 25-job training test stages:
-
-```bash
-project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --submit
-project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage beam_detvar_cv_train_shard_fullchain --check
-
-project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --submit
-project.py --xml xml/numi_reco2_run1_fhc_training.xml --stage strangeness_detvar_cv_train_shard_fullchain --check
 ```

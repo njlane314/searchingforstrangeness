@@ -1,5 +1,0 @@
-#include "run_redk2nu_rhc.fcl"
-
-process_name: ReDk2NuStageRHCDev
-
-outputs.out1.fileName: "stage_redk2nu_rhc_dev.root"

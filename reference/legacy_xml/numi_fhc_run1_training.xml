@@ -23,13 +23,20 @@
 
     <!ENTITY input_strange_run1_fhc "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
 
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
-    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
-    <!ENTITY fcl_redk2nu "run_redk2nu_fhc.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_v4_9_2_fhc.fcl">
+    <!ENTITY fcl_redk2nu_strangeness "run_redk2nu_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_03 "run_eventweight_microboone_sept24_extragenieall_3_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_04 "run_eventweight_microboone_sept24_extragenieall_4_numi_fhc.fcl">
+    <!ENTITY fcl_evtw_strangeness_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_old_01 "run_eventweight_microboone_sept24_extragenieall_1_numi_fhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_old_02 "run_eventweight_microboone_sept24_extragenieall_2_numi_fhc_oldflux_rw.fcl">
@@ -38,16 +45,9 @@
     <!ENTITY fcl_evtw_old_05 "run_eventweight_microboone_sept24_extragenieall_5_numi_fhc_oldflux_rw.fcl">
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
 
-    <!--
-      Temporary campaign settings:
-      keep only fcl_evtw_00 so these jobs write the first 100 multisim
-      universes, route the legacy beam and dirt shards through the old-flux
-      chain, keep the dedicated strangeness sample on the standard new-flux
-      chain, and skip inference because the checked-in models have not been
-      updated.
-    -->
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
     <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
     <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
 ]>
@@ -76,11 +76,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard0/evtw/log</logdir>
@@ -116,11 +115,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard1/evtw/log</logdir>
@@ -156,11 +154,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard2/evtw/log</logdir>
@@ -196,11 +193,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/shard3/evtw/log</logdir>
@@ -236,11 +232,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard0/evtw/log</logdir>
@@ -276,11 +271,10 @@
         <fcl>&fcl_redk2nu_old;</fcl>
 
         <fcl>&fcl_evtw_old_00;</fcl>
-        <!-- <fcl>&fcl_evtw_old_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_old_05;</fcl> -->
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/shard1/evtw/log</logdir>
@@ -313,14 +307,13 @@
 
     <stage name="strangeness_campaign_run1_fhc_evtw">
         <inputdef>&input_strange_run1_fhc;</inputdef>
-        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_redk2nu_strangeness;</fcl>
 
-        <fcl>&fcl_evtw_00;</fcl>
-        <!-- <fcl>&fcl_evtw_01;</fcl> -->
-        <!-- <fcl>&fcl_evtw_02;</fcl> -->
-        <!-- <fcl>&fcl_evtw_03;</fcl> -->
-        <!-- <fcl>&fcl_evtw_04;</fcl> -->
-        <!-- <fcl>&fcl_evtw_05;</fcl> -->
+        <fcl>&fcl_evtw_strangeness_00;</fcl>
+
+
+
+
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/evtw/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/evtw/log</logdir>
@@ -342,7 +335,7 @@
 
     <stage name="strangeness_campaign_run1_fhc_sel">
         <previousstage>strangeness_campaign_run1_fhc_image</previousstage>
-        <fcl>&fcl_sel_mc;</fcl>
+        <fcl>&fcl_sel_mc_strangeness;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/sel/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/sel/log</logdir>
