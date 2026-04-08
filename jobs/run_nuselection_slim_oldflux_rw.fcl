@@ -1,0 +1,6 @@
+#include "run_nuselection_slim.fcl"
+#include "oldflux_rw.fcl"
+
+process_name: NuSelectionMCSlimOldFluxRW
+
+services.TFileService.fileName: "nu_selection_slim_oldflux_rw.root"

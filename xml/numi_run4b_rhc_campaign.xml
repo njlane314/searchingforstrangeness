@@ -17,8 +17,8 @@
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_rhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_rhc_oldflux_rw.fcl">
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
 ]>
 
 <job>

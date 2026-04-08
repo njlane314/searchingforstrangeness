@@ -1,7 +1,8 @@
 #include "microboone_eventweight_service.fcl"
 #include "redk2nu_g4_9_2.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
-#include "run_nuselection_oldflux.fcl"
+#include "run_nuselection.fcl"
+#include "oldflux_rw.fcl"
 
 process_name: ImagingOldFluxDev
 

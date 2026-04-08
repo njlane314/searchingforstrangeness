@@ -64,15 +64,19 @@ jobs/run_nuselection_data.fcl
      Runs the data/EXT version of the selection and writes
      nu_selection_data.root.
 
-jobs/run_nuselection_noinference.fcl
+jobs/run_nuselection_slim.fcl
      Runs the MC-style selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
-     nu_selection_noinference.root.
+     nu_selection_slim.root.
 
-jobs/run_nuselection_data_noinference.fcl
+jobs/run_nuselection_data_slim.fcl
      Runs the data/EXT selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
-     nu_selection_data_noinference.root.
+     nu_selection_data_slim.root.
+
+jobs/run_nuselection_slim_oldflux_rw.fcl
+     Runs the slim MC-style selection on old-flux-reweighted input and writes
+     nu_selection_slim_oldflux_rw.root.
 
 jobs/run_imageprod.fcl
      Produces image::ImageFeatures objects for the selected slice and a
@@ -90,6 +94,13 @@ jobs/run_fullchain.fcl
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
+jobs/run_fullchain_slim.fcl
+     Runs the slim redk2nu, EventWeight, image, and neutrino-selection chain
+     in one process.
+
+jobs/run_fullchain_slim_oldflux_rw.fcl
+     Old-flux-reweighted counterpart to the slim fullchain wrapper.
+
 run_redk2nu_fhc.fcl
 run_redk2nu_rhc.fcl
      Restore Dk2Nu information to reco2 artroot files before EventWeight,
@@ -98,14 +109,14 @@ run_redk2nu_rhc.fcl
 
 The development entry points are under jobs/dev/.
 
-jobs/dev/flux/image_dev.fcl
+jobs/dev/flux/run_imageprod_dev.fcl
      Development chain for imaging, inference, and selection with event-weight
      analysis enabled.
 
-jobs/dev/flux/image_oldflux_dev.fcl
+jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl
      Old-flux variant of the same imaging, inference, and selection chain.
 
-jobs/dev/image_dev_cosmic.fcl
+jobs/dev/run_imageprod_data_dev.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
 jobs/dev/run_stage_sel_dev.fcl
@@ -142,9 +153,9 @@ Examples:
 
      lar -c jobs/run_nuselection_data.fcl -s data_input.root
 
-     lar -c jobs/run_nuselection_noinference.fcl -s imageprod_output.root
+     lar -c jobs/run_nuselection_slim.fcl -s imageprod_output.root
 
-     lar -c jobs/run_nuselection_data_noinference.fcl -s imageprod_output.root
+     lar -c jobs/run_nuselection_data_slim.fcl -s imageprod_output.root
 
      lar -c jobs/run_imageprod.fcl -s reco_input.root
 
@@ -156,8 +167,8 @@ Usage notes:
 
   * Use run_nuselection.fcl when you want flat analysis trees from MC-like
     input.
-  * Use run_nuselection_data.fcl for data or EXT workflows.
-  * Use the `*_noinference` selection jobs on input that contains
+  * Use run_nuselection_data.fcl for data or EXT workflows when inference is available.
+  * Use the `*_slim` selection jobs on input that contains
     `imageprod:CroppedWindow` and `imageprod:FullWindow` products when you do
     not want to run or depend on `inferenceprod`.
   * Use run_imageprod.fcl when you want persisted image products in the art
@@ -282,7 +293,8 @@ The package writes two kinds of ROOT output.
 
 art event files
      These are written by jobs such as run_imageprod.fcl, run_inferenceprod.fcl,
-     run_fullchain.fcl, and the extra-GENIE weight job.  They contain event
+     run_fullchain.fcl, run_fullchain_slim.fcl, and the extra-GENIE weight
+     job.  They contain event
      products such as image::ImageFeatures and inference products.
 
 TFileService analysis files

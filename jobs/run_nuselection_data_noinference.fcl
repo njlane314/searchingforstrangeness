@@ -1,7 +1,0 @@
-#include "run_nuselection_data.fcl"
-
-process_name: NuSelectionDATANoInference
-
-services.TFileService.fileName: "nu_selection_data_noinference.root"
-
-physics.filters.nuselection.AnalysisTools.image: @local::NoInferenceImageAnalysis

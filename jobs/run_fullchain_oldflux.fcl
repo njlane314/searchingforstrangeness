@@ -1,7 +1,0 @@
-#include "run_fullchain.fcl"
-
-process_name: FullChainNuSelectionOldFlux
-
-services.TFileService.fileName: "fullchain_nuselection_oldflux_hist.root"
-
-physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisOldFlux

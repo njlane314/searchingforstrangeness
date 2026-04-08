@@ -1,7 +1,6 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
-#include "is_numi.fcl"
 
 process_name: NuSelectionMC
 
@@ -46,6 +45,7 @@ physics: {
   trigger_paths: [ path1 ]
 }
 
+physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
 physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: true
 

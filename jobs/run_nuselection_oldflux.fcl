@@ -1,7 +1,0 @@
-#include "run_nuselection.fcl"
-
-process_name: NuSelectionMCOldFlux
-
-services.TFileService.fileName: "nu_selection_oldflux.root"
-
-physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisOldFlux

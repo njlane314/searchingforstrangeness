@@ -13,9 +13,9 @@
     <!ENTITY input_strangeness_detvar_nominal_train "nl_strange_detvar_nominal_training_stride2">
 
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_slim.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
 ]>
 
 <job>

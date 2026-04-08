@@ -50,10 +50,10 @@
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_rhc.fcl">
 
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_slim.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
 ]>
 
 <job>

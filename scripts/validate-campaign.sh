@@ -261,7 +261,7 @@ case "${workflow}" in
 
     run_step "run_imageprod.fcl" "${first_input}"
     require_single_event_output "image stage"
-    run_step "jobs/run_nuselection_data.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "jobs/run_nuselection_data_slim.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   ntuple)

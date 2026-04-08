@@ -4,12 +4,11 @@
 #include "redk2nu_g4_9_2.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "selectionconfig.fcl"
-#include "is_numi.fcl"
 
-process_name: FullChainNuSelectionNoInferenceOldFlux
+process_name: FullChainNuSelectionSlimOldFlux
 
 services: {
-  TFileService: { fileName: "fullchain_nuselection_noinference_oldflux_hist.root" }
+  TFileService: { fileName: "fullchain_nuselection_slim_oldflux_rw_hist.root" }
   TimeTracker: {}
   MemoryTracker: {}
   RandomNumberGenerator: {}
@@ -50,7 +49,7 @@ physics: {
   }
 
   filters: {
-    nuselection: @local::SlimWeightNeutrinoSelectionFilter
+    nuselection: @local::SlimWeightNeutrinoSelectionFilterOldFlux
   }
 
   path1: [ generator, rns, eventweightSep24, imageprod, nuselection ]
@@ -60,9 +59,8 @@ physics: {
   end_paths: [ stream1 ]
 }
 
+physics.filters.nuselection.IsNuMI: true
 physics.filters.nuselection.AnalysisTools.default.makeNuMINtuple: true
-physics.filters.nuselection.AnalysisTools.weight.useReweightedFlux: true
-physics.filters.nuselection.AnalysisTools.weight.eventWeightProcessName00: "FullChainNuSelectionNoInferenceOldFlux"
 
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""
@@ -70,7 +68,7 @@ physics.filters.nuselection.OpFilterProcName: ""
 outputs: {
   out1: {
     module_type: RootOutput
-    fileName: "%ifb_%tc_fullchain_nuselection_noinference_oldflux.root"
+    fileName: "%ifb_%tc_fullchain_nuselection_slim_oldflux_rw.root"
     dataTier: "selected"
     compressionLevel: 1
   }

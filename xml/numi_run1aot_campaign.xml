@@ -12,7 +12,7 @@
     <!ENTITY input_data "ub_numi_run1aot_beam_3va_repro_gr">
 
     <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
 ]>
 
 <job>

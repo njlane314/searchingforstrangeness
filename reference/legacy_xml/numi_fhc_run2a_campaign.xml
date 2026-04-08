@@ -42,10 +42,10 @@
 
     <!ENTITY fcl_image "run_imageprod.fcl">
     <!ENTITY fcl_infer "run_inferenceprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_noinference.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_noinference_oldflux.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_noinference.fcl">
+    <!ENTITY fcl_sel_mc "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_slim.fcl">
+    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
 
     <!ENTITY numjobs_beam_campaign_run2a_fhc "1">
     <!ENTITY numjobs_dirt_campaign_run2a_fhc "1">

@@ -73,17 +73,20 @@ The main top-level job configurations are:
   * run_redk2nu_rhc.fcl (from the sibling ubana redk2nu package)
   * jobs/run_nuselection.fcl
   * jobs/run_nuselection_data.fcl
-  * jobs/run_nuselection_noinference.fcl
-  * jobs/run_nuselection_data_noinference.fcl
+  * jobs/run_nuselection_slim.fcl
+  * jobs/run_nuselection_data_slim.fcl
+  * jobs/run_nuselection_slim_oldflux_rw.fcl
   * jobs/run_imageprod.fcl
   * jobs/run_inferenceprod.fcl
   * jobs/run_fullchain.fcl
+  * jobs/run_fullchain_slim.fcl
+  * jobs/run_fullchain_slim_oldflux_rw.fcl
 
 The main development configurations are:
 
-  * jobs/dev/flux/image_dev.fcl
-  * jobs/dev/flux/image_oldflux_dev.fcl
-  * jobs/dev/image_dev_cosmic.fcl
+  * jobs/dev/flux/run_imageprod_dev.fcl
+  * jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl
+  * jobs/dev/run_imageprod_data_dev.fcl
   * jobs/dev/run_stage_sel_dev.fcl
   * jobs/dev/run_stage_fullchain_dev.fcl
   * jobs/dev/flux/run_local_ntuple_dev.fcl

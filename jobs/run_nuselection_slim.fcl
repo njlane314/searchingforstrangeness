@@ -1,0 +1,6 @@
+#include "run_nuselection.fcl"
+#include "slim.fcl"
+
+process_name: NuSelectionMCSlim
+
+services.TFileService.fileName: "nu_selection_slim.root"

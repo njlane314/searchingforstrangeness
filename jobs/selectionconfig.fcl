@@ -100,7 +100,11 @@ SlimNumiEventWeightAnalysis.createGenieUpDnVecs: false
 SlimNumiEventWeightAnalysis.genieAllUniverses: 0
 SlimNumiEventWeightAnalysis.ppfxAllUniverses: 0
 SlimNumiEventWeightAnalysis.makeNuMINtuple: false
-SlimNumiEventWeightAnalysis.eventWeightProcessName00: "FullChainNuSelectionNoInference"
+SlimNumiEventWeightAnalysis.eventWeightProcessName00: "FullChainNuSelectionSlim"
+
+SlimNumiEventWeightAnalysisOldFlux: @local::SlimNumiEventWeightAnalysis
+SlimNumiEventWeightAnalysisOldFlux.useReweightedFlux: true
+SlimNumiEventWeightAnalysisOldFlux.eventWeightProcessName00: "FullChainNuSelectionSlimOldFlux"
 
 TruthAnalysis: {
     tool_type: "TruthAnalysis"
@@ -158,3 +162,6 @@ NeutrinoSelectionFilter: {
 SlimWeightNeutrinoSelectionFilter: @local::NeutrinoSelectionFilter
 SlimWeightNeutrinoSelectionFilter.AnalysisTools.weight: @local::SlimNumiEventWeightAnalysis
 SlimWeightNeutrinoSelectionFilter.AnalysisTools.image: @local::NoInferenceImageAnalysis
+
+SlimWeightNeutrinoSelectionFilterOldFlux: @local::SlimWeightNeutrinoSelectionFilter
+SlimWeightNeutrinoSelectionFilterOldFlux.AnalysisTools.weight: @local::SlimNumiEventWeightAnalysisOldFlux

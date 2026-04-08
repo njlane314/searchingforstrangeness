@@ -1,6 +1,7 @@
 #include "seedservice_microboone.fcl"
 #include "services_microboone.fcl"
-#include "stage_common.fcl"
+#include "particleinventoryservice.fcl"
+#include "producers.fcl"
 
 process_name: ImageProd
 
