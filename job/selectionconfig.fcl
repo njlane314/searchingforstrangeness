@@ -17,6 +17,7 @@ DefaultAnalysis: {
     MCFproducer: @local::standard_producers.MCFproducer
     HITproducer: @local::standard_producers.HITproducer
     SLCproducer: @local::standard_producers.SLCproducer
+    SPproducer: @local::standard_producers.SPproducer
     MCPproducer: @local::standard_producers.MCPproducer
 
     makeNuMINtuple: true

@@ -20,6 +20,8 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <set>
 
 namespace analysis {
 
@@ -41,6 +43,7 @@ private:
     art::InputTag fMCFproducer;
     art::InputTag fHITproducer;
     art::InputTag fSLCproducer;
+    art::InputTag fSPproducer;
 
     float fTrkShrScore;
     std::string NuMIOpFilterProd;
@@ -70,24 +73,54 @@ private:
     int _event_total_hits;
     int _slice_pdg;
     int _slice_num_hits;
+    int _slice_num_hits_u;
+    int _slice_num_hits_v;
+    int _slice_num_hits_w;
     int _slice_num_clusters;
-    int _slice_num_clusters_U;
-    int _slice_num_clusters_V;
-    int _slice_num_clusters_Y;
+    int _slice_num_clusters_u;
+    int _slice_num_clusters_v;
+    int _slice_num_clusters_w;
     int _slice_id;
     float _topological_score;
 
     std::vector<int> _pfp_pdg_codes;
     std::vector<int> _pfp_num_hits;
-    std::vector<int> _pfp_num_plane_hits_U;
-    std::vector<int> _pfp_num_plane_hits_V;
-    std::vector<int> _pfp_num_plane_hits_Y;
-    std::vector<int> _pfp_num_subclusters_U;
-    std::vector<int> _pfp_num_subclusters_V;
-    std::vector<int> _pfp_num_subclusters_Y;
-    std::vector<float> _pfp_max_subhit_fraction_U;
-    std::vector<float> _pfp_max_subhit_fraction_V;
-    std::vector<float> _pfp_max_subhit_fraction_Y;
+    std::vector<int> _pfp_num_plane_hits_u;
+    std::vector<int> _pfp_num_plane_hits_v;
+    std::vector<int> _pfp_num_plane_hits_w;
+    int _slice_num_spacepoints;
+    std::vector<float> _slice_spacepoint_x;
+    std::vector<float> _slice_spacepoint_y;
+    std::vector<float> _slice_spacepoint_z;
+    std::vector<float> _slice_spacepoint_charge;
+    std::vector<float> _slice_spacepoint_extent_x;
+    std::vector<float> _slice_spacepoint_extent_y;
+    std::vector<float> _slice_spacepoint_extent_z;
+    std::vector<float> _slice_spacepoint_extent_3d;
+    std::vector<float> _slice_hit_charge_u;
+    std::vector<float> _slice_hit_charge_v;
+    std::vector<float> _slice_hit_charge_w;
+    std::vector<int> _slice_hit_wire_u;
+    std::vector<int> _slice_hit_wire_v;
+    std::vector<int> _slice_hit_wire_w;
+    std::vector<float> _slice_hit_peak_time_u;
+    std::vector<float> _slice_hit_peak_time_v;
+    std::vector<float> _slice_hit_peak_time_w;
+    std::vector<int> _slice_hit_start_tick_u;
+    std::vector<int> _slice_hit_start_tick_v;
+    std::vector<int> _slice_hit_start_tick_w;
+    std::vector<int> _slice_hit_end_tick_u;
+    std::vector<int> _slice_hit_end_tick_v;
+    std::vector<int> _slice_hit_end_tick_w;
+    std::vector<int> _slice_hit_tick_extent_u;
+    std::vector<int> _slice_hit_tick_extent_v;
+    std::vector<int> _slice_hit_tick_extent_w;
+    std::vector<int> _pfp_num_subclusters_u;
+    std::vector<int> _pfp_num_subclusters_v;
+    std::vector<int> _pfp_num_subclusters_w;
+    std::vector<float> _pfp_max_subhit_fraction_u;
+    std::vector<float> _pfp_max_subhit_fraction_v;
+    std::vector<float> _pfp_max_subhit_fraction_w;
 
     float _slice_cluster_fraction;
     std::vector<uint> _pfp_generations;
@@ -101,9 +134,9 @@ private:
     std::vector<float> _track_shower_scores;
     unsigned int _num_tracks;
     unsigned int _num_showers;
-    unsigned int _total_hits_U;
-    unsigned int _total_hits_V;
-    unsigned int _total_hits_Y;
+    unsigned int _total_hits_u;
+    unsigned int _total_hits_v;
+    unsigned int _total_hits_w;
 };
 
 DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
@@ -114,6 +147,7 @@ DefaultAnalysis::DefaultAnalysis(const fhicl::ParameterSet &p) {
     fMCFproducer = p.get<art::InputTag>("MCFproducer", "generator");
     fHITproducer = p.get<art::InputTag>("HITproducer", "gaushit");
     fSLCproducer = p.get<art::InputTag>("SLCproducer", "pandora");
+    fSPproducer = p.get<art::InputTag>("SPproducer", "pandora");
 
     fTrkShrScore = p.get<float>("TrkShrScore", 0.5);
     
@@ -209,7 +243,9 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
     common::ProxyClusColl_t const &clus_proxy = proxy::getCollection<std::vector<recob::Cluster>>(event, fCLSproducer,
         proxy::withAssociated<recob::Hit>(fCLSproducer));
     art::ValidHandle<std::vector<recob::Slice>> inputSlice = event.getValidHandle<std::vector<recob::Slice>>(fSLCproducer);
+    auto hit_handle = event.getValidHandle<std::vector<recob::Hit>>(fHITproducer);
     auto assocSliceHit = std::unique_ptr<art::FindManyP<recob::Hit>>(new art::FindManyP<recob::Hit>(inputSlice, event, fSLCproducer));
+    art::FindManyP<recob::SpacePoint> hit_to_sp(hit_handle, event, fSPproducer);
 
     lar_pandora::LArPandoraHelper larpandora;
     lar_pandora::PFParticleVector pfparticles;
@@ -219,10 +255,40 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
 
     size_t pfpidx = 0;
     _num_pfps = 0;
+    _slice_num_hits_u = 0;
+    _slice_num_hits_v = 0;
+    _slice_num_hits_w = 0;
+    _slice_num_spacepoints = 0;
+    _slice_spacepoint_x.clear();
+    _slice_spacepoint_y.clear();
+    _slice_spacepoint_z.clear();
+    _slice_spacepoint_charge.clear();
+    _slice_spacepoint_extent_x.clear();
+    _slice_spacepoint_extent_y.clear();
+    _slice_spacepoint_extent_z.clear();
+    _slice_spacepoint_extent_3d.clear();
+    _slice_hit_charge_u.clear();
+    _slice_hit_charge_v.clear();
+    _slice_hit_charge_w.clear();
+    _slice_hit_wire_u.clear();
+    _slice_hit_wire_v.clear();
+    _slice_hit_wire_w.clear();
+    _slice_hit_peak_time_u.clear();
+    _slice_hit_peak_time_v.clear();
+    _slice_hit_peak_time_w.clear();
+    _slice_hit_start_tick_u.clear();
+    _slice_hit_start_tick_v.clear();
+    _slice_hit_start_tick_w.clear();
+    _slice_hit_end_tick_u.clear();
+    _slice_hit_end_tick_v.clear();
+    _slice_hit_end_tick_w.clear();
+    _slice_hit_tick_extent_u.clear();
+    _slice_hit_tick_extent_v.clear();
+    _slice_hit_tick_extent_w.clear();
     _slice_num_clusters = 0;
-    _slice_num_clusters_U = 0;
-    _slice_num_clusters_V = 0;
-    _slice_num_clusters_Y = 0;
+    _slice_num_clusters_u = 0;
+    _slice_num_clusters_v = 0;
+    _slice_num_clusters_w = 0;
     for (auto pfp : slice_pfp_vec) {
         if (pfp->IsPrimary()) {
             _slice_pdg = pfp->PdgCode();
@@ -232,6 +298,99 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
             
             auto slicehits = assocSliceHit->at(slice_pxy_v[0].key());
             _slice_num_hits = slicehits.size();
+            std::map<art::Ptr<recob::SpacePoint>, double> slice_spacepoint_charge_map;
+            std::set<std::size_t> seen_spacepoint_keys;
+            auto add_slice_hit = [&](const art::Ptr<recob::Hit> &hit) {
+                std::vector<float> *charges = nullptr;
+                std::vector<int> *wires = nullptr;
+                std::vector<float> *peak_times = nullptr;
+                std::vector<int> *start_ticks = nullptr;
+                std::vector<int> *end_ticks = nullptr;
+                std::vector<int> *tick_extents = nullptr;
+                int *plane_hit_count = nullptr;
+
+                if (hit->WireID().Plane == 0) {
+                    charges = &_slice_hit_charge_u;
+                    wires = &_slice_hit_wire_u;
+                    peak_times = &_slice_hit_peak_time_u;
+                    start_ticks = &_slice_hit_start_tick_u;
+                    end_ticks = &_slice_hit_end_tick_u;
+                    tick_extents = &_slice_hit_tick_extent_u;
+                    plane_hit_count = &_slice_num_hits_u;
+                }
+                else if (hit->WireID().Plane == 1) {
+                    charges = &_slice_hit_charge_v;
+                    wires = &_slice_hit_wire_v;
+                    peak_times = &_slice_hit_peak_time_v;
+                    start_ticks = &_slice_hit_start_tick_v;
+                    end_ticks = &_slice_hit_end_tick_v;
+                    tick_extents = &_slice_hit_tick_extent_v;
+                    plane_hit_count = &_slice_num_hits_v;
+                }
+                else if (hit->WireID().Plane == 2) {
+                    charges = &_slice_hit_charge_w;
+                    wires = &_slice_hit_wire_w;
+                    peak_times = &_slice_hit_peak_time_w;
+                    start_ticks = &_slice_hit_start_tick_w;
+                    end_ticks = &_slice_hit_end_tick_w;
+                    tick_extents = &_slice_hit_tick_extent_w;
+                    plane_hit_count = &_slice_num_hits_w;
+                }
+                else {
+                    return;
+                }
+
+                *plane_hit_count += 1;
+                charges->push_back(hit->Integral());
+                wires->push_back(static_cast<int>(hit->WireID().Wire));
+                peak_times->push_back(static_cast<float>(hit->PeakTime()));
+                start_ticks->push_back(static_cast<int>(hit->StartTick()));
+                end_ticks->push_back(static_cast<int>(hit->EndTick()));
+                tick_extents->push_back(static_cast<int>(hit->EndTick() - hit->StartTick()));
+
+                double const hit_charge = std::max(0.f, hit->Integral());
+                if (!(hit_charge > 0.0))
+                    return;
+
+                auto const &spacepoints = hit_to_sp.at(hit.key());
+                if (spacepoints.empty())
+                    return;
+
+                double const charge_per_spacepoint = hit_charge / static_cast<double>(spacepoints.size());
+                for (auto const &spacepoint : spacepoints) {
+                    if (!spacepoint)
+                        continue;
+                    slice_spacepoint_charge_map[spacepoint] += charge_per_spacepoint;
+                }
+            };
+            for (auto const &hit : slicehits) {
+                add_slice_hit(hit);
+            }
+            for (auto const &pfp_in_slice : slice_pfp_vec) {
+                auto const &spacepoints = pfp_in_slice.get<recob::SpacePoint>();
+                for (auto const &spacepoint : spacepoints) {
+                    if (!spacepoint)
+                        continue;
+                    if (!seen_spacepoint_keys.insert(static_cast<std::size_t>(spacepoint.key())).second)
+                        continue;
+
+                    auto const *xyz = spacepoint->XYZ();
+                    auto const *err = spacepoint->ErrXYZ();
+                    float const extent_x = static_cast<float>(std::sqrt(std::max(0., static_cast<double>(err[0]))));
+                    float const extent_y = static_cast<float>(std::sqrt(std::max(0., static_cast<double>(err[2]))));
+                    float const extent_z = static_cast<float>(std::sqrt(std::max(0., static_cast<double>(err[5]))));
+
+                    _slice_spacepoint_x.push_back(static_cast<float>(xyz[0]));
+                    _slice_spacepoint_y.push_back(static_cast<float>(xyz[1]));
+                    _slice_spacepoint_z.push_back(static_cast<float>(xyz[2]));
+                    _slice_spacepoint_charge.push_back(static_cast<float>(slice_spacepoint_charge_map[spacepoint]));
+                    _slice_spacepoint_extent_x.push_back(extent_x);
+                    _slice_spacepoint_extent_y.push_back(extent_y);
+                    _slice_spacepoint_extent_z.push_back(extent_z);
+                    _slice_spacepoint_extent_3d.push_back(std::sqrt(extent_x * extent_x + extent_y * extent_y + extent_z * extent_z));
+                }
+            }
+            _slice_num_spacepoints = static_cast<int>(_slice_spacepoint_x.size());
             auto metadata_pxy_v = pfp.get<larpandoraobj::PFParticleMetadata>();
             _slice_id = slice_pxy_v.at(0)->ID();
             if (metadata_pxy_v.size() != 0) {
@@ -304,26 +463,26 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
 
         std::vector<art::Ptr<recob::Hit>> hit_v;
         auto clus_pxy_v = pfp.get<recob::Cluster>();
-        _pfp_num_plane_hits_U.push_back(0);
-        _pfp_num_plane_hits_V.push_back(0);
-        _pfp_num_plane_hits_Y.push_back(0);
-        _pfp_num_subclusters_U.push_back(0);
-        _pfp_num_subclusters_V.push_back(0);
-        _pfp_num_subclusters_Y.push_back(0);
-        _pfp_max_subhit_fraction_U.push_back(0);
-        _pfp_max_subhit_fraction_V.push_back(0);
-        _pfp_max_subhit_fraction_Y.push_back(0);
+        _pfp_num_plane_hits_u.push_back(0);
+        _pfp_num_plane_hits_v.push_back(0);
+        _pfp_num_plane_hits_w.push_back(0);
+        _pfp_num_subclusters_u.push_back(0);
+        _pfp_num_subclusters_v.push_back(0);
+        _pfp_num_subclusters_w.push_back(0);
+        _pfp_max_subhit_fraction_u.push_back(0);
+        _pfp_max_subhit_fraction_v.push_back(0);
+        _pfp_max_subhit_fraction_w.push_back(0);
         for (auto ass_clus : clus_pxy_v) {
             const auto &clus = clus_proxy[ass_clus.key()];
             _slice_num_clusters += 1;
             if (clus->Plane().Plane == 0) {
-                _slice_num_clusters_U += 1;
+                _slice_num_clusters_u += 1;
             }
             else if (clus->Plane().Plane == 1) {
-                _slice_num_clusters_V += 1;
+                _slice_num_clusters_v += 1;
             }
             else if (clus->Plane().Plane == 2) {
-                _slice_num_clusters_Y += 1;
+                _slice_num_clusters_w += 1;
             }
             auto clus_hit_v = clus.get<recob::Hit>();
             auto num_hits = clus_hit_v.size();
@@ -349,22 +508,22 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
                 }
             }
             if (clus->Plane().Plane == 0) {
-                _total_hits_U += num_hits;
-                _pfp_num_plane_hits_U.back() += num_hits;
-                _pfp_num_subclusters_U.back() += num_subclusters;
-                _pfp_max_subhit_fraction_U.back() = max_subhit_fraction;
+                _total_hits_u += num_hits;
+                _pfp_num_plane_hits_u.back() += num_hits;
+                _pfp_num_subclusters_u.back() += num_subclusters;
+                _pfp_max_subhit_fraction_u.back() = max_subhit_fraction;
             }
             else if (clus->Plane().Plane == 1) {
-                _total_hits_V += num_hits;
-                _pfp_num_plane_hits_V.back() += num_hits;
-                _pfp_num_subclusters_V.back() += num_subclusters;
-                _pfp_max_subhit_fraction_V.back() = max_subhit_fraction;
+                _total_hits_v += num_hits;
+                _pfp_num_plane_hits_v.back() += num_hits;
+                _pfp_num_subclusters_v.back() += num_subclusters;
+                _pfp_max_subhit_fraction_v.back() = max_subhit_fraction;
             }
             else if (clus->Plane().Plane == 2) {
-                _total_hits_Y += num_hits;
-                _pfp_num_plane_hits_Y.back() += num_hits;
-                _pfp_num_subclusters_Y.back() += num_subclusters;
-                _pfp_max_subhit_fraction_Y.back() = max_subhit_fraction;
+                _total_hits_w += num_hits;
+                _pfp_num_plane_hits_w.back() += num_hits;
+                _pfp_num_subclusters_w.back() += num_subclusters;
+                _pfp_max_subhit_fraction_w.back() = max_subhit_fraction;
             }
             for (const auto &hit : clus_hit_v) {
                 hit_v.push_back(hit);
@@ -411,10 +570,14 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("event_total_hits", &_event_total_hits, "event_total_hits/I");
     _tree->Branch("slice_pdg", &_slice_pdg, "slice_pdg/I");
     _tree->Branch("slice_num_hits", &_slice_num_hits, "slice_num_hits/I");
+    _tree->Branch("slice_num_hits_u", &_slice_num_hits_u, "slice_num_hits_u/I");
+    _tree->Branch("slice_num_hits_v", &_slice_num_hits_v, "slice_num_hits_v/I");
+    _tree->Branch("slice_num_hits_w", &_slice_num_hits_w, "slice_num_hits_w/I");
+    _tree->Branch("slice_num_spacepoints", &_slice_num_spacepoints, "slice_num_spacepoints/I");
     _tree->Branch("slice_num_clusters", &_slice_num_clusters, "slice_num_clusters/I");
-    _tree->Branch("slice_num_clusters_U", &_slice_num_clusters_U, "slice_num_clusters_U/I");
-    _tree->Branch("slice_num_clusters_V", &_slice_num_clusters_V, "slice_num_clusters_V/I");
-    _tree->Branch("slice_num_clusters_Y", &_slice_num_clusters_Y, "slice_num_clusters_Y/I");
+    _tree->Branch("slice_num_clusters_u", &_slice_num_clusters_u, "slice_num_clusters_u/I");
+    _tree->Branch("slice_num_clusters_v", &_slice_num_clusters_v, "slice_num_clusters_v/I");
+    _tree->Branch("slice_num_clusters_w", &_slice_num_clusters_w, "slice_num_clusters_w/I");
     _tree->Branch("num_pfps", &_num_pfps, "num_pfps/I");
     _tree->Branch("num_tracks", &_num_tracks, "num_tracks/I");
     _tree->Branch("num_showers", &_num_showers, "num_showers/I");
@@ -428,18 +591,44 @@ void DefaultAnalysis::setBranches(TTree *_tree) {
     _tree->Branch("track_shower_scores", "std::vector<float>", &_track_shower_scores);
     _tree->Branch("pfp_pdg_codes", "std::vector<int>", &_pfp_pdg_codes);
     _tree->Branch("pfp_num_hits", "std::vector<int>", &_pfp_num_hits);
-    _tree->Branch("pfp_num_plane_hits_U", "std::vector<int>", &_pfp_num_plane_hits_U);
-    _tree->Branch("pfp_num_plane_hits_V", "std::vector<int>", &_pfp_num_plane_hits_V);
-    _tree->Branch("pfp_num_plane_hits_Y", "std::vector<int>", &_pfp_num_plane_hits_Y);
-    _tree->Branch("pfp_num_subclusters_U", "std::vector<int>", &_pfp_num_subclusters_U);
-    _tree->Branch("pfp_num_subclusters_V", "std::vector<int>", &_pfp_num_subclusters_V);
-    _tree->Branch("pfp_num_subclusters_Y", "std::vector<int>", &_pfp_num_subclusters_Y);
-    _tree->Branch("pfp_max_subhit_fraction_U", "std::vector<float>", &_pfp_max_subhit_fraction_U);
-    _tree->Branch("pfp_max_subhit_fraction_V", "std::vector<float>", &_pfp_max_subhit_fraction_V);
-    _tree->Branch("pfp_max_subhit_fraction_Y", "std::vector<float>", &_pfp_max_subhit_fraction_Y);
-    _tree->Branch("total_hits_U", &_total_hits_U, "total_hits_U/i");
-    _tree->Branch("total_hits_V", &_total_hits_V, "total_hits_V/i");
-    _tree->Branch("total_hits_Y", &_total_hits_Y, "total_hits_Y/i");
+    _tree->Branch("pfp_num_plane_hits_u", "std::vector<int>", &_pfp_num_plane_hits_u);
+    _tree->Branch("pfp_num_plane_hits_v", "std::vector<int>", &_pfp_num_plane_hits_v);
+    _tree->Branch("pfp_num_plane_hits_w", "std::vector<int>", &_pfp_num_plane_hits_w);
+    _tree->Branch("slice_spacepoint_x", "std::vector<float>", &_slice_spacepoint_x);
+    _tree->Branch("slice_spacepoint_y", "std::vector<float>", &_slice_spacepoint_y);
+    _tree->Branch("slice_spacepoint_z", "std::vector<float>", &_slice_spacepoint_z);
+    _tree->Branch("slice_spacepoint_charge", "std::vector<float>", &_slice_spacepoint_charge);
+    _tree->Branch("slice_spacepoint_extent_x", "std::vector<float>", &_slice_spacepoint_extent_x);
+    _tree->Branch("slice_spacepoint_extent_y", "std::vector<float>", &_slice_spacepoint_extent_y);
+    _tree->Branch("slice_spacepoint_extent_z", "std::vector<float>", &_slice_spacepoint_extent_z);
+    _tree->Branch("slice_spacepoint_extent_3d", "std::vector<float>", &_slice_spacepoint_extent_3d);
+    _tree->Branch("slice_hit_charge_u", "std::vector<float>", &_slice_hit_charge_u);
+    _tree->Branch("slice_hit_charge_v", "std::vector<float>", &_slice_hit_charge_v);
+    _tree->Branch("slice_hit_charge_w", "std::vector<float>", &_slice_hit_charge_w);
+    _tree->Branch("slice_hit_wire_u", "std::vector<int>", &_slice_hit_wire_u);
+    _tree->Branch("slice_hit_wire_v", "std::vector<int>", &_slice_hit_wire_v);
+    _tree->Branch("slice_hit_wire_w", "std::vector<int>", &_slice_hit_wire_w);
+    _tree->Branch("slice_hit_peak_time_u", "std::vector<float>", &_slice_hit_peak_time_u);
+    _tree->Branch("slice_hit_peak_time_v", "std::vector<float>", &_slice_hit_peak_time_v);
+    _tree->Branch("slice_hit_peak_time_w", "std::vector<float>", &_slice_hit_peak_time_w);
+    _tree->Branch("slice_hit_start_tick_u", "std::vector<int>", &_slice_hit_start_tick_u);
+    _tree->Branch("slice_hit_start_tick_v", "std::vector<int>", &_slice_hit_start_tick_v);
+    _tree->Branch("slice_hit_start_tick_w", "std::vector<int>", &_slice_hit_start_tick_w);
+    _tree->Branch("slice_hit_end_tick_u", "std::vector<int>", &_slice_hit_end_tick_u);
+    _tree->Branch("slice_hit_end_tick_v", "std::vector<int>", &_slice_hit_end_tick_v);
+    _tree->Branch("slice_hit_end_tick_w", "std::vector<int>", &_slice_hit_end_tick_w);
+    _tree->Branch("slice_hit_tick_extent_u", "std::vector<int>", &_slice_hit_tick_extent_u);
+    _tree->Branch("slice_hit_tick_extent_v", "std::vector<int>", &_slice_hit_tick_extent_v);
+    _tree->Branch("slice_hit_tick_extent_w", "std::vector<int>", &_slice_hit_tick_extent_w);
+    _tree->Branch("pfp_num_subclusters_u", "std::vector<int>", &_pfp_num_subclusters_u);
+    _tree->Branch("pfp_num_subclusters_v", "std::vector<int>", &_pfp_num_subclusters_v);
+    _tree->Branch("pfp_num_subclusters_w", "std::vector<int>", &_pfp_num_subclusters_w);
+    _tree->Branch("pfp_max_subhit_fraction_u", "std::vector<float>", &_pfp_max_subhit_fraction_u);
+    _tree->Branch("pfp_max_subhit_fraction_v", "std::vector<float>", &_pfp_max_subhit_fraction_v);
+    _tree->Branch("pfp_max_subhit_fraction_w", "std::vector<float>", &_pfp_max_subhit_fraction_w);
+    _tree->Branch("total_hits_u", &_total_hits_u, "total_hits_u/i");
+    _tree->Branch("total_hits_v", &_total_hits_v, "total_hits_v/i");
+    _tree->Branch("total_hits_w", &_total_hits_w, "total_hits_w/i");
     _tree->Branch("slice_id", &_slice_id, "slice_id/i");
     _tree->Branch("topological_score", &_topological_score, "topological_score/F");
     _tree->Branch("slice_cluster_fraction", &_slice_cluster_fraction, "slice_cluster_fraction/F");
@@ -478,21 +667,52 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _slice_id = -1;
     _topological_score = std::numeric_limits<float>::quiet_NaN();
     _slice_num_hits = -1;
+    _slice_num_hits_u = 0;
+    _slice_num_hits_v = 0;
+    _slice_num_hits_w = 0;
+    _slice_num_spacepoints = 0;
     _slice_num_clusters = 0;
-    _slice_num_clusters_U = 0;
-    _slice_num_clusters_V = 0;
-    _slice_num_clusters_Y = 0;
+    _slice_num_clusters_u = 0;
+    _slice_num_clusters_v = 0;
+    _slice_num_clusters_w = 0;
+    _pfp_slice_indices.clear();
     _pfp_pdg_codes.clear();
     _pfp_num_hits.clear();
-    _pfp_num_plane_hits_U.clear();
-    _pfp_num_plane_hits_V.clear();
-    _pfp_num_plane_hits_Y.clear();
-    _pfp_num_subclusters_U.clear();
-    _pfp_num_subclusters_V.clear();
-    _pfp_num_subclusters_Y.clear();
-    _pfp_max_subhit_fraction_U.clear();
-    _pfp_max_subhit_fraction_V.clear();
-    _pfp_max_subhit_fraction_Y.clear();
+    _pfp_num_plane_hits_u.clear();
+    _pfp_num_plane_hits_v.clear();
+    _pfp_num_plane_hits_w.clear();
+    _slice_spacepoint_x.clear();
+    _slice_spacepoint_y.clear();
+    _slice_spacepoint_z.clear();
+    _slice_spacepoint_charge.clear();
+    _slice_spacepoint_extent_x.clear();
+    _slice_spacepoint_extent_y.clear();
+    _slice_spacepoint_extent_z.clear();
+    _slice_spacepoint_extent_3d.clear();
+    _slice_hit_charge_u.clear();
+    _slice_hit_charge_v.clear();
+    _slice_hit_charge_w.clear();
+    _slice_hit_wire_u.clear();
+    _slice_hit_wire_v.clear();
+    _slice_hit_wire_w.clear();
+    _slice_hit_peak_time_u.clear();
+    _slice_hit_peak_time_v.clear();
+    _slice_hit_peak_time_w.clear();
+    _slice_hit_start_tick_u.clear();
+    _slice_hit_start_tick_v.clear();
+    _slice_hit_start_tick_w.clear();
+    _slice_hit_end_tick_u.clear();
+    _slice_hit_end_tick_v.clear();
+    _slice_hit_end_tick_w.clear();
+    _slice_hit_tick_extent_u.clear();
+    _slice_hit_tick_extent_v.clear();
+    _slice_hit_tick_extent_w.clear();
+    _pfp_num_subclusters_u.clear();
+    _pfp_num_subclusters_v.clear();
+    _pfp_num_subclusters_w.clear();
+    _pfp_max_subhit_fraction_u.clear();
+    _pfp_max_subhit_fraction_v.clear();
+    _pfp_max_subhit_fraction_w.clear();
     _pfp_generations.clear();
     _pfp_shower_daughters.clear();
     _pfp_track_daughters.clear();
@@ -501,9 +721,9 @@ void DefaultAnalysis::resetTTree(TTree *_tree) {
     _pfp_vertex_y.clear();
     _pfp_vertex_z.clear();
     _slice_cluster_fraction = std::numeric_limits<float>::quiet_NaN();
-    _total_hits_U = 0;
-    _total_hits_V = 0;
-    _total_hits_Y = 0;
+    _total_hits_u = 0;
+    _total_hits_v = 0;
+    _total_hits_w = 0;
 }
 
 DEFINE_ART_CLASS_TOOL(DefaultAnalysis)

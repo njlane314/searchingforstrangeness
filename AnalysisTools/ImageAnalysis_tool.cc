@@ -292,44 +292,44 @@ void ImageAnalysis::analyseSlice(
         }
 
         auto const planes = find_views(*imageH);
-        auto const *U = planes[0];
-        auto const *V = planes[1];
-        auto const *W = planes[2];
+        auto const *plane_u = planes[0];
+        auto const *plane_v = planes[1];
+        auto const *plane_w = planes[2];
 
-        if (!U && !V && !W) {
+        if (!plane_u && !plane_v && !plane_w) {
             throw cet::exception("ImageAnalysis")
                 << "ImageFeatures collection with tag \"" << tag.encode()
                 << "\" was present for event " << event.id()
-                << " but did not contain any U/V/W view planes.";
+                << " but did not contain any u/v/w view planes.";
         }
 
-        active_u = U ? countActivePixels(U->coords) : 0;
-        active_v = V ? countActivePixels(V->coords) : 0;
-        active_w = W ? countActivePixels(W->coords) : 0;
+        active_u = plane_u ? countActivePixels(plane_u->coords) : 0;
+        active_v = plane_v ? countActivePixels(plane_v->coords) : 0;
+        active_w = plane_w ? countActivePixels(plane_w->coords) : 0;
 
         if (!is_data) {
             size_t const nlabels = image::SemanticClassifier::semantic_label_names.size();
             std::vector<int> empty_counts(nlabels, 0);
-            sem_u = U ? countActiveSemanticLabels(U->semantic, nlabels) : empty_counts;
-            sem_v = V ? countActiveSemanticLabels(V->semantic, nlabels) : empty_counts;
-            sem_w = W ? countActiveSemanticLabels(W->semantic, nlabels) : empty_counts;
+            sem_u = plane_u ? countActiveSemanticLabels(plane_u->semantic, nlabels) : empty_counts;
+            sem_v = plane_v ? countActiveSemanticLabels(plane_v->semantic, nlabels) : empty_counts;
+            sem_w = plane_w ? countActiveSemanticLabels(plane_w->semantic, nlabels) : empty_counts;
         }
 
         if (vtx_proj_u && vtx_proj_v && vtx_proj_w) {
-            vtx_u = (U && in_img(*U, vtx_proj_u->X(), vtx_proj_u->Z()));
-            vtx_v = (V && in_img(*V, vtx_proj_v->X(), vtx_proj_v->Z()));
-            vtx_w = (W && in_img(*W, vtx_proj_w->X(), vtx_proj_w->Z()));
+            vtx_u = (plane_u && in_img(*plane_u, vtx_proj_u->X(), vtx_proj_u->Z()));
+            vtx_v = (plane_v && in_img(*plane_v, vtx_proj_v->X(), vtx_proj_v->Z()));
+            vtx_w = (plane_w && in_img(*plane_w, vtx_proj_w->X(), vtx_proj_w->Z()));
         }
 
         if (active_u == 0 && active_v == 0 && active_w == 0) {
             mf::LogWarning("ImageAnalysis")
                 << "ImageFeatures collection with tag \"" << tag.encode()
                 << "\" is present for event " << event.id()
-                << " but all U/V/W planes are empty."
+                << " but all u/v/w planes are empty."
                 << " Plane counts: total=" << imageH->size()
-                << ", hasU=" << static_cast<bool>(U)
-                << ", hasV=" << static_cast<bool>(V)
-                << ", hasW=" << static_cast<bool>(W) << ".";
+                << ", has_u=" << static_cast<bool>(plane_u)
+                << ", has_v=" << static_cast<bool>(plane_v)
+                << ", has_w=" << static_cast<bool>(plane_w) << ".";
         }
     };
 
