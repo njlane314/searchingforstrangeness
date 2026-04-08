@@ -229,12 +229,12 @@ print_summary() {
 case "${workflow}" in
   mc)
     case "${evtw_config}" in
-      cv) evtw_fhicl="dev/flux/run_stage_evtw_cv_dev.fcl" ;;
-      extragenie1) evtw_fhicl="dev/flux/run_stage_evtw_extragenie1_dev.fcl" ;;
-      extragenie2) evtw_fhicl="dev/flux/run_stage_evtw_extragenie2_dev.fcl" ;;
-      extragenie3) evtw_fhicl="dev/flux/run_stage_evtw_extragenie3_dev.fcl" ;;
-      extragenie4) evtw_fhicl="dev/flux/run_stage_evtw_extragenie4_dev.fcl" ;;
-      extragenie5) evtw_fhicl="dev/flux/run_stage_evtw_extragenie5_dev.fcl" ;;
+      cv) evtw_fhicl="job/dev/flux/run_stage_evtw_cv_dev.fcl" ;;
+      extragenie1) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie1_dev.fcl" ;;
+      extragenie2) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie2_dev.fcl" ;;
+      extragenie3) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie3_dev.fcl" ;;
+      extragenie4) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie4_dev.fcl" ;;
+      extragenie5) evtw_fhicl="job/dev/flux/run_stage_evtw_extragenie5_dev.fcl" ;;
     esac
 
     if [[ -n "${input_path}" ]]; then
@@ -245,9 +245,9 @@ case "${workflow}" in
 
     run_step "${evtw_fhicl}" "${first_input}"
     require_single_event_output "eventweight stage"
-    run_step "dev/run_stage_image_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "job/dev/run_stage_image_dev.fcl" "${LAST_EVENT_OUTPUT}"
     require_single_event_output "image stage"
-    run_step "dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "job/dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   data)
@@ -257,9 +257,9 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "dev/run_stage_image_dev.fcl" "${first_input}"
+    run_step "job/dev/run_stage_image_dev.fcl" "${first_input}"
     require_single_event_output "image stage"
-    run_step "dev/run_stage_sel_data_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "job/dev/run_stage_sel_data_dev.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   ntuple)
@@ -269,7 +269,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
+    run_step "job/dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
     print_summary
     ;;
   fullchain)
@@ -279,7 +279,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "dev/run_stage_fullchain_dev.fcl" "${first_input}"
+    run_step "job/dev/run_stage_fullchain_dev.fcl" "${first_input}"
     print_summary
     ;;
 esac

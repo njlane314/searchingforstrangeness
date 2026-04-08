@@ -30,7 +30,6 @@ public:
     void resetTTree(TTree* _tree) override;
 
 private:
-    static constexpr size_t kNumPPFXComponents = 11;
     static constexpr size_t kNumReintComponents = 6;
 
     float _weightSpline;
@@ -72,8 +71,6 @@ private:
     std::array<std::vector<double>, kNumReintComponents> _vecWeightsReintComponentsD;
     std::vector<unsigned short> _vecWeightsPPFX;
     std::vector<double> _vecWeightsPPFXD;
-    std::array<std::vector<unsigned short>, kNumPPFXComponents> _vecWeightsPPFXComponents;
-    std::array<std::vector<double>, kNumPPFXComponents> _vecWeightsPPFXComponentsD;
 
     std::vector<double> _vecWeightsGenie_vec;
     std::vector<int> _vecWeightsGenie_nam;
@@ -94,7 +91,6 @@ private:
     bool _makeNuMItuple;
     bool _useReweightedFlux;
     bool _createReintComponentBranches;
-    bool _createPPFXComponentBranches;
 
     std::string _event_weight_process_name_00;
     std::string _event_weight_process_name_01;
@@ -103,8 +99,6 @@ private:
     std::string _event_weight_process_name_04;
     std::string _event_weight_process_name_05;
 
-    static int GetPPFXComponentIndex(const std::string& keyname);
-    static const std::array<const char*, kNumPPFXComponents>& GetPPFXComponentBranchNames();
     static int GetReintComponentIndex(const std::string& keyname);
     static const std::array<const char*, kNumReintComponents>& GetReintComponentBranchNames();
 };
@@ -124,7 +118,6 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _makeNuMItuple = p.get<bool>("makeNuMINtuple", true);
     _useReweightedFlux = p.get<bool>("useReweightedFlux", false);
     _createReintComponentBranches = p.get<bool>("createReintComponentBranches", true);
-    _createPPFXComponentBranches = p.get<bool>("createPPFXComponentBranches", false);
 
     _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24");
     _event_weight_process_name_01 = p.get<std::string>("eventWeightProcessName01", "EventWeightSep24ExtraGENIE1");
@@ -132,46 +125,6 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _event_weight_process_name_03 = p.get<std::string>("eventWeightProcessName03", "EventWeightSep24ExtraGENIE3");
     _event_weight_process_name_04 = p.get<std::string>("eventWeightProcessName04", "EventWeightSep24ExtraGENIE4");
     _event_weight_process_name_05 = p.get<std::string>("eventWeightProcessName05", "EventWeightSep24ExtraGENIE5");
-}
-
-int EventWeightAnalysis::GetPPFXComponentIndex(const std::string& keyname) {
-    static const std::array<const char*, kNumPPFXComponents> componentKeys = {{
-        "ppfx_mipppi_PPFXMIPPPion",
-        "ppfx_mippk_PPFXMIPPKaon",
-        "ppfx_thinmes_PPFXThinMeson",
-        "ppfx_thinpi_PPFXThinPion",
-        "ppfx_other_PPFXOther",
-        "ppfx_thinnpi_PPFXThinNeutronPion",
-        "ppfx_totabs_PPFXTotAbsorp",
-        "ppfx_targatt_PPFXTargAtten",
-        "ppfx_thinna_PPFXThinNucA",
-        "ppfx_think_PPFXThinKaon",
-        "ppfx_thinn_PPFXThinNuc"
-    }};
-
-    for (size_t i = 0; i < componentKeys.size(); ++i) {
-        if (keyname.find(componentKeys[i]) != std::string::npos) return static_cast<int>(i);
-    }
-
-    return -1;
-}
-
-const std::array<const char*, EventWeightAnalysis::kNumPPFXComponents>& EventWeightAnalysis::GetPPFXComponentBranchNames() {
-    static const std::array<const char*, kNumPPFXComponents> branchNames = {{
-        "weightsPPFXMIPPPion",
-        "weightsPPFXMIPPKaon",
-        "weightsPPFXThinMeson",
-        "weightsPPFXThinPion",
-        "weightsPPFXOther",
-        "weightsPPFXThinNeutronPion",
-        "weightsPPFXTotalAbsorption",
-        "weightsPPFXTargetAttenuation",
-        "weightsPPFXThinNucleonA",
-        "weightsPPFXThinKaon",
-        "weightsPPFXThinNucleon"
-    }};
-
-    return branchNames;
 }
 
 int EventWeightAnalysis::GetReintComponentIndex(const std::string& keyname) {
@@ -215,20 +168,10 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _vecWeightsGenieDn.clear();
     for (auto& componentWeights : _vecWeightsReintComponents) componentWeights.clear();
     for (auto& componentWeights : _vecWeightsReintComponentsD) componentWeights.clear();
-    for (auto& componentWeights : _vecWeightsPPFXComponents) componentWeights.clear();
-    for (auto& componentWeights : _vecWeightsPPFXComponentsD) componentWeights.clear();
 
     if (_makeNuMItuple) {
         _vecWeightsPPFX  = std::vector<unsigned short>(_ppfxAllUniverses,1);
         _vecWeightsPPFXD = std::vector<double>(_ppfxAllUniverses,1.0);
-        if (_createPPFXComponentBranches) {
-            for (auto& componentWeights : _vecWeightsPPFXComponents) {
-                componentWeights = std::vector<unsigned short>(_ppfxAllUniverses, 1);
-            }
-            for (auto& componentWeights : _vecWeightsPPFXComponentsD) {
-                componentWeights = std::vector<double>(_ppfxAllUniverses, 1.0);
-            }
-        }
     }
 
     std::vector<art::InputTag> vecTag;
@@ -442,16 +385,6 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                         }
                     }
                 }
-                else if (_createPPFXComponentBranches && _makeNuMItuple) {
-                    const int componentIndex = GetPPFXComponentIndex(keyname);
-                    if (componentIndex >= 0) {
-                        for (unsigned int i = 0; i < it->second.size(); ++i) {
-                            if ((i + (100 * PPFXCounter)) < _vecWeightsPPFXComponentsD[componentIndex].size()) {
-                                _vecWeightsPPFXComponentsD[componentIndex][i + (100 * PPFXCounter)] *= it->second[i];
-                            }
-                        }
-                    }
-                }
                 else if(!_makeNuMItuple &&
                     (keyname.find("horncurrent") != std::string::npos ||
                     keyname.find("expskin") != std::string::npos ||
@@ -549,19 +482,6 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
             if (w < 0) { wshort = 0; }
             _vecWeightsPPFX[i] = wshort;
         }
-
-        if (_createPPFXComponentBranches) {
-            for (size_t componentIndex = 0; componentIndex < _vecWeightsPPFXComponentsD.size(); ++componentIndex) {
-                _vecWeightsPPFXComponents[componentIndex].assign(_vecWeightsPPFXComponentsD[componentIndex].size(), 1);
-                for (size_t i = 0; i < _vecWeightsPPFXComponentsD[componentIndex].size(); ++i) {
-                    auto w = _vecWeightsPPFXComponentsD[componentIndex][i];
-                    unsigned short wshort = (unsigned short)(w * 1000.);
-                    if (w * 1000. > static_cast<double>(std::numeric_limits<unsigned short>::max())) { wshort = std::numeric_limits<unsigned short>::max(); }
-                    if (w < 0) { wshort = 0; }
-                    _vecWeightsPPFXComponents[componentIndex][i] = wshort;
-                }
-            }
-        }
     }
 
 }
@@ -612,12 +532,6 @@ void EventWeightAnalysis::setBranches(TTree *_tree){
         }
     }
     if(_createPPFXBranch && _makeNuMItuple) _tree->Branch("weightsPPFX", "std::vector<unsigned short>", &_vecWeightsPPFX);
-    if(_createPPFXComponentBranches && _makeNuMItuple) {
-        const auto& branchNames = GetPPFXComponentBranchNames();
-        for (size_t i = 0; i < branchNames.size(); ++i) {
-            _tree->Branch(branchNames[i], "std::vector<unsigned short>", &_vecWeightsPPFXComponents[i]);
-        }
-    }
 
     if(_createGenieUpDnVecs) _tree->Branch("weightsGenieUp", "std::vector<unsigned short>", &_vecWeightsGenieUp);
     if(_createGenieUpDnVecs) _tree->Branch("weightsGenieDn", "std::vector<unsigned short>", &_vecWeightsGenieDn);
@@ -648,8 +562,6 @@ void EventWeightAnalysis::resetTTree(TTree *_tree){
     for (auto& componentWeights : _vecWeightsReintComponents) componentWeights.clear();
     for (auto& componentWeights : _vecWeightsReintComponentsD) componentWeights.clear();
     _vecWeightsPPFX.clear(); _vecWeightsPPFXD.clear();
-    for (auto& componentWeights : _vecWeightsPPFXComponents) componentWeights.clear();
-    for (auto& componentWeights : _vecWeightsPPFXComponentsD) componentWeights.clear();
 
     _vecWeightsGenie_vec.clear();
     _vecWeightsGenie_nam.clear();

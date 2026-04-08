@@ -1,0 +1,22 @@
+#include "run_nuselection_noinference.fcl"
+
+process_name: LocalNtupleNoWeightDev
+
+services.TFileService.fileName: "local_ntuple_noweight_dev.root"
+
+physics.producers.imageprod: {
+  module_type: "ImageProducer"
+  PFPproducer: @local::standard_producers.PFPproducer
+  SLCproducer: @local::standard_producers.SLCproducer
+  HITproducer: @local::standard_producers.HITproducer
+  WIREproducer: @local::standard_producers.WIREproducer
+  MCPproducer: @local::standard_producers.MCPproducer
+  BKTproducer: @local::standard_producers.BKTproducer
+  SPproducer: @local::standard_producers.SPproducer
+  BadChannelFile: "runtime/detector/badchannels.txt"
+}
+
+physics.path1: [ imageprod, nuselection ]
+
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 100

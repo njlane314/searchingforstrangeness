@@ -1,0 +1,30 @@
+#include "run_nuselection_data.fcl"
+
+process_name: ImagingDevCosmic
+
+services.TFileService.fileName: "imaging_dev_cosmic.root"
+services.NuRandomService: @local::microboone_seedservice
+
+physics.producers.inferenceprod: {
+  module_type: "InferenceProducer"
+  PlanesTag: "imageprod:CroppedWindow"
+  ScratchDir: ""
+  RuntimeBaseDir: "runtime"
+  DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
+  ModelDefaults: {
+    Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+    WeightsDir: "models/mink_binary"
+  }
+  Models: [
+    {
+      Label: "mink_binary"
+      Checkpoint: "checkpoint_step0010000.pt"
+    }
+  ]
+}
+
+physics.path1: [ imageprod, inferenceprod, nuselection ]
+physics.trigger_paths: [ path1 ]
+
+physics.filters.nuselection.CountWithOpFilter: false
+physics.filters.nuselection.OpFilterProcName: ""

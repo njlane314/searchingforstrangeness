@@ -57,7 +57,7 @@ Repository layout
   * ImagePipeline/      image-production and inference support
   * Products/           art product definitions
   * job/                standard production FHiCL files
-  * dev/                development and debugging FHiCL files
+  * job/dev/                development and debugging FHiCL files
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
   * runtime/            model checkpoints, detector data, and inference helpers
@@ -81,18 +81,18 @@ The main top-level job configurations are:
 
 The main development configurations are:
 
-  * dev/flux/image_dev.fcl
-  * dev/image_dev_cosmic.fcl
-  * dev/flux/run_stage_redk2nu_dev.fcl
-  * dev/flux/run_stage_evtw_cv_dev.fcl through dev/flux/run_stage_evtw_extragenie5_dev.fcl
-  * dev/run_stage_image_dev.fcl
-  * dev/run_stage_infer_dev.fcl
-  * dev/run_stage_sel_dev.fcl
-  * dev/run_stage_sel_data_dev.fcl
-  * dev/run_stage_fullchain_dev.fcl
-  * dev/flux/run_local_ntuple_dev.fcl
-  * dev/numi_fhc_run1_dev.xml
-  * dev/flux/run_numisystematicweights_rhc_extragenie1.fcl
+  * job/dev/flux/image_dev.fcl
+  * job/dev/image_dev_cosmic.fcl
+  * job/dev/flux/run_stage_redk2nu_dev.fcl
+  * job/dev/flux/run_stage_evtw_cv_dev.fcl through job/dev/flux/run_stage_evtw_extragenie5_dev.fcl
+  * job/dev/run_stage_image_dev.fcl
+  * job/dev/run_stage_infer_dev.fcl
+  * job/dev/run_stage_sel_dev.fcl
+  * job/dev/run_stage_sel_data_dev.fcl
+  * job/dev/run_stage_fullchain_dev.fcl
+  * job/dev/flux/run_local_ntuple_dev.fcl
+  * job/dev/numi_fhc_run1_dev.xml
+  * job/dev/flux/run_numisystematicweights_rhc_extragenie1.fcl
 
 The main grid-submission XML configurations are:
 

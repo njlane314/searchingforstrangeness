@@ -1,5 +1,0 @@
-#include "run_redk2nu_v4_9_2_fhc.fcl"
-
-process_name: ReDk2NuStageOldFluxDev
-
-outputs.out1.fileName: "stage_redk2nu_oldflux_dev.root"

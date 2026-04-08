@@ -48,7 +48,6 @@ EventWeightAnalysis: {
     createTuneBranch: true
     createSplineTimesTuneBranch: true
     createPPFXBranch: true
-    createPPFXComponentBranches: true
     makeNuMINtuple: true
     genieAllUniverses: 600
     ppfxAllUniverses: 600

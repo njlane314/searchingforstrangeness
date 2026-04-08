@@ -1,0 +1,5 @@
+#include "run_nuselection_data.fcl"
+
+process_name: NuSelectionStageDataDev
+
+services.TFileService.fileName: "stage_sel_data_dev.root"
