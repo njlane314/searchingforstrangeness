@@ -43,6 +43,7 @@ EventWeightAnalysis: {
     createFluxBranch: true
     createGenieBranch: true
     createReintBranch: true
+    createReintComponentBranches: true
     createSplineBranch: true
     createTuneBranch: true
     createSplineTimesTuneBranch: true

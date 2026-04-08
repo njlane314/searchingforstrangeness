@@ -31,6 +31,7 @@ public:
 
 private:
     static constexpr size_t kNumPPFXComponents = 11;
+    static constexpr size_t kNumReintComponents = 6;
 
     float _weightSpline;
     float _weightTune;
@@ -67,6 +68,8 @@ private:
     std::vector<double> _vecWeightFluxD;
     std::vector<unsigned short> _vecWeightsReint;
     std::vector<double> _vecWeightsReintD;
+    std::array<std::vector<unsigned short>, kNumReintComponents> _vecWeightsReintComponents;
+    std::array<std::vector<double>, kNumReintComponents> _vecWeightsReintComponentsD;
     std::vector<unsigned short> _vecWeightsPPFX;
     std::vector<double> _vecWeightsPPFXD;
     std::array<std::vector<unsigned short>, kNumPPFXComponents> _vecWeightsPPFXComponents;
@@ -90,6 +93,7 @@ private:
     int _ppfxAllUniverses;
     bool _makeNuMItuple;
     bool _useReweightedFlux;
+    bool _createReintComponentBranches;
     bool _createPPFXComponentBranches;
 
     std::string _event_weight_process_name_00;
@@ -101,6 +105,8 @@ private:
 
     static int GetPPFXComponentIndex(const std::string& keyname);
     static const std::array<const char*, kNumPPFXComponents>& GetPPFXComponentBranchNames();
+    static int GetReintComponentIndex(const std::string& keyname);
+    static const std::array<const char*, kNumReintComponents>& GetReintComponentBranchNames();
 };
 
 EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
@@ -117,6 +123,7 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _ppfxAllUniverses = p.get<int>("ppfxAllUniverses", 600);
     _makeNuMItuple = p.get<bool>("makeNuMINtuple", true);
     _useReweightedFlux = p.get<bool>("useReweightedFlux", false);
+    _createReintComponentBranches = p.get<bool>("createReintComponentBranches", true);
     _createPPFXComponentBranches = p.get<bool>("createPPFXComponentBranches", false);
 
     _event_weight_process_name_00 = p.get<std::string>("eventWeightProcessName00", "EventWeightSep24");
@@ -167,6 +174,36 @@ const std::array<const char*, EventWeightAnalysis::kNumPPFXComponents>& EventWei
     return branchNames;
 }
 
+int EventWeightAnalysis::GetReintComponentIndex(const std::string& keyname) {
+    static const std::array<const char*, kNumReintComponents> componentKeys = {{
+        "reinteractions_piplus_Geant4",
+        "reinteractions_piminus_Geant4",
+        "reinteractions_proton_Geant4",
+        "reinteractions_kplus_Geant4",
+        "reinteractions_kminus_Geant4",
+        "reinteractions_neutron_Geant4"
+    }};
+
+    for (size_t i = 0; i < componentKeys.size(); ++i) {
+        if (keyname == componentKeys[i]) return static_cast<int>(i);
+    }
+
+    return -1;
+}
+
+const std::array<const char*, EventWeightAnalysis::kNumReintComponents>& EventWeightAnalysis::GetReintComponentBranchNames() {
+    static const std::array<const char*, kNumReintComponents> branchNames = {{
+        "weightsReintPiPlus",
+        "weightsReintPiMinus",
+        "weightsReintProton",
+        "weightsReintKPlus",
+        "weightsReintKMinus",
+        "weightsReintNeutron"
+    }};
+
+    return branchNames;
+}
+
 void EventWeightAnalysis::configure(fhicl::ParameterSet const & p) {}
 
 void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
@@ -176,6 +213,8 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     _vecWeightsReintD.clear();
     _vecWeightsGenieUp.clear();
     _vecWeightsGenieDn.clear();
+    for (auto& componentWeights : _vecWeightsReintComponents) componentWeights.clear();
+    for (auto& componentWeights : _vecWeightsReintComponentsD) componentWeights.clear();
     for (auto& componentWeights : _vecWeightsPPFXComponents) componentWeights.clear();
     for (auto& componentWeights : _vecWeightsPPFXComponentsD) componentWeights.clear();
 
@@ -215,6 +254,8 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     int PPFXCounter = 0;
     const std::string reintPrefix = "reinteractions_";
     const std::string reintSuffix = "_Geant4";
+    std::array<bool, kNumReintComponents> isFirstVectorReintComponent;
+    isFirstVectorReintComponent.fill(true);
 
     for(auto& thisTag : vecTag){
         art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
@@ -370,6 +411,37 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                     }
                     PPFXCounter += 1;
                 }
+                else if ( keyname.find(reintPrefix) == 0 &&
+                          keyname.size() >= reintPrefix.size() + reintSuffix.size() &&
+                          keyname.compare(keyname.size() - reintSuffix.size(),
+                                          reintSuffix.size(),
+                                          reintSuffix) == 0 ) {
+                    if(isFirstVectorReint){
+                        _vecWeightsReintD = it->second;
+                        isFirstVectorReint = false;
+                    }
+                    else{
+                        if ( (it->second).size() == _vecWeightsReintD.size() ) {
+                            for(unsigned int i = 0; i < it->second.size(); ++i)
+                                _vecWeightsReintD[i] *= it->second[i];
+                        }
+                    }
+
+                    if (_createReintComponentBranches) {
+                        const int componentIndex = GetReintComponentIndex(keyname);
+                        if (componentIndex >= 0) {
+                            if (isFirstVectorReintComponent[componentIndex]) {
+                                _vecWeightsReintComponentsD[componentIndex] = it->second;
+                                isFirstVectorReintComponent[componentIndex] = false;
+                            }
+                            else if (it->second.size() == _vecWeightsReintComponentsD[componentIndex].size()) {
+                                for (unsigned int i = 0; i < it->second.size(); ++i) {
+                                    _vecWeightsReintComponentsD[componentIndex][i] *= it->second[i];
+                                }
+                            }
+                        }
+                    }
+                }
                 else if (_createPPFXComponentBranches && _makeNuMItuple) {
                     const int componentIndex = GetPPFXComponentIndex(keyname);
                     if (componentIndex >= 0) {
@@ -406,22 +478,6 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                             }
                         }
                     }
-                else if ( keyname.find(reintPrefix) == 0 &&
-                          keyname.size() >= reintPrefix.size() + reintSuffix.size() &&
-                          keyname.compare(keyname.size() - reintSuffix.size(),
-                                          reintSuffix.size(),
-                                          reintSuffix) == 0 ) {
-                    if(isFirstVectorReint){
-                        _vecWeightsReintD = it->second;
-                        isFirstVectorReint = false;
-                    }
-                    else{
-                        if ( (it->second).size() == _vecWeightsReintD.size() ) {
-                            for(unsigned int i = 0; i < it->second.size(); ++i)
-                                _vecWeightsReintD[i] *= it->second[i];
-                        }
-                    }
-                }
                 else{ 
                     if (keyname != "splines_general_Spline" && keyname != "TunedCentralValue_UBGenie" &&
                         !(keyname.find("RPA_CCQE_UBGenie") != std::string::npos) && 
@@ -469,6 +525,19 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
         if (w * 1000. > static_cast<double>(std::numeric_limits<unsigned short>::max()))  { wshort = std::numeric_limits<unsigned short>::max(); }
         if (w < 0) { wshort = 0; }
         _vecWeightsReint[i] = wshort;
+    }
+
+    if (_createReintComponentBranches) {
+        for (size_t componentIndex = 0; componentIndex < _vecWeightsReintComponentsD.size(); ++componentIndex) {
+            _vecWeightsReintComponents[componentIndex].assign(_vecWeightsReintComponentsD[componentIndex].size(), 1);
+            for (size_t i = 0; i < _vecWeightsReintComponentsD[componentIndex].size(); ++i) {
+                auto w = _vecWeightsReintComponentsD[componentIndex][i];
+                unsigned short wshort = (unsigned short)(w * 1000.);
+                if (w * 1000. > static_cast<double>(std::numeric_limits<unsigned short>::max())) { wshort = std::numeric_limits<unsigned short>::max(); }
+                if (w < 0) { wshort = 0; }
+                _vecWeightsReintComponents[componentIndex][i] = wshort;
+            }
+        }
     }
 
     if (_makeNuMItuple) {
@@ -536,6 +605,12 @@ void EventWeightAnalysis::setBranches(TTree *_tree){
     if(_createFluxBranch) _tree->Branch("weightsFlux", "std::vector<unsigned short>", &_vecWeightFlux);
     if(_createGenieBranch) _tree->Branch("weightsGenie", "std::vector<unsigned short>", &_vecWeightsGenie);
     if(_createReintBranch) _tree->Branch("weightsReint", "std::vector<unsigned short>", &_vecWeightsReint);
+    if(_createReintBranch && _createReintComponentBranches) {
+        const auto& branchNames = GetReintComponentBranchNames();
+        for (size_t i = 0; i < branchNames.size(); ++i) {
+            _tree->Branch(branchNames[i], "std::vector<unsigned short>", &_vecWeightsReintComponents[i]);
+        }
+    }
     if(_createPPFXBranch && _makeNuMItuple) _tree->Branch("weightsPPFX", "std::vector<unsigned short>", &_vecWeightsPPFX);
     if(_createPPFXComponentBranches && _makeNuMItuple) {
         const auto& branchNames = GetPPFXComponentBranchNames();
@@ -570,6 +645,8 @@ void EventWeightAnalysis::resetTTree(TTree *_tree){
     _vecWeightFlux.clear(); _vecWeightFluxD.clear();
     _vecWeightsGenie.clear(); _vecWeightsGenieD.clear();
     _vecWeightsReint.clear(); _vecWeightsReintD.clear();
+    for (auto& componentWeights : _vecWeightsReintComponents) componentWeights.clear();
+    for (auto& componentWeights : _vecWeightsReintComponentsD) componentWeights.clear();
     _vecWeightsPPFX.clear(); _vecWeightsPPFXD.clear();
     for (auto& componentWeights : _vecWeightsPPFXComponents) componentWeights.clear();
     for (auto& componentWeights : _vecWeightsPPFXComponentsD) componentWeights.clear();
