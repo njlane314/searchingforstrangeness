@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!DOCTYPE project [
-    <!ENTITY release "v08_00_00_82">
+    <!ENTITY release "v08_00_00_92">
     <!ENTITY user "nlane">
     <!ENTITY name "numi_fhc_run1_dev">
 
