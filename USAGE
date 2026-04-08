@@ -345,8 +345,7 @@ The campaign XMLs use the same building blocks:
   * detector-variation chains, where present, use `image -> sel`
   * inference is omitted because the checked-in model bundle has not been
     updated yet
-  * `numjobs` values are placeholders and should be replaced from `samweb`
-    counts before submission
+  * active campaign XMLs default to 25-job test submissions
 
 Run-specific notes:
 
@@ -364,8 +363,9 @@ Before submitting:
 
   * review the XML entities near the top of the file you plan to use
   * confirm the release tag, PNFS paths, and SAM definitions
-  * replace the placeholder `numjobs` values with
-    `samweb count-files defname:<...>` results
+  * if you want full statistics instead of the checked-in 25-job tests,
+    replace the `numjobs` values with `samweb count-files defname:<...>`
+    results
   * refresh the tarball with `./.tar.sh`
 
 Run 1 CV train/template shards are created upstream at the SAM-definition

@@ -3,7 +3,7 @@
 #include "particleinventoryservice.fcl"
 #include "producers.fcl"
 
-process_name: ImageProd
+process_name: image_prod
 
 services: {
   TFileService: { fileName: "imageprod_hist.root" }

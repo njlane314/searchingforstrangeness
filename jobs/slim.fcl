@@ -1,1 +1,1 @@
-physics.filters.nuselection.AnalysisTools.image: @local::NoInferenceImageAnalysis
+physics.filters.nuselection.AnalysisTools.image: @local::image_analysis_slim

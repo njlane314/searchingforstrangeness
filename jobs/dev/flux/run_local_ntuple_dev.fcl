@@ -3,7 +3,7 @@
 #include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection_slim.fcl"
 
-process_name: LocalNtupleDev
+process_name: local_ntuple_dev
 
 services.TFileService.fileName: "local_ntuple_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -20,14 +20,14 @@ physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
 physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
-LocalNtupleEventWeightAnalysis: {
-  @table::EventWeightAnalysis
+local_ntuple_event_weight_analysis: {
+  @table::event_weight_analysis
   genieAllUniverses: 100
   ppfxAllUniverses: 100
   useReweightedFlux: false
-  eventWeightProcessName00: "LocalNtupleDev"
+  eventWeightProcessName00: "local_ntuple_dev"
 }
 
-physics.filters.nuselection.AnalysisTools.weight: @local::LocalNtupleEventWeightAnalysis
+physics.filters.nuselection.AnalysisTools.weight: @local::local_ntuple_event_weight_analysis
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""

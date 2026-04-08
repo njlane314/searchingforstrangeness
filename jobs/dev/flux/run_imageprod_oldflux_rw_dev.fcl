@@ -4,7 +4,7 @@
 #include "run_nuselection.fcl"
 #include "oldflux_rw.fcl"
 
-process_name: ImagingOldFluxDev
+process_name: image_prod_oldflux_rw_dev
 
 services.TFileService.fileName: "imaging_oldflux_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -17,11 +17,11 @@ physics.producers.inferenceprod: @local::standard_inference_producer
 physics.path1: [ generator, eventweightSep24, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
-EventWeightAnalysisOldFluxDev: @local::EventWeightAnalysisOldFlux
-EventWeightAnalysisOldFluxDev.genieAllUniverses: 100
-EventWeightAnalysisOldFluxDev.ppfxAllUniverses: 100
-EventWeightAnalysisOldFluxDev.eventWeightProcessName00: "ImagingOldFluxDev"
+event_weight_analysis_oldflux_rw_dev: @local::event_weight_analysis_oldflux_rw
+event_weight_analysis_oldflux_rw_dev.genieAllUniverses: 100
+event_weight_analysis_oldflux_rw_dev.ppfxAllUniverses: 100
+event_weight_analysis_oldflux_rw_dev.eventWeightProcessName00: "image_prod_oldflux_rw_dev"
 
-physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisOldFluxDev
+physics.filters.nuselection.AnalysisTools.weight: @local::event_weight_analysis_oldflux_rw_dev
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""

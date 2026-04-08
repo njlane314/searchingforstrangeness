@@ -2,7 +2,7 @@
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
 
-process_name: NuSelectionMC
+process_name: nu_selection_mc
 
 services: {
   TFileService: { fileName: "nu_selection.root" }
@@ -37,7 +37,7 @@ source: {
 physics: {
   filters: {
     nuselection: {
-      @table::NeutrinoSelectionFilter
+      @table::neutrino_selection_filter
     }
   }
 

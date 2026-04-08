@@ -1,1 +1,1 @@
-physics.filters.nuselection.AnalysisTools.weight: @local::EventWeightAnalysisOldFlux
+physics.filters.nuselection.AnalysisTools.weight: @local::event_weight_analysis_oldflux_rw

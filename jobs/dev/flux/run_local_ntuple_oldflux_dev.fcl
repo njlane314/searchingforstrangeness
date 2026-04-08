@@ -3,7 +3,7 @@
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "run_nuselection_slim_oldflux_rw.fcl"
 
-process_name: LocalNtupleOldFluxDev
+process_name: local_ntuple_oldflux_rw_dev
 
 services.TFileService.fileName: "local_ntuple_oldflux_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -20,11 +20,11 @@ physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflu
 physics.path1: [ generator, eventweightSep24, imageprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
-LocalNtupleEventWeightAnalysisOldFlux: @local::EventWeightAnalysisOldFlux
-LocalNtupleEventWeightAnalysisOldFlux.genieAllUniverses: 100
-LocalNtupleEventWeightAnalysisOldFlux.ppfxAllUniverses: 100
-LocalNtupleEventWeightAnalysisOldFlux.eventWeightProcessName00: "LocalNtupleOldFluxDev"
+local_ntuple_event_weight_analysis_oldflux_rw: @local::event_weight_analysis_oldflux_rw
+local_ntuple_event_weight_analysis_oldflux_rw.genieAllUniverses: 100
+local_ntuple_event_weight_analysis_oldflux_rw.ppfxAllUniverses: 100
+local_ntuple_event_weight_analysis_oldflux_rw.eventWeightProcessName00: "local_ntuple_oldflux_rw_dev"
 
-physics.filters.nuselection.AnalysisTools.weight: @local::LocalNtupleEventWeightAnalysisOldFlux
+physics.filters.nuselection.AnalysisTools.weight: @local::local_ntuple_event_weight_analysis_oldflux_rw
 physics.filters.nuselection.CountWithOpFilter: false
 physics.filters.nuselection.OpFilterProcName: ""

@@ -30,8 +30,7 @@ The checked-in campaign XMLs use the same high-level building blocks:
 - detector-variation chains, where present, run `image -> sel` only
 - inference stages are omitted because the checked-in model bundle has not been
   updated yet
-- `numjobs` values are placeholders and should be replaced with
-  `samweb count-files defname:<...>` results before submission
+- active campaign XMLs default to 25-job test submissions
 
 The checked-in local validation helper now uses the staged EventWeight dev
 wrappers directly, and those wrappers run redk2nu internally before the

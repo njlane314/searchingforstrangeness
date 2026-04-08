@@ -100,7 +100,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>5556</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_image">
@@ -111,7 +111,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>5556</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_sel">
@@ -122,7 +122,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run1_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run1_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>5556</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="dirt_evtw">
@@ -139,7 +139,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run1_fhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="dirt_image">
@@ -150,7 +150,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run1_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="dirt_sel">
@@ -161,7 +161,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run1_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run1_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_evtw">
@@ -178,7 +178,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/evtw/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc/evtw</workdir>
         <datatier>eventweight</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_image">
@@ -189,7 +189,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_sel">
@@ -200,7 +200,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness/run1_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness/run1_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="ext_image">
@@ -211,7 +211,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="ext_sel">
@@ -222,7 +222,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="data_image">
@@ -233,7 +233,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1_fhc/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="data_sel">
@@ -244,7 +244,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1_fhc/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_cv_train_shard_image">
@@ -255,7 +255,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_cv_train_shard_sel">
@@ -266,7 +266,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_cv_template_shard_image">
@@ -277,7 +277,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_cv_template_shard_sel">
@@ -288,7 +288,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_attenuation_image">
@@ -299,7 +299,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_attenuation/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_attenuation/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_attenuation_sel">
@@ -310,7 +310,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_attenuation/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_attenuation/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_rayleigh_image">
@@ -321,7 +321,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_rayleigh/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_rayleigh/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_rayleigh_sel">
@@ -332,7 +332,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_rayleigh/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_rayleigh/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_down_image">
@@ -343,7 +343,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_down/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_down/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_ly_down_sel">
@@ -354,7 +354,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_down/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/ly_down/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_sce_image">
@@ -365,7 +365,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/sce/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/sce/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_sce_sel">
@@ -376,7 +376,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/sce/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/sce/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_recomb2_image">
@@ -387,7 +387,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/recomb2/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/recomb2/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_recomb2_sel">
@@ -398,7 +398,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/recomb2/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/recomb2/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodx_image">
@@ -409,7 +409,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodx/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodx/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodx_sel">
@@ -420,7 +420,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodx/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodx/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodyz_image">
@@ -431,7 +431,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodyz/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodyz/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodyz_sel">
@@ -442,7 +442,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodyz/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodyz/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodthetaxz_image">
@@ -453,7 +453,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetaxz/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetaxz/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodthetaxz_sel">
@@ -464,7 +464,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetaxz/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetaxz/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodthetayz_image">
@@ -475,7 +475,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetayz/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetayz/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="beam_detvar_wiremodthetayz_sel">
@@ -486,7 +486,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetayz/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/wiremodthetayz/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_cv_train_shard_image">
@@ -497,7 +497,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_cv_train_shard_sel">
@@ -508,7 +508,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_cv_template_shard_image">
@@ -519,7 +519,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_cv_template_shard_sel">
@@ -530,7 +530,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_ly_rayleigh_image">
@@ -541,7 +541,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_rayleigh/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_rayleigh/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_ly_rayleigh_sel">
@@ -552,7 +552,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_rayleigh/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_rayleigh/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_ly_down_image">
@@ -563,7 +563,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_down/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_down/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_ly_down_sel">
@@ -574,7 +574,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_down/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/ly_down/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_sce_image">
@@ -585,7 +585,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/sce/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/sce/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_sce_sel">
@@ -596,7 +596,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/sce/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/sce/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_recomb2_image">
@@ -607,7 +607,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/recomb2/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/recomb2/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_recomb2_sel">
@@ -618,7 +618,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/recomb2/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/recomb2/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodx_image">
@@ -629,7 +629,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodx/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodx/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodx_sel">
@@ -640,7 +640,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodx/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodx/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodyz_image">
@@ -651,7 +651,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodyz/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodyz/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodyz_sel">
@@ -662,7 +662,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodyz/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodyz/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremod_mismatch_image">
@@ -673,7 +673,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremod_mismatch/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremod_mismatch/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremod_mismatch_sel">
@@ -684,7 +684,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremod_mismatch/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremod_mismatch/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodthetayz_image">
@@ -695,7 +695,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodthetayz/image/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodthetayz/image</workdir>
         <datatier>image</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
     <stage name="strangeness_detvar_wiremodthetayz_sel">
@@ -706,7 +706,7 @@
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodthetayz/sel/log</logdir>
         <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/wiremodthetayz/sel</workdir>
         <datatier>selected</datatier>
-        <numjobs>1</numjobs>
+        <numjobs>25</numjobs>
     </stage>
 
 </project>
