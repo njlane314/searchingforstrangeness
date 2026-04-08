@@ -16,9 +16,8 @@
 
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
-    <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
+    <!ENTITY fcl_fullchain_old "run_fullchain_oldflux_rw.fcl">
+    <!ENTITY fcl_fullchain_data "run_fullchain_data.fcl">
 ]>
 
 <job>
@@ -40,114 +39,50 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="beam_evtw">
+    <stage name="beam">
         <inputdef>&input_beam;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run4c_fhc/evtw</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="beam_image">
-        <previousstage>beam_evtw</previousstage>
-        <fcl>&fcl_image;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run4c_fhc/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="beam_sel">
-        <previousstage>beam_image</previousstage>
-        <fcl>&fcl_sel_mc_old;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run4c_fhc/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam/run4c_fhc</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="dirt_evtw">
+    <stage name="dirt">
         <inputdef>&input_dirt;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/evtw/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/evtw/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run4c_fhc/evtw</workdir>
-        <datatier>eventweight</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="dirt_image">
-        <previousstage>dirt_evtw</previousstage>
-        <fcl>&fcl_image;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run4c_fhc/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="dirt_sel">
-        <previousstage>dirt_image</previousstage>
-        <fcl>&fcl_sel_mc_old;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run4c_fhc/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/dirt/run4c_fhc</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="ext_image">
+    <stage name="ext">
         <inputdef>&input_ext;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run4c_fhc/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="ext_sel">
-        <previousstage>ext_image</previousstage>
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run4c_fhc/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run4c_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run4c_fhc</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="data_image">
+    <stage name="data">
         <inputdef>&input_data;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run4c_fhc/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="data_sel">
-        <previousstage>data_image</previousstage>
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run4c_fhc/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run4c_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run4c_fhc</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>

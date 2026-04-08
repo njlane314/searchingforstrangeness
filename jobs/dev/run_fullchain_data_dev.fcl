@@ -1,0 +1,6 @@
+#include "run_fullchain_data.fcl"
+
+process_name: fullchain_data_dev
+
+services.TFileService.fileName: "fullchain_data_dev_hist.root"
+outputs.out1.fileName: "fullchain_data_dev.root"

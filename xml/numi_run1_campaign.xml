@@ -12,8 +12,7 @@
     <!ENTITY input_ext "ub_numi_run1_ext_gr">
     <!ENTITY input_data "ub_numi_run1_data_gr">
 
-    <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_data "run_nuselection_data_slim.fcl">
+    <!ENTITY fcl_fullchain_data "run_fullchain_data.fcl">
 ]>
 
 <job>
@@ -35,46 +34,24 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="ext_image">
+    <stage name="ext">
         <inputdef>&input_ext;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="ext_sel">
-        <previousstage>ext_image</previousstage>
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="data_image">
+    <stage name="data">
         <inputdef>&input_data;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>25</numjobs>
-    </stage>
-
-    <stage name="data_sel">
-        <previousstage>data_image</previousstage>
-        <fcl>&fcl_sel_data;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>

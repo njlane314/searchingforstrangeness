@@ -4,7 +4,6 @@
     <!ENTITY release "v08_00_00_92">
     <!ENTITY user "nlane">
     <!ENTITY name "numi_fhc_run1_dev">
-
     <!ENTITY initsrc "runtime/scripts/initsrc.sh">
 
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
@@ -37,106 +36,90 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="dev_beam_imaging_evtw">
+    <stage name="dev_beam">
       <inputdef>&input_beam;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_beam_imaging_evtw_full">
+    <stage name="dev_beam_full">
       <inputdef>&input_beam;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>3000</numjobs>
     </stage>
 
-    <stage name="dev_strange_imaging_evtw">
+    <stage name="dev_strangeness">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_strange_imaging_evtw_full">
+    <stage name="dev_strangeness_full">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>1800</numjobs>
     </stage>
 
-    <stage name="dev_dirt_imaging_evtw">
+    <stage name="dev_dirt">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_dirt_imaging_evtw_full">
+    <stage name="dev_dirt_full">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>1000</numjobs>
     </stage>
 
-    <stage name="dev_cosmic_imaging_data">
+    <stage name="dev_cosmic">
       <inputdef>&input_ext;</inputdef>
-      <fcl>jobs/dev/run_imageprod_data_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_data_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>50</numjobs>
     </stage>
 
-    <stage name="dev_cosmic_imaging_data_full">
+    <stage name="dev_cosmic_full">
       <inputdef>&input_ext;</inputdef>
-      <fcl>jobs/dev/run_imageprod_data_dev.fcl</fcl>
+      <fcl>jobs/dev/run_fullchain_data_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
-
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/log</logdir>
       <workdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/work</workdir>
-
       <datatier>selected</datatier>
       <numjobs>5000</numjobs>
     </stage>

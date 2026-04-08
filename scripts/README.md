@@ -4,7 +4,6 @@
 
 `xml/` now contains these staged campaign entry points:
 
-- `xml/numi_run1aot_campaign.xml`
 - `xml/numi_run1_campaign.xml`
 - `xml/numi_run1_fhc_campaign.xml`
 - `xml/numi_run1_rhc_campaign.xml`
@@ -20,17 +19,21 @@
 Legacy XMLs were moved to `reference/legacy_xml/` so they stay available as
 reference without looking like active submission entry points.
 
-The checked-in campaign XMLs use the same high-level building blocks:
+The checked-in campaign XMLs use one stage per sample:
 
-- MC beam, dirt, and dedicated strangeness chains run
-  `redk2nu -> evtw -> image -> sel`
+- MC beam and dirt chains run `redk2nu -> evtw -> fullchain_oldflux_rw`
+- dedicated strangeness MC chains run `redk2nu -> evtw -> fullchain`
+- data and EXT chains run `fullchain_data`
+- detector-variation chains run a single fullchain stage
 - only `fcl_evtw_00` is active, so the MC chains keep the first 100
   multisim universes
-- data and EXT chains run `image -> sel`
-- detector-variation chains, where present, run `image -> sel` only
-- inference stages are omitted because the checked-in model bundle has not been
-  updated yet
 - active campaign XMLs default to 25-job test submissions
+
+For Run 1 specifically:
+
+- `xml/numi_run1_campaign.xml` is the plain data/EXT campaign
+- `xml/numi_run1_fhc_campaign.xml` is the FHC MC and dedicated strangeness
+  campaign
 
 The checked-in local validation helper now uses the staged EventWeight dev
 wrappers directly, and those wrappers run redk2nu internally before the

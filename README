@@ -79,6 +79,8 @@ The main top-level job configurations are:
   * jobs/run_imageprod.fcl
   * jobs/run_inferenceprod.fcl
   * jobs/run_fullchain.fcl
+  * jobs/run_fullchain_data.fcl
+  * jobs/run_fullchain_oldflux_rw.fcl
   * jobs/run_fullchain_slim.fcl
   * jobs/run_fullchain_slim_oldflux_rw.fcl
 
@@ -99,7 +101,6 @@ points directly through `.local.sh`, for example `run_redk2nu_fhc.fcl` and
 
 The main grid-submission XML configurations are:
 
-  * xml/numi_run1aot_campaign.xml
   * xml/numi_run1_campaign.xml
   * xml/numi_run1_fhc_campaign.xml
   * xml/numi_run1_rhc_campaign.xml
@@ -114,6 +115,10 @@ The main grid-submission XML configurations are:
 
 Older XMLs were archived under reference/legacy_xml/ so xml/ only contains the
 current staged campaign entry points.
+
+For Run 1, `xml/numi_run1_campaign.xml` is the plain data/EXT campaign and
+`xml/numi_run1_fhc_campaign.xml` holds the FHC MC, dedicated strangeness, and
+Run 1 FHC detvar samples.
 
 The repository root also contains helper scripts commonly used during local
 work:

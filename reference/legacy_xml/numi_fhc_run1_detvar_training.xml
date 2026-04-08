@@ -12,10 +12,8 @@
     <!ENTITY input_beam_detvar_nominal_train "nl_beam_detvar_nominal_training_stride2">
     <!ENTITY input_strangeness_detvar_nominal_train "nl_strange_detvar_nominal_training_stride2">
 
-    <!ENTITY fcl_image "run_imageprod.fcl">
-    <!ENTITY fcl_sel_mc "run_nuselection_slim_oldflux_rw.fcl">
-    <!ENTITY fcl_sel_mc_strangeness "run_nuselection_slim.fcl">
-    <!ENTITY fcl_sel_mc_old "run_nuselection_slim_oldflux_rw.fcl">
+    <!ENTITY fcl_fullchain_old "run_fullchain_oldflux_rw.fcl">
+    <!ENTITY fcl_fullchain_strangeness "run_fullchain.fcl">
 ]>
 
 <job>
@@ -37,46 +35,24 @@
     <schema>https</schema>
     <maxfilesperjob>1</maxfilesperjob>
 
-    <stage name="beam_detvar_nominal_train_image">
+    <stage name="beam_detvar_nominal_train">
         <inputdef>&input_beam_detvar_nominal_train;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar_nominal_train/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="beam_detvar_nominal_train_sel">
-        <previousstage>beam_detvar_nominal_train_image</previousstage>
-        <fcl>&fcl_sel_mc_old;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar_nominal_train/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar_nominal_train/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar_nominal_train</workdir>
         <datatier>selected</datatier>
         <numjobs>1</numjobs>
     </stage>
 
-    <stage name="strangeness_detvar_nominal_train_image">
+    <stage name="strangeness_detvar_nominal_train">
         <inputdef>&input_strangeness_detvar_nominal_train;</inputdef>
-        <fcl>&fcl_image;</fcl>
+        <fcl>&fcl_fullchain_strangeness;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar_nominal_train/image</workdir>
-        <datatier>image</datatier>
-        <numjobs>1</numjobs>
-    </stage>
-
-    <stage name="strangeness_detvar_nominal_train_sel">
-        <previousstage>strangeness_detvar_nominal_train_image</previousstage>
-        <fcl>&fcl_sel_mc_strangeness;</fcl>
-        <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar_nominal_train/sel</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar_nominal_train/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar_nominal_train</workdir>
         <datatier>selected</datatier>
         <numjobs>1</numjobs>
     </stage>

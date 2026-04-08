@@ -94,6 +94,14 @@ jobs/run_fullchain.fcl
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
+jobs/run_fullchain_data.fcl
+     Data/EXT wrapper over run_fullchain.fcl.  It keeps the inference path but
+     applies the checked-in data overrides.
+
+jobs/run_fullchain_oldflux_rw.fcl
+     Old-flux-reweighted wrapper over run_fullchain.fcl for MC chains that read
+     EventWeightSep24OldRW products.
+
 jobs/run_fullchain_slim.fcl
      Runs the slim redk2nu, EventWeight, image, and neutrino-selection chain
      in one process.
@@ -320,7 +328,6 @@ The checked-in branch and product layout is summarized here.  In particular:
 
 `xml/` now contains these staged campaign entry points:
 
-  * xml/numi_run1aot_campaign.xml
   * xml/numi_run1_campaign.xml
   * xml/numi_run1_fhc_campaign.xml
   * xml/numi_run1_rhc_campaign.xml
@@ -337,21 +344,21 @@ Older XMLs were archived under `reference/legacy_xml/`.
 
 The campaign XMLs use the same building blocks:
 
-  * MC beam, dirt, and dedicated strangeness stages use
-    `redk2nu -> evtw -> image -> sel`
+  * MC beam and dirt stages use `redk2nu -> evtw -> fullchain_oldflux_rw`
+  * dedicated strangeness MC stages use `redk2nu -> evtw -> fullchain`
+  * data and EXT stages use `fullchain_data`
+  * detector-variation chains, where present, use a single fullchain stage
   * only `fcl_evtw_00` is active, so MC keeps the first 100 multisim
     universes
-  * data and EXT stages use `image -> sel`
-  * detector-variation chains, where present, use `image -> sel`
-  * inference is omitted because the checked-in model bundle has not been
-    updated yet
   * active campaign XMLs default to 25-job test submissions
 
 Run-specific notes:
 
-  * Run 1 FHC includes the nominal beam/dirt shards, the dedicated
-    strangeness sample, generic beam detvars, confirmed dedicated strangeness
-    detvars, and explicit CV `train_shard` / `template_shard` stage families.
+  * Run 1 is split into `numi_run1_campaign.xml` for the plain data/EXT
+    surfaces and `numi_run1_fhc_campaign.xml` for the nominal FHC beam/dirt
+    shards, the dedicated strangeness sample, generic beam detvars, confirmed
+    dedicated strangeness detvars, and explicit CV `train_shard` /
+    `template_shard` stage families.
   * Run 2a FHC includes the nominal beam/dirt/strangeness chains plus the
     generic Run 2a FHC beam detvars.
   * Run 2b RHC includes the regenerated nominal beam chain, the Run 2 RHC
@@ -396,53 +403,45 @@ common NuMI note examples for splitting large SAM definitions with
 
 Nominal Run 1 submission example:
 
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_evtw --submit
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_evtw --check
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --submit
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --check
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_sel --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --check
 
 Run 1 CV train-shard detvar example:
 
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --submit
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_image --check
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard_sel --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard --check
 
 Run 2a nominal example:
 
-     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_evtw --submit
-     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_evtw --check
-     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_image --submit
-     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam_sel --submit
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam --submit
+     project.py --xml xml/numi_run2a_fhc_campaign.xml --stage beam --check
 
 Run 2b nominal example:
 
-     project.py --xml xml/numi_run2b_rhc_campaign.xml --stage beam_evtw --submit
+     project.py --xml xml/numi_run2b_rhc_campaign.xml --stage beam --submit
 
 Run 3b nominal example:
 
-     project.py --xml xml/numi_run3b_rhc_campaign.xml --stage beam_shard0_evtw --submit
+     project.py --xml xml/numi_run3b_rhc_campaign.xml --stage beam --submit
 
 Stage naming follows a fixed pattern:
 
-  * nominal shard-based campaigns use names such as `beam_shard0_evtw`,
-    `beam_shard0_image`, `beam_shard0_sel`
-  * unsplit nominal campaigns use names such as `beam_evtw`, `beam_image`,
-    `beam_sel`
-  * detvars use names such as `beam_detvar_sce_image`, `beam_detvar_sce_sel`
+  * nominal campaigns use names such as `beam`, `dirt`, `strangeness`,
+    `ext`, and `data`
+  * split dirt campaigns use names such as `dirt_shard0` and `dirt_shard1`
+  * detvars use names such as `beam_detvar_sce`
   * Run 1 dedicated strangeness detvars use names such as
-    `strangeness_detvar_ly_rayleigh_image` and
-    `strangeness_detvar_ly_rayleigh_sel`
+    `strangeness_detvar_ly_rayleigh`
   * Run 1 CV split chains use names such as
-    `beam_detvar_cv_train_shard_image`,
-    `beam_detvar_cv_template_shard_image`,
-    `strangeness_detvar_cv_train_shard_image`, and
-    `strangeness_detvar_cv_template_shard_image`
+    `beam_detvar_cv_train_shard`,
+    `beam_detvar_cv_template_shard`,
+    `strangeness_detvar_cv_train_shard`, and
+    `strangeness_detvar_cv_template_shard`
 
 To clean and resubmit a stage, target the specific staged node you want to rerun:
 
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --clean
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_shard0_image --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --clean
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --submit
 
 
 7. Common adjustments
