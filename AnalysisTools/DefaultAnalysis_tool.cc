@@ -369,8 +369,6 @@ void DefaultAnalysis::analyseSlice(const art::Event &event, std::vector<common::
             for (auto const &pfp_in_slice : slice_pfp_vec) {
                 auto const &spacepoints = pfp_in_slice.get<recob::SpacePoint>();
                 for (auto const &spacepoint : spacepoints) {
-                    if (!spacepoint)
-                        continue;
                     if (!seen_spacepoint_keys.insert(static_cast<std::size_t>(spacepoint.key())).second)
                         continue;
 
