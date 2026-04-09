@@ -249,7 +249,7 @@ case "${workflow}" in
     require_single_event_output "eventweight stage"
     run_step "run_imageprod.fcl" "${LAST_EVENT_OUTPUT}"
     require_single_event_output "image stage"
-    run_step "jobs/dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "job/dev/run_stage_sel_dev.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   data)
@@ -261,7 +261,7 @@ case "${workflow}" in
 
     run_step "run_imageprod.fcl" "${first_input}"
     require_single_event_output "image stage"
-    run_step "jobs/run_nuselection_data_slim.fcl" "${LAST_EVENT_OUTPUT}"
+    run_step "job/run_nuselection_data_slim.fcl" "${LAST_EVENT_OUTPUT}"
     print_summary
     ;;
   ntuple)
@@ -271,7 +271,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "jobs/dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
+    run_step "job/dev/flux/run_local_ntuple_dev.fcl" "${first_input}"
     print_summary
     ;;
   fullchain)
@@ -281,7 +281,7 @@ case "${workflow}" in
       first_input="${files}"
     fi
 
-    run_step "jobs/dev/run_stage_fullchain_dev.fcl" "${first_input}"
+    run_step "job/dev/run_stage_fullchain_dev.fcl" "${first_input}"
     print_summary
     ;;
 esac

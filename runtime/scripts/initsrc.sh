@@ -57,9 +57,9 @@ for dir in "${FHICL_DIRS[@]}"; do
 done
 export FHICL_FILE_PATH="$cleaned_fhicl_path"
 
-prepend_fhicl_path "${REPO_BASE_DIR}/jobs"
-prepend_fhicl_path "${REPO_BASE_DIR}/jobs/dev"
-prepend_fhicl_path "${REPO_BASE_DIR}/jobs/dev/flux"
+prepend_fhicl_path "${REPO_BASE_DIR}/job"
+prepend_fhicl_path "${REPO_BASE_DIR}/job/dev"
+prepend_fhicl_path "${REPO_BASE_DIR}/job/dev/flux"
 prepend_fhicl_path "${REDK2NU_BASE}"
 
 if [[ "$PWD" != "$RUNTIME_BASE_DIR" && ! -e "$PWD/runtime" ]]; then

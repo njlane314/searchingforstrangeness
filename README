@@ -56,8 +56,8 @@ Repository layout
   * Helpers/            shared utilities and helper classes
   * ImagePipeline/      image-production and inference support
   * Products/           art product definitions
-  * jobs/               standard production FHiCL files
-  * jobs/dev/           development and debugging FHiCL files
+  * job/                standard production FHiCL files
+  * job/dev/            development and debugging FHiCL files
   * scripts/            helper scripts and operational notes
   * xml/                grid job XML configurations
   * runtime/            model checkpoints, detector data, and inference helpers
@@ -71,29 +71,29 @@ The main top-level job configurations are:
 
   * run_redk2nu_fhc.fcl (from the sibling ubana redk2nu package)
   * run_redk2nu_rhc.fcl (from the sibling ubana redk2nu package)
-  * jobs/run_nuselection.fcl
-  * jobs/run_nuselection_data.fcl
-  * jobs/run_nuselection_slim.fcl
-  * jobs/run_nuselection_data_slim.fcl
-  * jobs/run_nuselection_slim_oldflux_rw.fcl
-  * jobs/run_imageprod.fcl
-  * jobs/run_inferenceprod.fcl
-  * jobs/run_fullchain.fcl
-  * jobs/run_fullchain_data.fcl
-  * jobs/run_fullchain_oldflux_rw.fcl
-  * jobs/run_fullchain_slim.fcl
-  * jobs/run_fullchain_slim_oldflux_rw.fcl
+  * job/run_nuselection.fcl
+  * job/run_nuselection_data.fcl
+  * job/run_nuselection_slim.fcl
+  * job/run_nuselection_data_slim.fcl
+  * job/run_nuselection_slim_oldflux_rw.fcl
+  * job/run_imageprod.fcl
+  * job/run_inferenceprod.fcl
+  * job/run_fullchain.fcl
+  * job/run_fullchain_data.fcl
+  * job/run_fullchain_oldflux_rw.fcl
+  * job/run_fullchain_slim.fcl
+  * job/run_fullchain_slim_oldflux_rw.fcl
 
 The main development configurations are:
 
-  * jobs/dev/flux/run_imageprod_dev.fcl
-  * jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl
-  * jobs/dev/run_imageprod_data_dev.fcl
-  * jobs/dev/run_stage_sel_dev.fcl
-  * jobs/dev/run_stage_fullchain_dev.fcl
-  * jobs/dev/flux/run_local_ntuple_dev.fcl
-  * jobs/dev/flux/run_local_ntuple_oldflux_dev.fcl
-  * jobs/dev/numi_fhc_run1_dev.xml
+  * job/dev/flux/run_imageprod_dev.fcl
+  * job/dev/flux/run_imageprod_oldflux_rw_dev.fcl
+  * job/dev/run_imageprod_data_dev.fcl
+  * job/dev/run_stage_sel_dev.fcl
+  * job/dev/run_stage_fullchain_dev.fcl
+  * job/dev/flux/run_local_ntuple_dev.fcl
+  * job/dev/flux/run_local_ntuple_oldflux_dev.fcl
+  * job/dev/numi_fhc_run1_dev.xml
 
 Standalone redk2nu and EventWeight debugging now uses the upstream FHiCL entry
 points directly through `.local.sh`, for example `run_redk2nu_fhc.fcl` and

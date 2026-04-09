@@ -38,7 +38,7 @@
 
     <stage name="dev_beam">
       <inputdef>&input_beam;</inputdef>
-      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam/log</logdir>
@@ -49,7 +49,7 @@
 
     <stage name="dev_beam_full">
       <inputdef>&input_beam;</inputdef>
-      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/beam_full/log</logdir>
@@ -60,7 +60,7 @@
 
     <stage name="dev_strangeness">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>jobs/dev/run_fullchain_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange/log</logdir>
@@ -71,7 +71,7 @@
 
     <stage name="dev_strangeness_full">
       <inputdef>&input_strangeness;</inputdef>
-      <fcl>jobs/dev/run_fullchain_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/strange_full/log</logdir>
@@ -82,7 +82,7 @@
 
     <stage name="dev_dirt">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt/log</logdir>
@@ -93,7 +93,7 @@
 
     <stage name="dev_dirt_full">
       <inputdef>&input_dirt;</inputdef>
-      <fcl>jobs/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_oldflux_rw_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/dirt_full/log</logdir>
@@ -104,7 +104,7 @@
 
     <stage name="dev_cosmic">
       <inputdef>&input_ext;</inputdef>
-      <fcl>jobs/dev/run_fullchain_data_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_data_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic/log</logdir>
@@ -115,7 +115,7 @@
 
     <stage name="dev_cosmic_full">
       <inputdef>&input_ext;</inputdef>
-      <fcl>jobs/dev/run_fullchain_data_dev.fcl</fcl>
+      <fcl>job/dev/run_fullchain_data_dev.fcl</fcl>
       <initsource>&initsrc;</initsource>
       <outdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/out</outdir>
       <logdir>/pnfs/uboone/scratch/users/&user;/dev/&release;/&name;/cosmic_full/log</logdir>

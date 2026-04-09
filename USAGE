@@ -54,59 +54,59 @@ explicit `BEARER_TOKEN_FILE` export.
 2. Choose a checked-in job configuration
 ----------------------------------------
 
-The standard entry points are under jobs/.
+The standard entry points are under job/.
 
-jobs/run_nuselection.fcl
+job/run_nuselection.fcl
      Runs the neutrino-selection filter on MC-style input and writes the
      analysis TTree file nu_selection.root.
 
-jobs/run_nuselection_data.fcl
+job/run_nuselection_data.fcl
      Runs the data/EXT version of the selection and writes
      nu_selection_data.root.
 
-jobs/run_nuselection_slim.fcl
+job/run_nuselection_slim.fcl
      Runs the MC-style selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
      nu_selection_slim.root.
 
-jobs/run_nuselection_data_slim.fcl
+job/run_nuselection_data_slim.fcl
      Runs the data/EXT selection on input that already contains imageprod
      products, but skips loading inference products.  It writes
      nu_selection_data_slim.root.
 
-jobs/run_nuselection_slim_oldflux_rw.fcl
+job/run_nuselection_slim_oldflux_rw.fcl
      Runs the slim MC-style selection on old-flux-reweighted input and writes
      nu_selection_slim_oldflux_rw.root.
 
-jobs/run_imageprod.fcl
+job/run_imageprod.fcl
      Produces image::ImageFeatures objects for the selected slice and a
      full-detector companion collection, then writes the event file
      %ifb_%tc_imageprod.root.  The checked-in TFileService output is
      imageprod_hist.root.
 
-jobs/run_inferenceprod.fcl
+job/run_inferenceprod.fcl
      Runs model inference on existing imageprod:CroppedWindow products and writes
      the event file %ifb_%tc_inference.root.  The checked-in TFileService
      output is inferenceprod_hist.root.
 
-jobs/run_fullchain.fcl
+job/run_fullchain.fcl
      Runs image production, inference, and neutrino selection in one process.
      It writes %ifb_%tc_fullchain_nuselection.root and
      fullchain_nuselection_hist.root.
 
-jobs/run_fullchain_data.fcl
+job/run_fullchain_data.fcl
      Data/EXT wrapper over run_fullchain.fcl.  It keeps the inference path but
      applies the checked-in data overrides.
 
-jobs/run_fullchain_oldflux_rw.fcl
+job/run_fullchain_oldflux_rw.fcl
      Old-flux-reweighted wrapper over run_fullchain.fcl for MC chains that read
      EventWeightSep24OldRW products.
 
-jobs/run_fullchain_slim.fcl
+job/run_fullchain_slim.fcl
      Runs the slim redk2nu, EventWeight, image, and neutrino-selection chain
      in one process.
 
-jobs/run_fullchain_slim_oldflux_rw.fcl
+job/run_fullchain_slim_oldflux_rw.fcl
      Old-flux-reweighted counterpart to the slim fullchain wrapper.
 
 run_redk2nu_fhc.fcl
@@ -115,36 +115,36 @@ run_redk2nu_rhc.fcl
      using the FHC or RHC NuMI dk2nu file paths from the sibling ubana
      redk2nu package.
 
-The development entry points are under jobs/dev/.
+The development entry points are under job/dev/.
 
-jobs/dev/flux/run_imageprod_dev.fcl
+job/dev/flux/run_imageprod_dev.fcl
      Development chain for imaging, inference, and selection with event-weight
      analysis enabled.
 
-jobs/dev/flux/run_imageprod_oldflux_rw_dev.fcl
+job/dev/flux/run_imageprod_oldflux_rw_dev.fcl
      Old-flux variant of the same imaging, inference, and selection chain.
 
-jobs/dev/run_imageprod_data_dev.fcl
+job/dev/run_imageprod_data_dev.fcl
      Development chain for cosmic/data-style imaging and selection studies.
 
-jobs/dev/run_stage_sel_dev.fcl
+job/dev/run_stage_sel_dev.fcl
      Local wrapper for the staged MC-style selection step.
 
-jobs/dev/run_stage_fullchain_dev.fcl
+job/dev/run_stage_fullchain_dev.fcl
      Local wrapper for running the image, inference, and selection chain in
      one process while still using dev-local output names.
 
-jobs/dev/flux/run_local_ntuple_dev.fcl
+job/dev/flux/run_local_ntuple_dev.fcl
      Local MC-style ntuple job for downstream ntuple validation.  It runs the
      redk2nu, eventweight, and image stages in-process, writes the
      EventSelectionFilter and SubRun trees, keeps only 100 GENIE and 100 PPFX
      universes, uses the standard NuMI EventWeight chain, and leaves
      inference disabled until the checked-in model bundle is refreshed.
 
-jobs/dev/flux/run_local_ntuple_oldflux_dev.fcl
+job/dev/flux/run_local_ntuple_oldflux_dev.fcl
      Old-flux counterpart to the local ntuple validation job.
 
-jobs/dev/numi_fhc_run1_dev.xml
+job/dev/numi_fhc_run1_dev.xml
      Grid job template for the dev imaging and inference chain.
 
 
@@ -157,19 +157,19 @@ The most common command form is:
 
 Examples:
 
-     lar -c jobs/run_nuselection.fcl -s reco_input.root
+     lar -c job/run_nuselection.fcl -s reco_input.root
 
-     lar -c jobs/run_nuselection_data.fcl -s data_input.root
+     lar -c job/run_nuselection_data.fcl -s data_input.root
 
-     lar -c jobs/run_nuselection_slim.fcl -s imageprod_output.root
+     lar -c job/run_nuselection_slim.fcl -s imageprod_output.root
 
-     lar -c jobs/run_nuselection_data_slim.fcl -s imageprod_output.root
+     lar -c job/run_nuselection_data_slim.fcl -s imageprod_output.root
 
-     lar -c jobs/run_imageprod.fcl -s reco_input.root
+     lar -c job/run_imageprod.fcl -s reco_input.root
 
-     lar -c jobs/run_inferenceprod.fcl -s imageprod_output.root
+     lar -c job/run_inferenceprod.fcl -s imageprod_output.root
 
-     lar -c jobs/run_fullchain.fcl -s reco_input.root
+     lar -c job/run_fullchain.fcl -s reco_input.root
 
 Usage notes:
 
@@ -211,7 +211,7 @@ For a compact local ntuple validation file, run the dedicated local ntuple
 job on a single SAM file:
 
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
-       ./.local.sh jobs/dev/flux/run_local_ntuple_dev.fcl 1
+       ./.local.sh job/dev/flux/run_local_ntuple_dev.fcl 1
 
 That produces one combined TFileService ROOT file under `out/`.
 Because downstream ntuple consumers use the EventSelectionFilter and SubRun
@@ -228,7 +228,7 @@ That defaults to the Run 1 FHC staged MC path:
   * `run_redk2nu_fhc.fcl`
   * `run_eventweight_microboone_sept24_numi_fhc.fcl`
   * `run_imageprod.fcl`
-  * `jobs/dev/run_stage_sel_dev.fcl`
+  * `job/dev/run_stage_sel_dev.fcl`
 
 and enforces a single-file starting point so the local stage handoff stays on
 one ROOT file at a time. You can switch workflows or inputs, for example:
@@ -272,7 +272,7 @@ definition and loop over them:
      counter=1
      for file in $files; do
          filedir=$(samweb locate-file "$file" | grep -o '/pnfs/.*' | head -n 1)
-         lar -c jobs/run_fullchain.fcl -s "${filedir}/${file}"
+         lar -c job/run_fullchain.fcl -s "${filedir}/${file}"
          mv fullchain_nuselection_hist.root "fullchain_${counter}.root"
          counter=$((counter + 1))
      done
@@ -445,8 +445,8 @@ campaign.  Common edits include:
   * changing the inference model family, checkpoint, or wrapper path;
   * adjusting XML entities to point at your own PNFS areas and SAM inputs.
 
-For development work, put ad hoc configurations under jobs/dev/ rather than editing
-the production files in jobs/ without a reason.
+For development work, put ad hoc configurations under job/dev/ rather than editing
+the production files in job/ without a reason.
 
 
 8. If something fails early
