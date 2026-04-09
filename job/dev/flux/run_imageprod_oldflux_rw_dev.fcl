@@ -1,6 +1,7 @@
 #include "microboone_eventweight_service.fcl"
 #include "redk2nu_g4_9_2.fcl"
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
+#include "eventweight_microboone.fcl"
 #include "run_nuselection.fcl"
 #include "oldflux_rw.fcl"
 
@@ -12,15 +13,17 @@ services.NuRandomService: @local::microboone_seedservice
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24_oldflux
+physics.producers.eventweightreint: @local::microboone_eventweight_justreint
 physics.producers.inferenceprod: @local::standard_inference_producer
 
-physics.path1: [ generator, eventweightSep24, imageprod, inferenceprod, nuselection ]
+physics.path1: [ generator, eventweightSep24, eventweightreint, imageprod, inferenceprod, nuselection ]
 physics.trigger_paths: [ path1 ]
 
 event_weight_analysis_oldflux_rw_dev: @local::event_weight_analysis_oldflux_rw
 event_weight_analysis_oldflux_rw_dev.genieAllUniverses: 100
 event_weight_analysis_oldflux_rw_dev.ppfxAllUniverses: 100
 event_weight_analysis_oldflux_rw_dev.eventWeightProcessName00: "ImageProdOldFluxRWDev"
+event_weight_analysis_oldflux_rw_dev.reintProcessName: "ImageProdOldFluxRWDev"
 
 physics.filters.nuselection.AnalysisTools.weight: @local::event_weight_analysis_oldflux_rw_dev
 physics.filters.nuselection.CountWithOpFilter: false

@@ -16,6 +16,7 @@
 
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_reint "run_eventweight_microboone_g4rwt_reint.fcl">
     <!ENTITY fcl_redk2nu_strangeness "run_redk2nu_fhc.fcl">
     <!ENTITY fcl_evtw_strangeness_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
     <!ENTITY fcl_imageprod "run_imageprod.fcl">
@@ -47,6 +48,7 @@
         <inputdef>&input_beam;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_evtw_reint;</fcl>
         <fcl>&fcl_imageprod;</fcl>
         <fcl>&fcl_nuselection_old;</fcl>
         <initsource>&initsrc;</initsource>
@@ -61,6 +63,7 @@
         <inputdef>&input_dirt;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_evtw_reint;</fcl>
         <fcl>&fcl_imageprod;</fcl>
         <fcl>&fcl_nuselection_old;</fcl>
         <initsource>&initsrc;</initsource>

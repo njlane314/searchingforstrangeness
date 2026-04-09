@@ -16,6 +16,7 @@
 
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_reint "run_eventweight_microboone_g4rwt_reint.fcl">
     <!ENTITY fcl_fullchain_old "run_fullchain_oldflux_rw.fcl">
     <!ENTITY fcl_fullchain_data "run_fullchain_data.fcl">
 ]>
@@ -43,6 +44,7 @@
         <inputdef>&input_beam;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_evtw_reint;</fcl>
         <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run4c_fhc/out</outdir>
@@ -56,6 +58,7 @@
         <inputdef>&input_dirt;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_evtw_reint;</fcl>
         <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/dirt/run4c_fhc/out</outdir>

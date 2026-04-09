@@ -98,6 +98,8 @@ private:
     std::string _event_weight_process_name_03;
     std::string _event_weight_process_name_04;
     std::string _event_weight_process_name_05;
+    std::string _reint_process_name;
+    std::string _reint_module_label;
 
     static int GetReintComponentIndex(const std::string& keyname);
     static const std::array<const char*, kNumReintComponents>& GetReintComponentBranchNames();
@@ -125,6 +127,8 @@ EventWeightAnalysis::EventWeightAnalysis(const fhicl::ParameterSet &p) {
     _event_weight_process_name_03 = p.get<std::string>("eventWeightProcessName03", "EventWeightSep24ExtraGENIE3");
     _event_weight_process_name_04 = p.get<std::string>("eventWeightProcessName04", "EventWeightSep24ExtraGENIE4");
     _event_weight_process_name_05 = p.get<std::string>("eventWeightProcessName05", "EventWeightSep24ExtraGENIE5");
+    _reint_process_name = p.get<std::string>("reintProcessName", "");
+    _reint_module_label = p.get<std::string>("reintModuleLabel", "eventweightreint");
 }
 
 int EventWeightAnalysis::GetReintComponentIndex(const std::string& keyname) {
@@ -199,6 +203,43 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
     const std::string reintSuffix = "_Geant4";
     std::array<bool, kNumReintComponents> isFirstVectorReintComponent;
     isFirstVectorReintComponent.fill(true);
+    bool isFirstVectorFlux   = _vecWeightFluxD.empty();
+    bool isFirstVectorReint  = _vecWeightsReintD.empty();
+
+    auto mergeReintWeight = [&](const std::string& keyname, const std::vector<double>& weights) {
+        if ( keyname.find(reintPrefix) != 0 ||
+             keyname.size() < reintPrefix.size() + reintSuffix.size() ||
+             keyname.compare(keyname.size() - reintSuffix.size(),
+                             reintSuffix.size(),
+                             reintSuffix) != 0 ) {
+            return;
+        }
+
+        if (isFirstVectorReint) {
+            _vecWeightsReintD = weights;
+            isFirstVectorReint = false;
+        }
+        else if (weights.size() == _vecWeightsReintD.size()) {
+            for (unsigned int i = 0; i < weights.size(); ++i) {
+                _vecWeightsReintD[i] *= weights[i];
+            }
+        }
+
+        if (_createReintComponentBranches) {
+            const int componentIndex = GetReintComponentIndex(keyname);
+            if (componentIndex >= 0) {
+                if (isFirstVectorReintComponent[componentIndex]) {
+                    _vecWeightsReintComponentsD[componentIndex] = weights;
+                    isFirstVectorReintComponent[componentIndex] = false;
+                }
+                else if (weights.size() == _vecWeightsReintComponentsD[componentIndex].size()) {
+                    for (unsigned int i = 0; i < weights.size(); ++i) {
+                        _vecWeightsReintComponentsD[componentIndex][i] *= weights[i];
+                    }
+                }
+            }
+        }
+    };
 
     for(auto& thisTag : vecTag){
         art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
@@ -327,9 +368,6 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                 }
             } 
 
-            bool isFirstVectorFlux   = _vecWeightFluxD.empty();
-            bool isFirstVectorReint  = _vecWeightsReintD.empty();
-
             for(std::map<std::string, std::vector<double>>::iterator it=evtwgt_map.begin(); it!=evtwgt_map.end(); ++it){
                 std::string keyname = it->first;
 
@@ -354,36 +392,13 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                     }
                     PPFXCounter += 1;
                 }
-                else if ( keyname.find(reintPrefix) == 0 &&
-                          keyname.size() >= reintPrefix.size() + reintSuffix.size() &&
-                          keyname.compare(keyname.size() - reintSuffix.size(),
-                                          reintSuffix.size(),
-                                          reintSuffix) == 0 ) {
-                    if(isFirstVectorReint){
-                        _vecWeightsReintD = it->second;
-                        isFirstVectorReint = false;
-                    }
-                    else{
-                        if ( (it->second).size() == _vecWeightsReintD.size() ) {
-                            for(unsigned int i = 0; i < it->second.size(); ++i)
-                                _vecWeightsReintD[i] *= it->second[i];
-                        }
-                    }
-
-                    if (_createReintComponentBranches) {
-                        const int componentIndex = GetReintComponentIndex(keyname);
-                        if (componentIndex >= 0) {
-                            if (isFirstVectorReintComponent[componentIndex]) {
-                                _vecWeightsReintComponentsD[componentIndex] = it->second;
-                                isFirstVectorReintComponent[componentIndex] = false;
-                            }
-                            else if (it->second.size() == _vecWeightsReintComponentsD[componentIndex].size()) {
-                                for (unsigned int i = 0; i < it->second.size(); ++i) {
-                                    _vecWeightsReintComponentsD[componentIndex][i] *= it->second[i];
-                                }
-                            }
-                        }
-                    }
+                else if (_reint_process_name.empty() &&
+                         keyname.find(reintPrefix) == 0 &&
+                         keyname.size() >= reintPrefix.size() + reintSuffix.size() &&
+                         keyname.compare(keyname.size() - reintSuffix.size(),
+                                         reintSuffix.size(),
+                                         reintSuffix) == 0 ) {
+                    mergeReintWeight(keyname, it->second);
                 }
                 else if(!_makeNuMItuple &&
                     (keyname.find("horncurrent") != std::string::npos ||
@@ -428,6 +443,26 @@ void EventWeightAnalysis::analyseEvent(const art::Event& event, bool is_data) {
                         !(keyname.find("ppfx_oldrw_cv_UBOLDPPFXCV") != std::string::npos && _makeNuMItuple && _useReweightedFlux) &&
                         !(keyname.find("ppfx_cv_UBPPFXCV") != std::string::npos && _makeNuMItuple && !_useReweightedFlux)
                         ) {}
+                }
+            }
+        }
+    }
+
+    if (!_reint_process_name.empty()) {
+        art::Handle<std::vector<evwgh::MCEventWeight>> reintweights_handle;
+        art::InputTag reint_tag(_reint_module_label, "", _reint_process_name);
+        event.getByLabel(reint_tag, reintweights_handle);
+
+        if (reintweights_handle.isValid()) {
+            std::vector<art::Ptr<evwgh::MCEventWeight>> reintweights;
+            art::fill_ptr_vector(reintweights, reintweights_handle);
+
+            if (!reintweights.empty()) {
+                const auto& evtwgt_map = reintweights.at(0)->fWeight;
+                std::cout << "--- Reinteraction weights from art::Event label: " << reint_tag.label() << " ---" << std::endl;
+                for (const auto& pair : evtwgt_map) {
+                    std::cout << "    Found weight name: " << pair.first << std::endl;
+                    mergeReintWeight(pair.first, pair.second);
                 }
             }
         }
