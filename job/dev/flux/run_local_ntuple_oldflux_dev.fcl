@@ -3,7 +3,7 @@
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "run_nuselection_slim_oldflux_rw.fcl"
 
-process_name: local_ntuple_oldflux_rw_dev
+process_name: LocalNtupleOldFluxRWDev
 
 services.TFileService.fileName: "local_ntuple_oldflux_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -23,7 +23,7 @@ physics.trigger_paths: [ path1 ]
 local_ntuple_event_weight_analysis_oldflux_rw: @local::event_weight_analysis_oldflux_rw
 local_ntuple_event_weight_analysis_oldflux_rw.genieAllUniverses: 100
 local_ntuple_event_weight_analysis_oldflux_rw.ppfxAllUniverses: 100
-local_ntuple_event_weight_analysis_oldflux_rw.eventWeightProcessName00: "local_ntuple_oldflux_rw_dev"
+local_ntuple_event_weight_analysis_oldflux_rw.eventWeightProcessName00: "LocalNtupleOldFluxRWDev"
 
 physics.filters.nuselection.AnalysisTools.weight: @local::local_ntuple_event_weight_analysis_oldflux_rw
 physics.filters.nuselection.CountWithOpFilter: false

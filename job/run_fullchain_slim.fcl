@@ -5,7 +5,7 @@
 #include "eventweight_microboone_sept24_numi_fhc_slim.fcl"
 #include "selectionconfig.fcl"
 
-process_name: fullchain_nu_selection_slim
+process_name: FullChainNuSelectionSlim
 
 services: {
   TFileService: { fileName: "fullchain_nuselection_noinference_hist.root" }

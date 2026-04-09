@@ -100,11 +100,11 @@ event_weight_analysis_slim.createGenieUpDnVecs: false
 event_weight_analysis_slim.genieAllUniverses: 0
 event_weight_analysis_slim.ppfxAllUniverses: 0
 event_weight_analysis_slim.makeNuMINtuple: false
-event_weight_analysis_slim.eventWeightProcessName00: "fullchain_nu_selection_slim"
+event_weight_analysis_slim.eventWeightProcessName00: "FullChainNuSelectionSlim"
 
 event_weight_analysis_slim_oldflux_rw: @local::event_weight_analysis_slim
 event_weight_analysis_slim_oldflux_rw.useReweightedFlux: true
-event_weight_analysis_slim_oldflux_rw.eventWeightProcessName00: "fullchain_nu_selection_slim_oldflux_rw"
+event_weight_analysis_slim_oldflux_rw.eventWeightProcessName00: "FullChainNuSelectionSlimOldFluxRW"
 
 truth_analysis: {
     tool_type: "TruthAnalysis"

@@ -1,7 +1,7 @@
 #include "run_fullchain.fcl"
 #include "is_data.fcl"
 
-process_name: fullchain_nu_selection_data
+process_name: FullChainNuSelectionData
 
 services.TFileService.fileName: "fullchain_nuselection_data_hist.root"
 outputs.out1.fileName: "%ifb_%tc_fullchain_nuselection_data.root"

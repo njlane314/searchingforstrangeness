@@ -1,6 +1,6 @@
 #include "run_nuselection_data.fcl"
 
-process_name: image_prod_data_dev
+process_name: ImageProdDataDev
 
 services.TFileService.fileName: "imaging_dev_cosmic.root"
 services.NuRandomService: @local::microboone_seedservice

@@ -1,6 +1,6 @@
 #include "run_fullchain_oldflux_rw.fcl"
 
-process_name: fullchain_oldflux_rw_dev
+process_name: FullChainOldFluxRWDev
 
 services.TFileService.fileName: "fullchain_oldflux_rw_dev_hist.root"
 outputs.out1.fileName: "fullchain_oldflux_rw_dev.root"

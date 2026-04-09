@@ -1,6 +1,6 @@
 #include "run_fullchain.fcl"
 
-process_name: fullchain_dev
+process_name: FullChainDev
 
 services.TFileService.fileName: "fullchain_dev_hist.root"
 outputs.out1.fileName: "fullchain_dev.root"

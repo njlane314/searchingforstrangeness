@@ -3,7 +3,7 @@
 #include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection_slim.fcl"
 
-process_name: local_ntuple_dev
+process_name: LocalNtupleDev
 
 services.TFileService.fileName: "local_ntuple_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -25,7 +25,7 @@ local_ntuple_event_weight_analysis: {
   genieAllUniverses: 100
   ppfxAllUniverses: 100
   useReweightedFlux: false
-  eventWeightProcessName00: "local_ntuple_dev"
+  eventWeightProcessName00: "LocalNtupleDev"
 }
 
 physics.filters.nuselection.AnalysisTools.weight: @local::local_ntuple_event_weight_analysis

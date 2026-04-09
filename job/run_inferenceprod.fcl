@@ -3,7 +3,7 @@
 #include "particleinventoryservice.fcl"
 #include "producers.fcl"
 
-process_name: inference_prod
+process_name: InferenceProd
 
 services: {
   TFileService: { fileName: "inferenceprod_hist.root" }

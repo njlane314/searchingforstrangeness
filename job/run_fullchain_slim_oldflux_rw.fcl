@@ -5,7 +5,7 @@
 #include "eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl"
 #include "selectionconfig.fcl"
 
-process_name: fullchain_nu_selection_slim_oldflux_rw
+process_name: FullChainNuSelectionSlimOldFluxRW
 
 services: {
   TFileService: { fileName: "fullchain_nuselection_slim_oldflux_rw_hist.root" }

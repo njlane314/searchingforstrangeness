@@ -1,7 +1,7 @@
 #include "run_fullchain.fcl"
 #include "oldflux_rw.fcl"
 
-process_name: fullchain_nu_selection_oldflux_rw
+process_name: FullChainNuSelectionOldFluxRW
 
 services.TFileService.fileName: "fullchain_nuselection_oldflux_rw_hist.root"
 outputs.out1.fileName: "%ifb_%tc_fullchain_nuselection_oldflux_rw.root"

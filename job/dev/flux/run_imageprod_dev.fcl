@@ -3,7 +3,7 @@
 #include "eventweight_microboone_sept24_numi_fhc.fcl"
 #include "run_nuselection.fcl"
 
-process_name: image_prod_dev
+process_name: ImageProdDev
 
 services.TFileService.fileName: "imaging_dev.root"
 services.UBEventWeight: @local::microboone_eventweight_service
@@ -21,7 +21,7 @@ event_weight_analysis_dev: {
   genieAllUniverses: 100
   ppfxAllUniverses: 100
   useReweightedFlux: false
-  eventWeightProcessName00: "image_prod_dev"
+  eventWeightProcessName00: "ImageProdDev"
 }
 
 physics.filters.nuselection.AnalysisTools.weight: @local::event_weight_analysis_dev

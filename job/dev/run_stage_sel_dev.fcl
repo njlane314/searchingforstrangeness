@@ -1,6 +1,6 @@
 #include "run_nuselection_slim.fcl"
 
-process_name: nu_selection_stage_dev
+process_name: NuSelectionStageDev
 
 services.TFileService.fileName: "stage_sel_dev.root"
 physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 100

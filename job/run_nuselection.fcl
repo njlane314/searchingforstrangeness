@@ -2,7 +2,7 @@
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
 
-process_name: nu_selection_mc
+process_name: NuSelectionMC
 
 services: {
   TFileService: { fileName: "nu_selection.root" }

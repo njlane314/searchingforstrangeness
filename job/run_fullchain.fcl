@@ -2,7 +2,7 @@
 #include "services_microboone.fcl"
 #include "selectionconfig.fcl"
 
-process_name: fullchain_nu_selection
+process_name: FullChainNuSelection
 
 services: {
   TFileService: { fileName: "fullchain_nuselection_hist.root" }
