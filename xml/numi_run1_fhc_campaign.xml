@@ -9,10 +9,10 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!ENTITY input_beam "ub_numi_run1_fhc_beam_gr">
-    <!ENTITY input_dirt "ub_numi_run1_fhc_dirt_gr">
-    <!ENTITY input_strangeness "ub_numi_run1_fhc_strangeness_gr">
-    <!ENTITY input_ext "ub_numi_run1_ext_gr">
+    <!ENTITY input_beam "prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_all_snapshot">
+    <!ENTITY input_dirt "prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all_snapshot">
+    <!ENTITY input_strangeness "prod_strange_resample_fhc_run1_fhc_reco2_reco2">
+    <!ENTITY input_ext "prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2">
 
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
