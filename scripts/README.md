@@ -4,7 +4,6 @@
 
 `xml/` now contains these staged campaign entry points:
 
-- `xml/numi_run1_campaign.xml`
 - `xml/numi_run1_fhc_campaign.xml`
 - `xml/numi_run1_rhc_campaign.xml`
 - `xml/numi_run2a_fhc_campaign.xml`
@@ -31,9 +30,8 @@ The checked-in campaign XMLs use one stage per sample:
 
 For Run 1 specifically:
 
-- `xml/numi_run1_campaign.xml` is the plain data/EXT campaign
-- `xml/numi_run1_fhc_campaign.xml` is the FHC MC and dedicated strangeness
-  campaign
+- `xml/numi_run1_fhc_campaign.xml` is the active Run 1 FHC campaign and also
+  carries the checked-in Run 1 data/EXT surfaces by temporary convention
 
 The checked-in local validation helper now uses the staged EventWeight dev
 wrappers directly, and those wrappers run redk2nu internally before the
@@ -177,11 +175,11 @@ The explicit `samweb create-definition ...` commands now live at the bottom of
 `SAMPLES`, alongside the `original reco2`, `goodruns list`, and `updated
 reco2` mapping for each sample.
 
-## Run 1 CV train/template shards
+## Run 1 CV shard pairs
 
 Only Run 1 currently has the CV split encoded directly into the staged
-campaign XML. The split happens at the SAM-definition level so training and
-template surfaces are orthogonal before any processing stage runs.
+campaign XML. The split happens at the SAM-definition level so the two shard
+surfaces are orthogonal before any processing stage runs.
 
 The checked-in batch file is:
 
@@ -193,16 +191,18 @@ Create the shard definitions with:
 ./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 ```
 
-That produces:
+The existing SAM definitions are:
 
 - `nl_run1_fhc_beam_detvar_cv_train_shard`
 - `nl_run1_fhc_beam_detvar_cv_template_shard`
 - `nl_run1_fhc_strangeness_detvar_cv_train_shard`
 - `nl_run1_fhc_strangeness_detvar_cv_template_shard`
 
-The Run 1 campaign XML already points at those names. If you use different SAM
-definition names, update the four XML entities near the top of
-`xml/numi_run1_fhc_campaign.xml`.
+The active Run 1 FHC campaign exposes those as neutral stage names
+`beam_detvar_cv_shard0`, `beam_detvar_cv_shard1`,
+`strangeness_detvar_cv_shard0`, and `strangeness_detvar_cv_shard1`. If you
+use different SAM definition names, update the four CV shard entities near the
+top of `xml/numi_run1_fhc_campaign.xml`.
 
 Note:
 
@@ -252,8 +252,7 @@ Build the compact local ntuple validation surface locally:
 ./scripts/validate-campaign.sh --workflow ntuple
 ```
 
-Count a specific campaign XML and include derived train/template shard
-definitions:
+Count a specific campaign XML and include derived CV shard definitions:
 
 ```bash
 ./scripts/campaign-jobs.sh \
@@ -277,8 +276,8 @@ Create the whole Run 1 CV shard set with the full alternating-file split:
 ```
 
 Or use the wrapper that prints source counts and then applies the whole plan,
-targeting roughly 100000 events in the training shard by default while keeping
-the full template shard:
+targeting roughly 100000 events in the first shard by default while keeping
+the second shard untrimmed:
 
 ```bash
 ./scripts/train-template.sh

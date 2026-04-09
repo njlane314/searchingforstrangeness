@@ -12,9 +12,11 @@
     <!ENTITY input_beam "ub_numi_run1_fhc_beam_gr">
     <!ENTITY input_dirt "ub_numi_run1_fhc_dirt_gr">
     <!ENTITY input_strangeness "ub_numi_run1_fhc_strangeness_gr">
-    <!ENTITY input_beam_detvar_cv_train_shard "nl_run1_fhc_beam_detvar_cv_train_shard">
-    <!ENTITY input_beam_detvar_cv_template_shard "nl_run1_fhc_beam_detvar_cv_template_shard">
-    <!ENTITY input_beam_detvar_ly_attenuation "prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2">
+    <!ENTITY input_ext "ub_numi_run1_ext_gr">
+    <!ENTITY input_data "ub_numi_run1_data_gr">
+    <!ENTITY input_beam_detvar_cv_shard0 "nl_run1_fhc_beam_detvar_cv_train_shard">
+    <!ENTITY input_beam_detvar_cv_shard1 "nl_run1_fhc_beam_detvar_cv_template_shard">
+    <!ENTITY input_beam_detvar_ly_attenuation "ub_numi_run1_fhc_dv_ly_attenuation_gr">
     <!ENTITY input_beam_detvar_ly_rayleigh "ub_numi_run1_fhc_dv_ly_rayleigh_gr">
     <!ENTITY input_beam_detvar_ly_down "ub_numi_run1_fhc_dv_ly_down_gr">
     <!ENTITY input_beam_detvar_sce "ub_numi_run1_fhc_dv_sce_gr">
@@ -24,8 +26,8 @@
     <!ENTITY input_beam_detvar_wiremodthetaxz "ub_numi_run1_fhc_dv_wmtxz_gr">
     <!ENTITY input_beam_detvar_wiremodthetayz "ub_numi_run1_fhc_dv_wmtyz_gr">
 
-    <!ENTITY input_strangeness_detvar_cv_train_shard "nl_run1_fhc_strangeness_detvar_cv_train_shard">
-    <!ENTITY input_strangeness_detvar_cv_template_shard "nl_run1_fhc_strangeness_detvar_cv_template_shard">
+    <!ENTITY input_strangeness_detvar_cv_shard0 "nl_run1_fhc_strangeness_detvar_cv_train_shard">
+    <!ENTITY input_strangeness_detvar_cv_shard1 "nl_run1_fhc_strangeness_detvar_cv_template_shard">
     <!ENTITY input_strangeness_detvar_ly_rayleigh "ub_numi_run1_fhc_strangeness_dv_ly_rayleigh_gr">
     <!ENTITY input_strangeness_detvar_ly_down "ub_numi_run1_fhc_strangeness_dv_ly_down_gr">
     <!ENTITY input_strangeness_detvar_sce "ub_numi_run1_fhc_strangeness_dv_sce_gr">
@@ -41,6 +43,7 @@
     <!ENTITY fcl_evtw_strangeness_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
     <!ENTITY fcl_fullchain "run_fullchain.fcl">
     <!ENTITY fcl_fullchain_old "run_fullchain_oldflux_rw.fcl">
+    <!ENTITY fcl_fullchain_data "run_fullchain_data.fcl">
 ]>
 
 <job>
@@ -101,24 +104,46 @@
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="beam_detvar_cv_train_shard">
-        <inputdef>&input_beam_detvar_cv_train_shard;</inputdef>
-        <fcl>&fcl_fullchain_old;</fcl>
+    <stage name="ext">
+        <inputdef>&input_ext;</inputdef>
+        <fcl>&fcl_fullchain_data;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_train_shard</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/ext/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/ext/run1_fhc</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="beam_detvar_cv_template_shard">
-        <inputdef>&input_beam_detvar_cv_template_shard;</inputdef>
+    <stage name="data">
+        <inputdef>&input_data;</inputdef>
+        <fcl>&fcl_fullchain_data;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/data/run1_fhc/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/data/run1_fhc</workdir>
+        <datatier>selected</datatier>
+        <numjobs>25</numjobs>
+    </stage>
+
+    <stage name="beam_detvar_cv_shard0">
+        <inputdef>&input_beam_detvar_cv_shard0;</inputdef>
         <fcl>&fcl_fullchain_old;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_template_shard</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard0</workdir>
+        <datatier>selected</datatier>
+        <numjobs>25</numjobs>
+    </stage>
+
+    <stage name="beam_detvar_cv_shard1">
+        <inputdef>&input_beam_detvar_cv_shard1;</inputdef>
+        <fcl>&fcl_fullchain_old;</fcl>
+        <initsource>&initsrc;</initsource>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/beam_detvar/run1_fhc/cv_shard1</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
@@ -222,24 +247,24 @@
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="strangeness_detvar_cv_train_shard">
-        <inputdef>&input_strangeness_detvar_cv_train_shard;</inputdef>
+    <stage name="strangeness_detvar_cv_shard0">
+        <inputdef>&input_strangeness_detvar_cv_shard0;</inputdef>
         <fcl>&fcl_fullchain;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_train_shard</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard0/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard0/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard0</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>
 
-    <stage name="strangeness_detvar_cv_template_shard">
-        <inputdef>&input_strangeness_detvar_cv_template_shard;</inputdef>
+    <stage name="strangeness_detvar_cv_shard1">
+        <inputdef>&input_strangeness_detvar_cv_shard1;</inputdef>
         <fcl>&fcl_fullchain;</fcl>
         <initsource>&initsrc;</initsource>
-        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/out</outdir>
-        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard/log</logdir>
-        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_template_shard</workdir>
+        <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard1/out</outdir>
+        <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard1/log</logdir>
+        <workdir>/pnfs/uboone/scratch/users/&user;/staging/ntuples/&release;/&name;/strangeness_detvar/run1_fhc/cv_shard1</workdir>
         <datatier>selected</datatier>
         <numjobs>25</numjobs>
     </stage>

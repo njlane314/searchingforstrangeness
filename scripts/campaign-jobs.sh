@@ -20,7 +20,7 @@ Recommendations:
   shard   file count is above the threshold
   missing samweb could not resolve the definition
 
-By default, derived train/template shard entities are skipped because they are
+By default, derived CV shard-pair entities are skipped because they are
 usually created later from the source definitions. Use --include-derived-shards
 to count them as well.
 USAGE
@@ -102,7 +102,7 @@ awk -v include_derived="${include_derived}" '
   match($0, /<!ENTITY[[:space:]]+(input_[^[:space:]]+)[[:space:]]+"([^"]+)">/, m) {
     entity = m[1]
     samdef = m[2]
-    if (!include_derived && entity ~ /_(train|template)_shard$/) {
+    if (!include_derived && (entity ~ /_(train|template)_shard$/ || entity ~ /_cv_shard[01]$/)) {
       next
     }
     print samdef "\t" FILENAME ":" entity

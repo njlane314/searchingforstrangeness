@@ -36,6 +36,10 @@ Run 1 FHC:
       original reco2: prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2
       goodruns list: goodruns_mcc9_run1_hardcoded
       updated reco2: ub_numi_run1_fhc_dv_cv_gr
+    LY Attenuation:
+      original reco2: prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2
+      goodruns list: goodruns_mcc9_run1_hardcoded
+      updated reco2: ub_numi_run1_fhc_dv_ly_attenuation_gr
     LY Rayleigh:
       original reco2: prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2
       goodruns list: goodruns_mcc9_run1_hardcoded
@@ -400,6 +404,7 @@ samweb create-definition "ub_numi_run1_fhc_beam_gr" "defname: prodgenie_numi_ubo
 samweb create-definition "ub_numi_run1_fhc_dirt_gr" "defname: prodgenie_numi_uboone_overlay_dirt_fhc_mcc9_run1_v28_all_snapshot and (defname: goodruns_mcc9_run1_hardcoded)"
 samweb create-definition "ub_numi_run1_fhc_strangeness_gr" "defname: prod_strange_resample_fhc_run1_fhc_reco2_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"
 samweb create-definition "ub_numi_run1_fhc_dv_cv_gr" "defname: prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"
+samweb create-definition "ub_numi_run1_fhc_dv_ly_attenuation_gr" "defname: prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"
 samweb create-definition "ub_numi_run1_fhc_dv_ly_rayleigh_gr" "defname: prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"
 samweb create-definition "ub_numi_run1_fhc_dv_ly_down_gr" "defname: prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"
 samweb create-definition "ub_numi_run1_fhc_dv_sce_gr" "defname: prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2 and (defname: goodruns_mcc9_run1_hardcoded)"

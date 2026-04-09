@@ -282,7 +282,7 @@ definition and loop over them:
 If you need to prepare or inspect SAM definitions, use the helper scripts in
 scripts/ and the top-level describe-definitions.sh helper:
 
-     ./scripts/train-template-pair.sh <source_def> <training_shard_def> <template_shard_def>
+     ./scripts/train-template-pair.sh <source_def> <shard0_def> <shard1_def>
 
      ./scripts/campaign-jobs.sh
 
@@ -291,7 +291,7 @@ scripts/ and the top-level describe-definitions.sh helper:
      ./describe-definitions.sh
 
 scripts/README.md records the current staged campaign surface, the source SAM
-definitions behind it, and the Run 1 CV train/template shard strategy.
+definitions behind it, and the Run 1 CV shard-pair strategy.
 
 
 5. Understand the outputs
@@ -328,7 +328,6 @@ The checked-in branch and product layout is summarized here.  In particular:
 
 `xml/` now contains these staged campaign entry points:
 
-  * xml/numi_run1_campaign.xml
   * xml/numi_run1_fhc_campaign.xml
   * xml/numi_run1_rhc_campaign.xml
   * xml/numi_run2a_fhc_campaign.xml
@@ -354,11 +353,12 @@ The campaign XMLs use the same building blocks:
 
 Run-specific notes:
 
-  * Run 1 is split into `numi_run1_campaign.xml` for the plain data/EXT
-    surfaces and `numi_run1_fhc_campaign.xml` for the nominal FHC beam/dirt
-    shards, the dedicated strangeness sample, generic beam detvars, confirmed
-    dedicated strangeness detvars, and explicit CV `train_shard` /
-    `template_shard` stage families.
+  * Run 1 FHC includes the nominal FHC beam/dirt shards, the dedicated
+    strangeness sample, the checked-in Run 1 data/EXT surfaces, generic beam
+    detvars, confirmed dedicated strangeness detvars, and explicit CV shard
+    pairs. The current `data` and `ext` stages use `ub_numi_run1_data_gr` and
+    `ub_numi_run1_ext_gr` by temporary convention until a stricter Run 1
+    FHC-period filter definition is introduced.
   * Run 2a FHC includes the nominal beam/dirt/strangeness chains plus the
     generic Run 2a FHC beam detvars.
   * Run 2b RHC includes the regenerated nominal beam chain, the Run 2 RHC
@@ -375,8 +375,8 @@ Before submitting:
     results
   * refresh the tarball with `./.tar.sh`
 
-Run 1 CV train/template shards are created upstream at the SAM-definition
-level. To build the checked-in shard names, run:
+Run 1 CV shard pairs are created upstream at the SAM-definition level. To
+build the checked-in shard names, run:
 
      ./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
 
@@ -384,8 +384,7 @@ or use the wrapper:
 
      ./scripts/train-template.sh
 
-The wrapper now caps only the training shard at roughly 100000 events by
-default.
+The wrapper now caps only the first shard at roughly 100000 events by default.
 Use:
 
      ./scripts/train-template.sh --full-shards
@@ -406,10 +405,10 @@ Nominal Run 1 submission example:
      project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --submit
      project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --check
 
-Run 1 CV train-shard detvar example:
+Run 1 CV shard example:
 
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard --submit
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_train_shard --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_shard0 --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_shard0 --check
 
 Run 2a nominal example:
 
@@ -433,10 +432,10 @@ Stage naming follows a fixed pattern:
   * Run 1 dedicated strangeness detvars use names such as
     `strangeness_detvar_ly_rayleigh`
   * Run 1 CV split chains use names such as
-    `beam_detvar_cv_train_shard`,
-    `beam_detvar_cv_template_shard`,
-    `strangeness_detvar_cv_train_shard`, and
-    `strangeness_detvar_cv_template_shard`
+    `beam_detvar_cv_shard0`,
+    `beam_detvar_cv_shard1`,
+    `strangeness_detvar_cv_shard0`, and
+    `strangeness_detvar_cv_shard1`
 
 To clean and resubmit a stage, target the specific staged node you want to rerun:
 
