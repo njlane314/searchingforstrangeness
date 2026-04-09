@@ -5,7 +5,6 @@
 `xml/` now contains these staged campaign entry points:
 
 - `xml/numi_run1_fhc_campaign.xml`
-- `xml/numi_run1_rhc_campaign.xml`
 - `xml/numi_run2a_fhc_campaign.xml`
 - `xml/numi_run2b_rhc_campaign.xml`
 - `xml/numi_run3b_rhc_campaign.xml`
@@ -30,8 +29,12 @@ The checked-in campaign XMLs use one stage per sample:
 
 For Run 1 specifically:
 
-- `xml/numi_run1_fhc_campaign.xml` is the active Run 1 FHC campaign and also
-  carries the checked-in Run 1 data/EXT surfaces by temporary convention
+- `xml/numi_run1_fhc_campaign.xml` is the active Run 1 test campaign and only
+  carries `beam`, `dirt`, `strangeness`, and `ext`
+- the checked-in Run 1 EXT surface is still being treated as FHC-era by
+  temporary convention
+- that Run 1 test campaign skips inference and stops at
+  `imageprod -> run_nuselection_*_slim`
 
 The checked-in local validation helper now uses the staged EventWeight dev
 wrappers directly, and those wrappers run redk2nu internally before the
@@ -55,42 +58,6 @@ These are the source definitions currently encoded in the staged campaign XMLs.
   - `prod_strange_resample_fhc_run1_fhc_reco2_reco2`
 - EXT:
   - `prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2`
-- Data:
-  - `prod_mcc9_v08_00_00_45_numi_reco2_run1_beam_good_reco2`
-- Generic Run 1 beam detvars:
-  - `prodgenie_numi_nu_overlay_detvar_LY_suppression75attenuation8m_run1_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_LY_Rayleigh_run1_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_LYDown_run1_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_v08_00_00_53_SCE_300k_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_Recomb2_run1_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_WireModX_run1_reco2_fixed_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_WireModYZ_run1_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_v08_00_00_53_WireModThetaXZ_300k_reco2_run1_reco2`
-  - `prodgenie_numi_nu_overlay_detvar_WireModThetaYZ_withSplines_run1_reco2_run1_reco2`
-
-### Run 1 FHC dedicated strangeness detvars
-
-These are the confirmed Run 1 FHC strangeness Reco2 detvars currently wired
-into `xml/numi_run1_fhc_campaign.xml`:
-
-- `Run_1_MuMI_FHC_detvars_LY_Rayleigh_reco2_reco2_reco2`
-- `Run1_NuMI_FHC_detvars_LY_Down_Reco2_lydown_reco2`
-- `detvar_prod_strange_resample_fhc_run1_respin_sce_reco2_reco2`
-- `detvar_prod_strange_resample_fhc_run1_respin_recomb2_reco2_reco2`
-- `detvar_prod_strange_resample_fhc_run_respin_wiremodX_sce_reco2_reco2`
-- `detvar_prod_strange_resample_fhc_run_respin_wiremodYZ_sce_reco2_reco2`
-- `Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2`
-- `Run1_NuMI_FHC_detvars_wiremod_thetaYZ_Reco2_reco2_reco2`
-
-Notes:
-
-- No separate Run 1 FHC strangeness LY-attenuation Reco2 sample is currently
-  confirmed here.
-- One campaign-tracking row labels
-  `Run1_NuMI_nu_overlay_FHC_Strangeness_DetVar_WireMod_YZ_reco2_reco2_reco2`
-  as ThetaXZ, but the SAM definition itself says `WireMod_YZ`. The XML keeps
-  that sample under a neutral `wiremod_mismatch` label until the bookkeeping
-  is clarified externally.
 
 ### Run 2a FHC
 
@@ -175,49 +142,6 @@ The explicit `samweb create-definition ...` commands now live at the bottom of
 `SAMPLES`, alongside the `original reco2`, `goodruns list`, and `updated
 reco2` mapping for each sample.
 
-## Run 1 CV shard pairs
-
-Only Run 1 currently has the CV split encoded directly into the staged
-campaign XML. The split happens at the SAM-definition level so the two shard
-surfaces are orthogonal before any processing stage runs.
-
-The checked-in batch file is:
-
-- `scripts/run1-fhc-cv.plan`
-
-Create the shard definitions with:
-
-```bash
-./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
-```
-
-The existing SAM definitions are:
-
-- `nl_run1_fhc_beam_detvar_cv_train_shard`
-- `nl_run1_fhc_beam_detvar_cv_template_shard`
-- `nl_run1_fhc_strangeness_detvar_cv_train_shard`
-- `nl_run1_fhc_strangeness_detvar_cv_template_shard`
-
-The active Run 1 FHC campaign exposes those as neutral stage names
-`beam_detvar_cv_shard0`, `beam_detvar_cv_shard1`,
-`strangeness_detvar_cv_shard0`, and `strangeness_detvar_cv_shard1`. If you
-use different SAM definition names, update the four CV shard entities near the
-top of `xml/numi_run1_fhc_campaign.xml`.
-
-Note:
-
-If `samweb create-definition` fails on the GPVM after stale token attempts,
-the working reset sequence was:
-
-```bash
-unset BEARER_TOKEN
-unset BEARER_TOKEN_FILE
-htdestroytoken || true
-htgettoken -a htvaultprod.fnal.gov -i uboone
-```
-
-That was sufficient for successful `samweb create-definition ...` calls from
-this checkout without setting `BEARER_TOKEN_FILE` by hand.
 
 ## Useful commands
 
@@ -252,27 +176,10 @@ Build the compact local ntuple validation surface locally:
 ./scripts/validate-campaign.sh --workflow ntuple
 ```
 
-Count a specific campaign XML and include derived CV shard definitions:
+Count a specific campaign XML:
 
 ```bash
-./scripts/campaign-jobs.sh \
-  --xml xml/numi_run1_fhc_campaign.xml \
-  --include-derived-shards
-```
-
-Create one orthogonal pair by hand:
-
-```bash
-./scripts/train-template-pair.sh \
-  prodgenie_numi_nu_overlay_v08_00_00_53_CV_300k_reco2_run1_reco2 \
-  nl_run1_fhc_beam_detvar_cv_train_shard \
-  nl_run1_fhc_beam_detvar_cv_template_shard
-```
-
-Create the whole Run 1 CV shard set with the full alternating-file split:
-
-```bash
-./scripts/train-template-pair.sh --batch scripts/run1-fhc-cv.plan
+./scripts/campaign-jobs.sh --xml xml/numi_run1_fhc_campaign.xml
 ```
 
 Or use the wrapper that prints source counts and then applies the whole plan,

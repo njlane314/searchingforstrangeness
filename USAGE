@@ -329,7 +329,6 @@ The checked-in branch and product layout is summarized here.  In particular:
 `xml/` now contains these staged campaign entry points:
 
   * xml/numi_run1_fhc_campaign.xml
-  * xml/numi_run1_rhc_campaign.xml
   * xml/numi_run2a_fhc_campaign.xml
   * xml/numi_run2b_rhc_campaign.xml
   * xml/numi_run3b_rhc_campaign.xml
@@ -353,12 +352,11 @@ The campaign XMLs use the same building blocks:
 
 Run-specific notes:
 
-  * Run 1 FHC includes the nominal FHC beam/dirt shards, the dedicated
-    strangeness sample, the checked-in Run 1 data/EXT surfaces, generic beam
-    detvars, confirmed dedicated strangeness detvars, and explicit CV shard
-    pairs. The current `data` and `ext` stages use `ub_numi_run1_data_gr` and
+  * Run 1 FHC is currently trimmed to four test stages:
+    `beam`, `dirt`, `strangeness`, and `ext`. The current `ext` stage uses
     `ub_numi_run1_ext_gr` by temporary convention until a stricter Run 1
-    FHC-period filter definition is introduced.
+    FHC-period filter definition is introduced. Those Run 1 test stages also
+    skip inference and stop at `imageprod -> run_nuselection_*_slim`.
   * Run 2a FHC includes the nominal beam/dirt/strangeness chains plus the
     generic Run 2a FHC beam detvars.
   * Run 2b RHC includes the regenerated nominal beam chain, the Run 2 RHC
@@ -405,10 +403,10 @@ Nominal Run 1 submission example:
      project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --submit
      project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam --check
 
-Run 1 CV shard example:
+Run 1 EXT submission example:
 
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_shard0 --submit
-     project.py --xml xml/numi_run1_fhc_campaign.xml --stage beam_detvar_cv_shard0 --check
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage ext --submit
+     project.py --xml xml/numi_run1_fhc_campaign.xml --stage ext --check
 
 Run 2a nominal example:
 
@@ -429,13 +427,6 @@ Stage naming follows a fixed pattern:
     `ext`, and `data`
   * split dirt campaigns use names such as `dirt_shard0` and `dirt_shard1`
   * detvars use names such as `beam_detvar_sce`
-  * Run 1 dedicated strangeness detvars use names such as
-    `strangeness_detvar_ly_rayleigh`
-  * Run 1 CV split chains use names such as
-    `beam_detvar_cv_shard0`,
-    `beam_detvar_cv_shard1`,
-    `strangeness_detvar_cv_shard0`, and
-    `strangeness_detvar_cv_shard1`
 
 To clean and resubmit a stage, target the specific staged node you want to rerun:
 

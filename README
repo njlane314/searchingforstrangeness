@@ -102,7 +102,6 @@ points directly through `.local.sh`, for example `run_redk2nu_fhc.fcl` and
 The main grid-submission XML configurations are:
 
   * xml/numi_run1_fhc_campaign.xml
-  * xml/numi_run1_rhc_campaign.xml
   * xml/numi_run2a_fhc_campaign.xml
   * xml/numi_run2b_rhc_campaign.xml
   * xml/numi_run3b_rhc_campaign.xml
@@ -115,10 +114,12 @@ The main grid-submission XML configurations are:
 Older XMLs were archived under reference/legacy_xml/ so xml/ only contains the
 current staged campaign entry points.
 
-For Run 1, `xml/numi_run1_fhc_campaign.xml` now carries the FHC MC, dedicated
-strangeness, Run 1 FHC detvars, and the checked-in Run 1 data/EXT surfaces.
-Those data/EXT surfaces are temporarily treated as the Run 1 FHC-era samples
-until a stricter FHC-period filter definition is introduced.
+For Run 1, `xml/numi_run1_fhc_campaign.xml` is the active test campaign and
+only carries the overlay beam MC, dirt MC, dedicated strangeness MC, and the
+checked-in Run 1 EXT surface. The current EXT surface is still being treated
+as a Run 1 FHC-era sample by temporary convention until a stricter FHC-period
+filter definition is introduced. That test campaign also skips inference and
+stops at `imageprod -> nuselection_*_slim`.
 
 The repository root also contains helper scripts commonly used during local
 work:
