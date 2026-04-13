@@ -342,8 +342,10 @@ Older XMLs were archived under `reference/legacy_xml/`.
 
 The campaign XMLs use the same building blocks:
 
-  * MC beam and dirt stages use `redk2nu -> evtw -> fullchain_oldflux_rw`
-  * dedicated strangeness MC stages use `redk2nu -> evtw -> fullchain`
+  * G4-updated MC beam stages use `redk2nu -> evtw -> fullchain`
+  * legacy MC dirt stages still use `redk2nu -> evtw -> fullchain_oldflux_rw`
+  * dedicated strangeness MC stages already have the new NuMI flux, so they
+    use `redk2nu -> evtw -> fullchain` without old-flux reweighting
   * data and EXT stages use `fullchain_data`
   * detector-variation chains, where present, use a single fullchain stage
   * only `fcl_evtw_00` is active, so MC keeps the first 100 multisim

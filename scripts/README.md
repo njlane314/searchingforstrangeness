@@ -19,8 +19,10 @@ reference without looking like active submission entry points.
 
 The checked-in campaign XMLs use one stage per sample:
 
-- MC beam and dirt chains run `redk2nu -> evtw -> fullchain_oldflux_rw`
-- dedicated strangeness MC chains run `redk2nu -> evtw -> fullchain`
+- G4-updated MC beam chains run `redk2nu -> evtw -> fullchain`
+- legacy MC dirt chains still run `redk2nu -> evtw -> fullchain_oldflux_rw`
+- dedicated strangeness MC chains already have the new NuMI flux, so they run
+  `redk2nu -> evtw -> fullchain` without old-flux reweighting
 - data and EXT chains run `fullchain_data`
 - detector-variation chains run a single fullchain stage
 - only `fcl_evtw_00` is active, so the MC chains keep the first 100

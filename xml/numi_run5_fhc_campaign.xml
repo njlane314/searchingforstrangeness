@@ -9,7 +9,7 @@
     <!ENTITY tar_dir "/pnfs/uboone/scratch/users/nlane/tarballs">
     <!ENTITY larsoft_tar "&tar_dir;/strangeness.tar">
 
-    <!ENTITY input_beam "ub_numi_run5_fhc_beam_gr">
+    <!ENTITY input_beam "Run5_NuMI_nu_overlay_FHC_Pandora_reco2_pandora_reco2_reco2">
     <!ENTITY input_dirt "ub_numi_run5_fhc_dirt_gr">
     <!ENTITY input_ext "ub_numi_run5_fhc_ext_gr">
     <!ENTITY input_data "ub_numi_run5_fhc_data_gr">
@@ -17,6 +17,9 @@
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
     <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
     <!ENTITY fcl_evtw_reint "run_eventweight_microboone_g4rwt_reint.fcl">
+    <!ENTITY fcl_redk2nu "run_redk2nu_fhc.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
+    <!ENTITY fcl_fullchain "run_fullchain.fcl">
     <!ENTITY fcl_fullchain_old "run_fullchain_oldflux_rw.fcl">
     <!ENTITY fcl_fullchain_data "run_fullchain_data.fcl">
 ]>
@@ -42,10 +45,9 @@
 
     <stage name="beam">
         <inputdef>&input_beam;</inputdef>
-        <fcl>&fcl_redk2nu_old;</fcl>
-        <fcl>&fcl_evtw_old_00;</fcl>
-        <fcl>&fcl_evtw_reint;</fcl>
-        <fcl>&fcl_fullchain_old;</fcl>
+        <fcl>&fcl_redk2nu;</fcl>
+        <fcl>&fcl_evtw_00;</fcl>
+        <fcl>&fcl_fullchain;</fcl>
         <initsource>&initsrc;</initsource>
         <outdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run5_fhc/out</outdir>
         <logdir>/pnfs/uboone/scratch/users/&user;/ntuples/&release;/&name;/beam/run5_fhc/log</logdir>
