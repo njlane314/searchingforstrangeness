@@ -49,8 +49,8 @@ event_weight_analysis: {
     createSplineTimesTuneBranch: true
     createPPFXBranch: true
     makeNuMINtuple: true
-    genieAllUniverses: 600
-    ppfxAllUniverses: 600
+    genieAllUniverses: 100
+    ppfxAllUniverses: 100
 
     useReweightedFlux: false
     eventWeightProcessName00: "EventWeightSep24"
@@ -98,7 +98,7 @@ event_weight_analysis_slim.createReintBranch: false
 event_weight_analysis_slim.createSplineBranch: true
 event_weight_analysis_slim.createTuneBranch: true
 event_weight_analysis_slim.createSplineTimesTuneBranch: true
-event_weight_analysis_slim.createPPFXBranch: true
+event_weight_analysis_slim.createPPFXBranch: false
 event_weight_analysis_slim.createGenieUpDnVecs: false
 event_weight_analysis_slim.genieAllUniverses: 0
 event_weight_analysis_slim.ppfxAllUniverses: 0

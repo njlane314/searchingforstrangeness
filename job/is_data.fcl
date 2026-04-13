@@ -1,3 +1,13 @@
 physics.filters.nuselection.IsData: true
+physics.filters.nuselection.AnalysisTools.weight.createFluxBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createGenieBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createReintBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createSplineBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createTuneBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createSplineTimesTuneBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createPPFXBranch: false
+physics.filters.nuselection.AnalysisTools.weight.createGenieUpDnVecs: false
 physics.filters.nuselection.AnalysisTools.weight.makeNuMINtuple: false
+physics.filters.nuselection.AnalysisTools.weight.genieAllUniverses: 0
+physics.filters.nuselection.AnalysisTools.weight.ppfxAllUniverses: 0
 physics.filters.nuselection.AnalysisTools.default.NuMISWTriggerProcName: ""
