@@ -40,7 +40,7 @@ event_weight_analysis: {
     tool_type: "EventWeightAnalysis"
     createDedicatedTree: false
     createMapBranch: false
-    createFluxBranch: true
+    createFluxBranch: false
     createGenieBranch: true
     createReintBranch: true
     createReintComponentBranches: true
@@ -108,7 +108,7 @@ event_weight_analysis_slim.eventWeightProcessName00: "FullChainNuSelectionSlim"
 event_weight_analysis_slim_oldflux_rw: @local::event_weight_analysis_slim
 event_weight_analysis_slim_oldflux_rw.useReweightedFlux: true
 event_weight_analysis_slim_oldflux_rw.eventWeightProcessName00: "FullChainNuSelectionSlimOldFluxRW"
-event_weight_analysis_slim_oldflux_rw.reintProcessName: "EventWeight"
+event_weight_analysis_slim_oldflux_rw.reintProcessName: ""
 
 truth_analysis: {
     tool_type: "TruthAnalysis"
