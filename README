@@ -97,7 +97,7 @@ The main development configurations are:
 
 Standalone redk2nu and EventWeight debugging now uses the upstream FHiCL entry
 points directly through `.local.sh`, for example `run_redk2nu_fhc.fcl` and
-`run_eventweight_microboone_sept24_numi_fhc.fcl`.
+`run_eventweight_microboone_sept24_numi_fhc_noreint.fcl`.
 
 The main grid-submission XML configurations are:
 
