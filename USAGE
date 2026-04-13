@@ -194,7 +194,7 @@ redk2nu/EventWeight entry points directly:
      SAM_DEF=prodgenie_numi_uboone_overlay_fhc_mcc9_run1_v28_v2_sample0 \
        ./.local.sh run_redk2nu_fhc.fcl 1
 
-     ./.local.sh run_eventweight_microboone_sept24_numi_fhc_noreint.fcl \
+     ./.local.sh run_eventweight_microboone_sept24_numi_fhc.fcl \
        /absolute/path/to/previous_stage.root
 
      ./.local.sh run_imageprod.fcl \
@@ -226,7 +226,7 @@ submitting a campaign, use:
 That defaults to the Run 1 FHC staged MC path:
 
   * `run_redk2nu_fhc.fcl`
-  * `run_eventweight_microboone_sept24_numi_fhc_noreint.fcl`
+  * `run_eventweight_microboone_sept24_numi_fhc.fcl`
   * `run_imageprod.fcl`
   * `job/dev/run_stage_sel_dev.fcl`
 

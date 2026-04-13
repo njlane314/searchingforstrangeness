@@ -42,8 +42,8 @@ event_weight_analysis: {
     createMapBranch: false
     createFluxBranch: false
     createGenieBranch: true
-    createReintBranch: false
-    createReintComponentBranches: false
+    createReintBranch: true
+    createReintComponentBranches: true
     createSplineBranch: true
     createTuneBranch: true
     createSplineTimesTuneBranch: true
@@ -71,7 +71,7 @@ event_weight_analysis_oldflux_rw.eventWeightProcessName02: "EventWeightSep24OldR
 event_weight_analysis_oldflux_rw.eventWeightProcessName03: "EventWeightSep24OldRWExtraGENIE3"
 event_weight_analysis_oldflux_rw.eventWeightProcessName04: "EventWeightSep24OldRWExtraGENIE4"
 event_weight_analysis_oldflux_rw.eventWeightProcessName05: "EventWeightSep24OldRWExtraGENIE5"
-event_weight_analysis_oldflux_rw.reintProcessName: ""
+event_weight_analysis_oldflux_rw.reintProcessName: "EventWeight"
 
 image_analysis: {
     tool_type: "ImageAnalysis"

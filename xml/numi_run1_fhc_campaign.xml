@@ -15,9 +15,10 @@
     <!ENTITY input_ext "prod_mcc9_v08_00_00_45_extnumi_reco2_run1_all_reco2">
 
     <!ENTITY fcl_redk2nu_old "run_redk2nu_v4_9_2_fhc.fcl">
-    <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw_noreint.fcl">
+    <!ENTITY fcl_evtw_old_00 "run_eventweight_microboone_sept24_numi_fhc_oldflux_rw.fcl">
+    <!ENTITY fcl_evtw_reint "run_eventweight_microboone_g4rwt_reint.fcl">
     <!ENTITY fcl_redk2nu "run_redk2nu_fhc.fcl">
-    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc_noreint.fcl">
+    <!ENTITY fcl_evtw_00 "run_eventweight_microboone_sept24_numi_fhc.fcl">
     <!ENTITY fcl_imageprod "run_imageprod.fcl">
     <!ENTITY fcl_nuselection "run_nuselection_slim.fcl">
     <!ENTITY fcl_nuselection_old "run_nuselection_slim_oldflux_rw.fcl">
@@ -61,6 +62,7 @@
         <inputdef>&input_dirt;</inputdef>
         <fcl>&fcl_redk2nu_old;</fcl>
         <fcl>&fcl_evtw_old_00;</fcl>
+        <fcl>&fcl_evtw_reint;</fcl>
         <fcl>&fcl_imageprod;</fcl>
         <fcl>&fcl_nuselection_old;</fcl>
         <initsource>&initsrc;</initsource>
