@@ -40,7 +40,7 @@ def parse_arch(s: str) -> Dict:
         embed_dim=None,
         base=None,
         blocks=None,
-        in_ch=3,
+        in_ch=2,
     )
     if not s:
         return cfg
@@ -370,7 +370,7 @@ def main() -> int:
 
     C, H, W = 3, int(args.H), int(args.W)
     feature_dim, sparse_planes = read_sparse_planes(args.in_path, C, H, W)
-    model_in_ch = int(cfg.get("in_ch", 3))
+    model_in_ch = int(cfg["in_ch"])
     if feature_dim not in (2, 3):
         raise RuntimeError(
             f"Unsupported sparse payload feature_dim={feature_dim}. Expected 2 ([adc, nu_slice]) or 3 "

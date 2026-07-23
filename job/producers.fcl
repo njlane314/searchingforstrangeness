@@ -37,7 +37,7 @@ standard_inference_producer: {
   RuntimeBaseDir: "runtime"
   DefaultInferenceWrapper: "scripts/inference_wrapper.sh"
   ModelDefaults: {
-    Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+    Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=2"
     WeightsDir: "models/mink_binary"
   }
   Models: [

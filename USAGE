@@ -252,7 +252,7 @@ put the shared settings in ModelDefaults and vary only the per-model labels and
 Checkpoint values:
 
      ModelDefaults: {
-       Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=3"
+       Arch: "binary:device=cpu,seed=12345,thr=0.0,in_ch=2"
        WeightsDir: "models/mink_binary"
      }
      Models: [
