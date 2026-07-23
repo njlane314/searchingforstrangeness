@@ -7,94 +7,7 @@ import torch.nn as nn
 
 import MinkowskiEngine as ME
 
-
-def _replace_feature(x: ME.SparseTensor, new_F: torch.Tensor) -> ME.SparseTensor:
-    """
-    Compatibility wrapper for SparseTensor feature replacement.
-
-    Newer MinkowskiEngine versions provide `SparseTensor.replace_feature`.
-    Older versions require re-instantiating a SparseTensor while *sharing*
-    the same coordinate map + manager (coords_key/coords_man or
-    coordinate_map_key/coordinate_manager).
-    """
-    if hasattr(x, "replace_feature"):
-        return x.replace_feature(new_F)
-
-    # Collect whatever this ME build exposes on the tensor.
-    cmk = getattr(x, "coordinate_map_key", None)
-    cm = getattr(x, "coordinate_manager", None)
-    ck = getattr(x, "coords_key", None)
-    # Older builds commonly use `coords_man`; some use `coords_manager`.
-    cman = getattr(x, "coords_man", None)
-    if cman is None:
-        cman = getattr(x, "coords_manager", None)
-
-    # Try "new" ctor keywords first, then legacy ones.
-    if cmk is not None and cm is not None:
-        try:
-            return ME.SparseTensor(
-                features=new_F,
-                coordinate_map_key=cmk,
-                coordinate_manager=cm,
-                device=new_F.device,
-            )
-        except TypeError:
-            pass
-
-    if ck is not None and cman is not None:
-        try:
-            return ME.SparseTensor(
-                features=new_F,
-                coords_key=ck,
-                coords_manager=cman,
-                device=new_F.device,
-            )
-        except TypeError:
-            pass
-
-    # As a last resort, rebuild from explicit coordinates (may create a new
-    # coordinate manager; this is less ideal but avoids hard failure).
-    return ME.SparseTensor(
-        features=new_F,
-        coordinates=x.C,
-        device=new_F.device,
-    )
-
-
-def _subm_conv(
-    in_ch: int,
-    out_ch: int,
-    *,
-    kernel_size: int,
-    dimension: int,
-    bias: bool = False,
-) -> nn.Module:
-    """
-    Compatibility wrapper for submanifold sparse convolution.
-
-    Some MinkowskiEngine builds don't expose `MinkowskiSubmanifoldConvolution`.
-    The equivalent behavior is `MinkowskiConvolution(..., expand_coordinates=False)`
-    (which is the default in many versions, but we try to pass it explicitly).
-    """
-    if hasattr(ME, "MinkowskiSubmanifoldConvolution"):
-        return ME.MinkowskiSubmanifoldConvolution(
-            int(in_ch), int(out_ch), kernel_size=kernel_size, dimension=dimension, bias=bias
-        )
-    try:
-        return ME.MinkowskiConvolution(
-            int(in_ch),
-            int(out_ch),
-            kernel_size=kernel_size,
-            stride=1,
-            dimension=dimension,
-            bias=bias,
-            expand_coordinates=False,
-        )
-    except TypeError:
-        # Older ME builds may not accept `expand_coordinates`.
-        return ME.MinkowskiConvolution(
-            int(in_ch), int(out_ch), kernel_size=kernel_size, stride=1, dimension=dimension, bias=bias
-        )
+from me_compat import replace_feature, submanifold_convolution
 
 
 class SparseLayerNorm(nn.Module):
@@ -108,15 +21,19 @@ class SparseLayerNorm(nn.Module):
         self.ln = nn.LayerNorm(int(c), eps=eps)
 
     def forward(self, x: ME.SparseTensor) -> ME.SparseTensor:
-        return _replace_feature(x, self.ln(x.F))
+        return replace_feature(x, self.ln(x.F))
 
 
 class ResBlock(nn.Module):
     def __init__(self, cin: int, cout: int):
         super().__init__()
-        self.conv1 = _subm_conv(cin, cout, kernel_size=3, dimension=2, bias=False)
+        self.conv1 = submanifold_convolution(
+            cin, cout, kernel_size=3, dimension=2, bias=False
+        )
         self.n1 = SparseLayerNorm(cout)
-        self.conv2 = _subm_conv(cout, cout, kernel_size=3, dimension=2, bias=False)
+        self.conv2 = submanifold_convolution(
+            cout, cout, kernel_size=3, dimension=2, bias=False
+        )
         self.n2 = SparseLayerNorm(cout)
         # NOTE:
         # In-place activations are a common source of surprises for gradient-based
@@ -155,7 +72,9 @@ class SparseResNet2D(nn.Module):
     def __init__(self, in_ch: int, base: int, blocks: Tuple[int, ...], embed_dim: int):
         super().__init__()
         self.stem = nn.Sequential(
-            _subm_conv(in_ch, base, kernel_size=3, dimension=2, bias=False),
+            submanifold_convolution(
+                in_ch, base, kernel_size=3, dimension=2, bias=False
+            ),
             SparseLayerNorm(base),
             ME.MinkowskiReLU(inplace=False),
         )

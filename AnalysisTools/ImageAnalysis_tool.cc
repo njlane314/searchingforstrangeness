@@ -42,7 +42,6 @@
 #include <TVector3.h>
 
 #include <algorithm>
-#include <array>
 #include <cstdint>
 #include <cmath>
 #include <limits>
@@ -56,7 +55,7 @@ namespace analysis {
 class ImageAnalysis : public AnalysisToolBase {
 public:
     explicit ImageAnalysis(fhicl::ParameterSet const &p);
-    virtual ~ImageAnalysis() = default;
+    ~ImageAnalysis() override = default;
 
     void configure(const fhicl::ParameterSet &p) override;
     void analyseEvent(const art::Event &event, bool is_data) override {}
@@ -78,9 +77,12 @@ private:
     art::InputTag fInferencePredTag;
     art::InputTag fInferencePerfTag;
 
-    float _reco_neutrino_vertex_x;
-    float _reco_neutrino_vertex_y;
-    float _reco_neutrino_vertex_z;
+    float _reco_neutrino_vertex_x{
+        std::numeric_limits<float>::quiet_NaN()};
+    float _reco_neutrino_vertex_y{
+        std::numeric_limits<float>::quiet_NaN()};
+    float _reco_neutrino_vertex_z{
+        std::numeric_limits<float>::quiet_NaN()};
 
     std::vector<int> _slice_semantic_active_pixels_u;
     std::vector<int> _slice_semantic_active_pixels_v;
@@ -91,19 +93,19 @@ private:
 
     std::vector<std::string> _semantic_label_names;
 
-    int _active_pixels_u;
-    int _active_pixels_v;
-    int _active_pixels_w;
-    int _full_active_pixels_u;
-    int _full_active_pixels_v;
-    int _full_active_pixels_w;
+    int _active_pixels_u{0};
+    int _active_pixels_v{0};
+    int _active_pixels_w{0};
+    int _full_active_pixels_u{0};
+    int _full_active_pixels_v{0};
+    int _full_active_pixels_w{0};
 
-    bool _is_vtx_in_image_u;
-    bool _is_vtx_in_image_v;
-    bool _is_vtx_in_image_w;
-    bool _is_vtx_in_full_image_u;
-    bool _is_vtx_in_full_image_v;
-    bool _is_vtx_in_full_image_w;
+    bool _is_vtx_in_image_u{false};
+    bool _is_vtx_in_image_v{false};
+    bool _is_vtx_in_image_w{false};
+    bool _is_vtx_in_full_image_u{false};
+    bool _is_vtx_in_full_image_v{false};
+    bool _is_vtx_in_full_image_w{false};
 
     std::vector<std::string> _inf_model;
     std::vector<int> _inf_score_begin;
@@ -246,16 +248,6 @@ void ImageAnalysis::analyseSlice(
         }
     }
 
-    auto find_views = [](const std::vector<image::ImageFeatures> &images) {
-        std::array<const image::ImageFeatures *, 3> out{nullptr, nullptr, nullptr};
-        for (const auto &img : images) {
-            if (img.view == static_cast<int>(geo::kU)) out[0] = &img;
-            if (img.view == static_cast<int>(geo::kV)) out[1] = &img;
-            if (img.view == static_cast<int>(geo::kW)) out[2] = &img;
-        }
-        return out;
-    };
-
     auto in_img = [](const image::ImageFeatures &im, double drift, double wire) {
         bool in_row = (drift >= im.origin_y) &&
                                     (drift < im.origin_y + im.pixel_h * static_cast<double>(im.height));
@@ -291,34 +283,33 @@ void ImageAnalysis::analyseSlice(
                 << ". Check the image production stage and InputTag wiring.";
         }
 
-        auto const planes = find_views(*imageH);
-        auto const *plane_u = planes[0];
-        auto const *plane_v = planes[1];
-        auto const *plane_w = planes[2];
-
-        if (!plane_u && !plane_v && !plane_w) {
+        auto const validated =
+            image::validateImagePlaneTriplet(*imageH);
+        if (!validated) {
             throw cet::exception("ImageAnalysis")
                 << "ImageFeatures collection with tag \"" << tag.encode()
-                << "\" was present for event " << event.id()
-                << " but did not contain any u/v/w view planes.";
+                << "\" violates the sparse U/V/W contract for event "
+                << event.id() << ": " << validated.error;
         }
+        auto const *plane_u = validated.planes[0];
+        auto const *plane_v = validated.planes[1];
+        auto const *plane_w = validated.planes[2];
 
-        active_u = plane_u ? countActivePixels(plane_u->coords) : 0;
-        active_v = plane_v ? countActivePixels(plane_v->coords) : 0;
-        active_w = plane_w ? countActivePixels(plane_w->coords) : 0;
+        active_u = countActivePixels(plane_u->coords);
+        active_v = countActivePixels(plane_v->coords);
+        active_w = countActivePixels(plane_w->coords);
 
         if (!is_data) {
             size_t const nlabels = image::SemanticClassifier::semantic_label_names.size();
-            std::vector<int> empty_counts(nlabels, 0);
-            sem_u = plane_u ? countActiveSemanticLabels(plane_u->semantic, nlabels) : empty_counts;
-            sem_v = plane_v ? countActiveSemanticLabels(plane_v->semantic, nlabels) : empty_counts;
-            sem_w = plane_w ? countActiveSemanticLabels(plane_w->semantic, nlabels) : empty_counts;
+            sem_u = countActiveSemanticLabels(plane_u->semantic, nlabels);
+            sem_v = countActiveSemanticLabels(plane_v->semantic, nlabels);
+            sem_w = countActiveSemanticLabels(plane_w->semantic, nlabels);
         }
 
         if (vtx_proj_u && vtx_proj_v && vtx_proj_w) {
-            vtx_u = (plane_u && in_img(*plane_u, vtx_proj_u->X(), vtx_proj_u->Z()));
-            vtx_v = (plane_v && in_img(*plane_v, vtx_proj_v->X(), vtx_proj_v->Z()));
-            vtx_w = (plane_w && in_img(*plane_w, vtx_proj_w->X(), vtx_proj_w->Z()));
+            vtx_u = in_img(*plane_u, vtx_proj_u->X(), vtx_proj_u->Z());
+            vtx_v = in_img(*plane_v, vtx_proj_v->X(), vtx_proj_v->Z());
+            vtx_w = in_img(*plane_w, vtx_proj_w->X(), vtx_proj_w->Z());
         }
 
         if (active_u == 0 && active_v == 0 && active_w == 0) {
@@ -326,10 +317,8 @@ void ImageAnalysis::analyseSlice(
                 << "ImageFeatures collection with tag \"" << tag.encode()
                 << "\" is present for event " << event.id()
                 << " but all u/v/w planes are empty."
-                << " Plane counts: total=" << imageH->size()
-                << ", has_u=" << static_cast<bool>(plane_u)
-                << ", has_v=" << static_cast<bool>(plane_v)
-                << ", has_w=" << static_cast<bool>(plane_w) << ".";
+                << " The valid metadata-bearing U/V/W planes are recorded "
+                   "with zero active pixels.";
         }
     };
 

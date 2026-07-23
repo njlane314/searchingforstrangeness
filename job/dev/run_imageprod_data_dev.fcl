@@ -5,6 +5,8 @@ process_name: ImageProdDataDev
 services.TFileService.fileName: "imaging_dev_cosmic.root"
 services.NuRandomService: @local::microboone_seedservice
 
+physics.producers.imageprod: @local::standard_image_producer
+physics.producers.imageprod.IsData: true
 physics.producers.inferenceprod: @local::standard_inference_producer
 
 physics.path1: [ imageprod, inferenceprod, nuselection ]

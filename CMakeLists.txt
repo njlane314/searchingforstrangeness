@@ -15,15 +15,16 @@ include_directories(${LARDATAALG_INC})
 add_subdirectory(Helpers)
 add_subdirectory(Products)
 add_subdirectory(SelectionTools)
-add_subdirectory(AnalysisTools)
 add_subdirectory(ImagePipeline)
+add_subdirectory(AnalysisTools)
 add_subdirectory(job)
 
 message("Checking system platform: ${CMAKE_SYSTEM_NAME}")
 message("Compiler: ${CMAKE_CXX_COMPILER}")
 message("Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
-art_make( MODULE_LIBRARIES larcorealg_Geometry
+art_make( MODULE_LIBRARIES ubana_searchingforstrangeness_ImagePipeline
+                           larcorealg_Geometry
                            larcore_Geometry_Geometry_service
                            larsim_Simulation nutools_ParticleNavigation
                            lardataobj_Simulation
@@ -81,4 +82,9 @@ install_headers()
 install_fhicl()
 install_source()
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/runtime/ DESTINATION runtime)
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/runtime/
+  DESTINATION runtime
+  PATTERN "__pycache__" EXCLUDE
+  PATTERN "*.pyc" EXCLUDE
+)

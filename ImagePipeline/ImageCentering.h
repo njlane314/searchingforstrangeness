@@ -1,54 +1,57 @@
 #ifndef IMAGEPIPELINE_IMAGECENTERING_H
 #define IMAGEPIPELINE_IMAGECENTERING_H
 
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
+#include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/Ptr.h"
-
+#include "canvas/Utilities/InputTag.h"
+#include "lardataobj/RecoBase/Hit.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
 
 #include <TVector3.h>
 
+#include <optional>
+#include <vector>
+
 namespace image {
 
-inline TVector3 trimmedCentroid(const std::vector<art::Ptr<recob::SpacePoint>> &sps,
-                                const std::vector<double> &weights,
-                                const TVector3 &seed,
-                                double radius)
-{
-    const double R2 = radius * radius;
+enum class ImageCenterSeed {
+    Vertex,
+    WeightedCentroid,
+    OriginFallback
+};
 
-    TVector3 sum(0., 0., 0.);
-    double   W   = 0.0;
+struct ImageCenter {
+    TVector3 position;
+    ImageCenterSeed seed{ImageCenterSeed::OriginFallback};
+};
 
-    const std::size_t n = std::min(sps.size(), weights.size());
+std::optional<TVector3>
+weightedCentroid(
+    const std::vector<art::Ptr<recob::SpacePoint>> &spacepoints,
+    const std::vector<double> &weights);
 
-    for (std::size_t i = 0; i < n; ++i) {
-        auto const &sp = sps[i];
-        if (!sp) continue;
+TVector3 trimmedCentroid(
+    const std::vector<art::Ptr<recob::SpacePoint>> &spacepoints,
+    const std::vector<double> &weights,
+    const TVector3 &seed,
+    double radius);
 
-        double w = weights[i];
-        if (!(w > 0.0)) continue;
+class ImageCentering {
+  public:
+    ImageCentering(art::InputTag hit_producer,
+                   art::InputTag spacepoint_producer);
 
-        auto const *xyz = sp->XYZ();
-        TVector3 p(xyz[0], xyz[1], xyz[2]);
+    ImageCenter compute(
+        const art::Event &event,
+        const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
+        const std::optional<TVector3> &vertex,
+        double trimming_radius) const;
 
-        if (!std::isfinite(p.X()) || !std::isfinite(p.Y()) || !std::isfinite(p.Z()))
-            continue;
+  private:
+    art::InputTag hit_producer_;
+    art::InputTag spacepoint_producer_;
+};
 
-        if ((p - seed).Mag2() > R2)
-            continue;
-
-        sum += w * p;
-        W   += w;
-    }
-
-    if (W == 0.0) return seed;
-    return sum * (1.0 / W);
-}
-
-}
+} // namespace image
 
 #endif

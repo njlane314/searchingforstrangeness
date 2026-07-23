@@ -1,2 +1,30 @@
-# ImagePipeline now provides header-only utilities shared across modules.
+art_make(
+  BASENAME_ONLY
+  LIBRARY_NAME ubana_searchingforstrangeness_ImagePipeline
+  LIB_LIBRARIES
+    larcorealg_Geometry
+    larcore_Geometry_Geometry_service
+    lardataobj_RecoBase
+    lardataobj_AnalysisBase
+    lardataalg_DetectorInfo
+    lardata_Utilities
+    lardata_DetectorInfoServices_DetectorPropertiesServiceStandard_service
+    nusimdata_SimulationBase
+    ${ART_FRAMEWORK_CORE}
+    ${ART_FRAMEWORK_PRINCIPAL}
+    ${ART_FRAMEWORK_SERVICES_REGISTRY}
+    ${ART_FRAMEWORK_SERVICES_SYSTEM}
+    art_Persistency_Common
+    art_Persistency_Provenance
+    art_Utilities
+    canvas
+    ${MF_MESSAGELOGGER}
+    ${FHICLCPP}
+    ${CETLIB}
+    cetlib_except
+    ${ROOT_BASIC_LIB_LIST}
+    pthread
+)
+
 install_headers()
+install_source()

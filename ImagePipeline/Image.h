@@ -1,34 +1,12 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include "TDirectoryFile.h"
-#include <TFile.h>
-#include <TTree.h>
-
 #include <algorithm>
-#include <memory>
+#include <cstddef>
 #include <optional>
-#include <string>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "canvas/Utilities/InputTag.h"
-
-#include "larcore/Geometry/Geometry.h"
-#include "larcorealg/Geometry/GeometryCore.h"
-#include "larcorealg/Geometry/geo_vectors_utils.h"
 #include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "lardata/Utilities/GeometryUtilities.h"
-
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Wire.h"
 
 namespace image {
 
@@ -36,10 +14,14 @@ class ImageProperties {
 public:
     ImageProperties() = default;
     ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
-        : center_x_(center_x), center_y_(center_y), height_(height), width_(width), pixel_w_(pixel_w), pixel_h_(pixel_h), view_(view) {
-        origin_x_ = center_x - (width * pixel_w) / 2.0;
-        origin_y_ = center_y - (height * pixel_h) / 2.0;
-    }
+        : origin_x_(center_x - (width * pixel_w) / 2.0)
+        , origin_y_(center_y - (height * pixel_h) / 2.0)
+        , height_(height)
+        , width_(width)
+        , pixel_w_(pixel_w)
+        , pixel_h_(pixel_h)
+        , view_(view)
+    {}
 
     std::optional<size_t> index(size_t row, size_t col) const {
         if (row >= height_ || col >= width_)
@@ -70,10 +52,12 @@ public:
     double max_y() const { return origin_y_ + height_ * pixel_h_; }
 
 private:
-    double center_x_, center_y_;
-    double origin_x_, origin_y_;
-    size_t height_, width_;
-    double pixel_w_, pixel_h_;
+    double origin_x_{0.0};
+    double origin_y_{0.0};
+    size_t height_{0U};
+    size_t width_{0U};
+    double pixel_w_{0.0};
+    double pixel_h_{0.0};
     geo::View_t view_{geo::kUnknown};
 };
 
@@ -81,7 +65,7 @@ template <typename T>
 class Image {
 public:
     Image() = default;
-    Image(const ImageProperties &prop)
+    explicit Image(const ImageProperties &prop)
         : prop_(prop), pixels_(prop.height() * prop.width(), T(0)) {}
     
     void set(size_t row, size_t col, T value, bool accumulate = true) {

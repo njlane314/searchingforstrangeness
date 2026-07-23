@@ -1,6 +1,7 @@
 cet_enable_asserts()
 
-art_make( TOOL_LIBRARIES lardataobj_RecoBase
+art_make( TOOL_LIBRARIES ubana_searchingforstrangeness_ImagePipeline
+                         lardataobj_RecoBase
                          lardataobj_Simulation
                          lardataobj_MCBase
                          lardataobj_AnalysisBase

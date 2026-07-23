@@ -11,6 +11,7 @@ services.NuRandomService: @local::microboone_seedservice
 
 physics.producers.generator: @local::microboone_redk2nu_fhc
 physics.producers.eventweightSep24: @local::microboone_eventweight_sept24
+physics.producers.imageprod: @local::standard_image_producer
 physics.producers.inferenceprod: @local::standard_inference_producer
 
 physics.path1: [ generator, eventweightSep24, imageprod, inferenceprod, nuselection ]

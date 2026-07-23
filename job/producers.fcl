@@ -20,6 +20,7 @@ standard_producers: {
 
 standard_image_producer: {
   module_type: "ImageProducer"
+  IsData: false
   PFPproducer: @local::standard_producers.PFPproducer
   SLCproducer: @local::standard_producers.SLCproducer
   HITproducer: @local::standard_producers.HITproducer
