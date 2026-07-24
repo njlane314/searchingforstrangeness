@@ -122,8 +122,8 @@ def _torch_load_options(torch_load: Any) -> Dict[str, Any]:
 
     options: Dict[str, Any] = {"map_location": "cpu"}
     if "weights_only" in inspect.signature(torch_load).parameters:
-        # The bundled training checkpoint also stores optimizer and NumPy RNG
-        # state. It is a repository-controlled artifact, not a weights-only
+        # The bundled training checkpoint also stores optimiser and NumPy RNG
+        # state. It is a repository-controlled artefact, not a weights-only
         # archive, so modern PyTorch must be told to use its legacy loader.
         options["weights_only"] = False
     return options

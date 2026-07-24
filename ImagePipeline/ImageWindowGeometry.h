@@ -33,7 +33,7 @@ class ImageWindowGeometry {
         ImageWindowGeometryConfig config);
 
     std::vector<ImageProperties>
-    croppedWindowProperties(const TVector3 &center) const;
+    croppedWindowProperties(const TVector3 &centre) const;
     const std::vector<ImageProperties> &
     fullWindowProperties() const noexcept;
     double trimmingRadius() const noexcept;

@@ -66,7 +66,7 @@ void writeI32(std::ofstream &stream, int32_t value,
 void writeFloat(std::ofstream &stream, float value,
                 const std::string &path) {
     if (!std::isfinite(value)) {
-        protocolError(path, "cannot serialize a non-finite feature");
+        protocolError(path, "cannot serialise a non-finite feature");
     }
     uint32_t bits = 0U;
     std::memcpy(&bits, &value, sizeof(bits));
@@ -176,7 +176,7 @@ void InferenceProtocol::writeRequest(
 
     stream.close();
     if (!stream) {
-        protocolError(path, "failed to finalize request");
+        protocolError(path, "failed to finalise request");
     }
 }
 

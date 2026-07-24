@@ -13,9 +13,9 @@ namespace image {
 class ImageProperties {
 public:
     ImageProperties() = default;
-    ImageProperties(double center_x, double center_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
-        : origin_x_(center_x - (width * pixel_w) / 2.0)
-        , origin_y_(center_y - (height * pixel_h) / 2.0)
+    ImageProperties(double centre_x, double centre_y, size_t width, size_t height, double pixel_h, double pixel_w, geo::View_t view)
+        : origin_x_(centre_x - (width * pixel_w) / 2.0)
+        , origin_y_(centre_y - (height * pixel_h) / 2.0)
         , height_(height)
         , width_(width)
         , pixel_w_(pixel_w)

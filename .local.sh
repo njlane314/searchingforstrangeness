@@ -167,7 +167,7 @@ process_local_input() {
     run_lar "${input_path}" "${stem}"
 }
 
-finalize_hist_outputs() {
+finalise_hist_outputs() {
     if [ "${#SUCCESSFUL_HIST_OUTPUTS[@]}" -eq 0 ]; then
         return
     fi
@@ -182,7 +182,7 @@ finalize_hist_outputs() {
     echo "Combined histogram output: ${COMBINED_HIST_OUTPUT}"
 }
 
-finalize_event_outputs() {
+finalise_event_outputs() {
     if [ "${#SUCCESSFUL_EVENT_OUTPUTS[@]}" -eq 0 ]; then
         return
     fi
@@ -252,7 +252,7 @@ if [ "${#SUCCESSFUL_EVENT_OUTPUTS[@]}" -eq 0 ] && [ "${#SUCCESSFUL_HIST_OUTPUTS[
     exit 1
 fi
 
-finalize_hist_outputs
-finalize_event_outputs
+finalise_hist_outputs
+finalise_event_outputs
 
 echo "Process complete!"

@@ -47,15 +47,15 @@ image::ImageProperties makePropertiesFromBounds(
         static_cast<std::size_t>(std::ceil(
             (max_drift - min_drift) / pixel_height)) +
             1U);
-    double const center_wire =
+    double const centre_wire =
         min_wire_coordinate +
         0.5 * static_cast<double>(width) * pixel_width;
-    double const center_drift =
+    double const centre_drift =
         min_drift +
         0.5 * static_cast<double>(height) * pixel_height;
 
     return image::ImageProperties(
-        center_wire, center_drift, width, height,
+        centre_wire, centre_drift, width, height,
         pixel_height, pixel_width, view);
 }
 
@@ -130,26 +130,26 @@ ImageWindowGeometry::ImageWindowGeometry(
 
 std::vector<ImageProperties>
 ImageWindowGeometry::croppedWindowProperties(
-    const TVector3 &center) const {
-    if (!std::isfinite(center.X()) ||
-        !std::isfinite(center.Y()) ||
-        !std::isfinite(center.Z())) {
+    const TVector3 &centre) const {
+    if (!std::isfinite(centre.X()) ||
+        !std::isfinite(centre.Y()) ||
+        !std::isfinite(centre.Z())) {
         throw cet::exception("ImageWindowGeometry")
-            << "Cannot center a cropped image on a non-finite point.";
+            << "Cannot centre a cropped image on a non-finite point.";
     }
 
     auto const projected_u = projectToImageView(
-        static_cast<float>(center.X()),
-        static_cast<float>(center.Y()),
-        static_cast<float>(center.Z()), geo::kU);
+        static_cast<float>(centre.X()),
+        static_cast<float>(centre.Y()),
+        static_cast<float>(centre.Z()), geo::kU);
     auto const projected_v = projectToImageView(
-        static_cast<float>(center.X()),
-        static_cast<float>(center.Y()),
-        static_cast<float>(center.Z()), geo::kV);
+        static_cast<float>(centre.X()),
+        static_cast<float>(centre.Y()),
+        static_cast<float>(centre.Z()), geo::kV);
     auto const projected_w = projectToImageView(
-        static_cast<float>(center.X()),
-        static_cast<float>(center.Y()),
-        static_cast<float>(center.Z()), geo::kW);
+        static_cast<float>(centre.X()),
+        static_cast<float>(centre.Y()),
+        static_cast<float>(centre.Z()), geo::kW);
 
     std::vector<ImageProperties> properties;
     properties.reserve(3U);
@@ -198,14 +198,14 @@ ImageWindowGeometry::computeFullWindowProperties() const {
 
         for (std::size_t wire_index = 0U;
              wire_index < plane.Nwires(); ++wire_index) {
-            TVector3 const center =
+            TVector3 const centre =
                 plane.Wire(
                     static_cast<unsigned int>(wire_index))
                     .GetCenter();
             TVector3 const projected = projectToImageView(
-                static_cast<float>(center.X()),
-                static_cast<float>(center.Y()),
-                static_cast<float>(center.Z()), view);
+                static_cast<float>(centre.X()),
+                static_cast<float>(centre.Y()),
+                static_cast<float>(centre.Z()), view);
             min_wire = std::min(
                 min_wire,
                 static_cast<double>(projected.Z()));

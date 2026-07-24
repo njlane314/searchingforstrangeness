@@ -9,15 +9,15 @@
 namespace image {
 
 /// Unique request/result/log paths retained on failure and removed on success.
-class InferenceArtifacts {
+class InferenceArtefacts {
   public:
-    explicit InferenceArtifacts(const std::string &scratch_dir);
-    ~InferenceArtifacts() noexcept;
+    explicit InferenceArtefacts(const std::string &scratch_dir);
+    ~InferenceArtefacts() noexcept;
 
-    InferenceArtifacts(const InferenceArtifacts &) = delete;
-    InferenceArtifacts &operator=(const InferenceArtifacts &) = delete;
-    InferenceArtifacts(InferenceArtifacts &&) = delete;
-    InferenceArtifacts &operator=(InferenceArtifacts &&) = delete;
+    InferenceArtefacts(const InferenceArtefacts &) = delete;
+    InferenceArtefacts &operator=(const InferenceArtefacts &) = delete;
+    InferenceArtefacts(InferenceArtefacts &&) = delete;
+    InferenceArtefacts &operator=(InferenceArtefacts &&) = delete;
 
     const std::string &requestPath() const noexcept { return request_path_; }
     const std::string &resultPath() const noexcept { return result_path_; }
@@ -61,12 +61,12 @@ class InferenceProcess {
   public:
     static std::string commandForLog(
         const InferenceProcessConfig &config,
-        const InferenceArtifacts &artifacts);
+        const InferenceArtefacts &artefacts);
 
     static InferenceExecution execute(const InferenceProcessConfig &config,
-                                      const InferenceArtifacts &artifacts);
+                                      const InferenceArtefacts &artefacts);
 
-    static std::string diagnostics(const InferenceArtifacts &artifacts,
+    static std::string diagnostics(const InferenceArtefacts &artefacts,
                                    std::size_t max_bytes);
 };
 

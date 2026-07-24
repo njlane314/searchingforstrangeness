@@ -1,5 +1,5 @@
-#ifndef IMAGEPIPELINE_IMAGECENTERING_H
-#define IMAGEPIPELINE_IMAGECENTERING_H
+#ifndef IMAGEPIPELINE_IMAGECENTRING_H
+#define IMAGEPIPELINE_IMAGECENTRING_H
 
 #include "art/Framework/Principal/Event.h"
 #include "canvas/Persistency/Common/Ptr.h"
@@ -14,15 +14,15 @@
 
 namespace image {
 
-enum class ImageCenterSeed {
+enum class ImageCentreSeed {
     Vertex,
     WeightedCentroid,
     OriginFallback
 };
 
-struct ImageCenter {
+struct ImageCentre {
     TVector3 position;
-    ImageCenterSeed seed{ImageCenterSeed::OriginFallback};
+    ImageCentreSeed seed{ImageCentreSeed::OriginFallback};
 };
 
 std::optional<TVector3>
@@ -36,12 +36,12 @@ TVector3 trimmedCentroid(
     const TVector3 &seed,
     double radius);
 
-class ImageCentering {
+class ImageCentring {
   public:
-    ImageCentering(art::InputTag hit_producer,
-                   art::InputTag spacepoint_producer);
+    ImageCentring(art::InputTag hit_producer,
+                  art::InputTag spacepoint_producer);
 
-    ImageCenter compute(
+    ImageCentre compute(
         const art::Event &event,
         const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
         const std::optional<TVector3> &vertex,

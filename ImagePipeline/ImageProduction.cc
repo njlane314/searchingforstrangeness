@@ -43,7 +43,7 @@ ImageEventContext::ImageEventContext(
         event.getByLabel(options.producers.mcp, mcp_vector_);
     if (!found_mcps || !mcp_vector_.isValid()) {
         throw cet::exception("ImageProduction")
-            << "Semantic labeling is enabled, but the MCParticle "
+            << "Semantic labelling is enabled, but the MCParticle "
                "collection '"
             << options.producers.mcp.encode()
             << "' is unavailable. Set ImageProducer IsData=true for "
@@ -107,7 +107,7 @@ ImageEventContext::semanticLabels() const noexcept {
     return semantic_labels_;
 }
 
-RasterizedImageWindow::RasterizedImageWindow(
+RasterisedImageWindow::RasterisedImageWindow(
     std::vector<ImageProperties> properties)
     : properties_{std::move(properties)}
 {
@@ -127,61 +127,61 @@ RasterizedImageWindow::RasterizedImageWindow(
 }
 
 const std::vector<ImageProperties> &
-RasterizedImageWindow::properties() const noexcept {
+RasterisedImageWindow::properties() const noexcept {
     return properties_;
 }
 
 const std::vector<Image<float>> &
-RasterizedImageWindow::detectorImages() const noexcept {
+RasterisedImageWindow::detectorImages() const noexcept {
     return detector_images_;
 }
 
 const std::vector<Image<int>> &
-RasterizedImageWindow::semanticImages() const noexcept {
+RasterisedImageWindow::semanticImages() const noexcept {
     return semantic_images_;
 }
 
 const std::vector<Image<uint8_t>> &
-RasterizedImageWindow::sliceImages() const noexcept {
+RasterisedImageWindow::sliceImages() const noexcept {
     return slice_images_;
 }
 
-std::size_t RasterizedImageWindow::contributingHitCount(
+std::size_t RasterisedImageWindow::contributingHitCount(
     std::size_t plane_index) const {
     return contributing_hit_keys_.at(plane_index).size();
 }
 
-struct ImageRasterizer::WirePreparation {
+struct ImageRasteriser::WirePreparation {
     geo::PlaneID plane_id;
     geo::View_t view{geo::kUnknown};
     double wire_coordinate{0.0};
     std::vector<art::Ptr<recob::Hit>> hits;
 };
 
-struct ImageRasterizer::Destination {
-    RasterizedImageWindow *window{nullptr};
+struct ImageRasteriser::Destination {
+    RasterisedImageWindow *window{nullptr};
     std::size_t plane_index{0U};
     std::size_t column{0U};
 };
 
-ImageRasterizer::ImageRasterizer(
+ImageRasteriser::ImageRasteriser(
     geo::GeometryCore const &geometry)
     : geometry_{&geometry}
 {}
 
-void ImageRasterizer::rasterize(
+void ImageRasteriser::rasterise(
     const ImageEventContext &event_context,
-    const std::vector<RasterizedImageWindow *> &windows,
+    const std::vector<RasterisedImageWindow *> &windows,
     detinfo::DetectorProperties const *detector_properties) const {
     if (detector_properties == nullptr) {
         throw cet::exception("ImageProduction")
-            << "ImageRasterizer called with null "
+            << "ImageRasteriser called with null "
                "DetectorProperties pointer.";
     }
     for (auto const *window : windows) {
         if (window == nullptr) {
             throw cet::exception("ImageProduction")
-                << "ImageRasterizer called with a null output window.";
+                << "ImageRasteriser called with a null output window.";
         }
     }
 
@@ -193,8 +193,8 @@ void ImageRasterizer::rasterize(
     }
 }
 
-std::optional<ImageRasterizer::WirePreparation>
-ImageRasterizer::prepareWire(
+std::optional<ImageRasteriser::WirePreparation>
+ImageRasteriser::prepareWire(
     std::size_t wire_index,
     const ImageEventContext &context) const {
     auto hits_for_wire =
@@ -218,21 +218,21 @@ ImageRasterizer::prepareWire(
 
     geo::WireGeo const &wire_geometry =
         geometry_->WireIDToWireGeo(wire_id);
-    TVector3 const wire_center = wire_geometry.GetCenter();
+    TVector3 const wire_centre = wire_geometry.GetCenter();
     TVector3 const projected = projectToImageView(
-        static_cast<float>(wire_center.X()),
-        static_cast<float>(wire_center.Y()),
-        static_cast<float>(wire_center.Z()),
+        static_cast<float>(wire_centre.X()),
+        static_cast<float>(wire_centre.Y()),
+        static_cast<float>(wire_centre.Z()),
         view);
 
     return WirePreparation{
         plane_id, view, projected.Z(), std::move(filtered_hits)};
 }
 
-std::vector<ImageRasterizer::Destination>
-ImageRasterizer::destinationsForWire(
+std::vector<ImageRasteriser::Destination>
+ImageRasteriser::destinationsForWire(
     geo::View_t view, double wire_coordinate,
-    const std::vector<RasterizedImageWindow *> &windows) {
+    const std::vector<RasterisedImageWindow *> &windows) {
     std::vector<Destination> destinations;
     destinations.reserve(windows.size());
 
@@ -257,7 +257,7 @@ ImageRasterizer::destinationsForWire(
 }
 
 image::SemanticClassifier::SemanticLabel
-ImageRasterizer::semanticLabel(
+ImageRasteriser::semanticLabel(
     const art::Ptr<recob::Hit> &hit,
     const ImageEventContext &context) {
     using SemanticLabel =
@@ -301,7 +301,7 @@ ImageRasterizer::semanticLabel(
     return context.semanticLabels()[track->second];
 }
 
-void ImageRasterizer::mergeSemanticPixel(
+void ImageRasteriser::mergeSemanticPixel(
     Image<int> &image, std::size_t row, std::size_t column,
     image::SemanticClassifier::SemanticLabel label) {
     int const empty = static_cast<int>(
@@ -318,10 +318,10 @@ void ImageRasterizer::mergeSemanticPixel(
     }
 }
 
-void ImageRasterizer::fillWire(
+void ImageRasteriser::fillWire(
     std::size_t wire_index,
     const ImageEventContext &context,
-    const std::vector<RasterizedImageWindow *> &windows,
+    const std::vector<RasterisedImageWindow *> &windows,
     detinfo::DetectorProperties const &detector_properties) const {
     auto prepared = prepareWire(wire_index, context);
     if (!prepared)
@@ -463,7 +463,7 @@ void ImageRasterizer::fillWire(
 
 std::vector<ImageFeatures>
 SparseImagePacker::pack(
-    const RasterizedImageWindow &window,
+    const RasterisedImageWindow &window,
     const std::optional<TVector3> &vertex,
     bool include_semantics) {
     auto const &properties = window.properties();
@@ -475,7 +475,7 @@ SparseImagePacker::pack(
         properties.size() != semantic.size() ||
         properties.size() != slice.size()) {
         throw cet::exception("ImageProduction")
-            << "Rasterized image components are not aligned.";
+            << "Rasterised image components are not aligned.";
     }
 
     std::vector<ImageFeatures> output;
@@ -602,8 +602,8 @@ void ImageProduction::build(
     detinfo::DetectorProperties const *detector_properties) const {
     ImageEventContext context(
         event, hits, slice_hits, options_);
-    RasterizedImageWindow window(properties);
-    ImageRasterizer(*geometry_).rasterize(
+    RasterisedImageWindow window(properties);
+    ImageRasteriser(*geometry_).rasterise(
         context, {&window}, detector_properties);
     detector_images = window.detectorImages();
     semantic_images = window.semanticImages();

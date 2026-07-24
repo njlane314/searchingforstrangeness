@@ -33,6 +33,10 @@ reference/
      Extensionless reference copies of external batch-tool scripts kept in a
      format that is easy for LLM and text-ingestion tooling to read.
 
+Project-authored documentation, diagnostics, comments, and identifiers use
+British English.  Names owned by external APIs, data formats, legal titles,
+and verbatim files under reference/ retain their upstream spellings.
+
 
 Requirements
 ------------
@@ -144,7 +148,7 @@ Suggested reading order
 4. Read LICENSE for the repository terms.
 
 
-License
+Licence
 -------
 
 This repository is distributed under the MIT License.  See LICENSE.

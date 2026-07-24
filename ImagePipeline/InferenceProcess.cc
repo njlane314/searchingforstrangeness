@@ -141,7 +141,7 @@ void validateConfig(const InferenceProcessConfig &config) {
 
 std::vector<std::string>
 buildArguments(const InferenceProcessConfig &config,
-               const InferenceArtifacts &artifacts) {
+               const InferenceArtefacts &artefacts) {
     validateConfig(config);
 
     std::string runtime_dir = config.runtime_base_dir;
@@ -161,7 +161,7 @@ buildArguments(const InferenceProcessConfig &config,
 
     std::vector<std::string> binds;
     std::set<std::string> seen;
-    appendUnique(binds, seen, parentDirectory(artifacts.requestPath()));
+    appendUnique(binds, seen, parentDirectory(artefacts.requestPath()));
     appendUnique(binds, seen, absolute_runtime);
     appendUnique(binds, seen, parentDirectory(absolute_wrapper));
     appendUnique(binds, seen, parentDirectory(absolute_weights));
@@ -187,11 +187,11 @@ buildArguments(const InferenceProcessConfig &config,
         "/bin/bash",
         absolute_wrapper,
         "--in",
-        artifacts.requestPath(),
+        artefacts.requestPath(),
         "--out",
-        artifacts.resultPath(),
+        artefacts.resultPath(),
         "--metrics",
-        artifacts.metricsPath(),
+        artefacts.metricsPath(),
         "--W",
         std::to_string(config.width),
         "--H",
@@ -452,18 +452,18 @@ std::string describeStatus(const int status) {
 }
 
 [[noreturn]] void processError(const InferenceProcessConfig &config,
-                               const InferenceArtifacts &artifacts,
+                               const InferenceArtefacts &artefacts,
                                const std::string &message) {
     throw std::runtime_error(
         "Inference process failed for " + config.context + ": " + message +
         "\n" +
-        InferenceProcess::diagnostics(artifacts, config.diagnostic_bytes) +
-        "\nArtifacts retained for debugging:\n" + artifacts.describe());
+        InferenceProcess::diagnostics(artefacts, config.diagnostic_bytes) +
+        "\nArtefacts retained for debugging:\n" + artefacts.describe());
 }
 
 } // namespace
 
-InferenceArtifacts::InferenceArtifacts(const std::string &scratch_dir) {
+InferenceArtefacts::InferenceArtefacts(const std::string &scratch_dir) {
     const std::string directory = scratch_dir.empty() ? "." : scratch_dir;
     std::string pattern = joinPath(directory, "ia_XXXXXX");
     std::vector<char> writable(pattern.begin(), pattern.end());
@@ -471,7 +471,7 @@ InferenceArtifacts::InferenceArtifacts(const std::string &scratch_dir) {
 
     const int descriptor = ::mkstemp(writable.data());
     if (descriptor < 0) {
-        throw std::runtime_error("Could not create inference artifacts in " +
+        throw std::runtime_error("Could not create inference artefacts in " +
                                  directory + ": " + std::strerror(errno));
     }
     if (::close(descriptor) != 0 && errno != EINTR) {
@@ -490,13 +490,13 @@ InferenceArtifacts::InferenceArtifacts(const std::string &scratch_dir) {
     stderr_path_ = request_path_ + "_py_script.err";
 }
 
-InferenceArtifacts::~InferenceArtifacts() noexcept {
+InferenceArtefacts::~InferenceArtefacts() noexcept {
     if (cleanup_on_destruction_) {
         cleanup();
     }
 }
 
-void InferenceArtifacts::cleanup() noexcept {
+void InferenceArtefacts::cleanup() noexcept {
     ::remove(request_path_.c_str());
     ::remove(result_path_.c_str());
     ::remove(metrics_path_.c_str());
@@ -504,7 +504,7 @@ void InferenceArtifacts::cleanup() noexcept {
     ::remove(stderr_path_.c_str());
 }
 
-std::string InferenceArtifacts::describe() const {
+std::string InferenceArtefacts::describe() const {
     std::ostringstream output;
     output << "  request: " << request_path_ << '\n'
            << "  result: " << result_path_ << '\n'
@@ -516,21 +516,21 @@ std::string InferenceArtifacts::describe() const {
 
 std::string InferenceProcess::commandForLog(
     const InferenceProcessConfig &config,
-    const InferenceArtifacts &artifacts) {
-    return joinArgumentsForLog(buildArguments(config, artifacts));
+    const InferenceArtefacts &artefacts) {
+    return joinArgumentsForLog(buildArguments(config, artefacts));
 }
 
 InferenceExecution
 InferenceProcess::execute(const InferenceProcessConfig &config,
-                          const InferenceArtifacts &artifacts) {
+                          const InferenceArtefacts &artefacts) {
     try {
         std::vector<std::string> arguments =
-            buildArguments(config, artifacts);
+            buildArguments(config, artefacts);
 
         SpawnFileActions file_actions;
         SpawnAttributes attributes;
-        file_actions.redirect(STDOUT_FILENO, artifacts.stdoutPath());
-        file_actions.redirect(STDERR_FILENO, artifacts.stderrPath());
+        file_actions.redirect(STDOUT_FILENO, artefacts.stdoutPath());
+        file_actions.redirect(STDERR_FILENO, artefacts.stderrPath());
 
         std::vector<char *> argv;
         argv.reserve(arguments.size() + 1U);
@@ -570,11 +570,11 @@ InferenceProcess::execute(const InferenceProcessConfig &config,
                 "child terminated with " +
                 describeStatus(wait_result.status));
         }
-        if (!pathExists(artifacts.resultPath())) {
+        if (!pathExists(artefacts.resultPath())) {
             throw std::runtime_error(
                 "child exited successfully but did not create a result");
         }
-        if (!pathExists(artifacts.metricsPath())) {
+        if (!pathExists(artefacts.metricsPath())) {
             throw std::runtime_error(
                 "child exited successfully but did not create metrics");
         }
@@ -584,17 +584,17 @@ InferenceProcess::execute(const InferenceProcessConfig &config,
             std::chrono::duration<double, std::milli>(end - start).count();
         return execution;
     } catch (const std::exception &error) {
-        processError(config, artifacts, error.what());
+        processError(config, artefacts, error.what());
     }
 }
 
 std::string InferenceProcess::diagnostics(
-    const InferenceArtifacts &artifacts, const std::size_t max_bytes) {
+    const InferenceArtefacts &artefacts, const std::size_t max_bytes) {
     std::ostringstream output;
     output << "--- child stdout (bounded) ---\n"
-           << readTail(artifacts.stdoutPath(), max_bytes)
+           << readTail(artefacts.stdoutPath(), max_bytes)
            << "\n--- child stderr (bounded) ---\n"
-           << readTail(artifacts.stderrPath(), max_bytes)
+           << readTail(artefacts.stderrPath(), max_bytes)
            << "\n--- end child diagnostics ---";
     return output.str();
 }

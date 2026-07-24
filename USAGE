@@ -310,12 +310,12 @@ TFileService analysis files
      fullchain_nuselection_hist.root.  They contain TTrees and analysis
      branches intended for downstream plotting and ntuple-style analysis.
 
-The checked-in branch and product layout is summarized here.  In particular:
+The checked-in branch and product layout is summarised here.  In particular:
 
   * EventSelectionFilter trees live in nu_selection.root,
     nu_selection_data.root, fullchain_nuselection_hist.root,
     imaging_dev.root, and imaging_dev_cosmic.root.
-  * ImageProducer writes the neutrino-centered sparse planes to
+  * ImageProducer writes the neutrino-centred sparse planes to
     imageprod:CroppedWindow and the detector-wide sparse planes to
     imageprod:FullWindow.
   * The image-only and inference-only histogram files are mainly framework

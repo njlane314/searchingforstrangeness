@@ -81,9 +81,9 @@ class ImageEventContext {
 };
 
 /// Dense images and contributing-hit bookkeeping for one image window.
-class RasterizedImageWindow {
+class RasterisedImageWindow {
   public:
-    explicit RasterizedImageWindow(
+    explicit RasterisedImageWindow(
         std::vector<ImageProperties> properties);
 
     const std::vector<ImageProperties> &
@@ -98,7 +98,7 @@ class RasterizedImageWindow {
         std::size_t plane_index) const;
 
   private:
-    friend class ImageRasterizer;
+    friend class ImageRasteriser;
 
     std::vector<ImageProperties> properties_;
     std::vector<Image<float>> detector_images_;
@@ -107,15 +107,15 @@ class RasterizedImageWindow {
     std::vector<std::set<std::size_t>> contributing_hit_keys_;
 };
 
-/// Rasterize any number of windows in one wire/ROI/tick traversal.
-class ImageRasterizer {
+/// Rasterise any number of windows in one wire/ROI/tick traversal.
+class ImageRasteriser {
   public:
-    explicit ImageRasterizer(
+    explicit ImageRasteriser(
         geo::GeometryCore const &geometry);
 
-    void rasterize(
+    void rasterise(
         const ImageEventContext &event_context,
-        const std::vector<RasterizedImageWindow *> &windows,
+        const std::vector<RasterisedImageWindow *> &windows,
         detinfo::DetectorProperties const *detector_properties) const;
 
   private:
@@ -130,7 +130,7 @@ class ImageRasterizer {
     static std::vector<Destination>
     destinationsForWire(
         geo::View_t view, double wire_coordinate,
-        const std::vector<RasterizedImageWindow *> &windows);
+        const std::vector<RasterisedImageWindow *> &windows);
     static image::SemanticClassifier::SemanticLabel
     semanticLabel(const art::Ptr<recob::Hit> &hit,
                   const ImageEventContext &context);
@@ -140,17 +140,17 @@ class ImageRasterizer {
     void fillWire(
         std::size_t wire_index,
         const ImageEventContext &context,
-        const std::vector<RasterizedImageWindow *> &windows,
+        const std::vector<RasterisedImageWindow *> &windows,
         detinfo::DetectorProperties const &detector_properties) const;
 
     geo::GeometryCore const *geometry_{nullptr};
 };
 
-/// Convert a rasterized window into the persisted sparse product.
+/// Convert a rasterised window into the persisted sparse product.
 class SparseImagePacker {
   public:
     static std::vector<ImageFeatures>
-    pack(const RasterizedImageWindow &window,
+    pack(const RasterisedImageWindow &window,
          const std::optional<TVector3> &vertex,
          bool include_semantics);
 

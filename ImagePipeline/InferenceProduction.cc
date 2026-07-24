@@ -13,37 +13,37 @@ namespace image {
 namespace {
 
 [[noreturn]] void stageError(const InferenceProduction::Config &config,
-                             const InferenceArtifacts &artifacts,
+                             const InferenceArtefacts &artefacts,
                              const std::string &stage,
                              const std::exception &error) {
     throw std::runtime_error(
         "Inference failed for " + config.context + " while " + stage + ": " +
         error.what() + "\n" +
-        InferenceProcess::diagnostics(artifacts, config.diagnostic_bytes) +
-        "\nArtifacts retained for debugging:\n" + artifacts.describe());
+        InferenceProcess::diagnostics(artefacts, config.diagnostic_bytes) +
+        "\nArtefacts retained for debugging:\n" + artefacts.describe());
 }
 
 } // namespace
 
 InferenceProduction::Result InferenceProduction::runInference(
     const ValidatedPlaneTriplet &detector_images, const Config &config) {
-    std::unique_ptr<InferenceArtifacts> artifact_owner;
+    std::unique_ptr<InferenceArtefacts> artefact_owner;
     try {
-        artifact_owner =
-            std::make_unique<InferenceArtifacts>(config.scratch_dir);
+        artefact_owner =
+            std::make_unique<InferenceArtefacts>(config.scratch_dir);
     } catch (const std::exception &error) {
         throw std::runtime_error(
             "Inference failed for " + config.context +
-            " while creating temporary artifacts: " + error.what());
+            " while creating temporary artefacts: " + error.what());
     }
-    auto &artifacts = *artifact_owner;
+    auto &artefacts = *artefact_owner;
 
     const auto write_start = std::chrono::steady_clock::now();
     try {
-        InferenceProtocol::writeRequest(artifacts.requestPath(),
+        InferenceProtocol::writeRequest(artefacts.requestPath(),
                                         detector_images);
     } catch (const std::exception &error) {
-        stageError(config, artifacts, "writing the IASP request", error);
+        stageError(config, artefacts, "writing the IASP request", error);
     }
     const auto write_end = std::chrono::steady_clock::now();
 
@@ -62,26 +62,26 @@ InferenceProduction::Result InferenceProduction::runInference(
     try {
         mf::LogInfo("InferenceProduction")
             << "Executing inference for " << config.context << ": "
-            << InferenceProcess::commandForLog(process_config, artifacts);
+            << InferenceProcess::commandForLog(process_config, artefacts);
     } catch (const std::exception &error) {
-        stageError(config, artifacts, "building the child command", error);
+        stageError(config, artefacts, "building the child command", error);
     }
 
     // execute() reports bounded stdout/stderr and retained paths on every
     // process-level failure.
     const auto execution =
-        InferenceProcess::execute(process_config, artifacts);
+        InferenceProcess::execute(process_config, artefacts);
 
     const auto read_start = std::chrono::steady_clock::now();
     Result result;
     InferenceChildMetrics child_metrics;
     try {
         result.cls = InferenceProtocol::readResult(
-            artifacts.resultPath(), config.max_logits);
+            artefacts.resultPath(), config.max_logits);
         child_metrics =
-            InferenceProtocol::readMetrics(artifacts.metricsPath());
+            InferenceProtocol::readMetrics(artefacts.metricsPath());
     } catch (const std::exception &error) {
-        stageError(config, artifacts, "reading child output", error);
+        stageError(config, artefacts, "reading child output", error);
     }
     const auto read_end = std::chrono::steady_clock::now();
 
@@ -119,7 +119,7 @@ InferenceProduction::Result InferenceProduction::runInference(
             << "No class scores returned for " << config.context;
     }
 
-    artifacts.cleanupOnDestruction();
+    artefacts.cleanupOnDestruction();
     return result;
 }
 

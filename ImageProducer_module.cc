@@ -16,7 +16,7 @@
 #include "lardataobj/RecoBase/Slice.h"
 #include "lardataobj/RecoBase/Vertex.h"
 
-#include "ImagePipeline/ImageCentering.h"
+#include "ImagePipeline/ImageCentring.h"
 #include "ImagePipeline/ImageProduction.h"
 #include "ImagePipeline/ImageWindowGeometry.h"
 #include "ImagePipeline/SemanticClassifier.h"
@@ -84,7 +84,7 @@ class ImageProducer : public art::EDProducer {
 
     const geo::GeometryCore *fGeo{nullptr};
     const detinfo::DetectorProperties *fDetp{nullptr};
-    std::unique_ptr<image::ImageCentering> fCentering;
+    std::unique_ptr<image::ImageCentring> fCentring;
     std::unique_ptr<image::ImageWindowGeometry> fWindowGeometry;
 
     struct NeutrinoReco {
@@ -127,7 +127,7 @@ ImageProducer::ImageProducer(fhicl::ParameterSet const &pset)
         fGeo->WirePitch(geo::kU),
         fGeo->WirePitch(geo::kV),
         fGeo->WirePitch(geo::kW)};
-    fCentering = std::make_unique<image::ImageCentering>(
+    fCentring = std::make_unique<image::ImageCentring>(
         fHITproducer, fSPproducer);
     fWindowGeometry =
         std::make_unique<image::ImageWindowGeometry>(
@@ -308,30 +308,30 @@ void ImageProducer::produce(art::Event &event) {
         << (fIsData ? "DISABLED" : "ENABLED")
         << ", raw sparse features = [adc, nu-slice]";
 
-    image::ImageCenter const center = fCentering->compute(
+    image::ImageCentre const centre = fCentring->compute(
         event, neutrino.slice_hits, neutrino.vertex,
         fWindowGeometry->trimmingRadius());
     char const *seed_name = "origin fallback";
-    if (center.seed == image::ImageCenterSeed::Vertex)
+    if (centre.seed == image::ImageCentreSeed::Vertex)
         seed_name = "vertex";
-    else if (center.seed ==
-             image::ImageCenterSeed::WeightedCentroid)
+    else if (centre.seed ==
+             image::ImageCentreSeed::WeightedCentroid)
         seed_name = "weighted spacepoint centroid";
 
     mf::LogDebug("ImageProducer")
-        << "Cropped-window center = (" << center.position.X() << ", "
-        << center.position.Y() << ", " << center.position.Z()
+        << "Cropped-window centre = (" << centre.position.X() << ", "
+        << centre.position.Y() << ", " << centre.position.Z()
         << "), seed=" << seed_name;
 
-    image::RasterizedImageWindow cropped_window(
+    image::RasterisedImageWindow cropped_window(
         fWindowGeometry->croppedWindowProperties(
-            center.position));
-    image::RasterizedImageWindow full_window(
+            centre.position));
+    image::RasterisedImageWindow full_window(
         fWindowGeometry->fullWindowProperties());
     image::ImageEventContext context(
         event, event_hits, neutrino.slice_hits, opts);
 
-    std::vector<image::RasterizedImageWindow *> windows{&full_window};
+    std::vector<image::RasterisedImageWindow *> windows{&full_window};
     if (!neutrino.slice_hits.empty())
         windows.insert(windows.begin(), &cropped_window);
     else
@@ -340,7 +340,7 @@ void ImageProducer::produce(art::Event &event) {
                "empty CroppedWindow planes for event "
             << event.id();
 
-    image::ImageRasterizer(*fGeo).rasterize(context, windows, fDetp);
+    image::ImageRasteriser(*fGeo).rasterise(context, windows, fDetp);
 
     auto cropped = image::SparseImagePacker::pack(
         cropped_window, neutrino.vertex, !fIsData);

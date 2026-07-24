@@ -1,4 +1,4 @@
-#include "ImagePipeline/ImageCentering.h"
+#include "ImagePipeline/ImageCentring.h"
 
 #include "canvas/Persistency/Common/FindManyP.h"
 
@@ -44,13 +44,13 @@ weightedCentroid(
         return std::nullopt;
     }
 
-    TVector3 const center = sum * (1.0 / total_weight);
-    if (!std::isfinite(center.X()) ||
-        !std::isfinite(center.Y()) ||
-        !std::isfinite(center.Z())) {
+    TVector3 const centre = sum * (1.0 / total_weight);
+    if (!std::isfinite(centre.X()) ||
+        !std::isfinite(centre.Y()) ||
+        !std::isfinite(centre.Z())) {
         return std::nullopt;
     }
-    return center;
+    return centre;
 }
 
 TVector3 trimmedCentroid(
@@ -98,26 +98,26 @@ TVector3 trimmedCentroid(
     return sum * (1.0 / total_weight);
 }
 
-ImageCentering::ImageCentering(
+ImageCentring::ImageCentring(
     art::InputTag hit_producer,
     art::InputTag spacepoint_producer)
     : hit_producer_{std::move(hit_producer)}
     , spacepoint_producer_{std::move(spacepoint_producer)}
 {}
 
-ImageCenter ImageCentering::compute(
+ImageCentre ImageCentring::compute(
     const art::Event &event,
     const std::vector<art::Ptr<recob::Hit>> &neutrino_hits,
     const std::optional<TVector3> &vertex,
     double trimming_radius) const {
     if (neutrino_hits.empty()) {
         if (vertex) {
-            return ImageCenter{
-                *vertex, ImageCenterSeed::Vertex};
+            return ImageCentre{
+                *vertex, ImageCentreSeed::Vertex};
         }
-        return ImageCenter{
+        return ImageCentre{
             TVector3(0., 0., 0.),
-            ImageCenterSeed::OriginFallback};
+            ImageCentreSeed::OriginFallback};
     }
 
     std::map<art::Ptr<recob::SpacePoint>, double>
@@ -160,19 +160,19 @@ ImageCenter ImageCentering::compute(
         weights.push_back(entry.second);
     }
 
-    ImageCenter result;
+    ImageCentre result;
     TVector3 reference(0., 0., 0.);
     if (vertex) {
         reference = *vertex;
-        result.seed = ImageCenterSeed::Vertex;
+        result.seed = ImageCentreSeed::Vertex;
     } else if (auto const centroid =
                    weightedCentroid(spacepoints, weights)) {
         reference = *centroid;
-        result.seed = ImageCenterSeed::WeightedCentroid;
+        result.seed = ImageCentreSeed::WeightedCentroid;
     }
     result.position = reference;
 
-    if (result.seed != ImageCenterSeed::OriginFallback &&
+    if (result.seed != ImageCentreSeed::OriginFallback &&
         std::isfinite(trimming_radius) &&
         trimming_radius > 0.0 && !spacepoints.empty()) {
         result.position = trimmedCentroid(
@@ -183,7 +183,7 @@ ImageCenter ImageCentering::compute(
         !std::isfinite(result.position.Y()) ||
         !std::isfinite(result.position.Z())) {
         result.position.SetXYZ(0., 0., 0.);
-        result.seed = ImageCenterSeed::OriginFallback;
+        result.seed = ImageCentreSeed::OriginFallback;
     }
     return result;
 }

@@ -12,7 +12,7 @@ from me_compat import replace_feature, submanifold_convolution
 
 class SparseLayerNorm(nn.Module):
     """
-    Batch-size/occupancy agnostic normalization:
+    Batch-size/occupancy agnostic normalisation:
     LayerNorm over channels per sparse site (point).
     """
 

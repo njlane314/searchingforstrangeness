@@ -105,8 +105,8 @@ bool HitsCompatible(const art::Ptr<recob::Hit> &h1, const art::Ptr<recob::Hit> &
     return true;
 }
 
-void getNeighboringHits(const std::pair<int, int> &pair, std::vector<size_t> &hitIndices,
-                        std::map<std::pair<int, int>, std::vector<size_t>> &_hitMap) {
+void getNeighbouringHits(const std::pair<int, int> &pair, std::vector<size_t> &hitIndices,
+                         std::map<std::pair<int, int>, std::vector<size_t>> &_hitMap) {
 
     auto const &i = pair.first;
 
@@ -196,8 +196,8 @@ bool cluster(const std::vector<art::Ptr<recob::Hit>> &hit_ptr_v,
 
             std::vector<size_t> cellhits = it->second;
 
-            std::vector<size_t> neighborhits;
-            getNeighboringHits(pair, neighborhits, _hitMap);
+            std::vector<size_t> neighbour_hits;
+            getNeighbouringHits(pair, neighbour_hits, _hitMap);
 
             for (size_t h1 = 0; h1 < cellhits.size(); h1++) {
 
@@ -205,8 +205,8 @@ bool cluster(const std::vector<art::Ptr<recob::Hit>> &hit_ptr_v,
 
                 bool matched = false;
 
-                for (size_t h2 = 0; h2 < neighborhits.size(); h2++) {
-                    auto const &hit2 = neighborhits[h2];
+                for (size_t h2 = 0; h2 < neighbour_hits.size(); h2++) {
+                    auto const &hit2 = neighbour_hits[h2];
                     if (hit1 == hit2)
                         continue;
 
